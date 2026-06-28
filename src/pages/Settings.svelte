@@ -16,6 +16,14 @@
   const configured = $derived(!!(override.trim() || ONEDRIVE_CLIENT_ID));
 
   function errMsg(e: unknown): string {
+    if (e && typeof e === 'object' && 'errorCode' in e) {
+      const code = (e as { errorCode?: string }).errorCode;
+      if (code === 'user_cancelled') return 'Sign-in cancelled';
+      if (code === 'interaction_in_progress')
+        return 'A sign-in is already in progress — give it a moment and retry';
+      if (code === 'popup_window_error' || code === 'empty_window_error')
+        return 'Popup blocked — allow popups for this site and retry';
+    }
     return e instanceof Error ? e.message : 'Something went wrong';
   }
 

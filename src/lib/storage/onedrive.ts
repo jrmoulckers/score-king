@@ -18,6 +18,34 @@ function clientId(): string {
   return (get(settings).oneDriveClientId.trim() || ONEDRIVE_CLIENT_ID).trim();
 }
 
+function isInteractionInProgress(e: unknown): boolean {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    'errorCode' in e &&
+    (e as { errorCode?: string }).errorCode === 'interaction_in_progress'
+  );
+}
+
+/**
+ * Run an interactive MSAL call, recovering from a stuck "interaction_in_progress"
+ * left behind by a previously dismissed popup: reconcile state, then retry once.
+ */
+async function withInteractionRetry<T>(
+  app: PublicClientApplication,
+  fn: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    if (isInteractionInProgress(e)) {
+      await app.handleRedirectPromise().catch(() => {});
+      return await fn();
+    }
+    throw e;
+  }
+}
+
 async function ensureApp(): Promise<PublicClientApplication> {
   const id = clientId();
   if (!id) throw new Error('No OneDrive client ID configured (add it in Settings).');
@@ -31,6 +59,13 @@ async function ensureApp(): Promise<PublicClientApplication> {
       cache: { cacheLocation: 'localStorage' },
     });
     await pca.initialize();
+    // Reconcile any leftover state from a previous, possibly interrupted sign-in.
+    // Clears a stuck "interaction_in_progress" after a popup is dismissed/closed.
+    try {
+      await pca.handleRedirectPromise();
+    } catch {
+      /* nothing to handle */
+    }
     initializedFor = id;
     const accounts = pca.getAllAccounts();
     if (accounts.length) account = accounts[0];
@@ -41,7 +76,7 @@ async function ensureApp(): Promise<PublicClientApplication> {
 async function token(): Promise<string> {
   const app = await ensureApp();
   if (!account) {
-    const res = await app.loginPopup({ scopes: SCOPES });
+    const res = await withInteractionRetry(app, () => app.loginPopup({ scopes: SCOPES }));
     account = res.account;
   }
   if (!account) throw new Error('Microsoft sign-in was cancelled.');
@@ -49,7 +84,7 @@ async function token(): Promise<string> {
     const res = await app.acquireTokenSilent({ scopes: SCOPES, account });
     return res.accessToken;
   } catch {
-    const res = await app.acquireTokenPopup({ scopes: SCOPES });
+    const res = await withInteractionRetry(app, () => app.acquireTokenPopup({ scopes: SCOPES }));
     account = res.account;
     return res.accessToken;
   }
@@ -167,7 +202,7 @@ export const oneDrive: SyncProvider = {
   },
   async signIn() {
     const app = await ensureApp();
-    const res = await app.loginPopup({ scopes: SCOPES });
+    const res = await withInteractionRetry(app, () => app.loginPopup({ scopes: SCOPES }));
     account = res.account;
   },
   async signOut() {
