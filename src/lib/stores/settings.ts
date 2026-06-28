@@ -2,9 +2,13 @@ import { writable } from 'svelte/store';
 
 export type Theme = 'dark' | 'light';
 
+export type OneDriveFolderMode = 'app' | 'custom';
+
 export interface Settings {
   theme: Theme;
   oneDriveClientId: string;
+  oneDriveFolderMode: OneDriveFolderMode;
+  oneDriveCustomPath: string;
   autoSync: boolean;
   lastSync: number | null;
 }
@@ -14,6 +18,8 @@ const KEY = 'sk_settings';
 const defaults: Settings = {
   theme: 'dark',
   oneDriveClientId: '',
+  oneDriveFolderMode: 'app',
+  oneDriveCustomPath: '',
   autoSync: false,
   lastSync: null,
 };

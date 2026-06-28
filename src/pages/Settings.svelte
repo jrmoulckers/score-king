@@ -15,6 +15,26 @@
 
   const configured = $derived(!!(override.trim() || ONEDRIVE_CLIENT_ID));
 
+  let folderMode = $state($settings.oneDriveFolderMode);
+  let customPath = $state($settings.oneDriveCustomPath);
+
+  const cleanPath = $derived(customPath.trim().replace(/^\/+|\/+$/g, ''));
+  const locationLabel = $derived(
+    folderMode === 'custom'
+      ? 'OneDrive / ' + (cleanPath ? cleanPath.replace(/\//g, ' / ') + ' / ' : '') + 'Score King.xlsx'
+      : 'OneDrive / Apps / Score King / Score King.xlsx',
+  );
+
+  $effect(() => {
+    const mode = folderMode;
+    const path = customPath.trim();
+    settings.update((s) =>
+      s.oneDriveFolderMode === mode && s.oneDriveCustomPath === path
+        ? s
+        : { ...s, oneDriveFolderMode: mode, oneDriveCustomPath: path },
+    );
+  });
+
   function errMsg(e: unknown): string {
     if (e && typeof e === 'object' && 'errorCode' in e) {
       const code = (e as { errorCode?: string }).errorCode;
@@ -148,26 +168,72 @@
       and you can use the local JSON backup below. (To turn on OneDrive, add the app's client ID
       under Advanced or in <code>src/lib/config.ts</code>.)
     </div>
-  {:else if signedIn}
-    <div class="row spread">
-      <span class="row" style="gap: 8px">
-        <span class="dot ok"></span> Connected to OneDrive
-      </span>
-      <button class="btn small ghost" onclick={disconnect}>Disconnect</button>
-    </div>
-    <div class="row wrap" style="gap: 10px">
-      <button class="btn primary grow" onclick={backup} disabled={busy}>Back up now</button>
-      <button class="btn grow" onclick={restore} disabled={busy}>Restore</button>
-    </div>
-    <div class="muted sm">
-      {$settings.lastSync ? 'Last backup ' + formatDateTime($settings.lastSync) : 'Not backed up yet'}
-    </div>
   {:else}
-    <div class="muted sm">
-      Sign in with your Microsoft account to back up your scores to a <code>Score King.xlsx</code>
-      file in your own OneDrive. You can open it in Excel anytime.
+    {#if signedIn}
+      <div class="row spread">
+        <span class="row" style="gap: 8px">
+          <span class="dot ok"></span> Connected to OneDrive
+        </span>
+        <button class="btn small ghost" onclick={disconnect}>Disconnect</button>
+      </div>
+      <div class="row wrap" style="gap: 10px">
+        <button class="btn primary grow" onclick={backup} disabled={busy}>Back up now</button>
+        <button class="btn grow" onclick={restore} disabled={busy}>Restore</button>
+      </div>
+      <div class="muted sm">
+        {$settings.lastSync ? 'Last backup ' + formatDateTime($settings.lastSync) : 'Not backed up yet'}
+      </div>
+    {:else}
+      <div class="muted sm">
+        Sign in with your Microsoft account to back up your scores to a <code>Score King.xlsx</code>
+        file in your own OneDrive. You can open it in Excel anytime.
+      </div>
+      <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
+    {/if}
+
+    <hr class="sep" />
+
+    <div class="stack" style="gap: 10px">
+      <div class="fieldlabel">Where your data is stored</div>
+
+      <label class="opt">
+        <input type="radio" name="odmode" value="app" bind:group={folderMode} />
+        <span class="optbody">
+          <strong>App folder <span class="tag">recommended</span></strong>
+          <span class="muted sm block">
+            Score King can access <strong>only its own folder</strong>
+            (<code>OneDrive › Apps › Score King</code>) — it cannot see or touch anything else in
+            your OneDrive. Grants the sandboxed <code>Files.ReadWrite.AppFolder</code> permission.
+          </span>
+        </span>
+      </label>
+
+      <label class="opt">
+        <input type="radio" name="odmode" value="custom" bind:group={folderMode} />
+        <span class="optbody">
+          <strong>Custom folder</strong>
+          <span class="muted sm block">
+            Store the workbook anywhere you like. Microsoft can't limit access to a single folder,
+            so this grants the broader <code>Files.ReadWrite</code> permission — the app could
+            <strong>technically</strong> reach all of your OneDrive files, even though it only ever
+            reads and writes its own <code>Score King.xlsx</code>.
+          </span>
+        </span>
+      </label>
+
+      {#if folderMode === 'custom'}
+        <input
+          type="text"
+          bind:value={customPath}
+          placeholder="Folder path, e.g. Documents/Games (blank = OneDrive root)"
+        />
+      {/if}
+
+      <div class="muted sm">📄 <code>{locationLabel}</code></div>
+      <div class="muted sm">
+        Changing this may ask you to approve the new permission the next time you back up.
+      </div>
     </div>
-    <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
   {/if}
 
   <details>
@@ -222,6 +288,40 @@
   }
   details summary {
     cursor: pointer;
+  }
+  .block {
+    display: block;
+    margin-top: 4px;
+  }
+  .sep {
+    border: none;
+    border-top: 1px solid var(--border, rgba(127, 127, 127, 0.2));
+    margin: 4px 0;
+    width: 100%;
+  }
+  .opt {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    cursor: pointer;
+  }
+  .opt input {
+    margin-top: 3px;
+    flex: none;
+  }
+  .optbody {
+    display: block;
+  }
+  .tag {
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #29c785;
+    color: #04150d;
+    padding: 1px 6px;
+    border-radius: 999px;
+    vertical-align: middle;
+    margin-left: 4px;
   }
   code {
     font-size: 0.78rem;

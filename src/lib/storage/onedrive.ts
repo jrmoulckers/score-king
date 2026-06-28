@@ -6,8 +6,43 @@ import type { Snapshot, SyncProvider } from './sync';
 import type { Game, Player, Round } from '../types';
 
 const FILE_NAME = 'Score King.xlsx';
-const SCOPES = ['Files.ReadWrite', 'User.Read'];
 const GRAPH = 'https://graph.microsoft.com/v1.0';
+
+function folderMode(): 'app' | 'custom' {
+  return get(settings).oneDriveFolderMode === 'custom' ? 'custom' : 'app';
+}
+
+/**
+ * Permissions requested at sign-in (dynamic consent — no app-registration change needed).
+ * - App-folder mode is sandboxed to /Apps/Score King via Files.ReadWrite.AppFolder: the app
+ *   cannot see any of the user's other files.
+ * - Custom mode can write anywhere, which Graph only allows via the broad Files.ReadWrite scope
+ *   (delegated permissions can't be limited to a single arbitrary folder).
+ */
+function scopes(): string[] {
+  return folderMode() === 'custom'
+    ? ['Files.ReadWrite', 'User.Read']
+    : ['Files.ReadWrite.AppFolder', 'User.Read'];
+}
+
+function encodePath(p: string): string {
+  return p
+    .split('/')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(encodeURIComponent)
+    .join('/');
+}
+
+/** Graph addressing for the workbook's content, per the chosen storage location. */
+function contentPath(): string {
+  const file = encodeURIComponent(FILE_NAME);
+  if (folderMode() === 'custom') {
+    const folder = encodePath(get(settings).oneDriveCustomPath || '');
+    return `/me/drive/root:${folder ? '/' + folder : ''}/${file}:/content`;
+  }
+  return `/me/drive/special/approot:/${file}:/content`;
+}
 
 let pca: PublicClientApplication | null = null;
 let account: AccountInfo | null = null;
@@ -78,15 +113,15 @@ async function ensureApp(): Promise<PublicClientApplication> {
 async function token(): Promise<string> {
   const app = await ensureApp();
   if (!account) {
-    const res = await withInteractionRetry(app, () => app.loginPopup({ scopes: SCOPES }));
+    const res = await withInteractionRetry(app, () => app.loginPopup({ scopes: scopes() }));
     account = res.account;
   }
   if (!account) throw new Error('Microsoft sign-in was cancelled.');
   try {
-    const res = await app.acquireTokenSilent({ scopes: SCOPES, account });
+    const res = await app.acquireTokenSilent({ scopes: scopes(), account });
     return res.accessToken;
   } catch {
-    const res = await withInteractionRetry(app, () => app.acquireTokenPopup({ scopes: SCOPES }));
+    const res = await withInteractionRetry(app, () => app.acquireTokenPopup({ scopes: scopes() }));
     account = res.account;
     return res.accessToken;
   }
@@ -204,7 +239,7 @@ export const oneDrive: SyncProvider = {
   },
   async signIn() {
     const app = await ensureApp();
-    const res = await withInteractionRetry(app, () => app.loginPopup({ scopes: SCOPES }));
+    const res = await withInteractionRetry(app, () => app.loginPopup({ scopes: scopes() }));
     account = res.account;
   },
   async signOut() {
@@ -215,7 +250,7 @@ export const oneDrive: SyncProvider = {
     const accessToken = await token();
     const buf = await toWorkbook(snapshot);
     const res = await graph(
-      `/me/drive/root:/${encodeURIComponent(FILE_NAME)}:/content`,
+      contentPath(),
       {
         method: 'PUT',
         headers: {
@@ -231,7 +266,7 @@ export const oneDrive: SyncProvider = {
   async pull() {
     const accessToken = await token();
     const res = await graph(
-      `/me/drive/root:/${encodeURIComponent(FILE_NAME)}:/content`,
+      contentPath(),
       { method: 'GET' },
       accessToken,
     );

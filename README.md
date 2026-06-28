@@ -110,9 +110,12 @@ That's it — routing (`/<id>`), players, history, stats, and persistence all wo
 
 Sync is **opt‑in** — the app is fully usable offline without it. When enabled, each user signs in
 with **their own** Microsoft account and the app writes a `Score King.xlsx` to **their own**
-OneDrive. There's a single shared app registration; the client ID is **public** (for SPAs it isn't
-a secret — security comes from PKCE + the redirect‑URI allowlist), so end users never configure
-anything. They just open **Settings → Connect OneDrive**.
+OneDrive. By default the file lives in a **sandboxed app folder** (`OneDrive → Apps → Score King`)
+that the app is the *only* thing able to read — it can't see the rest of your OneDrive. Power users
+can switch to a **custom folder** in Settings (which needs broader access — see below). There's a
+single shared app registration; the client ID is **public** (for SPAs it isn't a secret — security
+comes from PKCE + the redirect‑URI allowlist), so end users never configure anything. They just open
+**Settings → Connect OneDrive**.
 
 ### One‑time developer setup (register the shared app)
 
@@ -126,8 +129,10 @@ anything. They just open **Settings → Connect OneDrive**.
    - `https://score.jrmoulckers.com`
    - `http://localhost:5173/auth.html`
    - `http://localhost:5173`
-4. No client secret (public client + PKCE). The **Files.ReadWrite** delegated scope is requested at
-   sign‑in.
+4. No client secret (public client + PKCE). Scopes are requested at sign‑in via **dynamic consent**,
+   so you don't pre‑list them: the default **app‑folder** mode uses **`Files.ReadWrite.AppFolder`**
+   (sandboxed to `/Apps/Score King`), while choosing a **custom folder** in Settings uses the
+   broader **`Files.ReadWrite`** (Graph can't scope a delegated permission to one arbitrary folder).
 5. Copy the **Application (client) ID** into `BUILT_IN_ONEDRIVE_CLIENT_ID` in
    [`src/lib/config.ts`](src/lib/config.ts) (or set `VITE_ONEDRIVE_CLIENT_ID` at build time). It's
    safe to commit.
