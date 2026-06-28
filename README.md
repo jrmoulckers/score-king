@@ -108,22 +108,37 @@ That's it — routing (`/<id>`), players, history, stats, and persistence all wo
 
 ## ☁️ OneDrive / Excel sync setup (optional)
 
-Backup uses **your own** Azure app registration so no credentials live in this repo. One‑time:
+Sync is **opt‑in** — the app is fully usable offline without it. When enabled, each user signs in
+with **their own** Microsoft account and the app writes a `Score King.xlsx` to **their own**
+OneDrive. There's a single shared app registration; the client ID is **public** (for SPAs it isn't
+a secret — security comes from PKCE + the redirect‑URI allowlist), so end users never configure
+anything. They just open **Settings → Connect OneDrive**.
 
-1. Go to the [Azure Portal → App registrations](https://portal.azure.com/) → **New registration**.
-2. Name it (e.g. *Score King*), supported accounts = **Personal Microsoft accounts** (and/or your
-   org).
-3. Add a **Single‑page application (SPA)** redirect URI: `https://score.jrmoulckers.com`
-   (add `http://localhost:5173` too for local testing).
-4. No client secret is needed (public client + PKCE). API permission **Files.ReadWrite** (delegated)
-   is requested at sign‑in.
-5. Copy the **Application (client) ID** → paste it into **Settings → OneDrive backup** in the app
-   and click **Save ID**.
-6. **Back up now** signs you in and writes `Score King.xlsx` to your OneDrive root. **Restore**
-   pulls it back.
+### One‑time developer setup (register the shared app)
+
+1. [Azure Portal → App registrations](https://portal.azure.com/) → **New registration**.
+2. Name it *Score King*; supported accounts = **Accounts in any organizational directory and
+   personal Microsoft accounts** (so anyone with a Microsoft/Outlook account can sign in).
+3. **Add a platform → Single‑page application (SPA)** — this matters; don't use "Web". Redirect
+   URIs: `https://score.jrmoulckers.com` and `http://localhost:5173`.
+4. No client secret (public client + PKCE). The **Files.ReadWrite** delegated scope is requested at
+   sign‑in.
+5. Copy the **Application (client) ID** into `BUILT_IN_ONEDRIVE_CLIENT_ID` in
+   [`src/lib/config.ts`](src/lib/config.ts) (or set `VITE_ONEDRIVE_CLIENT_ID` at build time). It's
+   safe to commit.
+
+After that, **Settings → Connect OneDrive** is one click for everyone. Power users / forks can
+override with their own client ID under **Settings → Advanced**.
 
 > The workbook has `Players`, `Games`, `Rounds`, and `RoundScores` sheets. The app treats local
 > data as the source of truth during play and syncs the whole snapshot on demand.
+
+### Google Drive (future)
+
+The `SyncProvider` interface (`src/lib/storage/sync.ts`) is storage‑agnostic, so a Google Drive
+provider can be added later using Google Identity Services + the `drive.file` scope (the app only
+ever sees the backup file it creates). Note Google may show an "unverified app" notice to external
+users until the OAuth consent screen is verified.
 
 ---
 

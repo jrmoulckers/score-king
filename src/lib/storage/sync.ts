@@ -13,6 +13,8 @@ export interface SyncProvider {
   label: string;
   isConfigured(): boolean;
   isSignedIn(): boolean;
+  /** Initialize and restore any cached session; resolves to whether a user is signed in. */
+  prepare(): Promise<boolean>;
   signIn(): Promise<void>;
   signOut(): Promise<void>;
   push(snapshot: Snapshot): Promise<void>;

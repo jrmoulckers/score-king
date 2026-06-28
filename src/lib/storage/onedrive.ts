@@ -1,6 +1,7 @@
 import { PublicClientApplication, type AccountInfo } from '@azure/msal-browser';
 import { get } from 'svelte/store';
 import { settings } from '../stores/settings';
+import { ONEDRIVE_CLIENT_ID } from '../config';
 import type { Snapshot, SyncProvider } from './sync';
 import type { Game, Player, Round } from '../types';
 
@@ -13,7 +14,8 @@ let account: AccountInfo | null = null;
 let initializedFor = '';
 
 function clientId(): string {
-  return get(settings).oneDriveClientId.trim();
+  // Per-user override (Settings) wins; otherwise the shared app's public client ID.
+  return (get(settings).oneDriveClientId.trim() || ONEDRIVE_CLIENT_ID).trim();
 }
 
 async function ensureApp(): Promise<PublicClientApplication> {
@@ -156,6 +158,11 @@ export const oneDrive: SyncProvider = {
     return !!clientId();
   },
   isSignedIn() {
+    return !!account;
+  },
+  async prepare() {
+    if (!clientId()) return false;
+    await ensureApp();
     return !!account;
   },
   async signIn() {
