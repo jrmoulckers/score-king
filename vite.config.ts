@@ -16,9 +16,9 @@ function spa404() {
 }
 
 // https://vite.dev/config/
-// Deploy base: '/score-king/' for the github.io project URL; change to '/' when
-// serving from the custom domain (and restore public/CNAME).
-const base = '/score-king/'
+// Deploy base: '/' for the score.jrmoulckers.com custom domain (served at root).
+// Use '/score-king/' instead to serve from the github.io project URL.
+const base = '/'
 
 export default defineConfig({
   base,
