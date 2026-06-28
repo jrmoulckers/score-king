@@ -54,7 +54,9 @@ async function ensureApp(): Promise<PublicClientApplication> {
       auth: {
         clientId: id,
         authority: 'https://login.microsoftonline.com/common',
-        redirectUri: window.location.origin,
+        // A minimal static page (not the SPA) so the sign-in popup/iframe returns
+        // to a blank page and closes cleanly instead of rendering the whole app.
+        redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}auth.html`,
       },
       cache: { cacheLocation: 'localStorage' },
     });
