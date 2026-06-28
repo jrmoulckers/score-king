@@ -120,7 +120,12 @@ anything. They just open **Settings → Connect OneDrive**.
 2. Name it *Score King*; supported accounts = **Accounts in any organizational directory and
    personal Microsoft accounts** (so anyone with a Microsoft/Outlook account can sign in).
 3. **Add a platform → Single‑page application (SPA)** — this matters; don't use "Web". Redirect
-   URIs: `https://score.jrmoulckers.com` and `http://localhost:5173`.
+   URIs (add **all four** — the `/auth.html` ones are the minimal page the sign‑in popup returns
+   to so it closes cleanly):
+   - `https://score.jrmoulckers.com/auth.html`
+   - `https://score.jrmoulckers.com`
+   - `http://localhost:5173/auth.html`
+   - `http://localhost:5173`
 4. No client secret (public client + PKCE). The **Files.ReadWrite** delegated scope is requested at
    sign‑in.
 5. Copy the **Application (client) ID** into `BUILT_IN_ONEDRIVE_CLIENT_ID` in
