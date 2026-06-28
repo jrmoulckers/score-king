@@ -1,17 +1,38 @@
 import { writable } from 'svelte/store';
 
-export const pathStore = writable<string>(window.location.pathname || '/');
+const RAW_BASE = import.meta.env.BASE_URL || '/';
+// '' when served at root ('/'), '/score-king' when served under a subpath.
+const BASE = RAW_BASE.replace(/\/+$/, '');
+
+/** Strip the deploy base prefix to get an app-relative path like '/play/x'. */
+function toAppPath(pathname: string): string {
+  let p = pathname || '/';
+  if (BASE && (p === BASE || p.startsWith(BASE + '/'))) {
+    p = p.slice(BASE.length);
+  }
+  if (!p.startsWith('/')) p = '/' + p;
+  return p;
+}
+
+/** Turn an app-relative path into a real URL that includes the deploy base. */
+function toUrl(appPath: string): string {
+  const clean = appPath.startsWith('/') ? appPath : '/' + appPath;
+  return BASE + clean;
+}
+
+export const pathStore = writable<string>(toAppPath(window.location.pathname));
 
 export function navigate(to: string) {
-  if (to !== window.location.pathname) {
-    window.history.pushState({}, '', to);
+  const url = toUrl(to);
+  if (url !== window.location.pathname) {
+    window.history.pushState({}, '', url);
   }
-  pathStore.set(to);
+  pathStore.set(toAppPath(url));
   window.scrollTo(0, 0);
 }
 
 window.addEventListener('popstate', () => {
-  pathStore.set(window.location.pathname || '/');
+  pathStore.set(toAppPath(window.location.pathname));
 });
 
 /** Svelte action: turn an <a href="/..."> into a client-side navigation. */

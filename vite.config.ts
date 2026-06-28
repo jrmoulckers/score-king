@@ -16,8 +16,12 @@ function spa404() {
 }
 
 // https://vite.dev/config/
+// Deploy base: '/score-king/' for the github.io project URL; change to '/' when
+// serving from the custom domain (and restore public/CNAME).
+const base = '/score-king/'
+
 export default defineConfig({
-  base: '/',
+  base,
   plugins: [
     svelte(),
     VitePWA({
@@ -31,14 +35,15 @@ export default defineConfig({
         background_color: '#0f1020',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: base,
+        scope: base,
         icons: [
           { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
         ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        navigateFallback: '/index.html',
+        navigateFallback: `${base}index.html`,
       },
     }),
     spa404(),
