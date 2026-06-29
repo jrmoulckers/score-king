@@ -282,65 +282,68 @@
       </div>
       <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
     {/if}
-
-    <hr class="sep" />
-
-    <div class="stack" style="gap: 10px">
-      <div class="fieldlabel">Where your data is stored</div>
-
-      <label class="opt">
-        <input type="radio" name="odmode" value="app" bind:group={folderMode} />
-        <span class="optbody">
-          <strong>App folder <span class="tag">recommended</span></strong>
-          <span class="muted sm block">
-            Score King can access <strong>only its own folder</strong>
-            (<code>OneDrive › Apps › Score King</code>) — it cannot see or touch anything else in
-            your OneDrive. Grants the sandboxed <code>Files.ReadWrite.AppFolder</code> permission.
-          </span>
-        </span>
-      </label>
-
-      <label class="opt">
-        <input type="radio" name="odmode" value="custom" bind:group={folderMode} />
-        <span class="optbody">
-          <strong>Custom folder</strong>
-          <span class="muted sm block">
-            Store the workbook anywhere you like. Microsoft can't limit access to a single folder,
-            so this grants the broader <code>Files.ReadWrite</code> permission — the app could
-            <strong>technically</strong> reach all of your OneDrive files, even though it only ever
-            reads and writes its own <code>Score King.xlsx</code>.
-          </span>
-        </span>
-      </label>
-
-      {#if folderMode === 'custom'}
-        <input
-          type="text"
-          bind:value={customPath}
-          placeholder="Folder path, e.g. Documents/Games (blank = OneDrive root)"
-        />
-      {/if}
-
-      <div class="muted sm">📄 <code>{locationLabel}</code></div>
-      <div class="muted sm">
-        Changing this may ask you to approve the new permission the next time you back up.
-      </div>
-    </div>
   {/if}
 
   <details>
-    <summary class="muted sm">Advanced: use your own client ID</summary>
-    <div class="stack" style="margin-top: 10px">
-      <input
-        type="text"
-        bind:value={override}
-        placeholder="00000000-0000-0000-0000-000000000000"
-      />
-      <div class="muted sm">
-        Override the built-in app with your own Azure app registration. Leave blank to use the
-        default. See the README for registration steps.
+    <summary class="muted sm">Advanced</summary>
+    <div class="stack" style="margin-top: 12px; gap: 16px">
+      <div class="stack" style="gap: 10px">
+        <div class="fieldlabel">Where your data is stored</div>
+
+        <label class="opt">
+          <input type="radio" name="odmode" value="app" bind:group={folderMode} />
+          <span class="optbody">
+            <strong>App folder <span class="tag">recommended</span></strong>
+            <span class="muted sm block">
+              Score King can access <strong>only its own folder</strong>
+              (<code>OneDrive › Apps › Score King</code>) — it cannot see or touch anything else in
+              your OneDrive. Grants the sandboxed <code>Files.ReadWrite.AppFolder</code> permission.
+            </span>
+          </span>
+        </label>
+
+        <label class="opt">
+          <input type="radio" name="odmode" value="custom" bind:group={folderMode} />
+          <span class="optbody">
+            <strong>Custom folder</strong>
+            <span class="muted sm block">
+              Store the workbook anywhere you like. Microsoft can't limit access to a single folder,
+              so this grants the broader <code>Files.ReadWrite</code> permission — the app could
+              <strong>technically</strong> reach all of your OneDrive files, even though it only ever
+              reads and writes its own <code>Score King.xlsx</code>.
+            </span>
+          </span>
+        </label>
+
+        {#if folderMode === 'custom'}
+          <input
+            type="text"
+            bind:value={customPath}
+            placeholder="Folder path, e.g. Documents/Games (blank = OneDrive root)"
+          />
+        {/if}
+
+        <div class="muted sm">📄 <code>{locationLabel}</code></div>
+        <div class="muted sm">
+          Changing this may ask you to approve the new permission the next time you back up.
+        </div>
       </div>
-      <button class="btn small" onclick={saveOverride}>Save ID</button>
+
+      <hr class="sep" />
+
+      <div class="stack" style="gap: 10px">
+        <div class="fieldlabel">Use your own client ID</div>
+        <input
+          type="text"
+          bind:value={override}
+          placeholder="00000000-0000-0000-0000-000000000000"
+        />
+        <div class="muted sm">
+          Override the built-in app with your own Azure app registration. Leave blank to use the
+          default. See the README for registration steps.
+        </div>
+        <button class="btn small" onclick={saveOverride}>Save ID</button>
+      </div>
     </div>
   </details>
 </div>
