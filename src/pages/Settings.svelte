@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { settings, toggleTheme, markSynced } from '../lib/stores/settings';
+  import { settings, toggleTheme, markSynced, markRestored } from '../lib/stores/settings';
   import { buildSnapshot, restoreSnapshot, getOneDrive } from '../lib/storage/sync';
   import { ONEDRIVE_CLIENT_ID } from '../lib/config';
   import { refreshGames } from '../lib/stores/games';
@@ -108,6 +108,7 @@
       await restoreSnapshot(snap);
       await refreshPlayers();
       await refreshGames();
+      markRestored(Date.now());
       showToast('Restored from OneDrive');
     } catch (e) {
       showToast(errMsg(e));
@@ -186,6 +187,9 @@
       </div>
       <div class="muted sm">
         {$settings.lastSync ? 'Last backup ' + formatDateTime($settings.lastSync) : 'Not backed up yet'}
+      </div>
+      <div class="muted sm">
+        {$settings.lastRestore ? 'Last restored ' + formatDateTime($settings.lastRestore) : 'Not restored yet'}
       </div>
     {:else}
       <div class="muted sm">
