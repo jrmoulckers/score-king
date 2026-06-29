@@ -2,11 +2,12 @@
   import { onMount } from 'svelte';
   import { settings, toggleTheme, markSynced } from '../lib/stores/settings';
   import { buildSnapshot, restoreSnapshot, getOneDrive } from '../lib/storage/sync';
+  import { autoSyncStatus, markSyncSettled } from '../lib/storage/autosync';
   import { ONEDRIVE_CLIENT_ID } from '../lib/config';
   import { refreshGames } from '../lib/stores/games';
   import { refreshPlayers } from '../lib/stores/players';
   import { showToast } from '../lib/stores/toast';
-  import { formatDateTime } from '../lib/util';
+  import { relativeTime } from '../lib/util';
 
   let override = $state($settings.oneDriveClientId);
   let busy = $state(false);
@@ -14,6 +15,32 @@
   let fileInput: HTMLInputElement;
 
   const configured = $derived(!!(override.trim() || ONEDRIVE_CLIENT_ID));
+
+  const dotClass = $derived(
+    $autoSyncStatus === 'syncing'
+      ? 'busy'
+      : $autoSyncStatus === 'pending' || $autoSyncStatus === 'error'
+        ? 'warn'
+        : $autoSyncStatus === 'offline'
+          ? 'off'
+          : $settings.lastSync
+            ? 'ok'
+            : '',
+  );
+
+  const syncText = $derived(
+    $autoSyncStatus === 'syncing'
+      ? 'Syncing…'
+      : $autoSyncStatus === 'pending'
+        ? 'Sync pending — reconnect to OneDrive'
+        : $autoSyncStatus === 'offline'
+          ? 'Offline — changes will back up when you reconnect'
+          : $autoSyncStatus === 'error'
+            ? 'Sync failed — will retry shortly'
+            : $settings.lastSync
+              ? 'Backed up · ' + relativeTime($settings.lastSync)
+              : 'Not backed up yet',
+  );
 
   let folderMode = $state($settings.oneDriveFolderMode);
   let customPath = $state($settings.oneDriveCustomPath);
@@ -52,6 +79,11 @@
     try {
       const od = await getOneDrive();
       signedIn = await od.prepare();
+      // Arm background auto-sync once OneDrive is connected (persisted, so it keeps
+      // working across reloads; only an explicit Disconnect turns it back off).
+      if (signedIn) {
+        settings.update((s) => (s.oneDriveConnected ? s : { ...s, oneDriveConnected: true }));
+      }
       // Confirm a sign-in that just completed via full-page redirect (shown once).
       if (signedIn && sessionStorage.getItem('sk_od_justConnected')) {
         sessionStorage.removeItem('sk_od_justConnected');
@@ -87,6 +119,7 @@
       await od.push(await buildSnapshot());
       signedIn = od.isSignedIn();
       markSynced(Date.now());
+      markSyncSettled();
       showToast('Backed up to OneDrive');
     } catch (e) {
       showToast(errMsg(e));
@@ -108,6 +141,7 @@
       await restoreSnapshot(snap);
       await refreshPlayers();
       await refreshGames();
+      markSyncSettled();
       showToast('Restored from OneDrive');
     } catch (e) {
       showToast(errMsg(e));
@@ -121,6 +155,8 @@
       const od = await getOneDrive();
       await od.signOut();
       signedIn = false;
+      // Disarm background auto-sync; manual Connect re-arms it.
+      settings.update((s) => ({ ...s, oneDriveConnected: false }));
       showToast('Disconnected from OneDrive');
     } catch (e) {
       showToast(errMsg(e));
@@ -184,9 +220,6 @@
         <button class="btn primary grow" onclick={backup} disabled={busy}>Back up now</button>
         <button class="btn grow" onclick={restore} disabled={busy}>Restore</button>
       </div>
-      <div class="muted sm">
-        {$settings.lastSync ? 'Last backup ' + formatDateTime($settings.lastSync) : 'Not backed up yet'}
-      </div>
     {:else}
       <div class="muted sm">
         Sign in with your Microsoft account to back up your scores to a <code>Score King.xlsx</code>
@@ -194,6 +227,25 @@
       </div>
       <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
     {/if}
+
+    <div class="autosync stack" style="gap: 8px">
+      <label class="sw-row row spread">
+        <span>Automatically back up changes</span>
+        <span class="switch">
+          <input
+            type="checkbox"
+            checked={$settings.autoSync}
+            onchange={(e) =>
+              settings.update((s) => ({ ...s, autoSync: e.currentTarget.checked }))}
+          />
+          <span class="track"><span class="thumb"></span></span>
+        </span>
+      </label>
+      <div class="row" style="gap: 8px">
+        <span class="dot {dotClass}"></span>
+        <span class="muted sm">{syncText}</span>
+      </div>
+    </div>
 
     <hr class="sep" />
 
@@ -289,6 +341,61 @@
   }
   .dot.ok {
     background: #29c785;
+  }
+  .dot.busy {
+    background: #f7b955;
+  }
+  .dot.warn {
+    background: var(--bad, #f87171);
+  }
+  .dot.off {
+    background: var(--muted);
+  }
+  .sw-row {
+    cursor: pointer;
+  }
+  .switch {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+  }
+  .switch input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .track {
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--surface-3, rgba(127, 127, 127, 0.3));
+    border: 1px solid var(--border, rgba(127, 127, 127, 0.2));
+    display: inline-flex;
+    align-items: center;
+    padding: 2px;
+    transition: background 0.15s ease;
+  }
+  .thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.15s ease;
+  }
+  .switch input:checked + .track {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+  .switch input:checked + .track .thumb {
+    transform: translateX(18px);
+  }
+  .switch input:focus-visible + .track {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
   details summary {
     cursor: pointer;
