@@ -12,6 +12,7 @@ export interface Settings {
   autoSync: boolean;
   oneDriveConnected: boolean;
   lastSync: number | null;
+  lastRestore: number | null;
 }
 
 const KEY = 'sk_settings';
@@ -24,6 +25,7 @@ const defaults: Settings = {
   autoSync: true,
   oneDriveConnected: false,
   lastSync: null,
+  lastRestore: null,
 };
 
 function load(): Settings {
@@ -56,4 +58,8 @@ export function toggleTheme() {
 
 export function markSynced(ts: number) {
   settings.update((s) => ({ ...s, lastSync: ts }));
+}
+
+export function markRestored(ts: number) {
+  settings.update((s) => ({ ...s, lastRestore: ts }));
 }

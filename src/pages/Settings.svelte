@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { settings, toggleTheme, markSynced } from '../lib/stores/settings';
+  import { settings, toggleTheme, markSynced, markRestored } from '../lib/stores/settings';
   import { buildSnapshot, restoreSnapshot, getOneDrive } from '../lib/storage/sync';
   import { autoSyncStatus, markSyncSettled } from '../lib/storage/autosync';
   import { ONEDRIVE_CLIENT_ID } from '../lib/config';
   import { refreshGames } from '../lib/stores/games';
   import { refreshPlayers } from '../lib/stores/players';
   import { showToast } from '../lib/stores/toast';
-  import { relativeTime } from '../lib/util';
+  import { relativeTime, formatDateTime } from '../lib/util';
 
   let override = $state($settings.oneDriveClientId);
   let busy = $state(false);
@@ -152,6 +152,7 @@
       await restoreSnapshot(snap);
       await refreshPlayers();
       await refreshGames();
+      markRestored(Date.now());
       markSyncSettled();
       showToast('Restored from OneDrive');
     } catch (e) {
@@ -230,6 +231,9 @@
       <div class="row wrap" style="gap: 10px">
         <button class="btn primary grow" onclick={backup} disabled={busy}>Back up now</button>
         <button class="btn grow" onclick={restore} disabled={busy}>Restore</button>
+      </div>
+      <div class="muted sm">
+        {$settings.lastRestore ? 'Last restored ' + formatDateTime($settings.lastRestore) : 'Not restored yet'}
       </div>
     {:else}
       <div class="muted sm">
