@@ -1,6 +1,6 @@
 <script lang="ts">
   import { scale } from 'svelte/transition';
-  import { backOut } from 'svelte/easing';
+  import { animate } from 'motion/mini';
   import { autoSyncStatus } from '../storage/autosync';
   import { settings } from '../stores/settings';
   import { navigate } from '../router';
@@ -55,6 +55,10 @@
               : 'Not backed up yet',
   );
 
+  const reduce = () =>
+    typeof window !== 'undefined' &&
+    !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
   // --- progress fill (slow >1s syncs only); never carries into the synced state ---
   let showFill = $state(false);
   let progress = $state(0); // 0..1
@@ -62,6 +66,8 @@
   // Plain (non-reactive) mirror so the effect can branch on it without
   // subscribing to it — the effect must depend on `status` alone.
   let barShown = false;
+
+  let dotEl: HTMLSpanElement | undefined = $state();
 
   const expanded = $derived(
     status === 'syncing' ||
@@ -85,7 +91,7 @@
         progress = 0.1;
       }, 1000);
       const tick = setInterval(() => {
-        // Ease toward a cap — no real byte-progress from Graph, so this is a
+        // Ease toward a cap — Graph gives no byte-progress, so this is a
         // bounded, reassuring approximation.
         if (barShown) progress = Math.min(0.92, progress + (0.92 - progress) * 0.16);
       }, 200);
@@ -102,24 +108,49 @@
 
     if (s === 'synced') {
       stickySynced = true;
+      // Springy celebration on the green dot.
+      if (dotEl && !reduce()) {
+        animate(
+          dotEl,
+          { scale: [0.3, 1.4, 0.9, 1] },
+          { duration: 0.5, ease: 'easeOut' },
+        );
+      }
       const t = setTimeout(() => (stickySynced = false), 2200);
       return () => clearTimeout(t);
     }
     stickySynced = false;
   });
 
-  // --- playful click: pop, then navigate to the connection page ---
+  // Springy entrance (Motion) — runs once when the pill mounts.
+  function enter(node: HTMLElement) {
+    if (reduce()) return;
+    animate(
+      node,
+      { opacity: [0, 1], scale: [0.5, 1.08, 1], rotate: [-8, 2, 0] },
+      { duration: 0.5, ease: 'easeOut' },
+    );
+  }
+
+  // --- playful click: pop with a spring, then navigate to the connection page ---
   let popping = $state(false);
-  let navTimer: ReturnType<typeof setTimeout> | undefined;
-  function onClick(e: MouseEvent) {
+  function onClick(e: MouseEvent, node: HTMLElement) {
     e.preventDefault();
     if (popping) return;
     popping = true;
-    clearTimeout(navTimer);
-    navTimer = setTimeout(() => {
+    if (reduce()) {
+      navigate('/settings');
+      return;
+    }
+    const controls = animate(
+      node,
+      { scale: [1, 1.18, 0.92, 1], rotate: [0, -7, 6, 0] },
+      { duration: 0.36, ease: 'easeOut' },
+    );
+    controls.finished.finally(() => {
       popping = false;
       navigate('/settings');
-    }, 300);
+    });
   }
 </script>
 
@@ -127,18 +158,18 @@
   <a
     class="syncbubble {tone}"
     class:expanded
-    class:pop={popping}
     class:celebrate={stickySynced}
     href="/settings"
-    onclick={onClick}
+    onclick={(e) => onClick(e, e.currentTarget)}
+    use:enter
     title={fullLabel}
     aria-label={'Backup status: ' + fullLabel}
-    transition:scale={{ duration: 260, start: 0.5, opacity: 0, easing: backOut }}
+    out:scale={{ duration: 200, start: 0.7, opacity: 0 }}
   >
     {#if showFill}
       <span class="sb-fill" style="width: {Math.round(progress * 100)}%" aria-hidden="true"></span>
     {/if}
-    <span class="sb-dot" class:spin={status === 'syncing'}></span>
+    <span class="sb-dot" class:spin={status === 'syncing'} bind:this={dotEl}></span>
     {#if expanded}<span class="sb-text">{label}</span>{/if}
   </a>
 {/if}
@@ -161,15 +192,11 @@
     overflow: hidden;
     transition:
       padding 0.18s ease,
-      background 0.18s ease,
-      transform 0.12s ease;
+      background 0.18s ease;
   }
   .syncbubble:hover {
     text-decoration: none;
     background: var(--surface-3);
-  }
-  .syncbubble:active {
-    transform: scale(0.94);
   }
   .syncbubble:not(.expanded) {
     padding: 7px;
@@ -233,41 +260,10 @@
   .syncbubble.celebrate {
     border-color: color-mix(in srgb, #29c785 55%, var(--border));
   }
-  .syncbubble.celebrate .sb-dot {
-    animation: sb-bounce 0.5s ease;
-  }
-  .syncbubble.pop {
-    animation: sb-pop 0.3s ease;
-  }
 
   @keyframes sb-spin {
     to {
       transform: rotate(360deg);
-    }
-  }
-  @keyframes sb-bounce {
-    0% {
-      transform: scale(0.4);
-    }
-    55% {
-      transform: scale(1.35);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-  @keyframes sb-pop {
-    0% {
-      transform: scale(1) rotate(0);
-    }
-    35% {
-      transform: scale(1.16) rotate(-5deg);
-    }
-    70% {
-      transform: scale(0.95) rotate(4deg);
-    }
-    100% {
-      transform: scale(1) rotate(0);
     }
   }
 
@@ -277,10 +273,6 @@
     }
     .sb-fill {
       transition: none;
-    }
-    .syncbubble.pop,
-    .syncbubble.celebrate .sb-dot {
-      animation: none;
     }
   }
 </style>
