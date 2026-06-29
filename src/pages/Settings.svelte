@@ -7,7 +7,7 @@
   import { refreshGames } from '../lib/stores/games';
   import { refreshPlayers } from '../lib/stores/players';
   import { showToast } from '../lib/stores/toast';
-  import { relativeTime, formatDateTime } from '../lib/util';
+  import { relativeTime } from '../lib/util';
 
   let override = $state($settings.oneDriveClientId);
   let busy = $state(false);
@@ -28,7 +28,7 @@
             : '',
   );
 
-  const syncText = $derived(
+  const backupText = $derived(
     $autoSyncStatus === 'syncing'
       ? 'Syncing…'
       : $autoSyncStatus === 'pending'
@@ -38,8 +38,16 @@
           : $autoSyncStatus === 'error'
             ? 'Sync failed — will retry shortly'
             : $settings.lastSync
-              ? 'Backed up · ' + relativeTime($settings.lastSync)
+              ? 'Synced · Backed up ' + relativeTime($settings.lastSync)
               : 'Not backed up yet',
+  );
+
+  // Restore is paired with backup but never shows a "not yet" state: connecting
+  // already pulls the latest file down, so the local data is treated as restored.
+  const restoreText = $derived(
+    $settings.lastRestore
+      ? 'Last restored ' + relativeTime($settings.lastRestore)
+      : 'Up to date with OneDrive',
   );
 
   let folderMode = $state($settings.oneDriveFolderMode);
@@ -223,27 +231,18 @@
   {:else}
     {#if signedIn}
       <div class="row spread">
-        <span class="row" style="gap: 8px">
-          <span class="dot ok"></span> Connected to OneDrive
+        <span class="row provider" style="gap: 9px">
+          <svg class="od-logo" viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="OneDrive">
+            <path
+              fill="#0078D4"
+              d="M19.35 10.04A7.49 7.49 0 0 0 12 4 7.49 7.49 0 0 0 5.1 8.36 5.994 5.994 0 0 0 6 20h13a4.99 4.99 0 0 0 .35-9.96z"
+            />
+          </svg>
+          <strong>Connected to OneDrive</strong>
         </span>
         <button class="btn small ghost" onclick={disconnect}>Disconnect</button>
       </div>
-      <div class="row wrap" style="gap: 10px">
-        <button class="btn primary grow" onclick={backup} disabled={busy}>Back up now</button>
-        <button class="btn grow" onclick={restore} disabled={busy}>Restore</button>
-      </div>
-      <div class="muted sm">
-        {$settings.lastRestore ? 'Last restored ' + formatDateTime($settings.lastRestore) : 'Not restored yet'}
-      </div>
-    {:else}
-      <div class="muted sm">
-        Sign in with your Microsoft account to back up your scores to a <code>Score King.xlsx</code>
-        file in your own OneDrive. You can open it in Excel anytime.
-      </div>
-      <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
-    {/if}
 
-    <div class="autosync stack" style="gap: 8px">
       <label class="sw-row row spread">
         <span>Automatically back up changes</span>
         <span class="switch">
@@ -256,11 +255,33 @@
           <span class="track"><span class="thumb"></span></span>
         </span>
       </label>
-      <div class="row" style="gap: 8px">
-        <span class="dot {dotClass}"></span>
-        <span class="muted sm">{syncText}</span>
+
+      <hr class="sep" />
+
+      <div class="syncrow row spread">
+        <span class="row" style="gap: 8px; min-width: 0">
+          <span class="dot {dotClass}"></span>
+          <span class="sm">{backupText}</span>
+        </span>
+        <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
       </div>
-    </div>
+
+      <div class="syncrow stack" style="gap: 6px">
+        <div class="row spread">
+          <span class="sm">{restoreText}</span>
+          <button class="btn small ghost" onclick={restore} disabled={busy}>Restore now</button>
+        </div>
+        <span class="muted sm">
+          Pulls the latest backup from OneDrive and replaces the data on this device.
+        </span>
+      </div>
+    {:else}
+      <div class="muted sm">
+        Sign in with your Microsoft account to back up your scores to a <code>Score King.xlsx</code>
+        file in your own OneDrive. You can open it in Excel anytime.
+      </div>
+      <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
+    {/if}
 
     <hr class="sep" />
 
@@ -365,6 +386,13 @@
   }
   .dot.off {
     background: var(--muted);
+  }
+  .od-logo {
+    flex: none;
+    display: block;
+  }
+  .provider strong {
+    font-weight: 600;
   }
   .sw-row {
     cursor: pointer;

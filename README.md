@@ -125,11 +125,12 @@ coalescing a burst of rapid edits into a single upload. It is **push‑only** (l
 own file — it never auto‑restores or auto‑pulls) and **silent**: if your sign‑in has expired it just
 shows _"Sync pending — reconnect to OneDrive"_ instead of yanking you to Microsoft mid‑use. It also
 pauses while you're offline and resumes on reconnect. Turn it off any time with **Settings →
-Automatically back up changes**; **Back up now** and **Restore** keep working regardless.
+Automatically back up changes**; **Sync now** and **Restore now** keep working regardless.
 
-A small **status bubble** in the bottom corner shows where your backup stands at a glance — a quiet
-dot when everything's synced, _"Syncing…"_ (with a progress bar if an upload runs long), or a
-_"Sync pending"_ / _"Offline"_ nudge when it needs attention. Tap it to jump to the OneDrive
+A small **status bubble** in the header — just left of the settings cog — shows where your backup
+stands at a glance: a quiet dot when everything's synced, _"Syncing…"_ (with a translucent progress
+fill washing across the bubble if an upload runs long, then a green _"Synced!"_), or a _"Pending"_ /
+_"Offline"_ nudge when it needs attention. Tap it for a little pop and a jump to the OneDrive
 settings.
 
 ### One‑time developer setup (register the shared app)

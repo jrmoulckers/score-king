@@ -22,7 +22,10 @@
     <img src="/favicon.svg" alt="" />
     Score King
   </a>
-  <a class="iconbtn" href="/settings" use:link aria-label="Settings" title="Settings">⚙️</a>
+  <div class="appbar-actions">
+    <SyncBubble />
+    <a class="iconbtn" href="/settings" use:link aria-label="Settings" title="Settings">⚙️</a>
+  </div>
 </header>
 
 <main class="app">
@@ -65,5 +68,3 @@
 {#if $toast}
   <div class="toast">{$toast}</div>
 {/if}
-
-<SyncBubble />
