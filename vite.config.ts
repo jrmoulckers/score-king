@@ -44,9 +44,6 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         navigateFallback: `${base}index.html`,
-        // Never fall back to the SPA for the auth redirect page; it must stay minimal
-        // so the OneDrive sign-in popup/iframe closes cleanly.
-        navigateFallbackDenylist: [/auth\.html$/],
       },
     }),
     spa404(),

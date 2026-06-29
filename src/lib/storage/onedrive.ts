@@ -89,9 +89,7 @@ async function ensureApp(): Promise<PublicClientApplication> {
       auth: {
         clientId: id,
         authority: 'https://login.microsoftonline.com/common',
-        // A minimal static page (not the SPA) so the sign-in popup/iframe returns
-        // to a blank page and closes cleanly instead of rendering the whole app.
-        redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}auth.html`,
+        redirectUri: window.location.origin,
       },
       cache: { cacheLocation: 'localStorage' },
     });
@@ -108,6 +106,19 @@ async function ensureApp(): Promise<PublicClientApplication> {
     if (accounts.length) account = accounts[0];
   }
   return pca;
+}
+
+/**
+ * Called when the app document is loaded inside the MSAL sign-in popup (redirectUri = origin).
+ * Initializing + handleRedirectPromise lets MSAL hand the result to the opener and close the
+ * popup, instead of the full SPA rendering inside the popup window.
+ */
+export async function finishPopup(): Promise<void> {
+  try {
+    await ensureApp();
+  } catch {
+    /* opener handles the result; the popup will close */
+  }
 }
 
 async function token(): Promise<string> {
