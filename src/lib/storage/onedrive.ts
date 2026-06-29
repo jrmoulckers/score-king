@@ -108,19 +108,6 @@ async function ensureApp(): Promise<PublicClientApplication> {
   return pca;
 }
 
-/**
- * Called when the app document is loaded inside the MSAL sign-in popup (redirectUri = origin).
- * Initializing + handleRedirectPromise lets MSAL hand the result to the opener and close the
- * popup, instead of the full SPA rendering inside the popup window.
- */
-export async function finishPopup(): Promise<void> {
-  try {
-    await ensureApp();
-  } catch {
-    /* opener handles the result; the popup will close */
-  }
-}
-
 async function token(): Promise<string> {
   const app = await ensureApp();
   if (!account) {
