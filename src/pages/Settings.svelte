@@ -142,7 +142,12 @@
   }
 
   async function restore() {
-    if (!confirm('Replace local data with the OneDrive backup?')) return;
+    if (
+      !confirm(
+        'Restore from OneDrive?\n\nThis overwrites the data currently on this device with the latest backup. This cannot be undone.',
+      )
+    )
+      return;
     busy = true;
     try {
       const od = await getOneDrive();
@@ -258,7 +263,7 @@
       </label>
 
       <div class="pathchip" title={locationLabel}>
-        <span class="pathchip-ico" aria-hidden="true">📄</span>
+        <span class="pathchip-ico" aria-hidden="true">📍</span>
         <code>{prettyPath}</code>
       </div>
 
@@ -274,7 +279,20 @@
 
       <div class="syncrow stack" style="gap: 6px">
         <div class="row spread">
-          <span class="sm">{restoreText}</span>
+          <span class="row" style="gap: 8px; min-width: 0">
+            <svg class="rdot" viewBox="0 0 16 16" role="img" aria-label="Restore up to date">
+              <circle cx="8" cy="8" r="8" fill="#29c785" />
+              <path
+                d="M4.5 8.3 7 10.8 11.5 5.6"
+                fill="none"
+                stroke="#04150d"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="sm">{restoreText}</span>
+          </span>
           <button class="btn small ghost" onclick={restore} disabled={busy}>Restore now</button>
         </div>
         <span class="muted sm">
@@ -401,6 +419,12 @@
   }
   .dot.off {
     background: var(--muted);
+  }
+  .rdot {
+    width: 9px;
+    height: 9px;
+    flex: none;
+    display: block;
   }
   .od-logo {
     flex: none;
