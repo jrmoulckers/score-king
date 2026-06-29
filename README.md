@@ -17,8 +17,9 @@ works fully offline, and can back itself up to an **Excel workbook in your OneDr
   validation). Adding a new game doesn't touch the rest of the app.
 - **Players, history & stats** are shared across every game — reusable players, a full game log,
   and a win‑rate leaderboard.
-- **Optional OneDrive Excel sync.** One‑click backup/restore to a real `.xlsx` you can open in
-  Excel. Uses your own free Azure app registration — *no secrets live in this repo.*
+- **Optional OneDrive Excel sync.** Automatic (and one‑click) backup to a real `.xlsx` you can open
+  in Excel, with one‑click restore. Auto‑backup is on by default, push‑only, and never interrupts
+  you. Uses your own free Azure app registration — *no secrets live in this repo.*
 - **Local JSON export/import** as a zero‑setup backup option.
 - **Dark / light** themes.
 
@@ -118,6 +119,14 @@ comes from PKCE + the redirect‑URI allowlist), so end users never configure an
 **Settings → Connect OneDrive**. Connecting briefly redirects the whole page to Microsoft to sign in,
 then returns you to Settings — there's no popup to allow or unblock.
 
+**Automatic backup is on by default.** Once you're connected, Score King quietly pushes a fresh
+backup a few seconds after you change anything (new game, saved round, finished game, edited player),
+coalescing a burst of rapid edits into a single upload. It is **push‑only** (last‑write‑wins to your
+own file — it never auto‑restores or auto‑pulls) and **silent**: if your sign‑in has expired it just
+shows _"Sync pending — reconnect to OneDrive"_ instead of yanking you to Microsoft mid‑use. It also
+pauses while you're offline and resumes on reconnect. Turn it off any time with **Settings →
+Automatically back up changes**; **Back up now** and **Restore** keep working regardless.
+
 ### One‑time developer setup (register the shared app)
 
 1. [Azure Portal → App registrations](https://portal.azure.com/) → **New registration**.
@@ -137,7 +146,19 @@ After that, **Settings → Connect OneDrive** is one click for everyone. Power u
 override with their own client ID under **Settings → Advanced**.
 
 > The workbook has `Players`, `Games`, `Rounds`, and `RoundScores` sheets. The app treats local
-> data as the source of truth during play and syncs the whole snapshot on demand.
+> data as the source of truth during play and syncs the whole snapshot automatically (debounced) —
+> or on demand via **Back up now**.
+
+### How backup & restore behave
+
+- **Back up now** overwrites the remote `Score King.xlsx` with your current data (last‑write‑wins).
+  If the file was deleted — or, in custom‑folder mode, the whole folder was deleted — the next
+  backup **recreates the file (and folder)** automatically.
+- **Restore** always fetches the **latest** remote copy. The download bypasses the browser cache
+  (`cache: 'no-store'`), so a single Restore reflects edits you (or Excel) just made to the
+  workbook — no disconnect/reconnect needed.
+- If you press **Restore** but no backup exists yet, the app offers to **back up your current data**
+  there instead, so you're never left in a dead end.
 
 ### Google Drive (future)
 

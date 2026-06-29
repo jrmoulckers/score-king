@@ -10,6 +10,7 @@ export interface Settings {
   oneDriveFolderMode: OneDriveFolderMode;
   oneDriveCustomPath: string;
   autoSync: boolean;
+  oneDriveConnected: boolean;
   lastSync: number | null;
   lastRestore: number | null;
 }
@@ -21,7 +22,8 @@ const defaults: Settings = {
   oneDriveClientId: '',
   oneDriveFolderMode: 'app',
   oneDriveCustomPath: '',
-  autoSync: false,
+  autoSync: true,
+  oneDriveConnected: false,
   lastSync: null,
   lastRestore: null,
 };

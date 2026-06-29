@@ -3,6 +3,7 @@ import { get } from 'svelte/store';
 import { settings } from '../stores/settings';
 import { ONEDRIVE_CLIENT_ID } from '../config';
 import type { Snapshot, SyncProvider } from './sync';
+import { InteractionRequiredError } from './sync';
 import type { Game, Player, Round } from '../types';
 
 const FILE_NAME = 'Score King.xlsx';
@@ -37,6 +38,14 @@ function encodePath(p: string): string {
     .filter(Boolean)
     .map(encodeURIComponent)
     .join('/');
+}
+
+/** Folder segments for custom mode, trimmed and emptied of blanks (root => []). */
+function customFolderSegments(): string[] {
+  return (get(settings).oneDriveCustomPath || '')
+    .split('/')
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 /** Graph addressing for the workbook's content, per the chosen storage location. */
@@ -107,9 +116,11 @@ export async function completeRedirect(): Promise<string | null> {
   return ret;
 }
 
-async function token(): Promise<string> {
+async function token(interactive = true): Promise<string> {
   const app = await ensureApp();
   if (!account) {
+    // Background auto-sync must never yank the user to Microsoft — fail quietly.
+    if (!interactive) throw new InteractionRequiredError('Not signed in to OneDrive');
     // Not signed in yet — hand off to a full-page redirect; this call does not return.
     sessionStorage.setItem(RETURN_KEY, window.location.pathname + window.location.search);
     await app.loginRedirect({ scopes: scopes() });
@@ -119,6 +130,8 @@ async function token(): Promise<string> {
     const res = await app.acquireTokenSilent({ scopes: scopes(), account });
     return res.accessToken;
   } catch {
+    if (!interactive)
+      throw new InteractionRequiredError('Silent OneDrive token refresh failed');
     sessionStorage.setItem(RETURN_KEY, window.location.pathname + window.location.search);
     await app.acquireTokenRedirect({ scopes: scopes(), account });
     throw new Error('Redirecting to Microsoft to refresh sign-in…');
@@ -221,6 +234,55 @@ async function fromWorkbook(buf: ArrayBuffer): Promise<Snapshot> {
   return { players, games, rounds, exportedAt: Date.now() };
 }
 
+/** PUT the workbook bytes to the configured content path (overwrites; last-write-wins). */
+function putContent(buf: ArrayBuffer, accessToken: string): Promise<Response> {
+  return graph(
+    contentPath(),
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type':
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+      body: buf,
+    },
+    accessToken,
+  );
+}
+
+/**
+ * Create the custom-folder path if it's missing — e.g. the user deleted the folder in OneDrive —
+ * so a subsequent upload to a file inside it succeeds. Each segment is created with
+ * conflictBehavior 'fail', so existing folders (and their contents) are left untouched (a 409 just
+ * means "already there"). App-folder mode needs nothing here: Graph provisions the sandboxed
+ * approot automatically on write.
+ */
+async function ensureCustomFolder(accessToken: string): Promise<void> {
+  let parentPath = '';
+  for (const name of customFolderSegments()) {
+    const childrenPath = parentPath
+      ? `/me/drive/root:/${encodePath(parentPath)}:/children`
+      : '/me/drive/root/children';
+    const res = await graph(
+      childrenPath,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          folder: {},
+          '@microsoft.graph.conflictBehavior': 'fail',
+        }),
+      },
+      accessToken,
+    );
+    if (!res.ok && res.status !== 409) {
+      throw new Error(`Could not create OneDrive folder "${name}" (HTTP ${res.status}).`);
+    }
+    parentPath = parentPath ? `${parentPath}/${name}` : name;
+  }
+}
+
 export const oneDrive: SyncProvider = {
   id: 'onedrive',
   label: 'OneDrive',
@@ -253,30 +315,25 @@ export const oneDrive: SyncProvider = {
     }
     account = null;
   },
-  async push(snapshot) {
-    const accessToken = await token();
+  async push(snapshot, opts) {
+    const accessToken = await token(opts?.interactive ?? true);
     const buf = await toWorkbook(snapshot);
-    const res = await graph(
-      contentPath(),
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type':
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        },
-        body: buf,
-      },
-      accessToken,
-    );
+    let res = await putContent(buf, accessToken);
+    // A custom-folder target 404s when its parent folder was deleted (or never created).
+    // Recreate the folder hierarchy and retry once so backup self-heals. App-folder mode
+    // doesn't need this — writing to approot re-provisions the sandboxed folder automatically.
+    if (res.status === 404 && folderMode() === 'custom') {
+      await ensureCustomFolder(accessToken);
+      res = await putContent(buf, accessToken);
+    }
     if (!res.ok) throw new Error(`Upload failed (HTTP ${res.status}).`);
   },
   async pull() {
     const accessToken = await token();
-    const res = await graph(
-      contentPath(),
-      { method: 'GET' },
-      accessToken,
-    );
+    // cache: 'no-store' bypasses the browser HTTP cache for this GET *and* the CDN download URL
+    // that Graph 302-redirects to (the cache mode is inherited across the redirect chain), so a
+    // single Restore always returns the latest remote content — no disconnect/reconnect needed.
+    const res = await graph(contentPath(), { method: 'GET', cache: 'no-store' }, accessToken);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Download failed (HTTP ${res.status}).`);
     return fromWorkbook(await res.arrayBuffer());
