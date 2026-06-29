@@ -127,6 +127,11 @@ shows _"Sync pending — reconnect to OneDrive"_ instead of yanking you to Micro
 pauses while you're offline and resumes on reconnect. Turn it off any time with **Settings →
 Automatically back up changes**; **Back up now** and **Restore** keep working regardless.
 
+A small **status bubble** in the bottom corner shows where your backup stands at a glance — a quiet
+dot when everything's synced, _"Syncing…"_ (with a progress bar if an upload runs long), or a
+_"Sync pending"_ / _"Offline"_ nudge when it needs attention. Tap it to jump to the OneDrive
+settings.
+
 ### One‑time developer setup (register the shared app)
 
 1. [Azure Portal → App registrations](https://portal.azure.com/) → **New registration**.
