@@ -139,6 +139,17 @@ override with their own client ID under **Settings → Advanced**.
 > The workbook has `Players`, `Games`, `Rounds`, and `RoundScores` sheets. The app treats local
 > data as the source of truth during play and syncs the whole snapshot on demand.
 
+### How backup & restore behave
+
+- **Back up now** overwrites the remote `Score King.xlsx` with your current data (last‑write‑wins).
+  If the file was deleted — or, in custom‑folder mode, the whole folder was deleted — the next
+  backup **recreates the file (and folder)** automatically.
+- **Restore** always fetches the **latest** remote copy. The download bypasses the browser cache
+  (`cache: 'no-store'`), so a single Restore reflects edits you (or Excel) just made to the
+  workbook — no disconnect/reconnect needed.
+- If you press **Restore** but no backup exists yet, the app offers to **back up your current data**
+  there instead, so you're never left in a dead end.
+
 ### Google Drive (future)
 
 The `SyncProvider` interface (`src/lib/storage/sync.ts`) is storage‑agnostic, so a Google Drive
