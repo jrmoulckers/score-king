@@ -3,6 +3,7 @@ import { get } from 'svelte/store';
 import { settings } from '../stores/settings';
 import { ONEDRIVE_CLIENT_ID } from '../config';
 import type { Snapshot, SyncProvider } from './sync';
+import { InteractionRequiredError } from './sync';
 import type { Game, Player, Round } from '../types';
 
 const FILE_NAME = 'Score King.xlsx';
@@ -115,9 +116,11 @@ export async function completeRedirect(): Promise<string | null> {
   return ret;
 }
 
-async function token(): Promise<string> {
+async function token(interactive = true): Promise<string> {
   const app = await ensureApp();
   if (!account) {
+    // Background auto-sync must never yank the user to Microsoft — fail quietly.
+    if (!interactive) throw new InteractionRequiredError('Not signed in to OneDrive');
     // Not signed in yet — hand off to a full-page redirect; this call does not return.
     sessionStorage.setItem(RETURN_KEY, window.location.pathname + window.location.search);
     await app.loginRedirect({ scopes: scopes() });
@@ -127,6 +130,8 @@ async function token(): Promise<string> {
     const res = await app.acquireTokenSilent({ scopes: scopes(), account });
     return res.accessToken;
   } catch {
+    if (!interactive)
+      throw new InteractionRequiredError('Silent OneDrive token refresh failed');
     sessionStorage.setItem(RETURN_KEY, window.location.pathname + window.location.search);
     await app.acquireTokenRedirect({ scopes: scopes(), account });
     throw new Error('Redirecting to Microsoft to refresh sign-in…');
@@ -310,8 +315,8 @@ export const oneDrive: SyncProvider = {
     }
     account = null;
   },
-  async push(snapshot) {
-    const accessToken = await token();
+  async push(snapshot, opts) {
+    const accessToken = await token(opts?.interactive ?? true);
     const buf = await toWorkbook(snapshot);
     let res = await putContent(buf, accessToken);
     // A custom-folder target 404s when its parent folder was deleted (or never created).

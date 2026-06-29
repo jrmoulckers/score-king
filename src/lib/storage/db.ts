@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Game, ID, Player, Round } from '../types';
 import { uid } from '../util';
+import { markDataChanged } from './changes';
 
 interface ScoreKingDB extends DBSchema {
   players: { key: string; value: Player };
@@ -37,15 +38,18 @@ export async function getAllPlayers(): Promise<Player[]> {
 export async function addPlayer(name: string, color: string): Promise<Player> {
   const player: Player = { id: uid(), name: name.trim(), color, createdAt: Date.now() };
   await (await db()).put('players', player);
+  markDataChanged();
   return player;
 }
 
 export async function updatePlayer(player: Player): Promise<void> {
   await (await db()).put('players', raw(player));
+  markDataChanged();
 }
 
 export async function deletePlayer(id: ID): Promise<void> {
   await (await db()).delete('players', id);
+  markDataChanged();
 }
 
 // ---- Games ----
@@ -60,6 +64,7 @@ export async function getGame(id: ID): Promise<Game | undefined> {
 
 export async function putGame(game: Game): Promise<void> {
   await (await db()).put('games', raw(game));
+  markDataChanged();
 }
 
 export async function deleteGame(id: ID): Promise<void> {
@@ -69,6 +74,7 @@ export async function deleteGame(id: ID): Promise<void> {
   const rounds = await tx.objectStore('rounds').index('byGame').getAllKeys(id);
   for (const key of rounds) await tx.objectStore('rounds').delete(key);
   await tx.done;
+  markDataChanged();
 }
 
 // ---- Rounds ----
@@ -79,10 +85,12 @@ export async function getRounds(gameId: ID): Promise<Round[]> {
 
 export async function putRound(round: Round): Promise<void> {
   await (await db()).put('rounds', raw(round));
+  markDataChanged();
 }
 
 export async function deleteRound(id: ID): Promise<void> {
   await (await db()).delete('rounds', id);
+  markDataChanged();
 }
 
 // ---- Bulk (used by sync restore) ----

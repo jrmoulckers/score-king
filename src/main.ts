@@ -3,6 +3,7 @@ import { registerSW } from 'virtual:pwa-register'
 import './app.css'
 import App from './App.svelte'
 import { applyTheme } from './lib/stores/settings'
+import { startAutoSync } from './lib/storage/autosync'
 
 // A Microsoft sign-in uses a full-page redirect. When the browser returns from Microsoft the
 // URL carries the auth response (in the hash or query). Detect that, let MSAL consume it, then
@@ -26,6 +27,8 @@ async function boot() {
   applyTheme()
   registerSW({ immediate: true })
   mount(App, { target: document.getElementById('app')! })
+  // Background OneDrive auto-backup (push-only, silent; never redirects on its own).
+  startAutoSync()
 }
 
 boot()

@@ -8,6 +8,25 @@ export interface Snapshot {
   exportedAt: number;
 }
 
+/** Options for a provider push. */
+export interface PushOptions {
+  /**
+   * When false, the provider must NOT trigger any interactive sign-in (e.g. a
+   * full-page redirect to Microsoft). If it can't get a token silently it throws
+   * {@link InteractionRequiredError} instead. Used by background auto-sync so it
+   * never yanks the user away mid-use. Defaults to true (manual backups).
+   */
+  interactive?: boolean;
+}
+
+/** Thrown by a silent (non-interactive) push when the user must sign in again. */
+export class InteractionRequiredError extends Error {
+  constructor(message = 'Interactive sign-in required') {
+    super(message);
+    this.name = 'InteractionRequiredError';
+  }
+}
+
 export interface SyncProvider {
   id: string;
   label: string;
@@ -22,7 +41,7 @@ export interface SyncProvider {
    * errors). Implementations MUST create the backing file — and any missing parent folders — if
    * it doesn't exist yet, so a backup succeeds even after the file/folder was deleted remotely.
    */
-  push(snapshot: Snapshot): Promise<void>;
+  push(snapshot: Snapshot, opts?: PushOptions): Promise<void>;
   /**
    * Fetch the latest remote snapshot, bypassing any HTTP/CDN caches so a single call always
    * reflects the most recent remote edit. Resolves to null (rather than throwing) when no backup
