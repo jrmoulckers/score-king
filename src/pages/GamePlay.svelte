@@ -18,6 +18,8 @@
   import { navigate, link } from '../lib/router';
   import { showToast } from '../lib/stores/toast';
   import { relativeTime } from '../lib/util';
+  import { settings } from '../lib/stores/settings';
+  import { enableWakeLock, disableWakeLock } from '../lib/wakelock';
   import Scoreboard from '../lib/components/Scoreboard.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
 
@@ -95,6 +97,15 @@
     const unsub = players.subscribe((v) => (plist = v));
     load();
     return unsub;
+  });
+
+  $effect(() => {
+    if ($settings.keepAwake && game?.status === 'active') {
+      enableWakeLock();
+    } else {
+      disableWakeLock();
+    }
+    return () => disableWakeLock();
   });
 
   async function saveRound() {

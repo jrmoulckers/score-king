@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-29T11:20:36-07:00",
+  "title": "Design System: Score King",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Royal Violet",
+        "canonical": "#7c5cff",
+        "tonalRamp": ["oklch(0.18 0.06 285)", "oklch(0.28 0.10 285)", "oklch(0.38 0.14 285)", "oklch(0.49 0.18 285)", "oklch(0.60 0.21 285)", "oklch(0.71 0.16 285)", "oklch(0.83 0.10 285)", "oklch(0.94 0.04 285)"]
+      },
+      "primary-strong": {
+        "role": "primary",
+        "displayName": "Deep Violet",
+        "canonical": "#6b46f0",
+        "tonalRamp": ["oklch(0.17 0.07 282)", "oklch(0.27 0.11 282)", "oklch(0.37 0.15 282)", "oklch(0.47 0.19 282)", "oklch(0.55 0.22 282)", "oklch(0.67 0.17 282)", "oklch(0.80 0.11 282)", "oklch(0.92 0.05 282)"]
+      },
+      "accent": {
+        "role": "secondary",
+        "displayName": "Crown Gold",
+        "canonical": "#ffd166",
+        "tonalRamp": ["oklch(0.30 0.05 90)", "oklch(0.42 0.07 90)", "oklch(0.54 0.09 90)", "oklch(0.65 0.11 90)", "oklch(0.76 0.13 90)", "oklch(0.84 0.14 90)", "oklch(0.90 0.10 90)", "oklch(0.96 0.05 90)"]
+      },
+      "good": {
+        "role": "tertiary",
+        "displayName": "Win Green",
+        "canonical": "#34d399",
+        "tonalRamp": ["oklch(0.25 0.05 165)", "oklch(0.36 0.07 165)", "oklch(0.47 0.10 165)", "oklch(0.58 0.12 165)", "oklch(0.69 0.14 165)", "oklch(0.78 0.15 165)", "oklch(0.87 0.10 165)", "oklch(0.95 0.05 165)"]
+      },
+      "bad": {
+        "role": "tertiary",
+        "displayName": "Loss Coral",
+        "canonical": "#f87171",
+        "tonalRamp": ["oklch(0.28 0.06 25)", "oklch(0.39 0.10 25)", "oklch(0.50 0.13 25)", "oklch(0.60 0.16 25)", "oklch(0.71 0.17 25)", "oklch(0.79 0.14 25)", "oklch(0.88 0.09 25)", "oklch(0.95 0.04 25)"]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Caution Amber",
+        "canonical": "#fbbf24",
+        "tonalRamp": ["oklch(0.29 0.05 80)", "oklch(0.41 0.08 80)", "oklch(0.53 0.11 80)", "oklch(0.64 0.13 80)", "oklch(0.75 0.15 80)", "oklch(0.83 0.16 80)", "oklch(0.90 0.11 80)", "oklch(0.96 0.05 80)"]
+      },
+      "dark-bg": {
+        "role": "neutral",
+        "displayName": "Midnight Court",
+        "canonical": "#0f1020",
+        "tonalRamp": ["oklch(0.16 0.04 285)", "oklch(0.22 0.04 285)", "oklch(0.30 0.04 285)", "oklch(0.40 0.03 285)", "oklch(0.52 0.03 285)", "oklch(0.66 0.02 285)", "oklch(0.80 0.02 285)", "oklch(0.93 0.01 285)"]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Indigo Slate",
+        "canonical": "#1a1b2e",
+        "tonalRamp": ["oklch(0.20 0.04 285)", "oklch(0.27 0.04 285)", "oklch(0.35 0.04 285)", "oklch(0.45 0.03 285)", "oklch(0.57 0.03 285)", "oklch(0.70 0.02 285)", "oklch(0.83 0.02 285)", "oklch(0.94 0.01 285)"]
+      },
+      "dark-text": {
+        "role": "neutral",
+        "displayName": "Moonlight",
+        "canonical": "#e9e9f4",
+        "tonalRamp": ["oklch(0.20 0.02 285)", "oklch(0.32 0.02 285)", "oklch(0.44 0.02 285)", "oklch(0.56 0.02 285)", "oklch(0.68 0.02 285)", "oklch(0.79 0.02 285)", "oklch(0.88 0.01 285)", "oklch(0.95 0.01 285)"]
+      },
+      "light-bg": {
+        "role": "neutral",
+        "displayName": "Lilac Mist",
+        "canonical": "#f4f4fb",
+        "tonalRamp": ["oklch(0.22 0.02 285)", "oklch(0.34 0.02 285)", "oklch(0.46 0.02 285)", "oklch(0.58 0.02 285)", "oklch(0.70 0.02 285)", "oklch(0.82 0.01 285)", "oklch(0.91 0.01 285)", "oklch(0.97 0.005 285)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display / h1", "purpose": "Page titles. The size ceiling — never larger than 1.6rem." },
+      "title": { "displayName": "Title / h2", "purpose": "Section and card headings." },
+      "body": { "displayName": "Body", "purpose": "Default text and list rows; cap prose at 65-75ch." },
+      "label": { "displayName": "Label", "purpose": "Muted form labels and secondary metadata." },
+      "overline": { "displayName": "Overline / section-title", "purpose": "The only sanctioned uppercase-tracked label; quiet group headers." }
+    },
+    "shadows": [
+      { "name": "soft-lift-dark", "value": "0 10px 30px rgba(0,0,0,0.45)", "purpose": "The single shadow in dark theme — floats cards, game tiles, and the toast off the background." },
+      { "name": "soft-lift-light", "value": "0 10px 30px rgba(60,50,120,0.12)", "purpose": "Light-theme equivalent of Soft Lift." },
+      { "name": "inset-hairline", "value": "inset 0 0 0 1px rgba(0,0,0,0.18)", "purpose": "1px inner ring on avatars so light player colors keep their edge." }
+    ],
+    "motion": [
+      { "name": "press", "value": "transform 0.05s ease", "purpose": "Button :active press-down (translateY(1px))." },
+      { "name": "state", "value": "background 0.15s ease, border-color 0.15s ease", "purpose": "Default hover/state color transitions — fast, functional." },
+      { "name": "tile-lift", "value": "0.12s", "purpose": "Game-tile hover lift and border-color shift." }
+    ],
+    "breakpoints": [
+      { "name": "content-max", "value": "760px" },
+      { "name": "tile-min", "value": "150px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single most important action on a screen — start a game, save a round.",
+      "html": "<button class='ds-btn-primary'>New game</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:12px 18px;border:1px solid #6b46f0;border-radius:9px;background:#7c5cff;color:#fff;font:600 1rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;cursor:pointer;transition:background .15s ease,transform .05s ease;}.ds-btn-primary:hover{background:#6b46f0;}.ds-btn-primary:active{transform:translateY(1px);}.ds-btn-primary:focus-visible{outline:2px solid #7c5cff;outline-offset:1px;}"
+    },
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Standard secondary action; surface-2 fill that climbs to surface-3 on hover.",
+      "html": "<button class='ds-btn-default'>Cancel</button>",
+      "css": ".ds-btn-default{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:12px 18px;border:1px solid #313357;border-radius:9px;background:#24263f;color:#e9e9f4;font:600 1rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;cursor:pointer;transition:background .15s ease,transform .05s ease;}.ds-btn-default:hover{background:#2c2e4d;}.ds-btn-default:active{transform:translateY(1px);}.ds-btn-default:focus-visible{outline:2px solid #7c5cff;outline-offset:1px;}"
+    },
+    {
+      "name": "Stepper",
+      "kind": "custom",
+      "refersTo": "iconbtn",
+      "description": "Signature round-entry control: minus / tabular number / plus, tuned for one-handed score nudging without the keyboard.",
+      "html": "<div class='ds-stepper'><button class='ds-step-btn' aria-label='decrease'>\u2212</button><input class='ds-step-input' type='number' value='3' inputmode='numeric'/><button class='ds-step-btn' aria-label='increase'>+</button></div>",
+      "css": ".ds-stepper{display:inline-flex;align-items:center;gap:6px;}.ds-step-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:10px;border:1px solid #313357;background:#24263f;color:#e9e9f4;font-size:1.1rem;cursor:pointer;}.ds-step-btn:hover{background:#2c2e4d;}.ds-step-input{width:62px;text-align:center;min-height:46px;padding:11px 4px;border:1px solid #313357;border-radius:9px;background:#1a1b2e;color:#e9e9f4;font:700 1rem system-ui;font-variant-numeric:tabular-nums;}.ds-step-input:focus{outline:2px solid #7c5cff;outline-offset:1px;}"
+    },
+    {
+      "name": "Game Tile",
+      "kind": "card",
+      "refersTo": "gametile",
+      "description": "Signature game-picker card — the primary place per-game theming (emoji, name, tagline) shows up; border turns Royal Violet on hover.",
+      "html": "<a class='ds-gametile'><span class='ds-gametile-emoji'>\ud83c\udff4\u200d\u2620\ufe0f</span><span class='ds-gametile-name'>Skull King</span><span class='ds-gametile-tag'>10 rounds \u00b7 bid vs. tricks</span></a>",
+      "css": ".ds-gametile{display:flex;flex-direction:column;gap:6px;padding:16px;text-align:left;max-width:210px;border:1px solid #313357;border-radius:14px;background:#1a1b2e;color:#e9e9f4;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer;text-decoration:none;transition:.12s;}.ds-gametile:hover{border-color:#7c5cff;transform:translateY(-1px);}.ds-gametile-emoji{font-size:2rem;}.ds-gametile-name{font-weight:700;}.ds-gametile-tag{font-size:.8rem;color:#a3a6cb;}"
+    },
+    {
+      "name": "Pill",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "Compact status/meta token (e.g. 'Round 4'); never used as a button.",
+      "html": "<span class='ds-pill'>Round 4</span>",
+      "css": ".ds-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:#24263f;border:1px solid #313357;font:0.8rem system-ui;color:#a3a6cb;}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard field; surface fill with Royal Violet focus ring shared with buttons.",
+      "html": "<input class='ds-input' type='text' placeholder='Player name'/>",
+      "css": ".ds-input{width:100%;max-width:280px;min-height:46px;padding:11px 12px;border:1px solid #313357;border-radius:9px;background:#1a1b2e;color:#e9e9f4;font:1rem system-ui;}.ds-input::placeholder{color:#a3a6cb;}.ds-input:focus{outline:2px solid #7c5cff;outline-offset:1px;}"
+    },
+    {
+      "name": "Avatar",
+      "kind": "custom",
+      "refersTo": "iconbtn",
+      "description": "Circular player chip filled from the 12-color palette; always shows initials so identity never relies on color alone.",
+      "html": "<span class='ds-avatar'>JD</span>",
+      "css": ".ds-avatar{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#7c5cff;color:#fff;font:700 0.7rem system-ui;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);}"
+    },
+    {
+      "name": "Bottom Tab Bar",
+      "kind": "nav",
+      "refersTo": "iconbtn",
+      "description": "Fixed glass primary navigation; active tab gets Moonlight text on a surface-2 pill. Built for thumbs.",
+      "html": "<nav class='ds-tabbar'><a class='ds-tab ds-tab-active'><span class='ds-tab-ico'>\ud83c\udfe0</span>Games</a><a class='ds-tab'><span class='ds-tab-ico'>\ud83d\udc65</span>Players</a><a class='ds-tab'><span class='ds-tab-ico'>\ud83d\udcdc</span>History</a><a class='ds-tab'><span class='ds-tab-ico'>\ud83d\udcca</span>Stats</a></nav>",
+      "css": ".ds-tabbar{display:flex;justify-content:space-around;gap:6px;padding:8px 6px;background:rgba(15,16,32,.92);backdrop-filter:blur(12px);border-top:1px solid #313357;border-radius:14px;}.ds-tab{display:flex;flex-direction:column;align-items:center;gap:2px;font:0.7rem system-ui;color:#a3a6cb;text-decoration:none;padding:4px 10px;border-radius:10px;min-width:56px;}.ds-tab-ico{font-size:1.2rem;line-height:1;}.ds-tab-active{color:#e9e9f4;background:#24263f;}"
+    },
+    {
+      "name": "Scoreboard",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Signature standings table — tabular numbers, rank-1 score in Crown Gold, winner row washed 14% gold.",
+      "html": "<table class='ds-scoreboard'><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead><tbody><tr class='ds-winner'><td>1</td><td>Ada \ud83d\udc51</td><td class='ds-num ds-lead'>112</td></tr><tr><td>2</td><td>Bo</td><td class='ds-num'>98</td></tr><tr><td>3</td><td>Cy</td><td class='ds-num'>74</td></tr></tbody></table>",
+      "css": ".ds-scoreboard{width:100%;max-width:320px;border-collapse:collapse;color:#e9e9f4;font:1rem system-ui;}.ds-scoreboard th,.ds-scoreboard td{padding:9px 8px;text-align:right;border-bottom:1px solid #313357;white-space:nowrap;}.ds-scoreboard th:first-child,.ds-scoreboard td:first-child{text-align:left;}.ds-scoreboard thead th{color:#a3a6cb;font-size:.8rem;font-weight:600;}.ds-num{font-variant-numeric:tabular-nums;font-weight:700;}.ds-lead{color:#ffd166;}.ds-winner td{background:rgba(255,209,102,.14);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Game-Night LARPer",
+    "overview": "Score King is a whimsical game-night host that role-plays through thematic elements customized per game, while the interaction underneath stays effortless and identical everywhere. The chrome is the costume; the mechanics are the actor. A self-contained, calm dark-violet shell never changes, so the muscle memory of entering a score is the same in Skull King as in Hearts as in a generic Tally. The theming lives on top of that shell: each game brings its own emoji, accent moments, and round-entry flavor, the way a LARPer swaps costumes but keeps the same easy patter. The single phone is the table, so every surface is built first for a thumb in a dimly lit room. The palette is royal by design: deep indigo-violet fields, a single Royal Violet that marks the one action that matters, and a scarce Crown Gold that appears only on the leader and the winner.",
+    "keyCharacteristics": [
+      "Consistent chrome, thematic costume — one shell, per-game flavor on top.",
+      "Royal violet + scarce crown gold on a deep indigo field.",
+      "Dark-first, OLED-friendly, readable in dim light; light theme is a faithful inversion.",
+      "One-handed, thumb-zone-first, >=46px touch targets.",
+      "Glanceable: tabular numbers, clear standings, the crown tells the story at a glance."
+    ],
+    "rules": [
+      { "name": "The Crown Gold Rule", "body": "Crown Gold (#ffd166) belongs to the leader and the winner — nothing else. The moment gold appears on an ordinary button, link, or flourish, it stops meaning 'you're winning,' and the crown loses its power.", "section": "colors" },
+      { "name": "The One Voice Rule", "body": "Royal Violet marks a single primary action and the active tab. One violet fill per screen. Everything else is surface, neutral, or semantic.", "section": "colors" },
+      { "name": "The Color-Is-Never-Alone Rule", "body": "Standing, win/loss, and state are never carried by hue alone (rank number, the crown, initials, +/- sign, and text always co-signal) so the app stays legible for color-blind players.", "section": "colors" },
+      { "name": "The Tabular Score Rule", "body": "Every number that can change renders with font-variant-numeric: tabular-nums and weight 700, so columns never jitter and the leader is readable at a glance across the table.", "section": "typography" },
+      { "name": "The Quiet-Type Rule", "body": "UI type never tries to be the personality. No display fonts in labels, buttons, or data. Whimsy comes from the motif, the emoji, and the copy — not from the letterforms.", "section": "typography" },
+      { "name": "The Soft-Lift Rule", "body": "One shadow token, used sparingly. If something needs to feel deeper, raise it one step up the surface ramp instead of darkening or stacking shadows.", "section": "elevation" },
+      { "name": "The Glass-Chrome Rule", "body": "Backdrop blur is permitted on exactly two surfaces — the sticky top app bar and the fixed bottom tab bar — because they are persistent navigation floating over scrolling content. Glass appears nowhere else.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep Crown Gold (#ffd166) for the leader and winner only — the crown earns its meaning through scarcity.",
+      "Do ship exactly one Royal Violet primary action per screen; everything else is neutral, surface, or semantic.",
+      "Do render every changing number with tabular-nums and weight 700 so columns stay glanceable.",
+      "Do build depth by climbing the surface ramp (surface -> surface-2 -> surface-3), and use the single Soft Lift shadow only for truly floating objects.",
+      "Do keep touch targets >=46px and primary actions in the thumb zone — this is played one-handed in dim light.",
+      "Do co-signal state with shape, number, icon, and text — never color alone — for color-blind players.",
+      "Do keep the chrome identical game to game; express per-game personality through emoji, copy, and accent moments, not by restyling the shell.",
+      "Do give every animation a prefers-reduced-motion alternative (instant or crossfade)."
+    ],
+    "donts": [
+      "Don't ship anything cluttered, confusing, verbose, corporate, sterile, redundant, ad-ridden, or inconsistent — the named anti-references from PRODUCT.md.",
+      "Don't let the UI look like an enterprise/corporate SaaS dashboard — no gray, sterile, density-for-its-own-sake screens.",
+      "Don't import app-store score-keeper habits: ad chrome, banner clutter, upsell rails.",
+      "Don't over-animate or 'gamify' the core loop; motion stays 150-250ms and conveys state, never decoration you wait for.",
+      "Don't use Crown Gold on buttons, links, or flourishes; don't add a second violet fill to compete with the primary action.",
+      "Don't add border-left/border-right colored stripes, gradient text, or decorative glass; glass is only the app bar and tab bar.",
+      "Don't introduce a display font into labels, buttons, or data; the system sans stays quiet so the game can be loud.",
+      "Don't restyle the navigation, button, or stepper vocabulary per game — consistency is the feature that lets new games feel instantly familiar."
+    ]
+  }
+}
