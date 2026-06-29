@@ -113,7 +113,7 @@
 
   function startEdit(r: Round) {
     editing = r;
-    editDraft = structuredClone(r.input);
+    editDraft = $state.snapshot(r.input);
   }
   function cancelEdit() {
     editing = null;
