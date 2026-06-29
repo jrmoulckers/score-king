@@ -8,6 +8,11 @@ import type { Game, Player, Round } from '../types';
 const FILE_NAME = 'Score King.xlsx';
 const GRAPH = 'https://graph.microsoft.com/v1.0';
 
+// Where to send the user back to after a full-page Microsoft sign-in redirect.
+const RETURN_KEY = 'sk_od_return';
+// Set once a redirect sign-in completes, so the UI can confirm success a single time.
+const JUST_CONNECTED_KEY = 'sk_od_justConnected';
+
 function folderMode(): 'app' | 'custom' {
   return get(settings).oneDriveFolderMode === 'custom' ? 'custom' : 'app';
 }
@@ -53,34 +58,6 @@ function clientId(): string {
   return (get(settings).oneDriveClientId.trim() || ONEDRIVE_CLIENT_ID).trim();
 }
 
-function isInteractionInProgress(e: unknown): boolean {
-  return (
-    typeof e === 'object' &&
-    e !== null &&
-    'errorCode' in e &&
-    (e as { errorCode?: string }).errorCode === 'interaction_in_progress'
-  );
-}
-
-/**
- * Run an interactive MSAL call, recovering from a stuck "interaction_in_progress"
- * left behind by a previously dismissed popup: reconcile state, then retry once.
- */
-async function withInteractionRetry<T>(
-  app: PublicClientApplication,
-  fn: () => Promise<T>,
-): Promise<T> {
-  try {
-    return await fn();
-  } catch (e) {
-    if (isInteractionInProgress(e)) {
-      await app.handleRedirectPromise().catch(() => {});
-      return await fn();
-    }
-    throw e;
-  }
-}
-
 async function ensureApp(): Promise<PublicClientApplication> {
   const id = clientId();
   if (!id) throw new Error('No OneDrive client ID configured (add it in Settings).');
@@ -94,34 +71,57 @@ async function ensureApp(): Promise<PublicClientApplication> {
       cache: { cacheLocation: 'localStorage' },
     });
     await pca.initialize();
-    // Reconcile any leftover state from a previous, possibly interrupted sign-in.
-    // Clears a stuck "interaction_in_progress" after a popup is dismissed/closed.
+    // Process a returning sign-in redirect (if any) and reconcile cached state. This must run
+    // before any other MSAL call and also clears a stuck "interaction_in_progress".
     try {
-      await pca.handleRedirectPromise();
+      const result = await pca.handleRedirectPromise();
+      if (result?.account) account = result.account;
     } catch {
       /* nothing to handle */
     }
     initializedFor = id;
-    const accounts = pca.getAllAccounts();
-    if (accounts.length) account = accounts[0];
+    if (!account) {
+      const accounts = pca.getAllAccounts();
+      if (accounts.length) account = accounts[0];
+    }
+    if (account) pca.setActiveAccount(account);
   }
   return pca;
+}
+
+/**
+ * Finish a Microsoft sign-in that used the full-page redirect flow. Called once at app
+ * startup when the URL carries the redirect response; returns the path the user started
+ * from (so the app can navigate back there), or null.
+ */
+export async function completeRedirect(): Promise<string | null> {
+  if (!clientId()) return null;
+  try {
+    await ensureApp();
+  } catch {
+    return null;
+  }
+  const ret = sessionStorage.getItem(RETURN_KEY);
+  sessionStorage.removeItem(RETURN_KEY);
+  if (account) sessionStorage.setItem(JUST_CONNECTED_KEY, '1');
+  return ret;
 }
 
 async function token(): Promise<string> {
   const app = await ensureApp();
   if (!account) {
-    const res = await withInteractionRetry(app, () => app.loginPopup({ scopes: scopes() }));
-    account = res.account;
+    // Not signed in yet — hand off to a full-page redirect; this call does not return.
+    sessionStorage.setItem(RETURN_KEY, window.location.pathname + window.location.search);
+    await app.loginRedirect({ scopes: scopes() });
+    throw new Error('Redirecting to Microsoft to sign in…');
   }
-  if (!account) throw new Error('Microsoft sign-in was cancelled.');
   try {
     const res = await app.acquireTokenSilent({ scopes: scopes(), account });
     return res.accessToken;
   } catch {
-    const res = await withInteractionRetry(app, () => app.acquireTokenPopup({ scopes: scopes() }));
-    account = res.account;
-    return res.accessToken;
+    sessionStorage.setItem(RETURN_KEY, window.location.pathname + window.location.search);
+    await app.acquireTokenRedirect({ scopes: scopes(), account });
+    throw new Error('Redirecting to Microsoft to refresh sign-in…');
   }
 }
 
@@ -237,11 +237,20 @@ export const oneDrive: SyncProvider = {
   },
   async signIn() {
     const app = await ensureApp();
-    const res = await withInteractionRetry(app, () => app.loginPopup({ scopes: scopes() }));
-    account = res.account;
+    // Full-page redirect to Microsoft. Remember where we are so we can return here after.
+    sessionStorage.setItem(RETURN_KEY, window.location.pathname + window.location.search);
+    await app.loginRedirect({ scopes: scopes() });
   },
   async signOut() {
-    if (pca && account) await pca.logoutPopup({ account });
+    if (pca && account) {
+      // Local sign-out: forget this app's cached tokens without a full-page logout redirect.
+      try {
+        await pca.clearCache({ account });
+      } catch {
+        /* ignore */
+      }
+      pca.setActiveAccount(null);
+    }
     account = null;
   },
   async push(snapshot) {

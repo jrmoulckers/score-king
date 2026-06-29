@@ -52,6 +52,11 @@
     try {
       const od = await getOneDrive();
       signedIn = await od.prepare();
+      // Confirm a sign-in that just completed via full-page redirect (shown once).
+      if (signedIn && sessionStorage.getItem('sk_od_justConnected')) {
+        sessionStorage.removeItem('sk_od_justConnected');
+        showToast('Connected to OneDrive');
+      }
     } catch {
       /* not signed in yet */
     }
@@ -66,12 +71,11 @@
     busy = true;
     try {
       const od = await getOneDrive();
+      showToast('Redirecting to Microsoft to sign in…');
+      // Full-page redirect: this navigates away. Success is confirmed on return (onMount).
       await od.signIn();
-      signedIn = od.isSignedIn();
-      showToast('Connected to OneDrive');
     } catch (e) {
       showToast(errMsg(e));
-    } finally {
       busy = false;
     }
   }

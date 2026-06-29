@@ -115,7 +115,8 @@ that the app is the *only* thing able to read — it can't see the rest of your 
 can switch to a **custom folder** in Settings (which needs broader access — see below). There's a
 single shared app registration; the client ID is **public** (for SPAs it isn't a secret — security
 comes from PKCE + the redirect‑URI allowlist), so end users never configure anything. They just open
-**Settings → Connect OneDrive**.
+**Settings → Connect OneDrive**. Connecting briefly redirects the whole page to Microsoft to sign in,
+then returns you to Settings — there's no popup to allow or unblock.
 
 ### One‑time developer setup (register the shared app)
 

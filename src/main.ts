@@ -4,21 +4,28 @@ import './app.css'
 import App from './App.svelte'
 import { applyTheme } from './lib/stores/settings'
 
-// When this document is the OAuth sign-in popup returning from Microsoft, do NOT boot the SPA or
-// touch MSAL: the opener window owns the result and will read the URL and close this popup. Booting
-// the app (or calling handleRedirectPromise here) would consume/clear the response and the opener
-// would hang. So we simply leave a blank page.
+// A Microsoft sign-in uses a full-page redirect. When the browser returns from Microsoft the
+// URL carries the auth response (in the hash or query). Detect that, let MSAL consume it, then
+// restore the page the user started from and strip the auth fragment before booting the app.
 const authParams = new URLSearchParams(
   window.location.hash.replace(/^#/, '') + '&' + window.location.search.replace(/^\?/, ''),
 )
-const isAuthResponse = authParams.has('code') || authParams.has('error') || authParams.has('state')
-const inPopup = !!window.opener && window.opener !== window
+const isAuthResponse =
+  authParams.has('code') || authParams.has('error') || authParams.has('state')
 
-let app: unknown
-if (!(isAuthResponse && inPopup)) {
+async function boot() {
+  if (isAuthResponse) {
+    try {
+      const { completeRedirect } = await import('./lib/storage/onedrive')
+      const back = await completeRedirect()
+      window.history.replaceState({}, '', back || window.location.pathname)
+    } catch {
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }
   applyTheme()
   registerSW({ immediate: true })
-  app = mount(App, { target: document.getElementById('app')! })
+  mount(App, { target: document.getElementById('app')! })
 }
 
-export default app
+boot()
