@@ -10,6 +10,9 @@ interface ScoreKingDB extends DBSchema {
 
 let dbp: Promise<IDBPDatabase<ScoreKingDB>> | null = null;
 
+/** Strip Svelte $state proxies so values are structured-clonable for IndexedDB. */
+const raw = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+
 function db(): Promise<IDBPDatabase<ScoreKingDB>> {
   if (!dbp) {
     dbp = openDB<ScoreKingDB>('score-king', 1, {
@@ -38,7 +41,7 @@ export async function addPlayer(name: string, color: string): Promise<Player> {
 }
 
 export async function updatePlayer(player: Player): Promise<void> {
-  await (await db()).put('players', player);
+  await (await db()).put('players', raw(player));
 }
 
 export async function deletePlayer(id: ID): Promise<void> {
@@ -56,7 +59,7 @@ export async function getGame(id: ID): Promise<Game | undefined> {
 }
 
 export async function putGame(game: Game): Promise<void> {
-  await (await db()).put('games', game);
+  await (await db()).put('games', raw(game));
 }
 
 export async function deleteGame(id: ID): Promise<void> {
@@ -75,7 +78,7 @@ export async function getRounds(gameId: ID): Promise<Round[]> {
 }
 
 export async function putRound(round: Round): Promise<void> {
-  await (await db()).put('rounds', round);
+  await (await db()).put('rounds', raw(round));
 }
 
 export async function deleteRound(id: ID): Promise<void> {
@@ -93,9 +96,9 @@ export async function replaceAll(data: {
   await tx.objectStore('players').clear();
   await tx.objectStore('games').clear();
   await tx.objectStore('rounds').clear();
-  for (const p of data.players) await tx.objectStore('players').put(p);
-  for (const g of data.games) await tx.objectStore('games').put(g);
-  for (const r of data.rounds) await tx.objectStore('rounds').put(r);
+  for (const p of data.players) await tx.objectStore('players').put(raw(p));
+  for (const g of data.games) await tx.objectStore('games').put(raw(g));
+  for (const r of data.rounds) await tx.objectStore('rounds').put(raw(r));
   await tx.done;
 }
 
