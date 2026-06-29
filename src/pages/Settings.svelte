@@ -59,6 +59,7 @@
       ? 'OneDrive / ' + (cleanPath ? cleanPath.replace(/\//g, ' / ') + ' / ' : '') + 'Score King.xlsx'
       : 'OneDrive / Apps / Score King / Score King.xlsx',
   );
+  const prettyPath = $derived(locationLabel.replace(/ \/ /g, ' › '));
 
   $effect(() => {
     const mode = folderMode;
@@ -256,6 +257,11 @@
         </span>
       </label>
 
+      <div class="pathchip" title={locationLabel}>
+        <span class="pathchip-ico" aria-hidden="true">📄</span>
+        <code>{prettyPath}</code>
+      </div>
+
       <hr class="sep" />
 
       <div class="syncrow row spread">
@@ -277,12 +283,13 @@
       </div>
     {:else}
       <div class="muted sm">
-        Sign in with your Microsoft account to back up your scores to a <code>Score King.xlsx</code>
-        file in your own OneDrive. You can open it in Excel anytime.
+        Sign in with your Microsoft account to back up your scores to OneDrive.
       </div>
       <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
     {/if}
   {/if}
+
+  <hr class="sep" />
 
   <details>
     <summary class="muted sm">Advanced</summary>
@@ -295,9 +302,10 @@
           <span class="optbody">
             <strong>App folder <span class="tag">recommended</span></strong>
             <span class="muted sm block">
-              Score King can access <strong>only its own folder</strong>
-              (<code>OneDrive › Apps › Score King</code>) — it cannot see or touch anything else in
-              your OneDrive. Grants the sandboxed <code>Files.ReadWrite.AppFolder</code> permission.
+              Score King can access only its own folder
+              (<code>OneDrive › Apps › Score King</code>). It cannot see or touch anything else in
+              your OneDrive. Grants only the sandboxed <code>Files.ReadWrite.AppFolder</code>
+              permission to the Apps folder.
             </span>
           </span>
         </label>
@@ -307,10 +315,10 @@
           <span class="optbody">
             <strong>Custom folder</strong>
             <span class="muted sm block">
-              Store the workbook anywhere you like. Microsoft can't limit access to a single folder,
-              so this grants the broader <code>Files.ReadWrite</code> permission — the app could
-              <strong>technically</strong> reach all of your OneDrive files, even though it only ever
-              reads and writes its own <code>Score King.xlsx</code>.
+              Store the workbook anywhere you like. Score King will <strong>only</strong> read and
+              write to its own <code>Score King.xlsx</code> file. Microsoft can't limit access to a
+              single folder, so this grants the broader <code>Files.ReadWrite</code> permission to
+              your entire OneDrive.
             </span>
           </span>
         </label>
@@ -332,16 +340,20 @@
       <hr class="sep" />
 
       <div class="stack" style="gap: 10px">
-        <div class="fieldlabel">Use your own client ID</div>
+        <div class="fieldlabel">Use your own Azure app Client ID</div>
+        <div class="muted sm">
+          Don't trust us at all? No hard feelings! Override the built-in Azure app registration with
+          your own. See our <a
+            href="https://github.com/jrmoulckers/score-king/blob/main/README.md#onetime-developer-setup-register-the-shared-app"
+            target="_blank"
+            rel="noopener noreferrer">README</a
+          > for registration steps. Leave blank to use the default.
+        </div>
         <input
           type="text"
           bind:value={override}
           placeholder="00000000-0000-0000-0000-000000000000"
         />
-        <div class="muted sm">
-          Override the built-in app with your own Azure app registration. Leave blank to use the
-          default. See the README for registration steps.
-        </div>
         <button class="btn small" onclick={saveOverride}>Save ID</button>
       </div>
     </div>
@@ -396,6 +408,29 @@
   }
   .provider strong {
     font-weight: 600;
+  }
+  .pathchip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--border, rgba(127, 127, 127, 0.2));
+    border-radius: 8px;
+    background: var(--surface-2, rgba(127, 127, 127, 0.08));
+  }
+  .pathchip-ico {
+    flex: none;
+    font-size: 0.95rem;
+  }
+  .pathchip code {
+    background: none;
+    padding: 0;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: inherit;
   }
   .sw-row {
     cursor: pointer;
