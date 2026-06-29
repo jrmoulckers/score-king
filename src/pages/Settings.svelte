@@ -80,13 +80,17 @@
     }
   }
 
+  async function performBackup() {
+    const od = await getOneDrive();
+    await od.push(await buildSnapshot());
+    signedIn = od.isSignedIn();
+    markSynced(Date.now());
+  }
+
   async function backup() {
     busy = true;
     try {
-      const od = await getOneDrive();
-      await od.push(await buildSnapshot());
-      signedIn = od.isSignedIn();
-      markSynced(Date.now());
+      await performBackup();
       showToast('Backed up to OneDrive');
     } catch (e) {
       showToast(errMsg(e));
@@ -102,7 +106,14 @@
       const od = await getOneDrive();
       const snap = await od.pull();
       if (!snap) {
-        showToast('No backup found in OneDrive');
+        // The file is missing on OneDrive (never created, or deleted). We're still connected —
+        // offer to create the backup from local data instead of leaving the user stuck.
+        if (confirm('No backup found in OneDrive. Back up your current data there now?')) {
+          await performBackup();
+          showToast('Backed up to OneDrive');
+        } else {
+          showToast('No backup found in OneDrive');
+        }
         return;
       }
       await restoreSnapshot(snap);

@@ -17,7 +17,17 @@ export interface SyncProvider {
   prepare(): Promise<boolean>;
   signIn(): Promise<void>;
   signOut(): Promise<void>;
+  /**
+   * Upload a full snapshot, overwriting any existing remote copy (last-write-wins; no conflict
+   * errors). Implementations MUST create the backing file — and any missing parent folders — if
+   * it doesn't exist yet, so a backup succeeds even after the file/folder was deleted remotely.
+   */
   push(snapshot: Snapshot): Promise<void>;
+  /**
+   * Fetch the latest remote snapshot, bypassing any HTTP/CDN caches so a single call always
+   * reflects the most recent remote edit. Resolves to null (rather than throwing) when no backup
+   * exists yet — e.g. the file was never created or was deleted.
+   */
   pull(): Promise<Snapshot | null>;
 }
 
