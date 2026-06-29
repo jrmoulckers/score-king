@@ -10,6 +10,7 @@
   import GameType from './pages/GameType.svelte';
   import GamePlay from './pages/GamePlay.svelte';
   import NotFound from './pages/NotFound.svelte';
+  import SyncBubble from './lib/components/SyncBubble.svelte';
 
   let current = $state(window.location.pathname || '/');
   onMount(() => pathStore.subscribe((v) => (current = v)));
@@ -64,3 +65,5 @@
 {#if $toast}
   <div class="toast">{$toast}</div>
 {/if}
+
+<SyncBubble />
