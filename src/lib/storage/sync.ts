@@ -1,10 +1,18 @@
 import * as db from './db';
 import type { Game, Player, Round } from '../types';
+import type { Settings } from '../stores/settings';
+import { getBackupSettings, applyBackupSettings } from '../stores/settings';
 
 export interface Snapshot {
   players: Player[];
   games: Game[];
   rounds: Round[];
+  /**
+   * Backed-up user preferences (the portable subset of {@link Settings}).
+   * Optional so older backups — and JSON files written before settings sync —
+   * still restore cleanly; when absent, local preferences are left as-is.
+   */
+  settings?: Partial<Settings>;
   exportedAt: number;
 }
 
@@ -56,7 +64,7 @@ export async function buildSnapshot(): Promise<Snapshot> {
     db.getAllGames(),
     db.getAllRounds(),
   ]);
-  return { players, games, rounds, exportedAt: Date.now() };
+  return { players, games, rounds, settings: getBackupSettings(), exportedAt: Date.now() };
 }
 
 export async function restoreSnapshot(snapshot: Snapshot): Promise<void> {
@@ -65,6 +73,7 @@ export async function restoreSnapshot(snapshot: Snapshot): Promise<void> {
     games: snapshot.games,
     rounds: snapshot.rounds,
   });
+  applyBackupSettings(snapshot.settings);
 }
 
 /** Lazy-load the OneDrive provider (keeps MSAL + SheetJS out of the main bundle). */

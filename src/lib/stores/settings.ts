@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 
 export type Theme = 'dark' | 'light';
 
@@ -18,6 +18,9 @@ export const FONT_SCALE_VALUES: Record<FontScale, number> = {
 };
 
 export interface Settings {
+  // ── Portable preferences ──────────────────────────────────────────────────
+  // Device-agnostic user choices. These are stored in the backup file so they
+  // travel with a restore. Keep this group in sync with PORTABLE_SETTING_KEYS.
   theme: Theme;
   /** True-black surfaces for OLED screens (dark theme only). */
   oled: boolean;
@@ -30,6 +33,11 @@ export interface Settings {
   keepAwake: boolean;
   /** Blur scores with a tap-to-reveal veil after the phone is set down. */
   privacyGuard: boolean;
+
+  // ── Device-local sync state ───────────────────────────────────────────────
+  // OneDrive connection, the backup file's own location, and per-device sync
+  // bookkeeping. Deliberately NOT backed up (see LOCAL_SETTING_KEYS) — restoring
+  // these onto another device would create dead/conflicting state.
   oneDriveClientId: string;
   oneDriveFolderMode: OneDriveFolderMode;
   oneDriveCustomPath: string;
@@ -38,6 +46,61 @@ export interface Settings {
   lastSync: number | null;
   lastRestore: number | null;
 }
+
+/**
+ * Settings written to (and restored from) the backup file. These are portable
+ * user preferences with no device- or connection-specific meaning, so carrying
+ * them across devices via a restore is always safe.
+ *
+ * Adding a new setting? If it's a portable preference, list it here so it gets
+ * backed up. If it's device/connection state, list it in LOCAL_SETTING_KEYS
+ * instead. The compile-time guard below fails the build until every key of
+ * {@link Settings} is categorized in exactly one of the two arrays.
+ */
+export const PORTABLE_SETTING_KEYS = [
+  'theme',
+  'oled',
+  'fontScale',
+  'motion',
+  'highContrast',
+  'colorBlind',
+  'keepAwake',
+  'privacyGuard',
+] as const;
+
+/**
+ * Settings intentionally kept OUT of the backup: the OneDrive client-ID override,
+ * the backup file's folder location, the auto-backup toggle, the "connected" flag,
+ * and the last-sync/last-restore stamps. Backing these up risks dead state on
+ * restore (e.g. a custom folder path that doesn't exist on the new device, or a
+ * "connected" flag for an account this device isn't signed into).
+ */
+export const LOCAL_SETTING_KEYS = [
+  'oneDriveClientId',
+  'oneDriveFolderMode',
+  'oneDriveCustomPath',
+  'autoSync',
+  'oneDriveConnected',
+  'lastSync',
+  'lastRestore',
+] as const;
+
+export type PortableSettingKey = (typeof PORTABLE_SETTING_KEYS)[number];
+type LocalSettingKey = (typeof LOCAL_SETTING_KEYS)[number];
+
+/** The portable subset of {@link Settings} that is persisted in a backup. */
+export type BackupSettings = Pick<Settings, PortableSettingKey>;
+
+/**
+ * Compile-time exhaustiveness guard. Every key of {@link Settings} must appear in
+ * either PORTABLE_SETTING_KEYS or LOCAL_SETTING_KEYS. Add a setting and forget to
+ * categorize it, and `UncategorizedSettingKey` becomes that key (not `never`),
+ * so this alias fails to type-check — a forced reminder to decide whether the new
+ * setting belongs in the backup.
+ */
+type AssertNever<T extends never> = T;
+type UncategorizedSettingKey = Exclude<keyof Settings, PortableSettingKey | LocalSettingKey>;
+type _AllSettingsCategorized = AssertNever<UncategorizedSettingKey>;
 
 const KEY = 'sk_settings';
 
@@ -98,4 +161,31 @@ export function markSynced(ts: number) {
 
 export function markRestored(ts: number) {
   settings.update((s) => ({ ...s, lastRestore: ts }));
+}
+
+/** The portable subset of the current settings, ready to embed in a backup. */
+export function getBackupSettings(): BackupSettings {
+  const s = get(settings);
+  const out = {} as Record<PortableSettingKey, unknown>;
+  for (const key of PORTABLE_SETTING_KEYS) out[key] = s[key];
+  return out as BackupSettings;
+}
+
+/**
+ * Merge backed-up preferences from a restored snapshot into the live settings.
+ * Only portable keys are ever applied, so a restore can never overwrite this
+ * device's OneDrive connection, file location, or sync bookkeeping — even if an
+ * old or hand-edited backup happens to contain those fields. A missing/`undefined`
+ * value leaves the current preference untouched.
+ */
+export function applyBackupSettings(incoming: Partial<Settings> | undefined): void {
+  if (!incoming) return;
+  settings.update((s) => {
+    const next: Settings = { ...s };
+    for (const key of PORTABLE_SETTING_KEYS) {
+      const value = incoming[key];
+      if (value !== undefined) next[key] = value as never;
+    }
+    return next;
+  });
 }
