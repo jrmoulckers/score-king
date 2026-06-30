@@ -162,6 +162,10 @@ because the app boots `data-theme="dark"`.
 - **Crown Gold** (`#ffd166`): The crown. Reserved for the current leader, the winner row
   highlight, and the 👑. Scarcity is the whole point — it is never a button, link, or
   decoration.
+- **Crown Gold Ink** (`--accent-ink`: `#ffd166` dark / `#806600` light): The text form of
+  Crown Gold for the leader/winner *number* (`.lead`). Pure `#ffd166` fails WCAG on light
+  surfaces, so light theme darkens it to `#806600` (≥4.5:1 on white) while keeping the gold
+  identity. Use `--accent-ink` for gold text, `--accent` for gold washes/fills.
 
 ### Tertiary (Semantic)
 - **Win Green** (`#34d399`): Positive deltas, good scores, success/synced states.
@@ -295,7 +299,7 @@ element shares one shape language (9px controls, 14px containers) and one state 
 - **Label:** muted 0.9rem, block, 6px below.
 
 ### Stepper (signature)
-- A horizontal − / number / + control for round entry: two 42px Lifted-Slate icon
+- A horizontal − / number / + control for round entry: two 46px Lifted-Slate icon
   buttons flanking a centered 62px tabular-number input, `inputmode="numeric"`. The
   fastest way to nudge a score one-handed without summoning the keyboard. Min/max disable
   the relevant button. This is the heartbeat of round entry — keep it identical across
@@ -309,8 +313,19 @@ element shares one shape language (9px controls, 14px containers) and one state 
 ### Scoreboard (signature)
 - A right-aligned numeric table (rank · player · score). Header row in muted overline
   caps; tabular-nums body; the rank-1 score uses Crown Gold (`.lead`); the winner row gets
-  a 14%-opacity Crown Gold wash. The whole standing is legible at a glance from across the
-  table.
+  a restrained (~13%) Crown Gold wash under a Crown Gold underline — the 👑 and gold score
+  carry the win, so gold stays a hint, never a muddy block. The whole standing is legible
+  at a glance from across the table.
+
+### Feedback (loading & save)
+- **Loading skeleton:** While a screen's data resolves, shaped shimmer blocks mirror the
+  content silhouette (meta bar → board → entry card) instead of a bare "Loading…". No
+  layout shift on arrival; the shimmer sweep settles to a static block under reduced motion.
+- **Round-saved pulse:** A saved round briefly pulses its new scorecard row in Win Green
+  (~0.9s) — positive confirmation kept distinct from Crown Gold (leader only). The row is
+  already visible; the pulse just points to where the entry landed.
+- **Undo toasts:** Destructive actions (delete round/game) confirm via an in-app toast with
+  an Undo action rather than a native dialog — themed, dismissible, and reversible.
 
 ### Navigation
 - **Top App Bar:** Sticky, glass (blurred translucent bg), Court Line bottom border; brand
@@ -318,7 +333,7 @@ element shares one shape language (9px controls, 14px containers) and one state 
 - **Bottom Tab Bar:** Fixed, glass, four emoji+label tabs (Games / Players / History /
   Stats). Inactive tabs are muted; the active tab gets Moonlight text on a Raised Slate
   pill. Built for thumbs and `env(safe-area-inset-*)`.
-- **Icon Button:** 42px square, 10px radius, Raised Slate fill — settings, steppers, and
+- **Icon Button:** 46px square, 10px radius, Raised Slate fill — settings, steppers, and
   compact actions.
 
 ## 6. Do's and Don'ts

@@ -92,7 +92,12 @@
 </nav>
 
 {#if $toast}
-  <div class="toast">{$toast}</div>
+  <div class="toast" role="status" aria-live="polite">
+    <span>{$toast.message}</span>
+    {#if $toast.action}
+      <button class="toast-action" onclick={$toast.action.run}>{$toast.action.label}</button>
+    {/if}
+  </div>
 {/if}
 
 {#if veiled}

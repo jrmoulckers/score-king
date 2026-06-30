@@ -22,6 +22,14 @@
         "canonical": "#ffd166",
         "tonalRamp": ["oklch(0.30 0.05 90)", "oklch(0.42 0.07 90)", "oklch(0.54 0.09 90)", "oklch(0.65 0.11 90)", "oklch(0.76 0.13 90)", "oklch(0.84 0.14 90)", "oklch(0.90 0.10 90)", "oklch(0.96 0.05 90)"]
       },
+      "accentInk": {
+        "role": "secondary",
+        "displayName": "Crown Gold Ink",
+        "canonical": "#ffd166",
+        "description": "Text form of Crown Gold for the leader/winner number (.lead). Dark theme uses #ffd166; light theme darkens to #806600 to clear WCAG 4.5:1 on white while keeping the gold identity.",
+        "themeValues": { "dark": "#ffd166", "light": "#806600" },
+        "tonalRamp": ["oklch(0.30 0.05 90)", "oklch(0.42 0.07 90)", "oklch(0.50 0.09 90)", "oklch(0.65 0.11 90)", "oklch(0.76 0.13 90)", "oklch(0.84 0.14 90)", "oklch(0.90 0.10 90)", "oklch(0.96 0.05 90)"]
+      },
       "good": {
         "role": "tertiary",
         "displayName": "Win Green",
@@ -110,7 +118,7 @@
       "refersTo": "iconbtn",
       "description": "Signature round-entry control: minus / tabular number / plus, tuned for one-handed score nudging without the keyboard.",
       "html": "<div class='ds-stepper'><button class='ds-step-btn' aria-label='decrease'>\u2212</button><input class='ds-step-input' type='number' value='3' inputmode='numeric'/><button class='ds-step-btn' aria-label='increase'>+</button></div>",
-      "css": ".ds-stepper{display:inline-flex;align-items:center;gap:6px;}.ds-step-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:10px;border:1px solid #313357;background:#24263f;color:#e9e9f4;font-size:1.1rem;cursor:pointer;}.ds-step-btn:hover{background:#2c2e4d;}.ds-step-input{width:62px;text-align:center;min-height:46px;padding:11px 4px;border:1px solid #313357;border-radius:9px;background:#1a1b2e;color:#e9e9f4;font:700 1rem system-ui;font-variant-numeric:tabular-nums;}.ds-step-input:focus{outline:2px solid #7c5cff;outline-offset:1px;}"
+      "css": ".ds-stepper{display:inline-flex;align-items:center;gap:6px;}.ds-step-btn{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:10px;border:1px solid #313357;background:#24263f;color:#e9e9f4;font-size:1.1rem;cursor:pointer;}.ds-step-btn:hover{background:#2c2e4d;}.ds-step-input{width:62px;text-align:center;min-height:46px;padding:11px 4px;border:1px solid #313357;border-radius:9px;background:#1a1b2e;color:#e9e9f4;font:700 1rem system-ui;font-variant-numeric:tabular-nums;}.ds-step-input:focus{outline:2px solid #7c5cff;outline-offset:1px;}"
     },
     {
       "name": "Game Tile",
@@ -156,9 +164,9 @@
       "name": "Scoreboard",
       "kind": "custom",
       "refersTo": "card",
-      "description": "Signature standings table — tabular numbers, rank-1 score in Crown Gold, winner row washed 14% gold.",
+      "description": "Signature standings table — tabular numbers, rank-1 score in Crown Gold, winner row a restrained ~13% gold wash under a Crown Gold underline.",
       "html": "<table class='ds-scoreboard'><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead><tbody><tr class='ds-winner'><td>1</td><td>Ada \ud83d\udc51</td><td class='ds-num ds-lead'>112</td></tr><tr><td>2</td><td>Bo</td><td class='ds-num'>98</td></tr><tr><td>3</td><td>Cy</td><td class='ds-num'>74</td></tr></tbody></table>",
-      "css": ".ds-scoreboard{width:100%;max-width:320px;border-collapse:collapse;color:#e9e9f4;font:1rem system-ui;}.ds-scoreboard th,.ds-scoreboard td{padding:9px 8px;text-align:right;border-bottom:1px solid #313357;white-space:nowrap;}.ds-scoreboard th:first-child,.ds-scoreboard td:first-child{text-align:left;}.ds-scoreboard thead th{color:#a3a6cb;font-size:.8rem;font-weight:600;}.ds-num{font-variant-numeric:tabular-nums;font-weight:700;}.ds-lead{color:#ffd166;}.ds-winner td{background:rgba(255,209,102,.14);}"
+      "css": ".ds-scoreboard{width:100%;max-width:320px;border-collapse:collapse;color:#e9e9f4;font:1rem system-ui;}.ds-scoreboard th,.ds-scoreboard td{padding:9px 8px;text-align:right;border-bottom:1px solid #313357;white-space:nowrap;}.ds-scoreboard th:first-child,.ds-scoreboard td:first-child{text-align:left;}.ds-scoreboard thead th{color:#a3a6cb;font-size:.8rem;font-weight:600;}.ds-num{font-variant-numeric:tabular-nums;font-weight:700;}.ds-lead{color:#ffd166;}.ds-winner td{background:rgba(255,209,102,.13);border-bottom-color:#a28a5f;}"
     }
   ],
   "narrative": {
