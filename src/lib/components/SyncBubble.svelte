@@ -1,9 +1,9 @@
 <script lang="ts">
   import { scale } from 'svelte/transition';
-  import { animate } from 'motion/mini';
   import { autoSyncStatus } from '../storage/autosync';
   import { settings } from '../stores/settings';
   import { navigate } from '../router';
+  import { animateMotion } from '../motion';
   import { relativeTime } from '../util';
 
   const status = $derived($autoSyncStatus);
@@ -55,10 +55,6 @@
               : 'Not backed up yet',
   );
 
-  const reduce = () =>
-    typeof window !== 'undefined' &&
-    !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
   // --- progress fill (slow >1s syncs only); never carries into the synced state ---
   let showFill = $state(false);
   let progress = $state(0); // 0..1
@@ -109,8 +105,8 @@
     if (s === 'synced') {
       stickySynced = true;
       // Springy celebration on the green dot.
-      if (dotEl && !reduce()) {
-        animate(
+      if (dotEl) {
+        animateMotion(
           dotEl,
           { scale: [0.3, 1.4, 0.9, 1] },
           { duration: 0.5, ease: 'easeOut' },
@@ -124,8 +120,7 @@
 
   // Springy entrance (Motion) — runs once when the pill mounts.
   function enter(node: HTMLElement) {
-    if (reduce()) return;
-    animate(
+    animateMotion(
       node,
       { opacity: [0, 1], scale: [0.5, 1.08, 1], rotate: [-8, 2, 0] },
       { duration: 0.5, ease: 'easeOut' },
@@ -138,11 +133,7 @@
     e.preventDefault();
     if (popping) return;
     popping = true;
-    if (reduce()) {
-      navigate('/settings');
-      return;
-    }
-    const controls = animate(
+    const controls = animateMotion(
       node,
       { scale: [1, 1.18, 0.92, 1], rotate: [0, -7, 6, 0] },
       { duration: 0.36, ease: 'easeOut' },
