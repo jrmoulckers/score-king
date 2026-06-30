@@ -181,6 +181,7 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: 0.2px; }
 .brand img { width: 30px; height: 30px; }
+.appbar-actions { display: flex; align-items: center; gap: 10px; min-width: 0; }
 
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;

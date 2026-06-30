@@ -43,7 +43,10 @@
     <img src="/favicon.svg" alt="" />
     Score King
   </a>
-  <a class="iconbtn" href="/settings" use:link aria-label="Settings" title="Settings">⚙️</a>
+  <div class="appbar-actions">
+    <SyncBubble />
+    <a class="iconbtn" href="/settings" use:link aria-label="Settings" title="Settings">⚙️</a>
+  </div>
 </header>
 
 <main class="app">
@@ -98,8 +101,6 @@
     </span>
   </button>
 {/if}
-
-<SyncBubble />
 
 <style>
   .veil {

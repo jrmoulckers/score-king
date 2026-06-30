@@ -1,17 +1,15 @@
 <script lang="ts">
+  import { scale } from 'svelte/transition';
+  import { animate } from 'motion/mini';
   import { autoSyncStatus } from '../storage/autosync';
   import { settings } from '../stores/settings';
-  import { pathStore, parseRoute, link } from '../router';
+  import { navigate } from '../router';
   import { relativeTime } from '../util';
 
   const status = $derived($autoSyncStatus);
-  // The bubble represents auto-sync: only show it once the user has connected
-  // OneDrive AND left auto-sync on. The Settings page already has the detailed
-  // indicator, so stay out of the way there.
-  const route = $derived(parseRoute($pathStore));
-  const visible = $derived(
-    $settings.oneDriveConnected && $settings.autoSync && route.name !== 'settings',
-  );
+  // Persistent header indicator: shown once OneDrive is connected and auto-sync
+  // is on. Tapping it takes you to the connection page (Settings).
+  const visible = $derived($settings.oneDriveConnected && $settings.autoSync);
 
   const tone = $derived(
     status === 'syncing'
@@ -25,37 +23,52 @@
             : 'idle',
   );
 
+  // Short label for the compact header pill.
   const label = $derived(
     status === 'syncing'
       ? 'Syncing…'
+      : status === 'synced'
+        ? 'Synced!'
+        : status === 'pending'
+          ? 'Pending'
+          : status === 'offline'
+            ? 'Offline'
+            : status === 'error'
+              ? 'Retrying…'
+              : $settings.lastSync
+                ? 'Backed up'
+                : 'Not backed up',
+  );
+
+  // Full description for the tooltip / screen readers.
+  const fullLabel = $derived(
+    status === 'syncing'
+      ? 'Backing up to OneDrive…'
       : status === 'pending'
-        ? 'Sync pending'
+        ? 'Sync pending — reconnect to OneDrive'
         : status === 'offline'
-          ? 'Offline'
+          ? 'Offline — changes will back up when you reconnect'
           : status === 'error'
-            ? 'Sync failed — retrying'
+            ? 'Sync failed — will retry shortly'
             : $settings.lastSync
               ? 'Backed up · ' + relativeTime($settings.lastSync)
               : 'Not backed up yet',
   );
 
-  const fullLabel = $derived(
-    status === 'pending'
-      ? 'Sync pending — reconnect to OneDrive'
-      : status === 'offline'
-        ? 'Offline — changes will back up when you reconnect'
-        : label,
-  );
+  const reduce = () =>
+    typeof window !== 'undefined' &&
+    !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-  // --- progress + post-sync "sticky" label, driven only by `status` ---
-  let showProgress = $state(false); // reactive: drives the bar in the template
+  // --- progress fill (slow >1s syncs only); never carries into the synced state ---
+  let showFill = $state(false);
   let progress = $state(0); // 0..1
-  let stickySynced = $state(false); // keep "Backed up" visible briefly after a sync
+  let stickySynced = $state(false); // briefly celebrate a completed sync
   // Plain (non-reactive) mirror so the effect can branch on it without
   // subscribing to it — the effect must depend on `status` alone.
   let barShown = false;
 
-  // Expanded = show the text label; collapsed = just the coloured dot.
+  let dotEl: HTMLSpanElement | undefined = $state();
+
   const expanded = $derived(
     status === 'syncing' ||
       status === 'pending' ||
@@ -68,19 +81,18 @@
     const s = status;
 
     if (s === 'syncing') {
-      // Fresh upload: clear any leftover bar so the ">1s" rule applies per-sync.
-      showProgress = false;
+      showFill = false;
       progress = 0;
       barShown = false;
-      // Only reveal the progress bar if the upload is genuinely slow (>1s).
+      // Reveal the fill only if the upload is genuinely slow (>1s).
       const slow = setTimeout(() => {
         barShown = true;
-        showProgress = true;
-        progress = 0.08;
+        showFill = true;
+        progress = 0.1;
       }, 1000);
       const tick = setInterval(() => {
-        // Ease toward a cap; we have no real byte-progress from Graph, so this
-        // is a bounded, reassuring approximation that completes on success.
+        // Ease toward a cap — Graph gives no byte-progress, so this is a
+        // bounded, reassuring approximation.
         if (barShown) progress = Math.min(0.92, progress + (0.92 - progress) * 0.16);
       }, 200);
       return () => {
@@ -89,84 +101,105 @@
       };
     }
 
-    // Left the syncing state.
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    if (barShown) {
-      if (s === 'synced') {
-        progress = 1; // snap to full, then fade the bar out
-        timers.push(
-          setTimeout(() => {
-            showProgress = false;
-            progress = 0;
-            barShown = false;
-          }, 450),
-        );
-      } else {
-        showProgress = false;
-        progress = 0;
-        barShown = false;
-      }
-    }
+    // Any non-syncing state: drop the fill immediately (no carry-over into "Synced!").
+    showFill = false;
+    progress = 0;
+    barShown = false;
+
     if (s === 'synced') {
       stickySynced = true;
-      timers.push(setTimeout(() => (stickySynced = false), 2500));
-    } else {
-      stickySynced = false;
+      // Springy celebration on the green dot.
+      if (dotEl && !reduce()) {
+        animate(
+          dotEl,
+          { scale: [0.3, 1.4, 0.9, 1] },
+          { duration: 0.5, ease: 'easeOut' },
+        );
+      }
+      const t = setTimeout(() => (stickySynced = false), 2200);
+      return () => clearTimeout(t);
     }
-    return () => timers.forEach((t) => clearTimeout(t));
+    stickySynced = false;
   });
+
+  // Springy entrance (Motion) — runs once when the pill mounts.
+  function enter(node: HTMLElement) {
+    if (reduce()) return;
+    animate(
+      node,
+      { opacity: [0, 1], scale: [0.5, 1.08, 1], rotate: [-8, 2, 0] },
+      { duration: 0.5, ease: 'easeOut' },
+    );
+  }
+
+  // --- playful click: pop with a spring, then navigate to the connection page ---
+  let popping = $state(false);
+  function onClick(e: MouseEvent, node: HTMLElement) {
+    e.preventDefault();
+    if (popping) return;
+    popping = true;
+    if (reduce()) {
+      navigate('/settings');
+      return;
+    }
+    const controls = animate(
+      node,
+      { scale: [1, 1.18, 0.92, 1], rotate: [0, -7, 6, 0] },
+      { duration: 0.36, ease: 'easeOut' },
+    );
+    controls.finished.finally(() => {
+      popping = false;
+      navigate('/settings');
+    });
+  }
 </script>
 
 {#if visible}
   <a
     class="syncbubble {tone}"
     class:expanded
+    class:celebrate={stickySynced}
     href="/settings"
-    use:link
+    onclick={(e) => onClick(e, e.currentTarget)}
+    use:enter
     title={fullLabel}
     aria-label={'Backup status: ' + fullLabel}
+    out:scale={{ duration: 200, start: 0.7, opacity: 0 }}
   >
-    <span class="sb-dot" class:spin={status === 'syncing'}></span>
-    {#if expanded}<span class="sb-text">{label}</span>{/if}
-    {#if showProgress}
-      <span class="sb-progress" aria-hidden="true">
-        <span class="sb-bar" style="width: {Math.round(progress * 100)}%"></span>
-      </span>
+    {#if showFill}
+      <span class="sb-fill" style="width: {Math.round(progress * 100)}%" aria-hidden="true"></span>
     {/if}
+    <span class="sb-dot" class:spin={status === 'syncing'} bind:this={dotEl}></span>
+    {#if expanded}<span class="sb-text">{label}</span>{/if}
   </a>
 {/if}
 
 <style>
   .syncbubble {
-    position: fixed;
-    right: 14px;
-    bottom: calc(86px + env(safe-area-inset-bottom));
-    z-index: 40;
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    max-width: min(72vw, 280px);
-    padding: 7px 12px;
+    gap: 7px;
+    max-width: 168px;
+    padding: 6px 11px;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--surface) 90%, transparent);
-    backdrop-filter: blur(8px);
+    background: color-mix(in srgb, var(--surface-2) 80%, transparent);
     border: 1px solid var(--border);
-    box-shadow: var(--shadow);
     color: var(--muted);
-    font-size: 0.8rem;
-    line-height: 1;
+    font-size: 0.78rem;
+    line-height: 1.15;
     text-decoration: none;
     overflow: hidden;
     transition:
-      padding 0.15s ease,
-      background 0.15s ease;
+      padding 0.18s ease,
+      background 0.18s ease;
   }
   .syncbubble:hover {
     text-decoration: none;
-    background: var(--surface);
+    background: var(--surface-3);
   }
   .syncbubble:not(.expanded) {
-    padding: 8px;
+    padding: 7px;
   }
 
   .syncbubble.busy {
@@ -185,7 +218,22 @@
     --tone: var(--muted);
   }
 
+  /* Translucent progress fill across the whole bubble (left -> right).
+     For a bottom -> top fill instead: set `top: auto; height: <pct>; width: 100%`. */
+  .sb-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: color-mix(in srgb, #f7b955 34%, transparent);
+    transition: width 0.2s ease;
+    z-index: 0;
+  }
+
   .sb-dot {
+    position: relative;
+    z-index: 1;
     width: 9px;
     height: 9px;
     border-radius: 50%;
@@ -202,25 +250,15 @@
   }
 
   .sb-text {
+    position: relative;
+    z-index: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .sb-progress {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 3px;
-    background: color-mix(in srgb, var(--tone) 16%, transparent);
-  }
-  .sb-bar {
-    display: block;
-    height: 100%;
-    width: 0;
-    background: var(--tone);
-    transition: width 0.2s ease;
+  .syncbubble.celebrate {
+    border-color: color-mix(in srgb, #29c785 55%, var(--border));
   }
 
   @keyframes sb-spin {
@@ -233,7 +271,7 @@
     .sb-dot.spin {
       animation: none;
     }
-    .sb-bar {
+    .sb-fill {
       transition: none;
     }
   }

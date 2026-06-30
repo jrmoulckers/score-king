@@ -8,7 +8,7 @@
   import { refreshGames } from '../lib/stores/games';
   import { refreshPlayers } from '../lib/stores/players';
   import { showToast } from '../lib/stores/toast';
-  import { relativeTime, formatDateTime } from '../lib/util';
+  import { relativeTime } from '../lib/util';
 
   let override = $state($settings.oneDriveClientId);
   let busy = $state(false);
@@ -29,7 +29,7 @@
             : '',
   );
 
-  const syncText = $derived(
+  const backupText = $derived(
     $autoSyncStatus === 'syncing'
       ? 'Syncing…'
       : $autoSyncStatus === 'pending'
@@ -39,8 +39,16 @@
           : $autoSyncStatus === 'error'
             ? 'Sync failed — will retry shortly'
             : $settings.lastSync
-              ? 'Backed up · ' + relativeTime($settings.lastSync)
+              ? 'Synced · Backed up ' + relativeTime($settings.lastSync)
               : 'Not backed up yet',
+  );
+
+  // Restore is paired with backup but never shows a "not yet" state: connecting
+  // already pulls the latest file down, so the local data is treated as restored.
+  const restoreText = $derived(
+    $settings.lastRestore
+      ? 'Last restored ' + relativeTime($settings.lastRestore)
+      : 'Up to date with OneDrive',
   );
 
   let folderMode = $state($settings.oneDriveFolderMode);
@@ -52,6 +60,7 @@
       ? 'OneDrive / ' + (cleanPath ? cleanPath.replace(/\//g, ' / ') + ' / ' : '') + 'Score King.xlsx'
       : 'OneDrive / Apps / Score King / Score King.xlsx',
   );
+  const prettyPath = $derived(locationLabel.replace(/ \/ /g, ' › '));
 
   $effect(() => {
     const mode = folderMode;
@@ -134,7 +143,12 @@
   }
 
   async function restore() {
-    if (!confirm('Replace local data with the OneDrive backup?')) return;
+    if (
+      !confirm(
+        'Restore from OneDrive?\n\nThis overwrites the data currently on this device with the latest backup. This cannot be undone.',
+      )
+    )
+      return;
     busy = true;
     try {
       const od = await getOneDrive();
@@ -228,27 +242,18 @@
   {:else}
     {#if signedIn}
       <div class="row spread">
-        <span class="row" style="gap: 8px">
-          <span class="dot ok"></span> Connected to OneDrive
+        <span class="row provider" style="gap: 9px">
+          <svg class="od-logo" viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="OneDrive">
+            <path
+              fill="#0078D4"
+              d="M19.35 10.04A7.49 7.49 0 0 0 12 4 7.49 7.49 0 0 0 5.1 8.36 5.994 5.994 0 0 0 6 20h13a4.99 4.99 0 0 0 .35-9.96z"
+            />
+          </svg>
+          <strong>Connected to OneDrive</strong>
         </span>
         <button class="btn small ghost" onclick={disconnect}>Disconnect</button>
       </div>
-      <div class="row wrap" style="gap: 10px">
-        <button class="btn primary grow" onclick={backup} disabled={busy}>Back up now</button>
-        <button class="btn grow" onclick={restore} disabled={busy}>Restore</button>
-      </div>
-      <div class="muted sm">
-        {$settings.lastRestore ? 'Last restored ' + formatDateTime($settings.lastRestore) : 'Not restored yet'}
-      </div>
-    {:else}
-      <div class="muted sm">
-        Sign in with your Microsoft account to back up your scores to a <code>Score King.xlsx</code>
-        file in your own OneDrive. You can open it in Excel anytime.
-      </div>
-      <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
-    {/if}
 
-    <div class="autosync stack" style="gap: 8px">
       <label class="sw-row row spread">
         <span>Automatically back up changes</span>
         <span class="switch">
@@ -261,70 +266,119 @@
           <span class="track"><span class="thumb"></span></span>
         </span>
       </label>
-      <div class="row" style="gap: 8px">
-        <span class="dot {dotClass}"></span>
-        <span class="muted sm">{syncText}</span>
+
+      <div class="pathchip" title={locationLabel}>
+        <span class="pathchip-ico" aria-hidden="true">📂</span>
+        <code>{prettyPath}</code>
       </div>
-    </div>
 
-    <hr class="sep" />
+      <hr class="sep" />
 
-    <div class="stack" style="gap: 10px">
-      <div class="fieldlabel">Where your data is stored</div>
-
-      <label class="opt">
-        <input type="radio" name="odmode" value="app" bind:group={folderMode} />
-        <span class="optbody">
-          <strong>App folder <span class="tag">recommended</span></strong>
-          <span class="muted sm block">
-            Score King can access <strong>only its own folder</strong>
-            (<code>OneDrive › Apps › Score King</code>) — it cannot see or touch anything else in
-            your OneDrive. Grants the sandboxed <code>Files.ReadWrite.AppFolder</code> permission.
-          </span>
+      <div class="syncrow row spread">
+        <span class="row" style="gap: 8px; min-width: 0">
+          <span class="dot {dotClass}"></span>
+          <span class="sm">{backupText}</span>
         </span>
-      </label>
+        <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
+      </div>
 
-      <label class="opt">
-        <input type="radio" name="odmode" value="custom" bind:group={folderMode} />
-        <span class="optbody">
-          <strong>Custom folder</strong>
-          <span class="muted sm block">
-            Store the workbook anywhere you like. Microsoft can't limit access to a single folder,
-            so this grants the broader <code>Files.ReadWrite</code> permission — the app could
-            <strong>technically</strong> reach all of your OneDrive files, even though it only ever
-            reads and writes its own <code>Score King.xlsx</code>.
+      <div class="syncrow stack" style="gap: 6px">
+        <div class="row spread">
+          <span class="row" style="gap: 8px; min-width: 0">
+            <svg class="rdot" viewBox="0 0 16 16" role="img" aria-label="Restore up to date">
+              <circle cx="8" cy="8" r="8" fill="#29c785" />
+              <path
+                d="M4.5 8.3 7 10.8 11.5 5.6"
+                fill="none"
+                stroke="#04150d"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="sm">{restoreText}</span>
           </span>
+          <button class="btn small ghost" onclick={restore} disabled={busy}>Restore now</button>
+        </div>
+        <span class="muted sm">
+          Pulls the latest backup from OneDrive and replaces the data on this device.
         </span>
-      </label>
-
-      {#if folderMode === 'custom'}
-        <input
-          type="text"
-          bind:value={customPath}
-          placeholder="Folder path, e.g. Documents/Games (blank = OneDrive root)"
-        />
-      {/if}
-
-      <div class="muted sm">📄 <code>{locationLabel}</code></div>
+      </div>
+    {:else}
       <div class="muted sm">
-        Changing this may ask you to approve the new permission the next time you back up.
+        Sign in with your Microsoft account to back up your scores to OneDrive.
       </div>
-    </div>
+      <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
+    {/if}
   {/if}
 
+  <hr class="sep" />
+
   <details>
-    <summary class="muted sm">Advanced: use your own client ID</summary>
-    <div class="stack" style="margin-top: 10px">
-      <input
-        type="text"
-        bind:value={override}
-        placeholder="00000000-0000-0000-0000-000000000000"
-      />
-      <div class="muted sm">
-        Override the built-in app with your own Azure app registration. Leave blank to use the
-        default. See the README for registration steps.
+    <summary class="muted sm">Advanced</summary>
+    <div class="stack" style="margin-top: 12px; gap: 16px">
+      <div class="stack" style="gap: 10px">
+        <div class="fieldlabel">Where your data is stored</div>
+
+        <label class="opt">
+          <input type="radio" name="odmode" value="app" bind:group={folderMode} />
+          <span class="optbody">
+            <strong>App folder <span class="tag">recommended</span></strong>
+            <span class="muted sm block">
+              Score King can access only its own folder
+              (<code>OneDrive › Apps › Score King</code>). It cannot see or touch anything else in
+              your OneDrive. Grants only the sandboxed <code>Files.ReadWrite.AppFolder</code>
+              permission to the Apps folder.
+            </span>
+          </span>
+        </label>
+
+        <label class="opt">
+          <input type="radio" name="odmode" value="custom" bind:group={folderMode} />
+          <span class="optbody">
+            <strong>Custom folder</strong>
+            <span class="muted sm block">
+              Store the workbook anywhere you like. Score King will <strong>only</strong> read and
+              write to its own <code>Score King.xlsx</code> file. Microsoft can't limit access to a
+              single folder, so this grants the broader <code>Files.ReadWrite</code> permission to
+              your entire OneDrive.
+            </span>
+          </span>
+        </label>
+
+        {#if folderMode === 'custom'}
+          <input
+            type="text"
+            bind:value={customPath}
+            placeholder="Folder path, e.g. Documents/Games (blank = OneDrive root)"
+          />
+        {/if}
+
+        <div class="muted sm">📄 <code>{locationLabel}</code></div>
+        <div class="muted sm">
+          Changing this may ask you to approve the new permission the next time you back up.
+        </div>
       </div>
-      <button class="btn small" onclick={saveOverride}>Save ID</button>
+
+      <hr class="sep" />
+
+      <div class="stack" style="gap: 10px">
+        <div class="fieldlabel">Use your own Azure app Client ID</div>
+        <div class="muted sm">
+          Don't trust us at all? No hard feelings! Override the built-in Azure app registration with
+          your own. See our <a
+            href="https://github.com/jrmoulckers/score-king/blob/main/README.md#onetime-developer-setup-register-the-shared-app"
+            target="_blank"
+            rel="noopener noreferrer">README</a
+          > for registration steps. Leave blank to use the default.
+        </div>
+        <input
+          type="text"
+          bind:value={override}
+          placeholder="00000000-0000-0000-0000-000000000000"
+        />
+        <button class="btn small" onclick={saveOverride}>Save ID</button>
+      </div>
     </div>
   </details>
 </div>
@@ -370,6 +424,42 @@
   }
   .dot.off {
     background: var(--muted);
+  }
+  .rdot {
+    width: 9px;
+    height: 9px;
+    flex: none;
+    display: block;
+  }
+  .od-logo {
+    flex: none;
+    display: block;
+  }
+  .provider strong {
+    font-weight: 600;
+  }
+  .pathchip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--border, rgba(127, 127, 127, 0.2));
+    border-radius: 8px;
+    background: var(--surface-2, rgba(127, 127, 127, 0.08));
+  }
+  .pathchip-ico {
+    flex: none;
+    font-size: 0.95rem;
+  }
+  .pathchip code {
+    background: none;
+    padding: 0;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: inherit;
   }
   .sw-row {
     cursor: pointer;
