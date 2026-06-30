@@ -70,6 +70,7 @@ export type RouteName =
   | 'history'
   | 'stats'
   | 'settings'
+  | 'accessibility'
   | 'play'
   | 'gametype'
   | 'notfound';
@@ -85,6 +86,7 @@ const RESERVED: Record<string, RouteName> = {
   history: 'history',
   stats: 'stats',
   settings: 'settings',
+  accessibility: 'accessibility',
 };
 
 export function parseRoute(path: string): Route {

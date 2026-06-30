@@ -6,7 +6,8 @@
     recolorPlayer,
     removePlayer,
   } from '../lib/stores/players';
-  import { PALETTE } from '../lib/util';
+  import { PALETTE, resolvePlayerColor } from '../lib/util';
+  import { settings } from '../lib/stores/settings';
   import Avatar from '../lib/components/Avatar.svelte';
   import type { Player } from '../lib/types';
 
@@ -72,7 +73,7 @@
             <button
               class="dot"
               class:sel={p.color === c}
-              style="background: {c}"
+              style="background: {resolvePlayerColor(c, $settings.colorBlind)}"
               onclick={() => recolorPlayer(p, c)}
               aria-label="Set colour"
             ></button>

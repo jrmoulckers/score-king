@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { settings, toggleTheme, markSynced, markRestored } from '../lib/stores/settings';
+  import { settings, markSynced, markRestored } from '../lib/stores/settings';
+  import { link } from '../lib/router';
   import { buildSnapshot, restoreSnapshot, getOneDrive } from '../lib/storage/sync';
   import { autoSyncStatus, markSyncSettled } from '../lib/storage/autosync';
   import { ONEDRIVE_CLIENT_ID } from '../lib/config';
@@ -218,13 +219,17 @@
 
 <h1>Settings</h1>
 
-<div class="section-title">Appearance</div>
-<div class="card row spread">
-  <span>Theme</span>
-  <button class="btn" onclick={toggleTheme}>
-    {$settings.theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
-  </button>
-</div>
+<div class="section-title">Display & accessibility</div>
+<a class="card navrow row spread" href="/accessibility" use:link>
+  <span class="row" style="gap: 12px">
+    <span class="navico" aria-hidden="true">👁️</span>
+    <span class="navmeta">
+      <span class="navname">Accessibility &amp; display</span>
+      <span class="muted sm">Theme, text size, contrast, motion, colour-blind palette</span>
+    </span>
+  </span>
+  <span class="chev" aria-hidden="true">›</span>
+</a>
 
 <div class="section-title">OneDrive backup (Excel)</div>
 <div class="card stack">
@@ -544,5 +549,32 @@
     background: var(--surface-2, rgba(127, 127, 127, 0.15));
     padding: 1px 5px;
     border-radius: 5px;
+  }
+  .navrow {
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .navrow:hover {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+  }
+  .navico {
+    font-size: 1.4rem;
+    line-height: 1;
+    flex: none;
+  }
+  .navmeta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .navname {
+    font-weight: 700;
+  }
+  .chev {
+    font-size: 1.5rem;
+    color: var(--muted);
+    flex: none;
   }
 </style>

@@ -2,7 +2,7 @@ import { mount } from 'svelte'
 import { registerSW } from 'virtual:pwa-register'
 import './app.css'
 import App from './App.svelte'
-import { applyTheme } from './lib/stores/settings'
+import { applySettings } from './lib/stores/settings'
 import { startAutoSync } from './lib/storage/autosync'
 
 // A Microsoft sign-in uses a full-page redirect. When the browser returns from Microsoft the
@@ -24,7 +24,7 @@ async function boot() {
       window.history.replaceState({}, '', window.location.pathname)
     }
   }
-  applyTheme()
+  applySettings()
   registerSW({ immediate: true })
   mount(App, { target: document.getElementById('app')! })
   // Background OneDrive auto-backup (push-only, silent; never redirects on its own).

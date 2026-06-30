@@ -12,6 +12,7 @@
   --maxw: 760px;
 
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: calc(100% * var(--font-scale, 1));
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
@@ -38,6 +39,35 @@ html[data-theme="light"] {
   --text: #1c1d2e;
   --muted: #5b5e7e;
   --shadow: 0 10px 30px rgba(60, 50, 120, 0.12);
+}
+
+/* OLED: true-black surfaces for dark theme to save power and deepen contrast. */
+html[data-theme="dark"][data-oled] {
+  --bg: #000000;
+  --bg-grad: none;
+  --surface: #0a0a12;
+  --surface-2: #14141f;
+  --surface-3: #1c1c2b;
+  --border: #2a2a3d;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+}
+
+/* High contrast: push text toward the ink end, strengthen borders and focus. */
+html[data-theme="dark"][data-contrast] {
+  --text: #ffffff;
+  --muted: #c8cbef;
+  --border: #5a5d8a;
+}
+html[data-theme="light"][data-contrast] {
+  --text: #000000;
+  --muted: #3a3c54;
+  --border: #9a9ab0;
+}
+html[data-contrast] input:focus,
+html[data-contrast] select:focus,
+html[data-contrast] .btn:focus-visible {
+  outline-width: 3px;
+  outline-offset: 2px;
 }
 
 * { box-sizing: border-box; }
@@ -209,3 +239,24 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--text); cursor: pointer; font-size: 1.1rem;
 }
 .iconbtn:hover { background: var(--surface-3); }
+
+/* Motion preferences. "full" never reduces; "reduce" always does;
+   "system" defers to the OS. 0.001ms keeps transition/animation end events firing. */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion="system"] *,
+  html[data-motion="system"] *::before,
+  html[data-motion="system"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
