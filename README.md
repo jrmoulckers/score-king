@@ -18,7 +18,8 @@ works fully offline, and can back itself up to an **Excel workbook in your OneDr
 - **Players, history & stats** are shared across every game — reusable players, a full game log,
   and a win‑rate leaderboard.
 - **Optional OneDrive Excel sync.** Automatic (and one‑click) backup to a real `.xlsx` you can open
-  in Excel, with one‑click restore. Auto‑backup is on by default, push‑only, and never interrupts
+  in Excel, with one‑click restore. Keep **multiple titled backups** in the folder (one per group or
+  occasion) and switch between them. Auto‑backup is on by default, push‑only, and never interrupts
   you. Uses your own free Azure app registration — *no secrets live in this repo.*
 - **Local JSON export/import** as a zero‑setup backup option.
 - **Dark / light** themes.
@@ -110,7 +111,7 @@ That's it — routing (`/<id>`), players, history, stats, and persistence all wo
 ## ☁️ OneDrive / Excel sync setup (optional)
 
 Sync is **opt‑in** — the app is fully usable offline without it. When enabled, each user signs in
-with **their own** Microsoft account and the app writes a `Score King.xlsx` to **their own**
+with **their own** Microsoft account and the app writes a `Main.xlsx` workbook to **their own**
 OneDrive. By default the file lives in a **sandboxed app folder** (`OneDrive → Apps → Score King`)
 that the app is the *only* thing able to read — it can't see the rest of your OneDrive. Power users
 can switch to a **custom folder** in Settings (which needs broader access — see below). There's a
@@ -118,6 +119,15 @@ single shared app registration; the client ID is **public** (for SPAs it isn't a
 comes from PKCE + the redirect‑URI allowlist), so end users never configure anything. They just open
 **Settings → Connect OneDrive**. Connecting briefly redirects the whole page to Microsoft to sign in,
 then returns you to Settings — there's no popup to allow or unblock.
+
+**Multiple titled backups.** The chosen folder is the source of truth: Score King treats every
+`.xlsx` workbook in it as a backup, so you can keep more than one — say one for the *Friday Night
+Crew* and one for *Family*. A backup's title is exactly what you type, saved as **`<Title>.xlsx`**
+(e.g. `Friday Night Crew.xlsx`) so it reads naturally in OneDrive and Excel. New connections start
+on **`Main.xlsx`**. In **Settings → Backups** you can add a new titled backup (a copy of your current
+scores), rename or delete one, and pick which backup is **active**. Switching the active backup loads
+its contents onto this device; everything below — the status bubble, **Sync now**, **Restore now**,
+and auto‑backup — always targets the active one.
 
 **Automatic backup is on by default.** Once you're connected, Score King quietly pushes a fresh
 backup a few seconds after you change anything (new game, saved round, finished game, edited player),
@@ -157,14 +167,18 @@ override with their own client ID under **Settings → Advanced**.
 
 ### How backup & restore behave
 
-- **Back up now** overwrites the remote `Score King.xlsx` with your current data (last‑write‑wins).
+- **Back up now** overwrites the **active** backup workbook with your current data (last‑write‑wins).
   If the file was deleted — or, in custom‑folder mode, the whole folder was deleted — the next
   backup **recreates the file (and folder)** automatically.
-- **Restore** always fetches the **latest** remote copy. The download bypasses the browser cache
-  (`cache: 'no-store'`), so a single Restore reflects edits you (or Excel) just made to the
-  workbook — no disconnect/reconnect needed.
+- **Restore** always fetches the **latest** remote copy of the active backup. The download bypasses
+  the browser cache (`cache: 'no-store'`), so a single Restore reflects edits you (or Excel) just
+  made to the workbook — no disconnect/reconnect needed.
 - If you press **Restore** but no backup exists yet, the app offers to **back up your current data**
   there instead, so you're never left in a dead end.
+- **Backups are independent save slots.** Adding a backup snapshots your current scores under a new
+  title and makes it active; your other backups are untouched. Auto‑backup keeps pushing to whichever
+  backup is active, so switching first (which loads that backup onto the device) keeps each slot
+  separate.
 
 ### Google Drive (future)
 

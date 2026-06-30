@@ -2,7 +2,15 @@
   import { onMount } from 'svelte';
   import { settings, markSynced, markRestored } from '../lib/stores/settings';
   import { link } from '../lib/router';
-  import { buildSnapshot, restoreSnapshot, getOneDrive } from '../lib/storage/sync';
+  import {
+    buildSnapshot,
+    restoreSnapshot,
+    getOneDrive,
+    DEFAULT_BACKUP_FILE,
+    fileNameForTitle,
+    titleFromFileName,
+  } from '../lib/storage/sync';
+  import type { BackupInfo } from '../lib/storage/sync';
   import { autoSyncStatus, markSyncSettled } from '../lib/storage/autosync';
   import { ONEDRIVE_CLIENT_ID } from '../lib/config';
   import { refreshGames } from '../lib/stores/games';
@@ -14,6 +22,16 @@
   let busy = $state(false);
   let signedIn = $state(false);
   let fileInput: HTMLInputElement;
+
+  // --- multiple backups ---
+  let backups = $state<BackupInfo[]>([]);
+  let loadingBackups = $state(false);
+  let backupBusy = $state(false);
+  let newTitle = $state('');
+  let renamingFile = $state<string | null>(null);
+  let renameTitle = $state('');
+
+  const activeFileName = $derived($settings.oneDriveBackupFile || DEFAULT_BACKUP_FILE);
 
   const configured = $derived(!!(override.trim() || ONEDRIVE_CLIENT_ID));
 
@@ -57,8 +75,8 @@
   const cleanPath = $derived(customPath.trim().replace(/^\/+|\/+$/g, ''));
   const locationLabel = $derived(
     folderMode === 'custom'
-      ? 'OneDrive / ' + (cleanPath ? cleanPath.replace(/\//g, ' / ') + ' / ' : '') + 'Score King.xlsx'
-      : 'OneDrive / Apps / Score King / Score King.xlsx',
+      ? 'OneDrive / ' + (cleanPath ? cleanPath.replace(/\//g, ' / ') + ' / ' : '') + activeFileName
+      : 'OneDrive / Apps / Score King / ' + activeFileName,
   );
   const prettyPath = $derived(locationLabel.replace(/ \/ /g, ' › '));
 
@@ -99,10 +117,185 @@
         sessionStorage.removeItem('sk_od_justConnected');
         showToast('Connected to OneDrive');
       }
+      // Detect the backups already sitting in the folder. Non-interactive so a stale
+      // token can't bounce the user to Microsoft just for opening Settings.
+      if (signedIn) void loadBackups(false);
     } catch {
       /* not signed in yet */
     }
   });
+
+  /** Build the on-screen list, always surfacing the active backup even if it isn't on OneDrive yet. */
+  function withActive(list: BackupInfo[]): BackupInfo[] {
+    if (list.some((b) => b.file === activeFileName)) return list;
+    return [
+      {
+        file: activeFileName,
+        title: titleFromFileName(activeFileName),
+        isDefault: activeFileName === DEFAULT_BACKUP_FILE,
+        modifiedAt: null,
+        size: null,
+      },
+      ...list,
+    ];
+  }
+
+  const displayBackups = $derived(withActive(backups));
+
+  async function loadBackups(interactive = false) {
+    if (!signedIn) return;
+    loadingBackups = true;
+    try {
+      const od = await getOneDrive();
+      backups = await od.listBackups({ interactive });
+    } catch (e) {
+      // A background refresh that needs re-auth fails quietly; only surface on a user action.
+      if (interactive) showToast(errMsg(e));
+    } finally {
+      loadingBackups = false;
+    }
+  }
+
+  function backupMeta(b: BackupInfo): string {
+    const when = b.modifiedAt ? 'Backed up ' + relativeTime(b.modifiedAt) : 'Not backed up yet';
+    return b.size != null ? `${when} · ${formatSize(b.size)}` : when;
+  }
+
+  function formatSize(n: number): string {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)} KB`;
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  /** Create a new titled backup from the current device data and make it active. */
+  async function addBackup() {
+    const title = newTitle.trim();
+    if (!title || backupBusy) return;
+    const file = fileNameForTitle(title);
+    if (displayBackups.some((b) => b.file === file)) {
+      showToast('A backup with that name already exists');
+      return;
+    }
+    backupBusy = true;
+    const prev = activeFileName;
+    try {
+      settings.update((s) => ({ ...s, oneDriveBackupFile: file }));
+      await performBackup();
+      newTitle = '';
+      await loadBackups(true);
+      showToast('Created backup “' + titleFromFileName(file) + '”');
+    } catch (e) {
+      settings.update((s) => ({ ...s, oneDriveBackupFile: prev }));
+      showToast(errMsg(e));
+    } finally {
+      backupBusy = false;
+    }
+  }
+
+  /** Switch the active backup, loading its contents onto this device. */
+  async function useBackup(b: BackupInfo) {
+    if (backupBusy || b.file === activeFileName) return;
+    if (
+      !confirm(
+        'Switch to “' +
+          b.title +
+          '”?\n\nThis loads that backup and replaces the data on this device. Your other backups are left untouched.',
+      )
+    )
+      return;
+    backupBusy = true;
+    const prev = activeFileName;
+    try {
+      settings.update((s) => ({ ...s, oneDriveBackupFile: b.file }));
+      const od = await getOneDrive();
+      const snap = await od.pull();
+      if (snap) {
+        await restoreSnapshot(snap);
+        await refreshPlayers();
+        await refreshGames();
+        markRestored(Date.now());
+      }
+      markSyncSettled();
+      await loadBackups(true);
+      showToast('Now using “' + b.title + '”');
+    } catch (e) {
+      settings.update((s) => ({ ...s, oneDriveBackupFile: prev }));
+      showToast(errMsg(e));
+    } finally {
+      backupBusy = false;
+    }
+  }
+
+  function startRename(b: BackupInfo) {
+    renamingFile = b.file;
+    renameTitle = b.title;
+  }
+
+  function cancelRename() {
+    renamingFile = null;
+    renameTitle = '';
+  }
+
+  async function commitRename(b: BackupInfo) {
+    const title = renameTitle.trim();
+    if (!title || backupBusy) return;
+    const newFile = fileNameForTitle(title);
+    if (newFile === b.file) {
+      cancelRename();
+      return;
+    }
+    if (displayBackups.some((x) => x.file === newFile)) {
+      showToast('A backup with that name already exists');
+      return;
+    }
+    backupBusy = true;
+    try {
+      const od = await getOneDrive();
+      const info = await od.renameBackup(b.file, title);
+      // The file name changed — keep pointing at it if it was the active backup.
+      if (b.file === activeFileName) {
+        settings.update((s) => ({ ...s, oneDriveBackupFile: info.file }));
+      }
+      cancelRename();
+      await loadBackups(true);
+      showToast('Renamed to “' + info.title + '”');
+    } catch (e) {
+      showToast(errMsg(e));
+    } finally {
+      backupBusy = false;
+    }
+  }
+
+  async function deleteBackup(b: BackupInfo) {
+    if (backupBusy) return;
+    if (
+      !confirm(
+        'Delete backup “' +
+          b.title +
+          '”?\nThe workbook will be removed from OneDrive.\nWARNING: This cannot be undone.',
+      )
+    )
+      return;
+    backupBusy = true;
+    try {
+      const od = await getOneDrive();
+      await od.removeBackup(b.file);
+      if (b.file === activeFileName) {
+        // Fall back to another remaining backup, or the default file.
+        const next = backups.find((x) => x.file !== b.file);
+        settings.update((s) => ({
+          ...s,
+          oneDriveBackupFile: next ? next.file : DEFAULT_BACKUP_FILE,
+        }));
+      }
+      await loadBackups(true);
+      showToast('Deleted backup “' + b.title + '”');
+    } catch (e) {
+      showToast(errMsg(e));
+    } finally {
+      backupBusy = false;
+    }
+  }
 
   function saveOverride() {
     settings.update((s) => ({ ...s, oneDriveClientId: override.trim() }));
@@ -134,6 +327,7 @@
     busy = true;
     try {
       await performBackup();
+      void loadBackups(false);
       showToast('Backed up to OneDrive');
     } catch (e) {
       showToast(errMsg(e));
@@ -304,6 +498,108 @@
           Pulls the latest backup from OneDrive and replaces the data on this device.
         </span>
       </div>
+
+      <hr class="sep" />
+
+      <div class="stack" style="gap: 10px">
+        <div class="row spread">
+          <div class="fieldlabel" style="margin: 0">Backups</div>
+          <button class="btn small ghost" onclick={() => loadBackups(true)} disabled={loadingBackups}>
+            {loadingBackups ? 'Refreshing…' : 'Refresh'}
+          </button>
+        </div>
+        <span class="muted sm">
+          Each backup is its own workbook in this folder — keep one per group or occasion. The active
+          one is what auto-sync, Sync now, and Restore now use.
+        </span>
+
+        <div class="bklist" role="list">
+          {#each displayBackups as b (b.file)}
+            {@const isActive = b.file === activeFileName}
+            <div class="bkrow" class:active={isActive} role="listitem">
+              {#if renamingFile === b.file}
+                <input
+                  class="bkrename"
+                  type="text"
+                  maxlength="60"
+                  bind:value={renameTitle}
+                  aria-label="Backup title"
+                  onkeydown={(e) => {
+                    if (e.key === 'Enter') commitRename(b);
+                    if (e.key === 'Escape') cancelRename();
+                  }}
+                />
+                <div class="bkactions">
+                  <button class="btn small" onclick={() => commitRename(b)} disabled={backupBusy}>
+                    Save
+                  </button>
+                  <button class="btn small ghost" onclick={cancelRename} disabled={backupBusy}>
+                    Cancel
+                  </button>
+                </div>
+              {:else}
+                <button
+                  class="bkmain"
+                  onclick={() => useBackup(b)}
+                  disabled={backupBusy || isActive}
+                  aria-pressed={isActive}
+                  title={isActive ? 'Active backup' : 'Switch to this backup'}
+                >
+                  <span class="bkmark" class:on={isActive} aria-hidden="true"></span>
+                  <span class="bkmeta">
+                    <span class="bktitle">
+                      <span class="bkname">{b.title}</span>
+                      {#if isActive}<span class="pill bkpill">Active</span>{/if}
+                      {#if b.isDefault}<span class="pill">Default</span>{/if}
+                    </span>
+                    <span class="muted sm">{backupMeta(b)}</span>
+                  </span>
+                </button>
+                <div class="bkactions">
+                  <button
+                    class="iconbtn bkicon"
+                    onclick={() => startRename(b)}
+                    disabled={backupBusy}
+                    title="Rename backup"
+                    aria-label={'Rename ' + b.title}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    class="iconbtn bkicon"
+                    onclick={() => deleteBackup(b)}
+                    disabled={backupBusy}
+                    title="Delete backup"
+                    aria-label={'Delete ' + b.title}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+
+        <form
+          class="bkadd row"
+          onsubmit={(e) => {
+            e.preventDefault();
+            addBackup();
+          }}
+        >
+          <input
+            class="bkadd-input"
+            type="text"
+            maxlength="60"
+            bind:value={newTitle}
+            placeholder="New backup title, e.g. Friday Night Crew"
+            aria-label="New backup title"
+          />
+          <button class="btn small" type="submit" disabled={backupBusy || !newTitle.trim()}>
+            Add backup
+          </button>
+        </form>
+      </div>
     {:else}
       <div class="muted sm">
         Sign in with your Microsoft account to back up your scores to OneDrive.
@@ -338,10 +634,10 @@
           <span class="optbody">
             <strong>Custom folder</strong>
             <span class="muted sm block">
-              Store the workbook anywhere you like. Score King will <strong>only</strong> read and
-              write to its own <code>Score King.xlsx</code> file. Microsoft can't limit access to a
-              single folder, so this grants the broader <code>Files.ReadWrite</code> permission to
-              your entire OneDrive.
+              Store your backups anywhere you like — Score King treats every
+              <code>.xlsx</code> workbook in this folder as a backup it can read and write.
+              Microsoft can't limit access to a single folder, so this grants the broader
+              <code>Files.ReadWrite</code> permission to your entire OneDrive.
             </span>
           </span>
         </label>
@@ -576,5 +872,107 @@
     font-size: 1.5rem;
     color: var(--muted);
     flex: none;
+  }
+
+  /* --- multiple backups --- */
+  .bklist {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .bkrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+  }
+  .bkrow.active {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, var(--surface-2));
+  }
+  .bkmain {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+  }
+  .bkmain:not(:disabled):hover {
+    background: var(--surface-3);
+  }
+  .bkmain:disabled {
+    cursor: default;
+  }
+  .bkmark {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid var(--muted);
+    box-sizing: border-box;
+  }
+  .bkmark.on {
+    border-color: var(--primary);
+    background: var(--primary);
+    box-shadow: inset 0 0 0 3px var(--surface);
+  }
+  .bkmeta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+  .bktitle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .bkname {
+    font-weight: 600;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .bkpill {
+    color: var(--primary);
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    background: color-mix(in srgb, var(--primary) 12%, var(--surface-2));
+  }
+  .bkactions {
+    display: flex;
+    gap: 4px;
+    flex: none;
+  }
+  .bkicon {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
+  .bkicon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .bkrename {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .bkadd {
+    gap: 8px;
+  }
+  .bkadd-input {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 </style>
