@@ -9,6 +9,7 @@
   import Stats from './pages/Stats.svelte';
   import Settings from './pages/Settings.svelte';
   import Accessibility from './pages/Accessibility.svelte';
+  import GameplaySettings from './pages/GameplaySettings.svelte';
   import GameType from './pages/GameType.svelte';
   import GamePlay from './pages/GamePlay.svelte';
   import NotFound from './pages/NotFound.svelte';
@@ -62,6 +63,8 @@
     <Settings />
   {:else if route.name === 'accessibility'}
     <Accessibility />
+  {:else if route.name === 'gameplay'}
+    <GameplaySettings />
   {:else if route.name === 'gametype'}
     <GameType type={route.params.type} />
   {:else if route.name === 'play'}

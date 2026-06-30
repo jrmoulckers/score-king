@@ -9,6 +9,7 @@
   import { refreshPlayers } from '../lib/stores/players';
   import { showToast } from '../lib/stores/toast';
   import { relativeTime } from '../lib/util';
+  import ExcelIcon from '../lib/components/ExcelIcon.svelte';
 
   let override = $state($settings.oneDriveClientId);
   let busy = $state(false);
@@ -219,6 +220,18 @@
 
 <h1>Settings</h1>
 
+<div class="section-title">Gameplay</div>
+<a class="card navrow row spread" href="/gameplay" use:link>
+  <span class="row" style="gap: 12px">
+    <span class="navico" aria-hidden="true">🎲</span>
+    <span class="navmeta">
+      <span class="navname">Gameplay</span>
+      <span class="muted sm">Keep screen awake, privacy peek-guard</span>
+    </span>
+  </span>
+  <span class="chev" aria-hidden="true">›</span>
+</a>
+
 <div class="section-title">Display & accessibility</div>
 <a class="card navrow row spread" href="/accessibility" use:link>
   <span class="row" style="gap: 12px">
@@ -268,7 +281,7 @@
       </label>
 
       <div class="pathchip" title={locationLabel}>
-        <span class="pathchip-ico" aria-hidden="true">📂</span>
+        <ExcelIcon size={18} />
         <code>{prettyPath}</code>
       </div>
 
@@ -354,7 +367,10 @@
           />
         {/if}
 
-        <div class="muted sm">📄 <code>{locationLabel}</code></div>
+        <div class="muted sm row" style="gap: 8px">
+          <ExcelIcon size={16} />
+          <code>{locationLabel}</code>
+        </div>
         <div class="muted sm">
           Changing this may ask you to approve the new permission the next time you back up.
         </div>
@@ -447,10 +463,6 @@
     border: 1px solid var(--border, rgba(127, 127, 127, 0.2));
     border-radius: 8px;
     background: var(--surface-2, rgba(127, 127, 127, 0.08));
-  }
-  .pathchip-ico {
-    flex: none;
-    font-size: 0.95rem;
   }
   .pathchip code {
     background: none;
