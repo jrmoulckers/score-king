@@ -12,6 +12,7 @@
   import GameplaySettings from './pages/GameplaySettings.svelte';
   import GameType from './pages/GameType.svelte';
   import GamePlay from './pages/GamePlay.svelte';
+  import LiveJoin from './pages/LiveJoin.svelte';
   import NotFound from './pages/NotFound.svelte';
   import SyncBubble from './lib/components/SyncBubble.svelte';
 
@@ -70,6 +71,10 @@
   {:else if route.name === 'play'}
     {#key route.params.id}
       <GamePlay id={route.params.id} />
+    {/key}
+  {:else if route.name === 'join'}
+    {#key route.params.code}
+      <LiveJoin code={route.params.code} />
     {/key}
   {:else}
     <NotFound />

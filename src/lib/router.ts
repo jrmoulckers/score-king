@@ -20,6 +20,11 @@ function toUrl(appPath: string): string {
   return BASE + clean;
 }
 
+/** Absolute, shareable URL for an app-relative path (includes origin + deploy base). */
+export function absoluteUrl(appPath: string): string {
+  return window.location.origin + toUrl(appPath);
+}
+
 export const pathStore = writable<string>(toAppPath(window.location.pathname));
 
 export function navigate(to: string) {
@@ -73,6 +78,7 @@ export type RouteName =
   | 'accessibility'
   | 'gameplay'
   | 'play'
+  | 'join'
   | 'gametype'
   | 'notfound';
 
@@ -103,6 +109,9 @@ export function parseRoute(path: string): Route {
   }
   if (segs[0] === 'play' && segs[1]) {
     return { name: 'play', params: { id: segs[1] } };
+  }
+  if (segs[0] === 'join' && segs[1]) {
+    return { name: 'join', params: { code: segs[1] } };
   }
   return { name: 'notfound', params: {} };
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import type { Game, Player, Round, RoundContext } from '../lib/types';
   import { resolveLower } from '../lib/types';
   import * as db from '../lib/storage/db';
@@ -17,13 +17,29 @@
   } from '../lib/stores/games';
   import { getModule } from '../lib/games/registry';
   import { computeTotals } from '../lib/scoring';
-  import { navigate, link } from '../lib/router';
+  import { navigate, link, absoluteUrl } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
-  import { relativeTime } from '../lib/util';
+  import { relativeTime, generateJoinCode } from '../lib/util';
   import { settings } from '../lib/stores/settings';
   import { enableWakeLock, disableWakeLock } from '../lib/wakelock';
   import Scoreboard from '../lib/components/Scoreboard.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
+  import LiveShareSheet from '../lib/components/LiveShareSheet.svelte';
+  import { get } from 'svelte/store';
+  import {
+    startHosting,
+    leaveSession,
+    publish,
+    runHostExclusive,
+    currentSelf,
+    isLiveSupported,
+    liveActive,
+    liveStatus,
+    liveParticipants,
+    liveCode,
+  } from '../lib/live/session';
+  import type { HostHandlers } from '../lib/live/session';
+  import type { LiveState, LiveIntent } from '../lib/live/protocol';
 
   let { id }: { id: string } = $props();
 
@@ -121,16 +137,22 @@
 
   async function saveRound() {
     if (!game || !module || !draft) return;
-    const ctx = buildCtx(rounds.length, computeTotals(rounds, game.playerIds));
     const snap = $state.snapshot(draft);
-    const err = module.validateRound(snap, ctx);
-    if (err) {
-      showToast(err);
-      return;
-    }
-    const deltas = module.scoreRound(snap, ctx);
-    await appendRound(game, snap, deltas);
-    await load();
+    const saved = await hostSerial(async () => {
+      if (!game || !module) return false;
+      const ctx = buildCtx(rounds.length, computeTotals(rounds, game.playerIds));
+      const err = module.validateRound(snap, ctx);
+      if (err) {
+        showToast(err);
+        return false;
+      }
+      const deltas = module.scoreRound(snap, ctx);
+      await appendRound(game, snap, deltas);
+      await load();
+      publish();
+      return true;
+    });
+    if (!saved) return;
     const newest = rounds[rounds.length - 1];
     if (newest) {
       justSavedId = newest.id;
@@ -151,38 +173,58 @@
   }
   async function saveEdit() {
     if (!game || !module || !editing) return;
-    const ctx = buildCtx(editing.index, totalsBefore(editing.index));
     const snap = $state.snapshot(editDraft);
-    const err = module.validateRound(snap, ctx);
-    if (err) {
-      showToast(err);
-      return;
-    }
-    const deltas = module.scoreRound(snap, ctx);
-    await updateRound(editing, snap, deltas);
-    await load();
+    const ed = editing;
+    await hostSerial(async () => {
+      if (!game || !module) return;
+      const ctx = buildCtx(ed.index, totalsBefore(ed.index));
+      const err = module.validateRound(snap, ctx);
+      if (err) {
+        showToast(err);
+        return;
+      }
+      const deltas = module.scoreRound(snap, ctx);
+      await updateRound(ed, snap, deltas);
+      await load();
+      publish();
+    });
   }
 
   async function del(r: Round) {
     if (!game) return;
     const gameSnap = $state.snapshot(game);
     const roundSnap = $state.snapshot(r);
-    await removeRound(r, game);
-    await load();
-    showActionToast(`Round ${r.index + 1} deleted`, 'Undo', async () => {
-      await restoreRound(gameSnap, roundSnap);
+    await hostSerial(async () => {
+      if (!game) return;
+      await removeRound(r, game);
       await load();
+      publish();
+    });
+    showActionToast(`Round ${r.index + 1} deleted`, 'Undo', async () => {
+      await hostSerial(async () => {
+        await restoreRound(gameSnap, roundSnap);
+        await load();
+        publish();
+      });
     });
   }
 
   async function doFinish() {
     if (!game) return;
-    game = await finishGame(game);
+    await hostSerial(async () => {
+      if (!game) return;
+      game = await finishGame(game);
+      publish();
+    });
   }
   async function doReopen() {
     if (!game) return;
-    game = await reopenGame(game);
-    resetDraft();
+    await hostSerial(async () => {
+      if (!game) return;
+      game = await reopenGame(game);
+      resetDraft();
+      publish();
+    });
   }
   async function playAgain() {
     if (!game) return;
@@ -208,6 +250,71 @@
   const winnerNames = $derived(
     (game?.winnerIds ?? []).map((wid) => plist.find((p) => p.id === wid)?.name ?? '?').join(' & '),
   );
+
+  // ── Live co-play (host-authoritative) ──────────────────────────────────
+  // The leader keeps using this very screen; the engine just mirrors the game
+  // to guests and feeds their round proposals back through the same store flow.
+  const liveSupported = isLiveSupported();
+  let sheetOpen = $state(false);
+  const liveLink = $derived($liveCode ? absoluteUrl(`/join/${$liveCode}`) : '');
+
+  // While hosting, route the host's own durable writes through the engine's serial queue
+  // so a guest's intent can't interleave with a local save on the non-atomic append/reindex.
+  function hostSerial<T>(fn: () => Promise<T>): Promise<T> {
+    return get(liveStatus) === 'hosting' ? runHostExclusive(fn) : fn();
+  }
+
+  function buildLiveState(): LiveState {
+    return {
+      game: $state.snapshot(game)!,
+      players: $state.snapshot(orderedPlayers),
+      rounds: $state.snapshot(rounds),
+      rev: 0,
+    };
+  }
+
+  async function applyLiveIntent(intent: LiveIntent): Promise<string | null> {
+    if (intent.kind !== 'record-round') return 'That action isn’t supported.';
+    if (!game || !module) return 'The game isn’t ready yet.';
+    if (game.status !== 'active') return 'This game has finished.';
+    if (!canAddRound) return `All ${maxR} rounds have been played.`;
+    const ctx = buildCtx(rounds.length, computeTotals(rounds, game.playerIds));
+    const err = module.validateRound(intent.input, ctx);
+    if (err) return err;
+    const deltas = module.scoreRound(intent.input, ctx);
+    await appendRound(game, intent.input, deltas);
+    await load();
+    return null;
+  }
+
+  async function startLive() {
+    if (!game) return;
+    const self = currentSelf('leader');
+    const handlers: HostHandlers = {
+      self,
+      buildState: buildLiveState,
+      applyIntent: applyLiveIntent,
+    };
+    try {
+      await startHosting(generateJoinCode(), handlers);
+      sheetOpen = true;
+    } catch {
+      showToast('Couldn’t start live play on this device.');
+    }
+  }
+
+  async function stopLive() {
+    await leaveSession();
+    sheetOpen = false;
+  }
+
+  $effect(() => {
+    if (!$liveActive) sheetOpen = false;
+  });
+
+  onDestroy(() => {
+    if (get(liveStatus) === 'hosting') void leaveSession();
+  });
 </script>
 
 {#if loading}
@@ -236,6 +343,25 @@
     </span>
     <button class="iconbtn" onclick={deleteGame} aria-label="Delete game" title="Delete game">🗑</button>
   </div>
+
+  {#if liveSupported && game.status === 'active'}
+    {#if $liveActive}
+      <button class="card row spread livebar" onclick={() => (sheetOpen = true)}>
+        <span class="row" style="gap: 10px">
+          <span class="livedot" aria-hidden="true"></span>
+          <span style="display: flex; flex-direction: column; text-align: left">
+            <strong>Live game</strong>
+            <span class="muted" style="font-size: 0.8rem">
+              {$liveParticipants.length} here · tap to share
+            </span>
+          </span>
+        </span>
+        <span class="pill">Share</span>
+      </button>
+    {:else}
+      <button class="btn ghost block playtogether" onclick={startLive}>👋 Play together</button>
+    {/if}
+  {/if}
 
   <Scoreboard players={orderedPlayers} {totals} lowerIsBetter={lower} winners={game.winnerIds ?? []} />
 
@@ -331,7 +457,38 @@
   {/if}
 {/if}
 
+{#if sheetOpen && $liveActive && $liveCode}
+  <LiveShareSheet
+    code={$liveCode}
+    link={liveLink}
+    count={$liveParticipants.length}
+    onclose={() => (sheetOpen = false)}
+    onend={stopLive}
+  />
+{/if}
+
 <style>
+  .playtogether {
+    margin-top: 12px;
+  }
+  .livebar {
+    margin-top: 12px;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+  }
+  .livebar:hover {
+    border-color: var(--primary);
+  }
+  .livedot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--good);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 22%, transparent);
+  }
   .banner {
     margin-top: 12px;
     font-size: 1.15rem;

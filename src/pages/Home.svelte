@@ -2,8 +2,17 @@
   import { MODULES, getModule } from '../lib/games/registry';
   import { games } from '../lib/stores/games';
   import { players } from '../lib/stores/players';
-  import { link } from '../lib/router';
-  import { relativeTime } from '../lib/util';
+  import { link, navigate } from '../lib/router';
+  import { relativeTime, normalizeJoinCode } from '../lib/util';
+  import { isLiveSupported } from '../lib/live/session';
+
+  const liveSupported = isLiveSupported();
+  let codeInput = $state('');
+  function submitJoin(e: Event) {
+    e.preventDefault();
+    const c = normalizeJoinCode(codeInput);
+    if (c) navigate(`/join/${c}`);
+  }
 
   const active = $derived($games.filter((g) => g.status === 'active'));
   const recent = $derived($games.filter((g) => g.status === 'finished').slice(0, 4));
@@ -46,6 +55,25 @@
   {/each}
 </div>
 
+{#if liveSupported}
+  <div class="section-title">Join a live game</div>
+  <form class="card row" onsubmit={submitJoin}>
+    <input
+      class="joincode"
+      type="text"
+      autocapitalize="characters"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      maxlength="8"
+      placeholder="Enter code"
+      aria-label="Live game join code"
+      bind:value={codeInput}
+    />
+    <button class="btn" type="submit" disabled={!codeInput.trim()}>Join</button>
+  </form>
+{/if}
+
 {#if recent.length}
   <div class="section-title">Recent results</div>
   <div class="stack">
@@ -80,5 +108,16 @@
   }
   .sm {
     font-size: 0.85rem;
+  }
+  .joincode {
+    flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+  }
+  .joincode::placeholder {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
   }
 </style>

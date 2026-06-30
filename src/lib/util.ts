@@ -112,6 +112,33 @@ export function generateHandle(taken: string[] = []): string {
   return `${make()} ${Math.floor(Math.random() * 90) + 10}`;
 }
 
+const JOIN_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no I, L, O, 0, 1 — unambiguous
+
+/** A short, unambiguous join code (e.g. "K7QP4") for a live session. */
+export function generateJoinCode(len = 5): string {
+  const a = JOIN_CODE_ALPHABET;
+  const pick = (n: number) => {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      return buf[0] % n;
+    }
+    return Math.floor(Math.random() * n);
+  };
+  let out = '';
+  for (let i = 0; i < len; i++) out += a[pick(a.length)];
+  return out;
+}
+
+/** Normalize user-typed codes: uppercase, strip non-alphabet chars (handles paste/typos). */
+export function normalizeJoinCode(raw: string): string {
+  return (raw || '')
+    .toUpperCase()
+    .split('')
+    .filter((c) => JOIN_CODE_ALPHABET.includes(c))
+    .join('');
+}
+
 export function initials(name: string): string {
   return name
     .split(/\s+/)

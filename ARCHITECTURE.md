@@ -101,6 +101,9 @@ A single `SessionTransport` interface (sibling to the storage `SyncProvider`):
 - **Relay first, peer-to-peer later** — the host-authoritative logic above it is unchanged when
   the transport swaps.
 - Members join by **code / QR / magic-link**.
+- First implementation is a **same-origin `BroadcastChannel`** transport (same-browser,
+  multi-tab) — zero infrastructure, yet it exercises the whole host-authoritative engine.
+  The relay drops in behind the same seam to add cross-device play.
 
 ### The relay — dumb and stateless on purpose
 
@@ -125,7 +128,8 @@ message bus.
 | 0 ✅    | Faithful JSON World + ETag conflict *detection* + versioned envelope                                        | none       |
 | 1 ✅    | Identity & World: Member model, claim / archive / promote, multiple members per device, active-member prefs | none       |
 | 2 ✅    | Per-entity merge (`updatedAt` + tombstones, union-merge) → async shared Worlds, multi-device-you            | none       |
-| 3       | Live co-play: `SessionTransport` + dumb relay + host-authoritative moves; join by code / QR / link; remote  | dumb relay |
+| 3a ✅   | Live co-play engine: host-authoritative `SessionTransport` seam + same-origin (`BroadcastChannel`) transport; join by code / link; record-round intents | none       |
+| 3b      | The dumb relay for cross-device play behind the same seam + join by QR — resolves a code, forwards messages, stores no game data | dumb relay |
 | later   | P2P transport (offline same-room) behind the same seam; field-level merge + "what changed elsewhere"        | none / relay |
 
 Identity and merge — the self-owned, local-first core — land **before** the relay, so the
