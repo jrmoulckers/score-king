@@ -32,12 +32,13 @@
           <span>
             <div>
               <strong>{m?.name ?? g.type}</strong>
-              {#if g.status === 'active'}<span class="pill">in progress</span>{/if}
+              {#if g.status === 'active'}<span class="pill">in progress</span>{:else if g.status === 'abandoned'}<span class="pill">🪦 abandoned</span>{/if}
             </div>
             <div class="muted sm">{names(g.playerIds)}</div>
             <div class="muted sm">
               {formatDateTime(g.finishedAt ?? g.createdAt)}
               {#if g.status === 'finished'} · 👑 {winners(g.winnerIds) || '—'}{/if}
+              {#if g.status === 'abandoned'} · no winner{/if}
             </div>
           </span>
         </span>

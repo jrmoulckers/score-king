@@ -127,6 +127,7 @@ export interface StatsResult {
   totals: {
     games: number;
     finishedGames: number;
+    abandonedGames: number;
     rounds: number;
     gameNights: number;
   };

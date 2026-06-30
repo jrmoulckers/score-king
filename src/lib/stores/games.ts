@@ -115,6 +115,25 @@ export async function reopenGame(game: Game): Promise<Game> {
   return updated;
 }
 
+/**
+ * Mark an unfinished game as abandoned — it was started but called off, so it
+ * has no winner and is excluded from win%/standings. Distinct from an open
+ * (active) game and from a finished one; reopen to resume it.
+ */
+export async function abandonGame(game: Game): Promise<Game> {
+  const rounds = await db.getRounds(game.id);
+  const updated: Game = {
+    ...game,
+    status: 'abandoned',
+    finishedAt: Date.now(),
+    winnerIds: undefined,
+    roundCount: rounds.length,
+  };
+  await db.putGame(updated);
+  await refreshGames();
+  return updated;
+}
+
 export async function removeGame(id: ID): Promise<void> {
   await db.deleteGame(id);
   await refreshGames();

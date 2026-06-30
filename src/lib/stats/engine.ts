@@ -103,7 +103,15 @@ export function computeStats(
   for (const p of data.players) if (canonical(p.id) === p.id) playerById.set(p.id, p);
 
   const typeOk = (g: Game) => !query.gameType || g.type === query.gameType;
-  const inWindow = data.games.filter((g) => typeOk(g) && inRange(gameTime(g), query.range));
+  const inRangeType = (g: Game) => typeOk(g) && inRange(gameTime(g), query.range);
+  // Abandoned games (started but called off) have no winner, so they never enter
+  // standings/wins; by default they're left out of volume counts too.
+  // `includeAbandoned` keeps them in the games total as a "started but not
+  // finished" tally — they still never become `finished`.
+  const abandoned = data.games.filter((g) => inRangeType(g) && g.status === 'abandoned');
+  const inWindow = data.games.filter(
+    (g) => inRangeType(g) && (query.includeAbandoned || g.status !== 'abandoned'),
+  );
   const finished = inWindow
     .filter((g) => g.status === 'finished')
     .sort((a, b) => gameTime(a) - gameTime(b) || a.createdAt - b.createdAt);
@@ -233,6 +241,7 @@ export function computeStats(
     totals: {
       games: inWindow.length,
       finishedGames: finished.length,
+      abandonedGames: abandoned.length,
       rounds: facts.reduce((n, f) => n + f.rounds.length, 0),
       gameNights: allNights.size,
     },

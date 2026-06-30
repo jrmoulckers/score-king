@@ -213,6 +213,36 @@ describe('computeStats — injected game-specific hook', () => {
   });
 });
 
+describe('computeStats — abandoned games', () => {
+  const players = [player('A'), player('B')];
+  const finished = mkGame({ id: 'f', playerIds: ['A', 'B'], winnerIds: ['A'], roundCount: 1, finishedAt: BASE });
+  const dead = mkGame({ id: 'x', playerIds: ['A', 'B'], status: 'abandoned', roundCount: 1, finishedAt: BASE + DAY });
+  const data = {
+    players,
+    games: [finished, dead],
+    rounds: [mkRound('f', 0, { A: 5, B: 1 }), mkRound('x', 0, { A: 9, B: 0 })],
+  };
+
+  it('excludes abandoned games from standings, wins and records by default', () => {
+    const res = computeStats(data);
+    expect(res.totals.finishedGames).toBe(1);
+    expect(res.totals.abandonedGames).toBe(1);
+    expect(res.totals.games).toBe(1); // abandoned left out of the volume count by default
+    expect(res.perPlayer['A'].played).toBe(1);
+    expect(res.perPlayer['A'].wins).toBe(1);
+    expect(res.records.find((r) => r.key === 'topRound')?.value).toBe('5'); // the abandoned 9 never counts
+  });
+
+  it('counts abandoned games in volume when includeAbandoned is set, but never as finished', () => {
+    const res = computeStats(data, { includeAbandoned: true });
+    expect(res.totals.games).toBe(2);
+    expect(res.totals.finishedGames).toBe(1);
+    expect(res.totals.abandonedGames).toBe(1);
+    expect(res.perPlayer['A'].played).toBe(1); // still excluded from standings
+    expect(res.records.find((r) => r.key === 'topRound')?.value).toBe('5');
+  });
+});
+
 describe('buildAliasMap', () => {
   it('resolves merge chains transitively', () => {
     const canonical = canonicalizer(

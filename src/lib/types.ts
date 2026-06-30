@@ -10,7 +10,7 @@ export interface Player {
   createdAt: number;
 }
 
-export type GameStatus = 'active' | 'finished';
+export type GameStatus = 'active' | 'finished' | 'abandoned';
 
 export interface Game {
   id: ID;
