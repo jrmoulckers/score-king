@@ -20,7 +20,7 @@ Score King is a local-first, installable PWA that keeps score for card & party g
 the math and bookkeeping disappear into the night. Each game is a self-contained,
 pluggable module (config, round entry, scoring, validation); players, history, and stats
 are shared across all of them. Everything saves instantly to the device (IndexedDB) and
-works fully offline, with optional, opt-in OneDrive Excel backup for people who want it.
+works fully offline, with optional, opt‑in OneDrive JSON backup for people who want it.
 Success looks like this: open the app, pick a game, enter rounds, glance at who's
 winning — and never think about the tool itself.
 

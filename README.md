@@ -4,7 +4,7 @@ A lightweight, local‑first **score‑keeping PWA** for card & party games — 
 Cribbage, Finding Friends, Skull King, and a generic tally for *any* game you can think of.
 
 Live at **[score.jrmoulckers.com](https://score.jrmoulckers.com)**. Installable on phone & desktop,
-works fully offline, and can back itself up to an **Excel workbook in your OneDrive**.
+works fully offline, and can back itself up to a **JSON file in your OneDrive**.
 
 ---
 
@@ -17,10 +17,12 @@ works fully offline, and can back itself up to an **Excel workbook in your OneDr
   validation). Adding a new game doesn't touch the rest of the app.
 - **Players, history & stats** are shared across every game — reusable players, a full game log,
   and a win‑rate leaderboard.
-- **Optional OneDrive Excel sync.** Automatic (and one‑click) backup to a real `.xlsx` you can open
-  in Excel, with one‑click restore. Keep **multiple titled backups** in the folder (one per group or
-  occasion) and switch between them. Auto‑backup is on by default, push‑only, and never interrupts
-  you. Uses your own free Azure app registration — *no secrets live in this repo.*
+- **Optional OneDrive sync.** Automatic (and one‑click) backup to a compact `.json` file in your own
+  OneDrive, with one‑click restore. Keep **multiple titled backups** in the folder (one per group or
+  occasion) and switch between them. Writes are guarded by an **ETag**, so a backup changed on another
+  device surfaces a conflict instead of being silently overwritten. Auto‑backup is on by default,
+  push‑only, and never interrupts you. Uses your own free Azure app registration — *no secrets live in
+  this repo.*
 - **Local JSON export/import** as a zero‑setup backup option.
 - **Dark / light** themes.
 
@@ -44,10 +46,9 @@ Spades (bags/nil), Cribbage (121 pegboard + skunks), Finding Friends / Zhao Peng
 - **[idb](https://github.com/jakearchibald/idb)** for IndexedDB
 - **[@azure/msal-browser](https://github.com/AzureAD/microsoft-authentication-library-for-js)** +
   **Microsoft Graph** for OneDrive sync
-- **[SheetJS / xlsx](https://sheetjs.com)** to read/write the Excel workbook
 - Hosted on **GitHub Pages** (static), deployed by GitHub Actions
 
-The MSAL and SheetJS libraries are **code‑split** and only downloaded when you actually use
+The MSAL library is **code‑split** and only downloaded when you actually use
 OneDrive sync, so the core app stays ~34 KB gzipped.
 
 ---
@@ -78,21 +79,21 @@ src/
     storage/
       db.ts           # IndexedDB (players, games, rounds)
       sync.ts         # Snapshot + SyncProvider interface
-      onedrive.ts     # MSAL + Graph + xlsx implementation
+      onedrive.ts     # MSAL + Graph (JSON backup) implementation
     stores/           # Svelte stores (games, players, settings, toast)
     types.ts          # GameModule contract + core types
     router.ts         # tiny history-based router
   pages/              # Home, GameType, GamePlay, History, Stats, Players, Settings
 ```
 
-**Data model** (mirrored in IndexedDB and the Excel sheets):
+**Data model** (mirrored in IndexedDB and the JSON backup):
 
 - `Players(id, name, color, createdAt)`
 - `Games(id, type, config, playerIds, status, createdAt, finishedAt, winnerIds)`
 - `Rounds(id, gameId, index, inputs, scores, createdAt)`
 - `Settings(key, value)` — your **portable preferences** (theme, OLED, text size, contrast,
   motion, colour-blind palette, keep-awake, privacy guard). Kept in `localStorage` on the
-  device and mirrored into the backup's `Settings` sheet so they travel with a restore.
+  device and included in the backup's `settings` object so they travel with a restore.
   Device-local OneDrive details (client-ID override, folder location, auto-backup toggle,
   connection flag, sync timestamps) are deliberately **not** backed up — see
   [What gets backed up](#what-gets-backed-up).
@@ -114,10 +115,10 @@ That's it — routing (`/<id>`), players, history, stats, and persistence all wo
 
 ---
 
-## ☁️ OneDrive / Excel sync setup (optional)
+## ☁️ OneDrive sync setup (optional)
 
 Sync is **opt‑in** — the app is fully usable offline without it. When enabled, each user signs in
-with **their own** Microsoft account and the app writes a `Main.xlsx` workbook to **their own**
+with **their own** Microsoft account and the app writes a `Main.json` file to **their own**
 OneDrive. By default the file lives in a **sandboxed app folder** (`OneDrive → Apps → Score King`)
 that the app is the *only* thing able to read — it can't see the rest of your OneDrive. Power users
 can switch to a **custom folder** in Settings (which needs broader access — see below). There's a
@@ -127,10 +128,10 @@ comes from PKCE + the redirect‑URI allowlist), so end users never configure an
 then returns you to Settings — there's no popup to allow or unblock.
 
 **Multiple titled backups.** The chosen folder is the source of truth: Score King treats every
-`.xlsx` workbook in it as a backup, so you can keep more than one — say one for the *Friday Night
-Crew* and one for *Family*. A backup's title is exactly what you type, saved as **`<Title>.xlsx`**
-(e.g. `Friday Night Crew.xlsx`) so it reads naturally in OneDrive and Excel. New connections start
-on **`Main.xlsx`**. In **Settings → Backups** you can add a new titled backup (a copy of your current
+`.json` file in it as a backup, so you can keep more than one — say one for the *Friday Night
+Crew* and one for *Family*. A backup's title is exactly what you type, saved as **`<Title>.json`**
+(e.g. `Friday Night Crew.json`) so it reads naturally in OneDrive. New connections start
+on **`Main.json`**. In **Settings → Backups** you can add a new titled backup (a copy of your current
 scores), rename or delete one, and pick which backup is **active**. Switching the active backup loads
 its contents onto this device; everything below — the status bubble, **Sync now**, **Restore now**,
 and auto‑backup — always targets the active one.
@@ -146,8 +147,8 @@ Automatically back up changes**; **Sync now** and **Restore now** keep working r
 A small **status bubble** in the header — just left of the settings cog — shows where your backup
 stands at a glance: a quiet dot when everything's synced, _"Syncing…"_ (with a translucent progress
 fill washing across the bubble if an upload runs long, then a green _"Synced!"_), or a _"Pending"_ /
-_"Offline"_ nudge when it needs attention. Tap it for a little pop and a jump to the OneDrive
-settings.
+_"Offline"_ / _"Conflict"_ nudge when it needs attention. Tap it for a little pop and a jump to the
+OneDrive settings.
 
 ### One‑time developer setup (register the shared app)
 
@@ -167,36 +168,45 @@ settings.
 After that, **Settings → Connect OneDrive** is one click for everyone. Power users / forks can
 override with their own client ID under **Settings → Advanced**.
 
-> The workbook has `Players`, `Games`, `Rounds`, `RoundScores`, and `Settings` sheets. The app
-> treats local data as the source of truth during play and syncs the whole snapshot
-> automatically (debounced) — or on demand via **Back up now**.
+> Each backup is a single JSON file: a small envelope (`schema`, `version`, `exportedAt`) wrapping
+> the `players`, `games`, `rounds`, and `settings` it contains. The app treats local data as the
+> source of truth during play and syncs the whole snapshot automatically (debounced) — or on demand
+> via **Sync now**.
 
 ### How backup & restore behave
 
-- **Back up now** overwrites the **active** backup workbook with your current data (last‑write‑wins).
-  If the file was deleted — or, in custom‑folder mode, the whole folder was deleted — the next
-  backup **recreates the file (and folder)** automatically.
+- **Sync now** writes your current data to the **active** backup. The write is **conditional on an
+  ETag**: if the file changed on another device since this one last synced, the app stops and asks
+  whether to **load the other version** or **overwrite** it — so a concurrent edit is never silently
+  lost. The first write of a connection (no ETag baseline yet) is unconditional. If the file was
+  deleted — or, in custom‑folder mode, the whole folder was deleted — the next backup **recreates the
+  file (and folder)** automatically.
 - **Restore** always fetches the **latest** remote copy of the active backup. The download bypasses
-  the browser cache (`cache: 'no-store'`), so a single Restore reflects edits you (or Excel) just
-  made to the workbook — no disconnect/reconnect needed.
+  the browser cache (`cache: 'no-store'`), so a single Restore reflects the most recent remote edit —
+  no disconnect/reconnect needed.
 - If you press **Restore** but no backup exists yet, the app offers to **back up your current data**
   there instead, so you're never left in a dead end.
 - **Backups are independent save slots.** Adding a backup snapshots your current scores under a new
   title and makes it active; your other backups are untouched. Auto‑backup keeps pushing to whichever
   backup is active, so switching first (which loads that backup onto the device) keeps each slot
   separate.
+- **Conflicts pause auto‑backup, never clobber.** If automatic backup meets a file that changed
+  elsewhere, the status bubble switches to a **conflict** state and auto‑pushing stops until you
+  resolve it from **Settings** (load the other version, or overwrite) — your local edits stay safe on
+  the device meanwhile.
 
 ### What gets backed up
 
 A backup carries your game data **and** your portable preferences — theme, OLED, text size, high
-contrast, motion, colour‑blind palette, keep‑awake, and privacy guard — in the `Settings` sheet, so
+contrast, motion, colour‑blind palette, keep‑awake, and privacy guard — in the `settings` object, so
 restoring on a new device brings your accessibility/display setup along. The local JSON
 export/import covers the same set.
 
 Deliberately **left out**, to avoid dead or conflicting state on another device: the OneDrive
-client‑ID override, the backup file's folder location, the auto‑backup toggle, the "connected" flag,
-and the last‑sync/last‑restore timestamps. (Restore is also defensive — it only ever applies the
-portable keys, so even a hand‑edited workbook can't clobber this device's connection.)
+client‑ID override, the backup file's folder location, the active backup file and its ETag, the
+auto‑backup toggle, the "connected" flag, and the last‑sync/last‑restore timestamps. (Restore is also
+defensive — it only ever applies the portable keys, and a file that isn't a recognizable Score King
+backup is ignored, so neither a hand‑edited nor a foreign file can clobber this device.)
 
 > **Adding a setting?** Categorize it in [`src/lib/stores/settings.ts`](src/lib/stores/settings.ts):
 > add portable user preferences to `PORTABLE_SETTING_KEYS` (so they're included in the backup) and

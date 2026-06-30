@@ -1,7 +1,7 @@
 import { get, writable } from 'svelte/store';
-import { settings, markSynced, getBackupSettings } from '../stores/settings';
+import { settings, markSynced, getBackupSettings, setActiveBackupEtag } from '../stores/settings';
 import { dataVersion } from './changes';
-import { buildSnapshot, getOneDrive, InteractionRequiredError } from './sync';
+import { buildSnapshot, getOneDrive, ConflictError, InteractionRequiredError } from './sync';
 import type { SyncProvider } from './sync';
 
 export type AutoSyncStatus =
@@ -10,6 +10,7 @@ export type AutoSyncStatus =
   | 'synced'
   | 'pending'
   | 'offline'
+  | 'conflict'
   | 'error';
 
 /** Live status for the Settings indicator. */
@@ -21,6 +22,7 @@ const DEBOUNCE_MS = 2500;
 let started = false;
 let dirty = false; // local changes awaiting upload
 let pushing = false; // an upload is in flight
+let conflicted = false; // remote diverged — hold auto-pushes until the user resolves
 let timer: ReturnType<typeof setTimeout> | undefined;
 let lastVersion = 0;
 let wasActive = false;
@@ -61,7 +63,9 @@ function schedule(): void {
 
 function onLocalChange(): void {
   dirty = true;
-  if (!active()) return;
+  // While a conflict is unresolved we keep recording edits locally but never schedule a
+  // push — the user must pick a side first (which clears `conflicted`).
+  if (!active() || conflicted) return;
   if (!isOnline()) {
     autoSyncStatus.set('offline');
     return;
@@ -73,7 +77,7 @@ async function run(): Promise<void> {
   cancelTimer();
   // `active()` gates loading the (heavy) OneDrive provider: a user who never
   // connected never pulls MSAL in just to back up.
-  if (pushing || !dirty || !active()) return;
+  if (pushing || !dirty || !active() || conflicted) return;
   if (!isOnline()) {
     autoSyncStatus.set('offline');
     return;
@@ -102,8 +106,12 @@ async function run(): Promise<void> {
   dirty = false; // claim current changes; edits during upload re-set this
   autoSyncStatus.set('syncing');
   try {
-    await od.push(await buildSnapshot(), { interactive: false });
+    const { etag } = await od.push(await buildSnapshot(), {
+      interactive: false,
+      baseEtag: get(settings).oneDriveBackupEtag || null,
+    });
     markSynced(Date.now());
+    setActiveBackupEtag(etag); // remember the new version for the next conditional write
     if (dirty) {
       schedule(); // more edits arrived mid-upload
     } else {
@@ -111,7 +119,12 @@ async function run(): Promise<void> {
     }
   } catch (e) {
     dirty = true; // keep the changes pending
-    if (e instanceof InteractionRequiredError) {
+    if (e instanceof ConflictError) {
+      // The remote backup changed under us (another device). Do NOT clobber it in the
+      // background — surface a conflict and stop auto-pushing until the user resolves it.
+      conflicted = true;
+      autoSyncStatus.set('conflict');
+    } else if (e instanceof InteractionRequiredError) {
       // Silent token failed — must NOT redirect in the background. Wait for the
       // user to reconnect, or for the next data change / online event.
       autoSyncStatus.set('pending');
@@ -170,6 +183,7 @@ export function startAutoSync(): void {
         if (dirty) schedule(); // turned on / just connected with changes waiting
       } else {
         cancelTimer(); // turned off or disconnected — stop automatic uploads
+        conflicted = false; // a fresh connection starts without a stale conflict
         autoSyncStatus.set('idle');
       }
     }
@@ -182,10 +196,12 @@ export function startAutoSync(): void {
 /**
  * Clear the pending-changes marker (and reflect success) without scheduling a
  * push. Call after a manual "Back up now" or a Restore so the controller doesn't
- * re-upload state that is already — or freshly — in sync.
+ * re-upload state that is already — or freshly — in sync. Also clears any conflict
+ * flag, since a manual back-up/restore is how the user resolves one.
  */
 export function markSyncSettled(): void {
   dirty = false;
+  conflicted = false;
   cancelTimer();
   autoSyncStatus.set('synced');
 }

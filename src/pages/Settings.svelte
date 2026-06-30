@@ -1,14 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { settings, markSynced, markRestored } from '../lib/stores/settings';
+  import { settings, markSynced, markRestored, setActiveBackupEtag } from '../lib/stores/settings';
   import { link } from '../lib/router';
   import {
     buildSnapshot,
     restoreSnapshot,
+    serializeSnapshot,
+    deserializeSnapshot,
     getOneDrive,
     DEFAULT_BACKUP_FILE,
     fileNameForTitle,
     titleFromFileName,
+    ConflictError,
   } from '../lib/storage/sync';
   import type { BackupInfo } from '../lib/storage/sync';
   import { autoSyncStatus, markSyncSettled } from '../lib/storage/autosync';
@@ -17,7 +20,7 @@
   import { refreshPlayers } from '../lib/stores/players';
   import { showToast } from '../lib/stores/toast';
   import { relativeTime } from '../lib/util';
-  import ExcelIcon from '../lib/components/ExcelIcon.svelte';
+  import JsonIcon from '../lib/components/JsonIcon.svelte';
 
   let override = $state($settings.oneDriveClientId);
   let busy = $state(false);
@@ -39,7 +42,9 @@
   const dotClass = $derived(
     $autoSyncStatus === 'syncing'
       ? 'busy'
-      : $autoSyncStatus === 'pending' || $autoSyncStatus === 'error'
+      : $autoSyncStatus === 'pending' ||
+          $autoSyncStatus === 'error' ||
+          $autoSyncStatus === 'conflict'
         ? 'warn'
         : $autoSyncStatus === 'offline'
           ? 'off'
@@ -51,15 +56,17 @@
   const backupText = $derived(
     $autoSyncStatus === 'syncing'
       ? 'Syncing…'
-      : $autoSyncStatus === 'pending'
-        ? 'Sync pending — reconnect to OneDrive'
-        : $autoSyncStatus === 'offline'
-          ? 'Offline — changes will back up when you reconnect'
-          : $autoSyncStatus === 'error'
-            ? 'Sync failed — will retry shortly'
-            : $settings.lastSync
-              ? 'Synced · Backed up ' + relativeTime($settings.lastSync)
-              : 'Not backed up yet',
+      : $autoSyncStatus === 'conflict'
+        ? 'Backup changed on another device — tap Resolve'
+        : $autoSyncStatus === 'pending'
+          ? 'Sync pending — reconnect to OneDrive'
+          : $autoSyncStatus === 'offline'
+            ? 'Offline — changes will back up when you reconnect'
+            : $autoSyncStatus === 'error'
+              ? 'Sync failed — will retry shortly'
+              : $settings.lastSync
+                ? 'Synced · Backed up ' + relativeTime($settings.lastSync)
+                : 'Not backed up yet',
   );
 
   // Restore is paired with backup but never shows a "not yet" state: connecting
@@ -136,6 +143,7 @@
         isDefault: activeFileName === DEFAULT_BACKUP_FILE,
         modifiedAt: null,
         size: null,
+        etag: null,
       },
       ...list,
     ];
@@ -179,14 +187,16 @@
     }
     backupBusy = true;
     const prev = activeFileName;
+    const prevEtag = $settings.oneDriveBackupEtag;
     try {
-      settings.update((s) => ({ ...s, oneDriveBackupFile: file }));
-      await performBackup();
+      // New file: no eTag baseline yet, and 'create' refuses to clobber a same-named file.
+      settings.update((s) => ({ ...s, oneDriveBackupFile: file, oneDriveBackupEtag: '' }));
+      await performBackup({ mode: 'create' });
       newTitle = '';
       await loadBackups(true);
       showToast('Created backup “' + titleFromFileName(file) + '”');
     } catch (e) {
-      settings.update((s) => ({ ...s, oneDriveBackupFile: prev }));
+      settings.update((s) => ({ ...s, oneDriveBackupFile: prev, oneDriveBackupEtag: prevEtag }));
       showToast(errMsg(e));
     } finally {
       backupBusy = false;
@@ -206,21 +216,25 @@
       return;
     backupBusy = true;
     const prev = activeFileName;
+    const prevEtag = $settings.oneDriveBackupEtag;
     try {
-      settings.update((s) => ({ ...s, oneDriveBackupFile: b.file }));
+      settings.update((s) => ({ ...s, oneDriveBackupFile: b.file, oneDriveBackupEtag: '' }));
       const od = await getOneDrive();
-      const snap = await od.pull();
-      if (snap) {
-        await restoreSnapshot(snap);
+      const pulled = await od.pull();
+      if (pulled) {
+        await restoreSnapshot(pulled.snapshot);
         await refreshPlayers();
         await refreshGames();
         markRestored(Date.now());
+        setActiveBackupEtag(pulled.etag);
+      } else {
+        setActiveBackupEtag(null);
       }
       markSyncSettled();
       await loadBackups(true);
       showToast('Now using “' + b.title + '”');
     } catch (e) {
-      settings.update((s) => ({ ...s, oneDriveBackupFile: prev }));
+      settings.update((s) => ({ ...s, oneDriveBackupFile: prev, oneDriveBackupEtag: prevEtag }));
       showToast(errMsg(e));
     } finally {
       backupBusy = false;
@@ -256,6 +270,7 @@
       // The file name changed — keep pointing at it if it was the active backup.
       if (b.file === activeFileName) {
         settings.update((s) => ({ ...s, oneDriveBackupFile: info.file }));
+        setActiveBackupEtag(info.etag);
       }
       cancelRename();
       await loadBackups(true);
@@ -273,7 +288,7 @@
       !confirm(
         'Delete backup “' +
           b.title +
-          '”?\nThe workbook will be removed from OneDrive.\nWARNING: This cannot be undone.',
+          '”?\nThe backup file will be removed from OneDrive.\nWARNING: This cannot be undone.',
       )
     )
       return;
@@ -287,6 +302,7 @@
         settings.update((s) => ({
           ...s,
           oneDriveBackupFile: next ? next.file : DEFAULT_BACKUP_FILE,
+          oneDriveBackupEtag: next?.etag ?? '',
         }));
       }
       await loadBackups(true);
@@ -316,11 +332,17 @@
     }
   }
 
-  async function performBackup() {
+  async function performBackup(opts: { mode?: 'create' | 'update' } = {}) {
     const od = await getOneDrive();
-    await od.push(await buildSnapshot());
+    const mode = opts.mode ?? 'update';
+    const { etag } = await od.push(await buildSnapshot(), {
+      mode,
+      // Update writes are conditional on our last-known eTag; a brand-new 'create' has none.
+      baseEtag: mode === 'update' ? $settings.oneDriveBackupEtag || null : null,
+    });
     signedIn = od.isSignedIn();
     markSynced(Date.now());
+    setActiveBackupEtag(etag);
     markSyncSettled();
   }
 
@@ -331,7 +353,58 @@
       void loadBackups(false);
       showToast('Backed up to OneDrive');
     } catch (e) {
+      if (e instanceof ConflictError) {
+        await resolveConflict();
+      } else {
+        showToast(errMsg(e));
+      }
+    } finally {
+      busy = false;
+    }
+  }
+
+  /**
+   * The active backup changed on another device since our last sync. Let the user pick a
+   * side: load the OneDrive copy (replacing local data) or overwrite it with this device's.
+   */
+  async function resolveConflict() {
+    const loadTheirs = confirm(
+      'This backup was changed on another device since you last synced here.\n\n' +
+        'OK — Load the OneDrive version (replaces the data on this device).\n' +
+        'Cancel — Overwrite OneDrive with this device’s data.',
+    );
+    try {
+      const od = await getOneDrive();
+      if (loadTheirs) {
+        const pulled = await od.pull();
+        if (pulled) {
+          await restoreSnapshot(pulled.snapshot);
+          await refreshPlayers();
+          await refreshGames();
+          markRestored(Date.now());
+          setActiveBackupEtag(pulled.etag);
+        }
+        markSyncSettled();
+        showToast('Loaded the version from OneDrive');
+      } else {
+        // Force the overwrite with an unconditional write (no baseEtag).
+        const { etag } = await od.push(await buildSnapshot(), { baseEtag: null });
+        signedIn = od.isSignedIn();
+        markSynced(Date.now());
+        setActiveBackupEtag(etag);
+        markSyncSettled();
+        showToast('Backed up to OneDrive');
+      }
+      void loadBackups(false);
+    } catch (e) {
       showToast(errMsg(e));
+    }
+  }
+
+  async function resolveNow() {
+    busy = true;
+    try {
+      await resolveConflict();
     } finally {
       busy = false;
     }
@@ -347,8 +420,8 @@
     busy = true;
     try {
       const od = await getOneDrive();
-      const snap = await od.pull();
-      if (!snap) {
+      const pulled = await od.pull();
+      if (!pulled) {
         // The file is missing on OneDrive (never created, or deleted). We're still connected —
         // offer to create the backup from local data instead of leaving the user stuck.
         if (confirm('No backup found in OneDrive. Back up your current data there now?')) {
@@ -359,10 +432,11 @@
         }
         return;
       }
-      await restoreSnapshot(snap);
+      await restoreSnapshot(pulled.snapshot);
       await refreshPlayers();
       await refreshGames();
       markRestored(Date.now());
+      setActiveBackupEtag(pulled.etag);
       markSyncSettled();
       showToast('Restored from OneDrive');
     } catch (e) {
@@ -386,8 +460,9 @@
   }
 
   async function exportJson() {
-    const snap = await buildSnapshot();
-    const blob = new Blob([JSON.stringify(snap, null, 2)], { type: 'application/json' });
+    const blob = new Blob([serializeSnapshot(await buildSnapshot())], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -400,7 +475,11 @@
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
     try {
-      const snap = JSON.parse(await file.text());
+      const snap = deserializeSnapshot(await file.text());
+      if (!snap) {
+        showToast('Invalid backup file');
+        return;
+      }
       if (!confirm('Replace local data with this file?')) return;
       await restoreSnapshot(snap);
       await refreshPlayers();
@@ -438,7 +517,7 @@
   <span class="chev" aria-hidden="true">›</span>
 </a>
 
-<div class="section-title">OneDrive backup (Excel)</div>
+<div class="section-title">OneDrive backup</div>
 <div class="card stack">
   {#if !configured}
     <div class="muted sm">
@@ -475,7 +554,7 @@
       </label>
 
       <div class="pathchip" title={locationLabel}>
-        <ExcelIcon size={18} />
+        <JsonIcon size={18} />
         <code>{prettyPath}</code>
       </div>
 
@@ -486,7 +565,11 @@
           <span class="dot {dotClass}"></span>
           <span class="sm">{backupText}</span>
         </span>
-        <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
+        {#if $autoSyncStatus === 'conflict'}
+          <button class="btn small primary" onclick={resolveNow} disabled={busy}>Resolve</button>
+        {:else}
+          <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
+        {/if}
       </div>
 
       <div class="syncrow stack" style="gap: 6px">
@@ -522,7 +605,7 @@
           </button>
         </div>
         <span class="muted sm">
-          Each backup is its own workbook in this folder — keep one per group or occasion. The active
+          Each backup is its own JSON file in this folder — keep one per group or occasion. The active
           one is what auto-sync, Sync now, and Restore now use.
         </span>
 
@@ -648,7 +731,7 @@
             <strong>Custom folder</strong>
             <span class="muted sm block">
               Store your backups anywhere you like — Score King treats every
-              <code>.xlsx</code> workbook in this folder as a backup it can read and write.
+              <code>.json</code> file in this folder as a backup it can read and write.
               Microsoft can't limit access to a single folder, so this grants the broader
               <code>Files.ReadWrite</code> permission to your entire OneDrive.
             </span>
@@ -664,7 +747,7 @@
         {/if}
 
         <div class="muted sm row" style="gap: 8px">
-          <ExcelIcon size={16} />
+          <JsonIcon size={16} />
           <code>{locationLabel}</code>
         </div>
         <div class="muted sm">
@@ -711,7 +794,7 @@
 <div class="section-title">About</div>
 <div class="card muted sm">
   Score King · a local-first scorekeeping PWA. Your data lives on this device and, when you connect
-  it, your own OneDrive Excel workbook.
+  it, a JSON backup in your own OneDrive.
 </div>
 
 <style>
