@@ -43,6 +43,8 @@ export interface Settings {
   oneDriveCustomPath: string;
   /** File name of the active backup within the configured folder (the sync target). */
   oneDriveBackupFile: string;
+  /** OneDrive eTag of the active backup, for optimistic-concurrency writes (device-local). */
+  oneDriveBackupEtag: string;
   autoSync: boolean;
   oneDriveConnected: boolean;
   lastSync: number | null;
@@ -71,16 +73,18 @@ export const PORTABLE_SETTING_KEYS = [
 ] as const;
 
 /**
- * Settings intentionally kept OUT of the backup: the OneDrive client-ID override,
- * the backup file's folder location, the auto-backup toggle, the "connected" flag,
- * and the last-sync/last-restore stamps. Backing these up risks dead state on
- * restore (e.g. a custom folder path that doesn't exist on the new device, or a
- * "connected" flag for an account this device isn't signed into).
+ * Settings intentionally kept OUT of the backup: the OneDrive client-ID override, the
+ * backup file's folder location, the active backup file and its eTag, the auto-backup
+ * toggle, the "connected" flag, and the last-sync/last-restore stamps. Backing these up
+ * risks dead state on restore (e.g. a custom folder path or active file that doesn't exist
+ * on the new device, or a "connected" flag for an account this device isn't signed into).
  */
 export const LOCAL_SETTING_KEYS = [
   'oneDriveClientId',
   'oneDriveFolderMode',
   'oneDriveCustomPath',
+  'oneDriveBackupFile',
+  'oneDriveBackupEtag',
   'autoSync',
   'oneDriveConnected',
   'lastSync',
@@ -118,7 +122,8 @@ const defaults: Settings = {
   oneDriveClientId: '',
   oneDriveFolderMode: 'app',
   oneDriveCustomPath: '',
-  oneDriveBackupFile: 'Main.xlsx',
+  oneDriveBackupFile: 'Main.json',
+  oneDriveBackupEtag: '',
   autoSync: true,
   oneDriveConnected: false,
   lastSync: null,
@@ -127,7 +132,14 @@ const defaults: Settings = {
 
 function load(): Settings {
   try {
-    return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+    const merged = { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+    // Clean break from the old Excel format: any non-.json active file (e.g. a "Main.xlsx"
+    // persisted by a previous version) is reset to the JSON default, and its stale eTag cleared.
+    if (!/\.json$/i.test(merged.oneDriveBackupFile || '')) {
+      merged.oneDriveBackupFile = 'Main.json';
+      merged.oneDriveBackupEtag = '';
+    }
+    return merged;
   } catch {
     return defaults;
   }
@@ -164,6 +176,14 @@ export function markSynced(ts: number) {
 
 export function markRestored(ts: number) {
   settings.update((s) => ({ ...s, lastRestore: ts }));
+}
+
+/** Remember the active backup's OneDrive eTag (device-local) for the next conditional write. */
+export function setActiveBackupEtag(etag: string | null) {
+  settings.update((s) => {
+    const next = etag ?? '';
+    return s.oneDriveBackupEtag === next ? s : { ...s, oneDriveBackupEtag: next };
+  });
 }
 
 /** The portable subset of the current settings, ready to embed in a backup. */

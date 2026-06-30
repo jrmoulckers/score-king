@@ -14,7 +14,7 @@
   const tone = $derived(
     status === 'syncing'
       ? 'busy'
-      : status === 'pending' || status === 'error'
+      : status === 'pending' || status === 'error' || status === 'conflict'
         ? 'warn'
         : status === 'offline'
           ? 'off'
@@ -29,30 +29,34 @@
       ? 'Syncing…'
       : status === 'synced'
         ? 'Synced!'
-        : status === 'pending'
-          ? 'Pending'
-          : status === 'offline'
-            ? 'Offline'
-            : status === 'error'
-              ? 'Retrying…'
-              : $settings.lastSync
-                ? 'Backed up'
-                : 'Not backed up',
+        : status === 'conflict'
+          ? 'Conflict'
+          : status === 'pending'
+            ? 'Pending'
+            : status === 'offline'
+              ? 'Offline'
+              : status === 'error'
+                ? 'Retrying…'
+                : $settings.lastSync
+                  ? 'Backed up'
+                  : 'Not backed up',
   );
 
   // Full description for the tooltip / screen readers.
   const fullLabel = $derived(
     status === 'syncing'
       ? 'Backing up to OneDrive…'
-      : status === 'pending'
-        ? 'Sync pending — reconnect to OneDrive'
-        : status === 'offline'
-          ? 'Offline — changes will back up when you reconnect'
-          : status === 'error'
-            ? 'Sync failed — will retry shortly'
-            : $settings.lastSync
-              ? 'Backed up · ' + relativeTime($settings.lastSync)
-              : 'Not backed up yet',
+      : status === 'conflict'
+        ? 'Backup changed on another device — tap to resolve'
+        : status === 'pending'
+          ? 'Sync pending — reconnect to OneDrive'
+          : status === 'offline'
+            ? 'Offline — changes will back up when you reconnect'
+            : status === 'error'
+              ? 'Sync failed — will retry shortly'
+              : $settings.lastSync
+                ? 'Backed up · ' + relativeTime($settings.lastSync)
+                : 'Not backed up yet',
   );
 
   // --- progress fill (slow >1s syncs only); never carries into the synced state ---
@@ -70,6 +74,7 @@
       status === 'pending' ||
       status === 'offline' ||
       status === 'error' ||
+      status === 'conflict' ||
       stickySynced,
   );
 
