@@ -19,8 +19,9 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
   and a win‑rate leaderboard.
 - **Optional OneDrive sync.** Automatic (and one‑click) backup to a compact `.json` file in your own
   OneDrive, with one‑click restore. Keep **multiple titled backups** in the folder (one per group or
-  occasion) and switch between them. Writes are guarded by an **ETag**, so a backup changed on another
-  device surfaces a conflict instead of being silently overwritten. Auto‑backup is on by default,
+  occasion) and switch between them. Writes are guarded by an **ETag** and reconciled by a **per‑entity
+  merge** (newest edit wins per player, game, and round), so two devices that change different things
+  combine cleanly instead of one silently overwriting the other. Auto‑backup is on by default,
   push‑only, and never interrupts you. Uses your own free Azure app registration — *no secrets live in
   this repo.*
 - **Local JSON export/import** as a zero‑setup backup option.
@@ -179,9 +180,12 @@ override with their own client ID under **Settings → Advanced**.
 ### How backup & restore behave
 
 - **Sync now** writes your current data to the **active** backup. The write is **conditional on an
-  ETag**: if the file changed on another device since this one last synced, the app stops and asks
-  whether to **load the other version** or **overwrite** it — so a concurrent edit is never silently
-  lost. The first write of a connection (no ETag baseline yet) is unconditional. If the file was
+  ETag**: if the file changed on another device since this one last synced, the app **merges** the two
+  copies **per entity** — the newest write wins for each player, game, and round (deletions, which are
+  kept as tombstones, included) — saves the combined World to both sides, and shows _“Merged changes
+  from your other device.”_ So edits made on different devices both survive; only two edits to the
+  **same** record settle last‑writer‑wins (a field‑level merge and a “what changed” summary are
+  planned). The first write of a connection (no ETag baseline yet) is unconditional. If the file was
   deleted — or, in custom‑folder mode, the whole folder was deleted — the next backup **recreates the
   file (and folder)** automatically.
 - **Restore** always fetches the **latest** remote copy of the active backup. The download bypasses
@@ -193,10 +197,12 @@ override with their own client ID under **Settings → Advanced**.
   title and makes it active; your other backups are untouched. Auto‑backup keeps pushing to whichever
   backup is active, so switching first (which loads that backup onto the device) keeps each slot
   separate.
-- **Conflicts pause auto‑backup, never clobber.** If automatic backup meets a file that changed
-  elsewhere, the status bubble switches to a **conflict** state and auto‑pushing stops until you
-  resolve it from **Settings** (load the other version, or overwrite) — your local edits stay safe on
-  the device meanwhile.
+- **Auto‑backup merges in the background, never clobbers.** If automatic backup meets a file that
+  changed elsewhere, the app quietly **merges** per entity and pushes the combined World — no
+  interruption, and records from the other device appear on screen as soon as the merge lands. Only if
+  the merge can't settle (the remote keeps moving, or a sign‑in is needed) does the status bubble
+  switch to a **conflict**/**pending** state you finish from **Settings** with a single **Merge** —
+  your local edits stay safe on the device meanwhile.
 
 ### What gets backed up
 

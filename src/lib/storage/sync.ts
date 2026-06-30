@@ -1,5 +1,5 @@
 import * as db from './db';
-import type { Game, Player, Round } from '../types';
+import type { Game, ID, Player, Round } from '../types';
 import type { Settings } from '../stores/settings';
 import { getBackupSettings, applyBackupSettings } from '../stores/settings';
 
@@ -218,11 +218,7 @@ export interface SyncProvider {
 }
 
 export async function buildSnapshot(): Promise<Snapshot> {
-  const [players, games, rounds] = await Promise.all([
-    db.getAllPlayers(),
-    db.getAllGames(),
-    db.getAllRounds(),
-  ]);
+  const { players, games, rounds } = await db.getAllForSync();
   return { players, games, rounds, settings: getBackupSettings(), exportedAt: Date.now() };
 }
 
@@ -233,6 +229,85 @@ export async function restoreSnapshot(snapshot: Snapshot): Promise<void> {
     rounds: snapshot.rounds,
   });
   applyBackupSettings(snapshot.settings);
+}
+
+// ── Per-entity merge (Phase 2) ───────────────────────────────────────────────
+// The World is a set of records keyed by stable `id`, each carrying `updatedAt`
+// and a soft-delete tombstone. Merging two copies is a union by id where, per
+// record, the newest write wins — so two devices that touched *different* things
+// (one edits a profile, another retunes a game) combine cleanly. Two edits to the
+// *same* record fall back to last-writer-wins (the accepted limitation).
+
+type Mergeable = { id: ID; updatedAt?: number; createdAt?: number };
+
+/** Effective merge timestamp; falls back to creation time, then 0, for legacy records. */
+function mergeStamp(e: Mergeable): number {
+  return e.updatedAt ?? e.createdAt ?? 0;
+}
+
+/** Pick the surviving version of one record. Ties break on content so all devices converge. */
+function pickWinner<T extends Mergeable>(a: T, b: T): T {
+  const sa = mergeStamp(a);
+  const sb = mergeStamp(b);
+  if (sa !== sb) return sa > sb ? a : b;
+  return JSON.stringify(a) >= JSON.stringify(b) ? a : b;
+}
+
+/** Union two record lists by id, newest-per-id winning. Tombstones are kept (and can win). */
+function mergeById<T extends Mergeable>(local: T[], remote: T[]): T[] {
+  const byId = new Map<ID, T>();
+  for (const e of local) byId.set(e.id, e);
+  for (const e of remote) {
+    const cur = byId.get(e.id);
+    byId.set(e.id, cur ? pickWinner(cur, e) : e);
+  }
+  return [...byId.values()];
+}
+
+/**
+ * Merge a remote World into the local one: union every entity by id, newest wins.
+ * Tombstones are preserved so deletions propagate. Portable device prefs are taken
+ * from `local` — a background merge must never silently restyle this device (per-member
+ * prefs, which DO merge, travel inside `players`).
+ */
+export function mergeSnapshots(local: Snapshot, remote: Snapshot): Snapshot {
+  return {
+    players: mergeById(local.players, remote.players),
+    games: mergeById(local.games, remote.games),
+    rounds: mergeById(local.rounds, remote.rounds),
+    settings: local.settings,
+    exportedAt: Date.now(),
+  };
+}
+
+/**
+ * Reconcile local and remote into one merged World and write it to both. Used when a
+ * conditional push hits a {@link ConflictError}: pull the remote, merge per-entity,
+ * persist the merge locally, then push it (conditional on the version we merged from).
+ * If the remote moves again mid-flight, re-pull and re-merge up to `maxAttempts`.
+ * Callers refresh their stores afterward so open screens reflect the merged-in records.
+ */
+export async function reconcile(
+  provider: SyncProvider,
+  opts: { interactive?: boolean; maxAttempts?: number } = {},
+): Promise<PushResult> {
+  const interactive = opts.interactive ?? true;
+  const maxAttempts = opts.maxAttempts ?? 4;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const pulled = await provider.pull();
+    const local = await buildSnapshot();
+    const merged = pulled ? mergeSnapshots(local, pulled.snapshot) : local;
+    if (pulled) await restoreSnapshot(merged);
+    try {
+      return await provider.push(merged, { interactive, baseEtag: pulled?.etag ?? null });
+    } catch (e) {
+      lastErr = e;
+      if (e instanceof ConflictError) continue; // remote moved again — re-pull & re-merge
+      throw e;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new ConflictError();
 }
 
 /** Lazy-load the OneDrive provider (keeps MSAL out of the main bundle). */

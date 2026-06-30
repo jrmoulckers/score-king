@@ -8,6 +8,7 @@
     serializeSnapshot,
     deserializeSnapshot,
     getOneDrive,
+    reconcile,
     DEFAULT_BACKUP_FILE,
     fileNameForTitle,
     titleFromFileName,
@@ -57,7 +58,7 @@
     $autoSyncStatus === 'syncing'
       ? 'Syncing…'
       : $autoSyncStatus === 'conflict'
-        ? 'Backup changed on another device — tap Resolve'
+        ? 'Backup changed on another device — tap Merge'
         : $autoSyncStatus === 'pending'
           ? 'Sync pending — reconnect to OneDrive'
           : $autoSyncStatus === 'offline'
@@ -364,38 +365,23 @@
   }
 
   /**
-   * The active backup changed on another device since our last sync. Let the user pick a
-   * side: load the OneDrive copy (replacing local data) or overwrite it with this device's.
+   * The active backup changed on another device since our last sync. Merge the two
+   * copies per entity (union by id, newest write wins) and write the result to both
+   * sides — so edits from this device and the other one both survive. Only a same-record
+   * collision falls back to last-writer-wins.
    */
   async function resolveConflict() {
-    const loadTheirs = confirm(
-      'This backup was changed on another device since you last synced here.\n\n' +
-        'OK — Load the OneDrive version (replaces the data on this device).\n' +
-        'Cancel — Overwrite OneDrive with this device’s data.',
-    );
     try {
       const od = await getOneDrive();
-      if (loadTheirs) {
-        const pulled = await od.pull();
-        if (pulled) {
-          await restoreSnapshot(pulled.snapshot);
-          await refreshPlayers();
-          await refreshGames();
-          markRestored(Date.now());
-          setActiveBackupEtag(pulled.etag);
-        }
-        markSyncSettled();
-        showToast('Loaded the version from OneDrive');
-      } else {
-        // Force the overwrite with an unconditional write (no baseEtag).
-        const { etag } = await od.push(await buildSnapshot(), { baseEtag: null });
-        signedIn = od.isSignedIn();
-        markSynced(Date.now());
-        setActiveBackupEtag(etag);
-        markSyncSettled();
-        showToast('Backed up to OneDrive');
-      }
+      const { etag } = await reconcile(od, { interactive: true });
+      await refreshPlayers();
+      await refreshGames();
+      signedIn = od.isSignedIn();
+      markSynced(Date.now());
+      setActiveBackupEtag(etag);
+      markSyncSettled();
       void loadBackups(false);
+      showToast('Merged changes from your other device');
     } catch (e) {
       showToast(errMsg(e));
     }
@@ -566,7 +552,7 @@
           <span class="sm">{backupText}</span>
         </span>
         {#if $autoSyncStatus === 'conflict'}
-          <button class="btn small primary" onclick={resolveNow} disabled={busy}>Resolve</button>
+          <button class="btn small primary" onclick={resolveNow} disabled={busy}>Merge</button>
         {:else}
           <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
         {/if}

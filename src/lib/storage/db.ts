@@ -37,7 +37,10 @@ function normalizePlayer(p: Player): Player {
 
 export async function getAllPlayers(): Promise<Player[]> {
   const all = await (await db()).getAll('players');
-  return all.map(normalizePlayer).sort((a, b) => a.name.localeCompare(b.name));
+  return all
+    .filter((p) => !p.deleted)
+    .map(normalizePlayer)
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function addPlayer(name: string, color: string, claimed: boolean): Promise<Player> {
@@ -62,31 +65,42 @@ export async function updatePlayer(player: Player): Promise<void> {
 }
 
 export async function deletePlayer(id: ID): Promise<void> {
-  await (await db()).delete('players', id);
+  const database = await db();
+  const existing = await database.get('players', id);
+  if (existing) {
+    const now = Date.now();
+    await database.put('players', raw({ ...existing, deleted: now, updatedAt: now }));
+  }
   markDataChanged();
 }
 
 // ---- Games ----
 export async function getAllGames(): Promise<Game[]> {
   const all = await (await db()).getAllFromIndex('games', 'byCreated');
-  return all.reverse();
+  return all.filter((g) => !g.deleted).reverse();
 }
 
 export async function getGame(id: ID): Promise<Game | undefined> {
-  return (await db()).get('games', id);
+  const game = await (await db()).get('games', id);
+  return game && !game.deleted ? game : undefined;
 }
 
 export async function putGame(game: Game): Promise<void> {
-  await (await db()).put('games', raw(game));
+  await (await db()).put('games', raw({ ...game, updatedAt: Date.now() }));
   markDataChanged();
 }
 
 export async function deleteGame(id: ID): Promise<void> {
   const database = await db();
+  const now = Date.now();
   const tx = database.transaction(['games', 'rounds'], 'readwrite');
-  await tx.objectStore('games').delete(id);
-  const rounds = await tx.objectStore('rounds').index('byGame').getAllKeys(id);
-  for (const key of rounds) await tx.objectStore('rounds').delete(key);
+  const game = await tx.objectStore('games').get(id);
+  if (game) await tx.objectStore('games').put(raw({ ...game, deleted: now, updatedAt: now }));
+  // Tombstone the game's rounds too, so the cascade delete propagates on merge.
+  const rounds = await tx.objectStore('rounds').index('byGame').getAll(id);
+  for (const r of rounds) {
+    await tx.objectStore('rounds').put(raw({ ...r, deleted: now, updatedAt: now }));
+  }
   await tx.done;
   markDataChanged();
 }
@@ -94,16 +108,21 @@ export async function deleteGame(id: ID): Promise<void> {
 // ---- Rounds ----
 export async function getRounds(gameId: ID): Promise<Round[]> {
   const all = await (await db()).getAllFromIndex('rounds', 'byGame', gameId);
-  return all.sort((a, b) => a.index - b.index);
+  return all.filter((r) => !r.deleted).sort((a, b) => a.index - b.index);
 }
 
 export async function putRound(round: Round): Promise<void> {
-  await (await db()).put('rounds', raw(round));
+  await (await db()).put('rounds', raw({ ...round, updatedAt: Date.now() }));
   markDataChanged();
 }
 
 export async function deleteRound(id: ID): Promise<void> {
-  await (await db()).delete('rounds', id);
+  const database = await db();
+  const existing = await database.get('rounds', id);
+  if (existing) {
+    const now = Date.now();
+    await database.put('rounds', raw({ ...existing, deleted: now, updatedAt: now }));
+  }
   markDataChanged();
 }
 
@@ -125,5 +144,25 @@ export async function replaceAll(data: {
 }
 
 export async function getAllRounds(): Promise<Round[]> {
-  return (await db()).getAll('rounds');
+  const all = await (await db()).getAll('rounds');
+  return all.filter((r) => !r.deleted);
+}
+
+/**
+ * Everything in the World, tombstones INCLUDED — the raw material for a backup
+ * snapshot and per-entity merge. The live getters above hide tombstones; sync must
+ * keep them so deletions propagate to (and survive a merge with) other devices.
+ */
+export async function getAllForSync(): Promise<{
+  players: Player[];
+  games: Game[];
+  rounds: Round[];
+}> {
+  const database = await db();
+  const [players, games, rounds] = await Promise.all([
+    database.getAll('players'),
+    database.getAll('games'),
+    database.getAll('rounds'),
+  ]);
+  return { players: players.map(normalizePlayer), games, rounds };
 }

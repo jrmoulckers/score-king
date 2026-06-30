@@ -124,7 +124,7 @@ message bus.
 | ------- | ---------------------------------------------------------------------------------------------------------- | ---------- |
 | 0 ✅    | Faithful JSON World + ETag conflict *detection* + versioned envelope                                        | none       |
 | 1 ✅    | Identity & World: Member model, claim / archive / promote, multiple members per device, active-member prefs | none       |
-| 2       | Per-entity merge (`updatedAt` + tombstones, union-merge) → async shared Worlds, multi-device-you            | none       |
+| 2 ✅    | Per-entity merge (`updatedAt` + tombstones, union-merge) → async shared Worlds, multi-device-you            | none       |
 | 3       | Live co-play: `SessionTransport` + dumb relay + host-authoritative moves; join by code / QR / link; remote  | dumb relay |
 | later   | P2P transport (offline same-room) behind the same seam; field-level merge + "what changed elsewhere"        | none / relay |
 
