@@ -23,8 +23,14 @@ export interface Player {
   ephemeral?: boolean;
   /** This member's portable preferences, applied to a device when they're its lead. */
   prefs?: Partial<BackupSettings>;
-  /** Last local mutation time — groundwork for per-entity merge (Phase 2). */
+  /** Last local mutation time — drives per-entity merge (Phase 2). */
   updatedAt?: number;
+  /**
+   * Sync tombstone: when set, this record was permanently deleted and is retained
+   * only so the deletion propagates on merge. Distinct from {@link archived} (a
+   * recoverable, still-present member). Tombstoned records are hidden everywhere.
+   */
+  deleted?: number;
 }
 
 export type GameStatus = 'active' | 'finished';
@@ -40,6 +46,10 @@ export interface Game {
   finishedAt?: number;
   winnerIds?: ID[];
   roundCount: number;
+  /** Last local mutation time — drives per-entity merge (Phase 2). */
+  updatedAt?: number;
+  /** Sync tombstone: deletion time, retained so the delete propagates on merge. */
+  deleted?: number;
 }
 
 export interface Round {
@@ -49,6 +59,10 @@ export interface Round {
   input: unknown; // game-specific payload
   deltas: Record<ID, number>; // per-player points for this round
   createdAt: number;
+  /** Last local mutation time — drives per-entity merge (Phase 2). */
+  updatedAt?: number;
+  /** Sync tombstone: deletion time, retained so the delete propagates on merge. */
+  deleted?: number;
 }
 
 /** Context handed to a game module when editing/scoring a round. */

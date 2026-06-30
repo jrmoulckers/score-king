@@ -1,8 +1,10 @@
 import { get, writable } from 'svelte/store';
 import { settings, markSynced, getBackupSettings, setActiveBackupEtag } from '../stores/settings';
 import { dataVersion } from './changes';
-import { buildSnapshot, getOneDrive, ConflictError, InteractionRequiredError } from './sync';
+import { buildSnapshot, getOneDrive, reconcile, ConflictError, InteractionRequiredError } from './sync';
 import type { SyncProvider } from './sync';
+import { refreshPlayers } from '../stores/players';
+import { refreshGames } from '../stores/games';
 
 export type AutoSyncStatus =
   | 'idle'
@@ -120,10 +122,10 @@ async function run(): Promise<void> {
   } catch (e) {
     dirty = true; // keep the changes pending
     if (e instanceof ConflictError) {
-      // The remote backup changed under us (another device). Do NOT clobber it in the
-      // background — surface a conflict and stop auto-pushing until the user resolves it.
-      conflicted = true;
-      autoSyncStatus.set('conflict');
+      // The remote backup changed under us (another device). Instead of stopping to
+      // ask the user to pick a side, merge per-entity (union by id, newest wins) and
+      // push the result — a background reconcile that loses no untouched records.
+      await mergeRemote(od);
     } else if (e instanceof InteractionRequiredError) {
       // Silent token failed — must NOT redirect in the background. Wait for the
       // user to reconnect, or for the next data change / online event.
@@ -134,6 +136,42 @@ async function run(): Promise<void> {
     }
   } finally {
     pushing = false;
+  }
+}
+
+/**
+ * Resolve a background push conflict by merging rather than choosing a side. Pull the
+ * remote World, union it with ours per entity, persist + push the merge, then refresh
+ * the open stores so any records that arrived from the other device appear immediately.
+ * Only if the merge itself can't settle (or needs sign-in) do we fall back to a held
+ * conflict / pending state for the user to handle from Settings.
+ */
+async function mergeRemote(od: SyncProvider): Promise<void> {
+  dirty = false; // fold the current edits into this merge; edits during it re-set dirty
+  try {
+    const { etag } = await reconcile(od, { interactive: false });
+    await Promise.all([refreshPlayers(), refreshGames()]);
+    markSynced(Date.now());
+    setActiveBackupEtag(etag);
+    conflicted = false;
+    if (dirty) {
+      schedule(); // more edits arrived while merging
+    } else {
+      autoSyncStatus.set('synced');
+    }
+  } catch (e) {
+    dirty = true;
+    if (e instanceof InteractionRequiredError) {
+      autoSyncStatus.set('pending');
+    } else if (e instanceof ConflictError) {
+      // The remote kept moving and we couldn't win the conditional push after several
+      // tries — hand off to a manual resolve so we never spin or clobber.
+      conflicted = true;
+      autoSyncStatus.set('conflict');
+    } else {
+      autoSyncStatus.set('error');
+      schedule(); // transient (e.g. network) — retry later
+    }
   }
 }
 
