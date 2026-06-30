@@ -81,6 +81,7 @@ export const LOCAL_SETTING_KEYS = [
   'oneDriveClientId',
   'oneDriveFolderMode',
   'oneDriveCustomPath',
+  'oneDriveBackupFile',
   'autoSync',
   'oneDriveConnected',
   'lastSync',

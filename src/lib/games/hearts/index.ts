@@ -1,5 +1,6 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import Editor from './HeartsEditor.svelte';
+import { heartsStats } from './stats';
 
 export interface HeartsInput {
   hearts: Record<ID, number>;
@@ -95,6 +96,8 @@ export const hearts: GameModule = {
     if (moon) return `🌙 ${name(moon)} shot the moon`;
     return `♠Q: ${name(input.queen)}`;
   },
+
+  stats: heartsStats,
 
   RoundEditor: Editor,
 };
