@@ -69,6 +69,9 @@ Requires Node 20.19+ or 22.12+ (Vite 8).
 
 ## 📦 Architecture
 
+> **Where this is heading:** see [ARCHITECTURE.md](ARCHITECTURE.md) for the target system — the
+> self-owned **World**, identity/accounts, the merge model, and the live-play roadmap.
+
 ```
 src/
   lib/
