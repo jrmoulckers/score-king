@@ -263,7 +263,7 @@
       </label>
 
       <div class="pathchip" title={locationLabel}>
-        <span class="pathchip-ico" aria-hidden="true">📍</span>
+        <span class="pathchip-ico" aria-hidden="true">📂</span>
         <code>{prettyPath}</code>
       </div>
 
