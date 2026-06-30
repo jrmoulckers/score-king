@@ -41,6 +41,8 @@ export interface Settings {
   oneDriveClientId: string;
   oneDriveFolderMode: OneDriveFolderMode;
   oneDriveCustomPath: string;
+  /** File name of the active backup within the configured folder (the sync target). */
+  oneDriveBackupFile: string;
   autoSync: boolean;
   oneDriveConnected: boolean;
   lastSync: number | null;
@@ -116,6 +118,7 @@ const defaults: Settings = {
   oneDriveClientId: '',
   oneDriveFolderMode: 'app',
   oneDriveCustomPath: '',
+  oneDriveBackupFile: 'Main.xlsx',
   autoSync: true,
   oneDriveConnected: false,
   lastSync: null,

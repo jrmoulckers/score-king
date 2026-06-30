@@ -16,6 +16,66 @@ export interface Snapshot {
   exportedAt: number;
 }
 
+/**
+ * Backup file naming
+ * ------------------
+ * The configured OneDrive folder (App folder or a custom folder) is the source of
+ * truth: every workbook in it is a backup the user can keep alongside others.
+ *
+ * - A backup's title is exactly what the user types and the file is stored as
+ *   `<Title>.xlsx`, so it reads naturally in OneDrive and Excel.
+ * - New connections start on `Main.xlsx` ("Main"), which also stays the fallback
+ *   when every other backup has been removed.
+ */
+export const BACKUP_EXT = '.xlsx';
+/** The default backup, used for new connections and as the last-resort fallback. */
+export const DEFAULT_BACKUP_FILE = `Main${BACKUP_EXT}`;
+
+/** Metadata for one detected backup workbook in the configured folder. */
+export interface BackupInfo {
+  /** File name within the folder, e.g. "Friday Crew.xlsx". */
+  file: string;
+  /** Human-readable title derived from the file name. */
+  title: string;
+  /** True for the default `Main.xlsx`. */
+  isDefault: boolean;
+  /** Last modified time (ms epoch), or null when not backed up yet. */
+  modifiedAt: number | null;
+  /** Size in bytes, or null when unknown. */
+  size: number | null;
+}
+
+/** Characters OneDrive/SharePoint forbid in a file name. */
+const ILLEGAL_NAME_CHARS = /[\\/:*?"<>|]/g;
+
+/** Clean a user title into something safe to use as a file name. */
+export function sanitizeBackupTitle(title: string): string {
+  return title
+    .replace(ILLEGAL_NAME_CHARS, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60);
+}
+
+/** Build the file name for a user title (the title is the file name). */
+export function fileNameForTitle(title: string): string {
+  const clean = sanitizeBackupTitle(title);
+  if (!clean) return DEFAULT_BACKUP_FILE;
+  return `${clean}${BACKUP_EXT}`;
+}
+
+/** Derive a display title from a backup file name. */
+export function titleFromFileName(file: string): string {
+  return file.replace(/\.xlsx$/i, '').trim();
+}
+
+/** Whether a folder child looks like one of our backup workbooks. */
+export function isBackupFile(file: string): boolean {
+  if (!/\.xlsx$/i.test(file)) return false;
+  // Skip Excel's lock/owner temp files (e.g. "~$Main.xlsx").
+  return !/^~\$/.test(file);
+}
+
 /** Options for a provider push. */
 export interface PushOptions {
   /**
@@ -56,6 +116,19 @@ export interface SyncProvider {
    * exists yet — e.g. the file was never created or was deleted.
    */
   pull(): Promise<Snapshot | null>;
+  /**
+   * List every backup workbook detected in the configured folder, newest first. Resolves to an
+   * empty array when the folder doesn't exist yet. Pass `{ interactive: false }` so a background /
+   * on-mount refresh never triggers a sign-in redirect (throws {@link InteractionRequiredError}).
+   */
+  listBackups(opts?: PushOptions): Promise<BackupInfo[]>;
+  /** Permanently delete a backup workbook from the configured folder. */
+  removeBackup(file: string): Promise<void>;
+  /**
+   * Rename a backup workbook to carry a new title, returning its updated info. Throws if a backup
+   * with the target name already exists.
+   */
+  renameBackup(file: string, newTitle: string): Promise<BackupInfo>;
 }
 
 export async function buildSnapshot(): Promise<Snapshot> {
