@@ -8,15 +8,17 @@
     appendRound,
     updateRound,
     removeRound,
+    restoreRound,
     finishGame,
     reopenGame,
     createGame,
     removeGame,
+    restoreGame,
   } from '../lib/stores/games';
   import { getModule } from '../lib/games/registry';
   import { computeTotals } from '../lib/scoring';
   import { navigate, link } from '../lib/router';
-  import { showToast } from '../lib/stores/toast';
+  import { showToast, showActionToast } from '../lib/stores/toast';
   import { relativeTime } from '../lib/util';
   import { settings } from '../lib/stores/settings';
   import { enableWakeLock, disableWakeLock } from '../lib/wakelock';
@@ -32,6 +34,7 @@
   let draft = $state<any>(null);
   let editing = $state<Round | null>(null);
   let editDraft = $state<any>(null);
+  let justSavedId = $state<string | null>(null);
 
   const module = $derived(game ? getModule(game.type) : undefined);
   const orderedPlayers = $derived(
@@ -43,6 +46,14 @@
   );
   const totals = $derived(game ? computeTotals(rounds, game.playerIds) : {});
   const lower = $derived(game && module ? resolveLower(module, game.config) : false);
+  const leaderIds = $derived.by(() => {
+    const ids = new Set<string>();
+    if (!game || rounds.length === 0 || orderedPlayers.length === 0) return ids;
+    const vals = orderedPlayers.map((p) => totals[p.id] ?? 0);
+    const best = lower ? Math.min(...vals) : Math.max(...vals);
+    for (const p of orderedPlayers) if ((totals[p.id] ?? 0) === best) ids.add(p.id);
+    return ids;
+  });
   const maxR = $derived(
     game && module && module.maxRounds ? module.maxRounds(game.config, game.playerIds.length) : null,
   );
@@ -120,6 +131,14 @@
     const deltas = module.scoreRound(snap, ctx);
     await appendRound(game, snap, deltas);
     await load();
+    const newest = rounds[rounds.length - 1];
+    if (newest) {
+      justSavedId = newest.id;
+      const fid = newest.id;
+      setTimeout(() => {
+        if (justSavedId === fid) justSavedId = null;
+      }, 1000);
+    }
   }
 
   function startEdit(r: Round) {
@@ -146,9 +165,14 @@
 
   async function del(r: Round) {
     if (!game) return;
-    if (!confirm(`Delete round ${r.index + 1}?`)) return;
+    const gameSnap = $state.snapshot(game);
+    const roundSnap = $state.snapshot(r);
     await removeRound(r, game);
     await load();
+    showActionToast(`Round ${r.index + 1} deleted`, 'Undo', async () => {
+      await restoreRound(gameSnap, roundSnap);
+      await load();
+    });
   }
 
   async function doFinish() {
@@ -167,9 +191,14 @@
   }
   async function deleteGame() {
     if (!game) return;
-    if (!confirm('Delete this entire game and its scores?')) return;
+    const gameSnap = $state.snapshot(game);
+    const roundsSnap = $state.snapshot(rounds);
     await removeGame(game.id);
     navigate('/');
+    showActionToast('Game deleted', 'Undo', async () => {
+      await restoreGame(gameSnap, roundsSnap);
+      navigate(`/play/${gameSnap.id}`);
+    });
   }
 
   function fmt(d: number | undefined): string {
@@ -182,7 +211,11 @@
 </script>
 
 {#if loading}
-  <div class="empty">Loading…</div>
+  <div class="skeleton" aria-busy="true" aria-label="Loading game">
+    <div class="sk" style="height: 56px"></div>
+    <div class="sk" style="height: 184px"></div>
+    <div class="sk" style="height: 150px"></div>
+  </div>
 {:else if !game || !module}
   <div class="empty">
     <h2>Game not found</h2>
@@ -209,7 +242,7 @@
   {#if game.status === 'finished'}
     <div class="card center banner">🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}</div>
     <div class="row" style="gap: 10px; margin-top: 12px">
-      <button class="btn" onclick={doReopen}>Reopen</button>
+      <button class="btn" onclick={doReopen} title="Reopen to add more rounds">Reopen</button>
       <button class="btn primary grow" onclick={playAgain}>Play again</button>
     </div>
   {:else if editing}
@@ -222,6 +255,9 @@
         <button class="btn grow" onclick={cancelEdit}>Cancel</button>
         <button class="btn primary grow" onclick={saveEdit}>Save changes</button>
       </div>
+      <button class="btn danger block" onclick={() => editing && del(editing)}>
+        Delete round {editing.index + 1}
+      </button>
     </div>
   {:else}
     {#if canAddRound}
@@ -241,7 +277,7 @@
     {#if finishedReady}
       <div class="card center stack" style="margin-top: 12px">
         <span>🏁 This game looks complete.</span>
-        <button class="btn primary" onclick={doFinish}>Finish &amp; record winner</button>
+        <button class="btn {canAddRound ? '' : 'primary'}" onclick={doFinish}>Finish &amp; record winner</button>
       </div>
     {:else}
       <button class="btn ghost block" style="margin-top: 12px" onclick={doFinish}>Finish game now</button>
@@ -254,24 +290,28 @@
       <table class="matrix">
         <thead>
           <tr>
-            <th>R</th>
+            <th scope="col">Rd</th>
             {#each orderedPlayers as p (p.id)}
-              <th><Avatar name={p.name} color={p.color} size={22} /></th>
+              <th scope="col"><Avatar name={p.name} color={p.color} size={22} /></th>
             {/each}
-            <th></th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
           {#each rounds as r (r.id)}
-            <tr>
+            <tr class:flash={r.id === justSavedId}>
               <td>{r.index + 1}</td>
               {#each orderedPlayers as p (p.id)}
                 <td class="num">{fmt(r.deltas[p.id])}</td>
               {/each}
               <td class="acts">
                 {#if game.status !== 'finished'}
-                  <button class="mini" onclick={() => startEdit(r)} aria-label="Edit">✎</button>
-                  <button class="mini" onclick={() => del(r)} aria-label="Delete">🗑</button>
+                  <button
+                    class="rowbtn"
+                    onclick={() => startEdit(r)}
+                    aria-label={`Edit round ${r.index + 1}`}
+                    title="Edit round"
+                  >✎</button>
                 {/if}
               </td>
             </tr>
@@ -279,9 +319,9 @@
         </tbody>
         <tfoot>
           <tr>
-            <td>Σ</td>
+            <th scope="row">Total</th>
             {#each orderedPlayers as p (p.id)}
-              <td class="num lead">{totals[p.id] ?? 0}</td>
+              <td class="num" class:lead={leaderIds.has(p.id)}>{totals[p.id] ?? 0}</td>
             {/each}
             <td></td>
           </tr>
@@ -296,7 +336,8 @@
     margin-top: 12px;
     font-size: 1.15rem;
     font-weight: 800;
-    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
   }
   .scroll {
     overflow-x: auto;
@@ -313,22 +354,51 @@
   .matrix .num {
     font-variant-numeric: tabular-nums;
   }
-  .matrix tfoot td {
+  .matrix tfoot td,
+  .matrix tfoot th {
     border-bottom: none;
     font-weight: 800;
+  }
+  .matrix tbody tr.flash td {
+    animation: rowflash 0.9s ease-out;
+  }
+  /* Positive "round saved" confirmation: green (success), distinct from gold
+     (which means leader only). The new row is already visible; this pulse just
+     draws the eye to where the entry landed, and reduced-motion settles it instantly. */
+  @keyframes rowflash {
+    from {
+      background: color-mix(in srgb, var(--good) 26%, transparent);
+    }
+    to {
+      background: transparent;
+    }
   }
   .acts {
     white-space: nowrap;
   }
-  .mini {
+  .matrix td.acts {
+    padding: 2px 6px;
+  }
+  .rowbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 46px;
+    min-height: 46px;
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 0.95rem;
-    padding: 2px 4px;
+    font-size: 1.05rem;
     color: var(--muted);
   }
-  .mini:hover {
+  .rowbtn:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  .rowbtn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
     color: var(--text);
   }
 </style>

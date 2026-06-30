@@ -46,6 +46,7 @@
     font-weight: 700;
   }
   tr.winner td {
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    background: color-mix(in srgb, var(--accent) 13%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--accent) 55%, var(--border));
   }
 </style>

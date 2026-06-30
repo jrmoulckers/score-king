@@ -73,6 +73,19 @@ export async function removeRound(round: Round, game: Game): Promise<void> {
   await refreshGames();
 }
 
+/** Re-insert a previously removed round at its original position (undo). */
+export async function restoreRound(game: Game, round: Round): Promise<void> {
+  const existing = (await db.getRounds(game.id)).sort((a, b) => a.index - b.index);
+  const at = Math.max(0, Math.min(round.index, existing.length));
+  existing.splice(at, 0, { ...round });
+  existing.forEach((r, i) => {
+    r.index = i;
+  });
+  for (const r of existing) await db.putRound(r);
+  await db.putGame({ ...game, roundCount: existing.length });
+  await refreshGames();
+}
+
 export async function finishGame(game: Game): Promise<Game> {
   const rounds = await db.getRounds(game.id);
   const totals = computeTotals(rounds, game.playerIds);
@@ -104,6 +117,13 @@ export async function reopenGame(game: Game): Promise<Game> {
 
 export async function removeGame(id: ID): Promise<void> {
   await db.deleteGame(id);
+  await refreshGames();
+}
+
+/** Re-create a deleted game and its rounds (undo). */
+export async function restoreGame(game: Game, rounds: Round[]): Promise<void> {
+  await db.putGame(game);
+  for (const r of rounds) await db.putRound(r);
   await refreshGames();
 }
 
