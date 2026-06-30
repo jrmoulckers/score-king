@@ -49,6 +49,12 @@ export interface Settings {
   oneDriveConnected: boolean;
   lastSync: number | null;
   lastRestore: number | null;
+
+  // ── Device identity ───────────────────────────────────────────────────────
+  // Which member is the active "lead" on THIS device; their portable prefs are
+  // applied to the device. Device-specific (each device picks its own lead), so it
+  // is NOT backed up — the members themselves (each carrying their own prefs) are.
+  leadMemberId: string | null;
 }
 
 /**
@@ -89,6 +95,7 @@ export const LOCAL_SETTING_KEYS = [
   'oneDriveConnected',
   'lastSync',
   'lastRestore',
+  'leadMemberId',
 ] as const;
 
 export type PortableSettingKey = (typeof PORTABLE_SETTING_KEYS)[number];
@@ -128,6 +135,7 @@ const defaults: Settings = {
   oneDriveConnected: false,
   lastSync: null,
   lastRestore: null,
+  leadMemberId: null,
 };
 
 function load(): Settings {
