@@ -1,7 +1,6 @@
 <script lang="ts">
   import { settings } from '../lib/stores/settings';
   import { PALETTE } from '../lib/util';
-  import { isWakeLockSupported } from '../lib/wakelock';
   import Segmented from '../lib/components/Segmented.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
 
@@ -34,7 +33,6 @@
   ];
 
   const oledDisabled = $derived($settings.theme !== 'dark');
-  const wakeSupported = isWakeLockSupported();
 
   const previewPlayers = [
     { name: 'Ada Lovelace', color: PALETTE[0], score: 42 },
@@ -42,7 +40,7 @@
     { name: 'Cy Young', color: PALETTE[4], score: 31 },
   ];
 
-  function setBool(key: 'oled' | 'highContrast' | 'colorBlind' | 'keepAwake' | 'privacyGuard', v: boolean) {
+  function setBool(key: 'oled' | 'highContrast' | 'colorBlind', v: boolean) {
     settings.update((s) => ({ ...s, [key]: v }));
   }
 </script>
@@ -148,43 +146,6 @@
       type="checkbox"
       checked={$settings.colorBlind}
       onchange={(e) => setBool('colorBlind', e.currentTarget.checked)}
-    />
-    <span class="track"><span class="thumb"></span></span>
-  </span>
-</label>
-
-<div class="section-title">While playing</div>
-
-<label class="card sw-row row spread">
-  <span class="meta">
-    <span class="name">Keep screen awake</span>
-    <span class="muted sm">
-      {wakeSupported
-        ? 'Stops the screen dimming while a game is in progress.'
-        : 'Your browser doesn’t support screen wake lock.'}
-    </span>
-  </span>
-  <span class="switch">
-    <input
-      type="checkbox"
-      checked={$settings.keepAwake}
-      disabled={!wakeSupported}
-      onchange={(e) => setBool('keepAwake', e.currentTarget.checked)}
-    />
-    <span class="track"><span class="thumb"></span></span>
-  </span>
-</label>
-
-<label class="card sw-row row spread">
-  <span class="meta">
-    <span class="name">Privacy peek-guard</span>
-    <span class="muted sm">Blurs the board when you set the phone down, so a passer-by can’t read the scores. Tap to reveal.</span>
-  </span>
-  <span class="switch">
-    <input
-      type="checkbox"
-      checked={$settings.privacyGuard}
-      onchange={(e) => setBool('privacyGuard', e.currentTarget.checked)}
     />
     <span class="track"><span class="thumb"></span></span>
   </span>
