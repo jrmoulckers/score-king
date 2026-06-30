@@ -1,12 +1,30 @@
 import type { Component } from 'svelte';
+import type { BackupSettings } from './stores/settings';
 
 export type ID = string;
 
+/**
+ * A gamer — the unified "Member" entity from ARCHITECTURE.md (one record for a
+ * person: their seat in a game *and* their identity). Named `Player` because that's
+ * what it is inside a game, and the name is woven through the GameModule contract.
+ */
 export interface Player {
   id: ID;
+  /** Display handle. Auto-generated and whimsical until the gamer claims it. */
   name: string;
   color: string;
   createdAt: number;
+  /** True once the gamer renames the auto-generated handle to claim this identity. */
+  claimed?: boolean;
+  /** Soft-delete: hidden from the active roster + selection, kept in history & stats. */
+  archived?: boolean;
+  archivedAt?: number;
+  /** A temporary, session-only member (networked guest join). Reserved; no UI yet. */
+  ephemeral?: boolean;
+  /** This member's portable preferences, applied to a device when they're its lead. */
+  prefs?: Partial<BackupSettings>;
+  /** Last local mutation time — groundwork for per-entity merge (Phase 2). */
+  updatedAt?: number;
 }
 
 export type GameStatus = 'active' | 'finished';

@@ -3,6 +3,7 @@ import { registerSW } from 'virtual:pwa-register'
 import './app.css'
 import App from './App.svelte'
 import { applySettings } from './lib/stores/settings'
+import { initIdentity } from './lib/stores/identity'
 import { startAutoSync } from './lib/storage/autosync'
 
 // A Microsoft sign-in uses a full-page redirect. When the browser returns from Microsoft the
@@ -27,6 +28,8 @@ async function boot() {
   applySettings()
   registerSW({ immediate: true })
   mount(App, { target: document.getElementById('app')! })
+  // Apply the lead member's saved look to this device, then keep them in sync.
+  await initIdentity()
   // Background OneDrive auto-backup (push-only, silent; never redirects on its own).
   startAutoSync()
 }

@@ -85,6 +85,33 @@ export function relativeTime(ts: number): string {
   return formatDate(ts);
 }
 
+const HANDLE_ADJECTIVES = [
+  'Royal', 'Crowned', 'Sneaky', 'Lucky', 'Mighty', 'Jolly', 'Dapper', 'Cosmic',
+  'Turbo', 'Wily', 'Brave', 'Cheeky', 'Noble', 'Zany', 'Swift', 'Grand',
+  'Merry', 'Bold', 'Sly', 'Epic', 'Plucky', 'Gilded', 'Rowdy', 'Fuzzy',
+];
+
+const HANDLE_NOUNS = [
+  'Otter', 'Wizard', 'Badger', 'Comet', 'Monarch', 'Jester', 'Phoenix', 'Walrus',
+  'Goose', 'Raccoon', 'Dragon', 'Penguin', 'Yeti', 'Narwhal', 'Falcon', 'Hedgehog',
+  'Bandit', 'Maverick', 'Champion', 'Gremlin', 'Knight', 'Wombat', 'Llama', 'Pixel',
+];
+
+/**
+ * A whimsical, on-brand display handle (e.g. "Royal Otter") for a not-yet-claimed
+ * member. Avoids handles already in `taken`, falling back to a numbered variant.
+ */
+export function generateHandle(taken: string[] = []): string {
+  const used = new Set(taken.map((n) => n.toLowerCase()));
+  const pick = (list: string[]) => list[Math.floor(Math.random() * list.length)];
+  const make = () => `${pick(HANDLE_ADJECTIVES)} ${pick(HANDLE_NOUNS)}`;
+  for (let i = 0; i < 24; i++) {
+    const handle = make();
+    if (!used.has(handle.toLowerCase())) return handle;
+  }
+  return `${make()} ${Math.floor(Math.random() * 90) + 10}`;
+}
+
 export function initials(name: string): string {
   return name
     .split(/\s+/)

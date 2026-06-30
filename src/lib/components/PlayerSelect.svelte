@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { players as roster, createPlayer } from '../stores/players';
+  import { activePlayers as roster, createPlayer, generatePlayer } from '../stores/players';
   import type { ID } from '../types';
   import Avatar from './Avatar.svelte';
 
@@ -20,6 +20,11 @@
     if (!name) return;
     const p = await createPlayer(name);
     newName = '';
+    if (selected.length < max) selected = [...selected, p.id];
+  }
+
+  async function addRandom() {
+    const p = await generatePlayer();
     if (selected.length < max) selected = [...selected, p.id];
   }
 </script>
@@ -45,6 +50,7 @@
 
   <form class="row" onsubmit={(e) => { e.preventDefault(); add(); }}>
     <input class="grow" type="text" placeholder="Add a player…" bind:value={newName} />
+    <button class="btn" type="button" onclick={addRandom} aria-label="Add a random player" title="Surprise me">🎲</button>
     <button class="btn" type="submit">Add</button>
   </form>
 </div>

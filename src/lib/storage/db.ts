@@ -30,20 +30,34 @@ function db(): Promise<IDBPDatabase<ScoreKingDB>> {
 }
 
 // ---- Players ----
-export async function getAllPlayers(): Promise<Player[]> {
-  const all = await (await db()).getAll('players');
-  return all.sort((a, b) => a.name.localeCompare(b.name));
+/** Default identity fields that legacy records (pre-Member) won't have on disk. */
+function normalizePlayer(p: Player): Player {
+  return { ...p, claimed: p.claimed ?? true, archived: p.archived ?? false };
 }
 
-export async function addPlayer(name: string, color: string): Promise<Player> {
-  const player: Player = { id: uid(), name: name.trim(), color, createdAt: Date.now() };
+export async function getAllPlayers(): Promise<Player[]> {
+  const all = await (await db()).getAll('players');
+  return all.map(normalizePlayer).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function addPlayer(name: string, color: string, claimed: boolean): Promise<Player> {
+  const now = Date.now();
+  const player: Player = {
+    id: uid(),
+    name: name.trim(),
+    color,
+    createdAt: now,
+    updatedAt: now,
+    claimed,
+    archived: false,
+  };
   await (await db()).put('players', player);
   markDataChanged();
   return player;
 }
 
 export async function updatePlayer(player: Player): Promise<void> {
-  await (await db()).put('players', raw(player));
+  await (await db()).put('players', raw({ ...player, updatedAt: Date.now() }));
   markDataChanged();
 }
 
