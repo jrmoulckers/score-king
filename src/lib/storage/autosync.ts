@@ -1,5 +1,5 @@
 import { get, writable } from 'svelte/store';
-import { settings, markSynced } from '../stores/settings';
+import { settings, markSynced, getBackupSettings } from '../stores/settings';
 import { dataVersion } from './changes';
 import { buildSnapshot, getOneDrive, InteractionRequiredError } from './sync';
 import type { SyncProvider } from './sync';
@@ -24,6 +24,7 @@ let pushing = false; // an upload is in flight
 let timer: ReturnType<typeof setTimeout> | undefined;
 let lastVersion = 0;
 let wasActive = false;
+let lastPortableSig: string | undefined; // JSON of the last-seen portable settings
 
 function enabled(): boolean {
   return get(settings).autoSync;
@@ -150,14 +151,27 @@ export function startAutoSync(): void {
   });
 
   settings.subscribe((s) => {
+    // Backed-up preferences live outside the db, so dataVersion never moves when
+    // one changes. Watch them here so e.g. a theme or text-size tweak is pushed
+    // too. Only the portable subset counts — reacting to autoSync/connection or
+    // the lastSync/lastRestore stamps would loop, since a push writes lastSync.
+    const sig = JSON.stringify(getBackupSettings());
+    if (lastPortableSig === undefined) {
+      lastPortableSig = sig; // initial subscribe replay — capture the baseline
+    } else if (sig !== lastPortableSig) {
+      lastPortableSig = sig;
+      onLocalChange();
+    }
+
     const now = s.autoSync && s.oneDriveConnected;
-    if (now === wasActive) return;
-    wasActive = now;
-    if (now) {
-      if (dirty) schedule(); // turned on / just connected with changes waiting
-    } else {
-      cancelTimer(); // turned off or disconnected — stop automatic uploads
-      autoSyncStatus.set('idle');
+    if (now !== wasActive) {
+      wasActive = now;
+      if (now) {
+        if (dirty) schedule(); // turned on / just connected with changes waiting
+      } else {
+        cancelTimer(); // turned off or disconnected — stop automatic uploads
+        autoSyncStatus.set('idle');
+      }
     }
   });
 

@@ -5,6 +5,7 @@ import { ONEDRIVE_CLIENT_ID } from '../config';
 import type { Snapshot, SyncProvider } from './sync';
 import { InteractionRequiredError } from './sync';
 import type { Game, Player, Round } from '../types';
+import type { Settings } from '../stores/settings';
 
 const FILE_NAME = 'Score King.xlsx';
 const GRAPH = 'https://graph.microsoft.com/v1.0';
@@ -189,12 +190,19 @@ async function toWorkbook(s: Snapshot): Promise<ArrayBuffer> {
       scores.push({ gameId: r.gameId, round: r.index + 1, player: nameOf(pid), delta });
     }
   }
+  // Portable preferences, one row per key with a JSON-encoded value (matching how
+  // config/inputs are stored in the other sheets) so any value type round-trips.
+  const settings = Object.entries(s.settings ?? {}).map(([key, value]) => ({
+    key,
+    value: JSON.stringify(value),
+  }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(players), 'Players');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(games), 'Games');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rounds), 'Rounds');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(scores), 'RoundScores');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(settings), 'Settings');
   return XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
 }
 
@@ -231,7 +239,15 @@ async function fromWorkbook(buf: ArrayBuffer): Promise<Snapshot> {
     createdAt: Date.parse(String(r.created)) || Date.now(),
   }));
   for (const g of games) g.roundCount = rounds.filter((r) => r.gameId === g.id).length;
-  return { players, games, rounds, exportedAt: Date.now() };
+
+  // Portable preferences (JSON-encoded values). applyBackupSettings ignores any
+  // non-portable keys, so we read permissively here.
+  const restoredSettings: Partial<Settings> = {};
+  for (const r of sheet('Settings')) {
+    const key = String(r.key ?? '').trim();
+    if (key) (restoredSettings as Record<string, unknown>)[key] = parse<unknown>(r.value, undefined);
+  }
+  return { players, games, rounds, settings: restoredSettings, exportedAt: Date.now() };
 }
 
 /** PUT the workbook bytes to the configured content path (overwrites; last-write-wins). */

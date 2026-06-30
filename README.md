@@ -89,6 +89,12 @@ src/
 - `Players(id, name, color, createdAt)`
 - `Games(id, type, config, playerIds, status, createdAt, finishedAt, winnerIds)`
 - `Rounds(id, gameId, index, inputs, scores, createdAt)`
+- `Settings(key, value)` — your **portable preferences** (theme, OLED, text size, contrast,
+  motion, colour-blind palette, keep-awake, privacy guard). Kept in `localStorage` on the
+  device and mirrored into the backup's `Settings` sheet so they travel with a restore.
+  Device-local OneDrive details (client-ID override, folder location, auto-backup toggle,
+  connection flag, sync timestamps) are deliberately **not** backed up — see
+  [What gets backed up](#what-gets-backed-up).
 
 ---
 
@@ -151,9 +157,9 @@ settings.
 After that, **Settings → Connect OneDrive** is one click for everyone. Power users / forks can
 override with their own client ID under **Settings → Advanced**.
 
-> The workbook has `Players`, `Games`, `Rounds`, and `RoundScores` sheets. The app treats local
-> data as the source of truth during play and syncs the whole snapshot automatically (debounced) —
-> or on demand via **Back up now**.
+> The workbook has `Players`, `Games`, `Rounds`, `RoundScores`, and `Settings` sheets. The app
+> treats local data as the source of truth during play and syncs the whole snapshot
+> automatically (debounced) — or on demand via **Back up now**.
 
 ### How backup & restore behave
 
@@ -165,6 +171,24 @@ override with their own client ID under **Settings → Advanced**.
   workbook — no disconnect/reconnect needed.
 - If you press **Restore** but no backup exists yet, the app offers to **back up your current data**
   there instead, so you're never left in a dead end.
+
+### What gets backed up
+
+A backup carries your game data **and** your portable preferences — theme, OLED, text size, high
+contrast, motion, colour‑blind palette, keep‑awake, and privacy guard — in the `Settings` sheet, so
+restoring on a new device brings your accessibility/display setup along. The local JSON
+export/import covers the same set.
+
+Deliberately **left out**, to avoid dead or conflicting state on another device: the OneDrive
+client‑ID override, the backup file's folder location, the auto‑backup toggle, the "connected" flag,
+and the last‑sync/last‑restore timestamps. (Restore is also defensive — it only ever applies the
+portable keys, so even a hand‑edited workbook can't clobber this device's connection.)
+
+> **Adding a setting?** Categorize it in [`src/lib/stores/settings.ts`](src/lib/stores/settings.ts):
+> add portable user preferences to `PORTABLE_SETTING_KEYS` (so they're included in the backup) and
+> device/connection state to `LOCAL_SETTING_KEYS`. A compile‑time guard fails `npm run check` until
+> every setting is listed in exactly one of the two arrays, so a new preference can't silently miss
+> the backup — the default expectation is that new settings **are** backed up.
 
 ### Google Drive (future)
 
