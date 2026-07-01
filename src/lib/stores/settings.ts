@@ -50,6 +50,13 @@ export interface Settings {
   lastSync: number | null;
   lastRestore: number | null;
 
+  /**
+   * Per-device override for the live-play relay URL (a `wss://` origin). Empty uses the
+   * built-in {@link RELAY_URL} default. Device-local like the OneDrive client-ID override:
+   * a relay endpoint is connection state, not a portable preference, so it isn't backed up.
+   */
+  relayUrl: string;
+
   // ── Device identity ───────────────────────────────────────────────────────
   // Which member is the active "lead" on THIS device; their portable prefs are
   // applied to the device. Device-specific (each device picks its own lead), so it
@@ -95,6 +102,7 @@ export const LOCAL_SETTING_KEYS = [
   'oneDriveConnected',
   'lastSync',
   'lastRestore',
+  'relayUrl',
   'leadMemberId',
 ] as const;
 
@@ -135,6 +143,7 @@ const defaults: Settings = {
   oneDriveConnected: false,
   lastSync: null,
   lastRestore: null,
+  relayUrl: '',
   leadMemberId: null,
 };
 

@@ -103,7 +103,8 @@ A single `SessionTransport` interface (sibling to the storage `SyncProvider`):
 - Members join by **code / QR / magic-link**.
 - First implementation is a **same-origin `BroadcastChannel`** transport (same-browser,
   multi-tab) — zero infrastructure, yet it exercises the whole host-authoritative engine.
-  The relay drops in behind the same seam to add cross-device play.
+  A `RelayTransport` (`src/lib/live/relay.ts`) drops in behind the same seam to add
+  cross-device play, chosen in the one `makeTransport` factory when a relay URL is set.
 
 ### The relay — dumb and stateless on purpose
 
@@ -111,6 +112,14 @@ The one piece of always-on shared infrastructure. It **resolves a join code to a
 forwards messages — and stores no game data.** This keeps storage genuinely self-owned, keeps
 cost and the privacy surface minimal, and keeps the centralized footprint to a stateless
 message bus.
+
+Shipped as deploy-ready code in **`relay/`** — a Cloudflare Worker + Durable Object (one DO
+instance per join code) using Hibernatable WebSockets, so idle rooms cost nothing. It fans
+each frame out to the *other* sockets in the room and never echoes the sender, matching the
+`BroadcastChannel` semantics the engine relies on. Point the app at it with `VITE_RELAY_URL`
+at build time or a per-device override in **Settings → Advanced → Live play relay URL**
+(mirroring the OneDrive client-ID override). The hosted deployment + public URL is the
+operator's call; the code is ready to `wrangler deploy`.
 
 ## Guardrails — explicit non-goals
 
@@ -129,7 +138,7 @@ message bus.
 | 1 ✅    | Identity & World: Member model, claim / archive / promote, multiple members per device, active-member prefs | none       |
 | 2 ✅    | Per-entity merge (`updatedAt` + tombstones, union-merge) → async shared Worlds, multi-device-you            | none       |
 | 3a ✅   | Live co-play engine: host-authoritative `SessionTransport` seam + same-origin (`BroadcastChannel`) transport; join by code / link; record-round intents | none       |
-| 3b      | The dumb relay for cross-device play behind the same seam + join by QR — resolves a code, forwards messages, stores no game data | dumb relay |
+| 3b ✅   | Cross-device live play: `RelayTransport` behind the same seam + a deploy-ready Cloudflare Worker/Durable Object relay (`relay/`) + join by QR — resolves a code, forwards messages, stores no game data | dumb relay |
 | later   | P2P transport (offline same-room) behind the same seam; field-level merge + "what changed elsewhere"        | none / relay |
 
 Identity and merge — the self-owned, local-first core — land **before** the relay, so the

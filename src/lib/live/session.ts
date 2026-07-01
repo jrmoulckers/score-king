@@ -17,6 +17,12 @@ import type { Participant, LiveState, LiveIntent, LiveMessage } from './protocol
 import { PROTOCOL_VERSION } from './protocol';
 import type { SessionTransport, TransportEnvelope } from './transport';
 import { BroadcastChannelTransport, isBroadcastSupported } from './broadcast';
+import {
+  RelayTransport,
+  isRelayConfigured,
+  isWebSocketSupported,
+  effectiveRelayUrl,
+} from './relay';
 import type { ID } from '../types';
 import { settings } from '../stores/settings';
 import { players } from '../stores/players';
@@ -31,13 +37,15 @@ export const liveParticipants = writable<Participant[]>([]);
 /** The guest's replica of the leader's game. Null for the leader (who uses its own screen). */
 export const liveReplica = writable<LiveState | null>(null);
 export const liveError = writable<string | null>(null);
+/** True when the active session runs over the relay (cross-device) vs. same-browser only. */
+export const liveRemote = writable<boolean>(false);
 
 /** Convenience: a session is live when hosting or joined as a guest. */
 export const liveActive = derived(liveStatus, ($s) => $s === 'hosting' || $s === 'guest');
 
-/** Whether this browser can run live play at all (same-origin transport for now). */
+/** Whether this browser can run live play at all (same-origin transport or the relay). */
 export function isLiveSupported(): boolean {
-  return isBroadcastSupported();
+  return isBroadcastSupported() || isWebSocketSupported();
 }
 
 /** Handlers the leader provides so the engine can read + mutate the durable World. */
@@ -110,7 +118,14 @@ function upsertPeer(p: Participant): void {
 }
 
 function makeTransport(code: string): SessionTransport {
-  // The only place that picks a transport — a relay implementation drops in here later.
+  // The only place that picks a transport. Prefer the relay when one is configured (real
+  // cross-device play); otherwise fall back to the same-origin BroadcastChannel (same
+  // browser profile). The engine above this line is identical either way.
+  if (isRelayConfigured()) {
+    liveRemote.set(true);
+    return new RelayTransport(effectiveRelayUrl(), code);
+  }
+  liveRemote.set(false);
   return new BroadcastChannelTransport(code);
 }
 
@@ -294,4 +309,5 @@ async function teardown(): Promise<void> {
   host = null;
   seq = 0;
   opChain = Promise.resolve();
+  liveRemote.set(false);
 }

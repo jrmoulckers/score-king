@@ -24,6 +24,7 @@
   import JsonIcon from '../lib/components/JsonIcon.svelte';
 
   let override = $state($settings.oneDriveClientId);
+  let relayInput = $state($settings.relayUrl);
   let busy = $state(false);
   let signedIn = $state(false);
   let fileInput: HTMLInputElement;
@@ -318,6 +319,11 @@
   function saveOverride() {
     settings.update((s) => ({ ...s, oneDriveClientId: override.trim() }));
     showToast('Client ID saved');
+  }
+
+  function saveRelay() {
+    settings.update((s) => ({ ...s, relayUrl: relayInput.trim() }));
+    showToast(relayInput.trim() ? 'Relay URL saved' : 'Relay URL cleared');
   }
 
   async function connect() {
@@ -759,6 +765,23 @@
           placeholder="00000000-0000-0000-0000-000000000000"
         />
         <button class="btn small" onclick={saveOverride}>Save ID</button>
+      </div>
+
+      <hr class="sep" />
+
+      <div class="stack" style="gap: 10px">
+        <div class="fieldlabel">Live play relay URL</div>
+        <div class="muted sm">
+          Play a live game together across different devices. Deploy the tiny relay in
+          <code>relay/</code> (see its <a
+            href="https://github.com/jrmoulckers/score-king/blob/main/relay/README.md"
+            target="_blank"
+            rel="noopener noreferrer">README</a
+          >) and paste its <code>wss://</code> address here — the same one on every device that
+          plays together. Leave blank to keep live play to this browser only.
+        </div>
+        <input type="text" bind:value={relayInput} placeholder="wss://your-relay.workers.dev" />
+        <button class="btn small" onclick={saveRelay}>Save relay</button>
       </div>
     </div>
   </details>

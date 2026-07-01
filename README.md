@@ -27,8 +27,9 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
 - **Local JSON export/import** as a zero‑setup backup option.
 - **Play together (live).** Host a game and others follow along in real time on a shared board:
   the host stays the single source of truth and players send round entries as *intents* the host
-  records. Today it links players in the **same browser** (multi‑tab) with **zero infrastructure**;
-  the same engine sits behind a transport seam so a tiny relay can add cross‑device play without
+  records. It links players in the **same browser** (multi‑tab) with **zero infrastructure**, and —
+  once you deploy the tiny relay in [`relay/`](relay/README.md) and set its URL — **across devices**
+  by code, link, or QR. The same engine sits behind a transport seam, so the relay swaps in without
   touching the game logic. Live play is never required — every game still works fully offline.
 - **Dark / light** themes.
 
@@ -91,13 +92,15 @@ src/
       onedrive.ts     # MSAL + Graph (JSON backup) implementation
     live/             # live co-play: host-authoritative engine + transport seam
       protocol.ts     # wire messages (hello/welcome/state/intent/…)
-      transport.ts    # SessionTransport interface (relay drops in later)
-      broadcast.ts    # same-origin BroadcastChannel transport
+      transport.ts    # SessionTransport interface (one seam, many transports)
+      broadcast.ts    # same-origin BroadcastChannel transport (same browser)
+      relay.ts        # cross-device transport over the relay (WebSocket)
       session.ts      # the engine: leader applies intents, rebroadcasts state
     stores/           # Svelte stores (games, players, settings, toast)
     types.ts          # GameModule contract + core types
     router.ts         # tiny history-based router
   pages/              # Home, GameType, GamePlay, LiveJoin, History, Stats, Players, Settings
+relay/                # deploy-ready Cloudflare Worker + Durable Object live relay
 ```
 
 **Data model** (mirrored in IndexedDB and the JSON backup):
