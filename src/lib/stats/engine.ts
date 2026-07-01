@@ -40,6 +40,7 @@ interface Acc {
   wins: number;
   podiums: number;
   rankSum: number;
+  rankSqSum: number;
   bestFinish: number;
   points: number;
   rounds: number;
@@ -47,6 +48,8 @@ interface Acc {
   h2h: Record<ID, HeadToHead>;
   comebackWins: number;
   wireToWireWins: number;
+  closeGames: number;
+  closeWins: number;
   bestWinMargin?: number;
   closestWinMargin?: number;
   nights: Set<string>;
@@ -65,6 +68,7 @@ function newAcc(id: ID): Acc {
     wins: 0,
     podiums: 0,
     rankSum: 0,
+    rankSqSum: 0,
     bestFinish: Infinity,
     points: 0,
     rounds: 0,
@@ -72,6 +76,8 @@ function newAcc(id: ID): Acc {
     h2h: {},
     comebackWins: 0,
     wireToWireWins: 0,
+    closeGames: 0,
+    closeWins: 0,
     nights: new Set(),
     firstPlayedAt: Infinity,
     lastPlayedAt: -Infinity,
@@ -152,6 +158,13 @@ export function computeStats(
     records.consider('longest', f.rounds.length, f.winners[0], f.game.id, t);
     for (const id of f.playerIds) records.consider('highTotal', f.totals[id], id, f.game.id, t);
 
+    // A "close" game: the winning margin is a small slice of the score spread —
+    // scale-free, so it reads the same for any game and either direction. Powers
+    // the clutch trait (win rate when it's tight).
+    const vals = f.playerIds.map((id) => f.totals[id] ?? 0);
+    const spread = vals.length ? Math.max(...vals) - Math.min(...vals) : 0;
+    const closeGame = spread > 0 && f.margin !== undefined && f.margin <= 0.1 * spread;
+
     for (const id of f.playerIds) {
       const a = acc(id);
       const rank = f.rankOf[id] ?? f.playerIds.length;
@@ -159,7 +172,12 @@ export function computeStats(
 
       a.played += 1;
       a.rankSum += rank;
+      a.rankSqSum += rank * rank;
       a.bestFinish = Math.min(a.bestFinish, rank);
+      if (closeGame) {
+        a.closeGames += 1;
+        if (isWin) a.closeWins += 1;
+      }
       // Top-3, but never "everyone" at a small table: caps at playerCount-1 so
       // last place is never a podium (e.g. top-2 in a 3-player game).
       if (rank <= Math.min(3, Math.max(1, f.playerIds.length - 1))) a.podiums += 1;
@@ -266,11 +284,15 @@ function finalize(a: Acc): MemberStats {
     headToHead: a.h2h,
     comebackWins: a.comebackWins,
     wireToWireWins: a.wireToWireWins,
+    closeGames: a.closeGames,
+    closeWins: a.closeWins,
     gameNights: a.nights.size,
   };
   if (a.played > 0) {
     m.avgFinish = a.rankSum / a.played;
     m.bestFinish = a.bestFinish;
+    const variance = a.rankSqSum / a.played - m.avgFinish * m.avgFinish;
+    m.finishStdev = Math.sqrt(Math.max(0, variance));
     m.firstPlayedAt = a.firstPlayedAt;
     m.lastPlayedAt = a.lastPlayedAt;
   }

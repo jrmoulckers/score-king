@@ -33,6 +33,8 @@ export interface Settings {
   keepAwake: boolean;
   /** Blur scores with a tap-to-reveal veil after the phone is set down. */
   privacyGuard: boolean;
+  /** Let the Daily Crown & Court surface playful roasts/rivalries, not just flexes. */
+  roastMode: boolean;
 
   // ── Device-local sync state ───────────────────────────────────────────────
   // OneDrive connection, the backup file's own location, and per-device sync
@@ -47,6 +49,12 @@ export interface Settings {
   oneDriveConnected: boolean;
   lastSync: number | null;
   lastRestore: number | null;
+  /**
+   * Which member this device treats as "you" — the personal lens for Stats,
+   * Daily Crown and Wrapped. Device-local: the member record lives in the World,
+   * but which one is *you* is per-device, so it never rides a backup.
+   */
+  mePlayerId: string | null;
 }
 
 /**
@@ -68,6 +76,7 @@ export const PORTABLE_SETTING_KEYS = [
   'colorBlind',
   'keepAwake',
   'privacyGuard',
+  'roastMode',
 ] as const;
 
 /**
@@ -86,6 +95,7 @@ export const LOCAL_SETTING_KEYS = [
   'oneDriveConnected',
   'lastSync',
   'lastRestore',
+  'mePlayerId',
 ] as const;
 
 export type PortableSettingKey = (typeof PORTABLE_SETTING_KEYS)[number];
@@ -116,6 +126,7 @@ const defaults: Settings = {
   colorBlind: false,
   keepAwake: false,
   privacyGuard: false,
+  roastMode: true,
   oneDriveClientId: '',
   oneDriveFolderMode: 'app',
   oneDriveCustomPath: '',
@@ -124,6 +135,7 @@ const defaults: Settings = {
   oneDriveConnected: false,
   lastSync: null,
   lastRestore: null,
+  mePlayerId: null,
 };
 
 function load(): Settings {
@@ -157,6 +169,11 @@ export function applySettings() {
 
 export function toggleTheme() {
   settings.update((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }));
+}
+
+/** Point this device's personal lens at a member (or clear it). */
+export function setMePlayer(id: string | null) {
+  settings.update((s) => ({ ...s, mePlayerId: id }));
 }
 
 export function markSynced(ts: number) {

@@ -70,6 +70,8 @@ export interface MemberStats {
   /** Mean finishing position (1 = first); undefined with no finished games. */
   avgFinish?: number;
   bestFinish?: number;
+  /** Population stdev of finishing positions — volatility; undefined with no games. */
+  finishStdev?: number;
   /** Consecutive wins ending at the most recent finished game. */
   currentStreak: number;
   longestStreak: number;
@@ -81,6 +83,9 @@ export interface MemberStats {
   // Drama
   comebackWins: number;
   wireToWireWins: number;
+  /** Games decided by a small margin, and how many the member won (clutch). */
+  closeGames: number;
+  closeWins: number;
   bestWinMargin?: number;
   closestWinMargin?: number;
   // Cadence
