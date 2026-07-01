@@ -37,6 +37,7 @@
     liveStatus,
     liveParticipants,
     liveCode,
+    liveRemote,
   } from '../lib/live/session';
   import type { HostHandlers } from '../lib/live/session';
   import type { LiveState, LiveIntent } from '../lib/live/protocol';
@@ -462,6 +463,7 @@
     code={$liveCode}
     link={liveLink}
     count={$liveParticipants.length}
+    remote={$liveRemote}
     onclose={() => (sheetOpen = false)}
     onend={stopLive}
   />

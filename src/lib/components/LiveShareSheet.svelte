@@ -6,17 +6,47 @@
     code,
     link,
     count,
+    remote = false,
     onclose,
     onend,
   }: {
     code: string;
     link: string;
     count: number;
+    /** True when the session runs over the relay — i.e. the link genuinely works cross-device. */
+    remote?: boolean;
     onclose: () => void;
     onend: () => void;
   } = $props();
 
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  // A scannable QR only when a relay makes the link reachable from another device; showing one
+  // for a same-browser BroadcastChannel session would be a lie (a scanning phone can't join).
+  let qr = $state('');
+  $effect(() => {
+    const target = link;
+    if (!remote || !target) {
+      qr = '';
+      return;
+    }
+    let alive = true;
+    // Lazy-load qrcode only when a host actually needs a scannable code — keeps it out of the
+    // core bundle (like the OneDrive chunk), since most sessions never open this sheet.
+    import('qrcode')
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(target, { margin: 1, width: 240, errorCorrectionLevel: 'M' }),
+      )
+      .then((url) => {
+        if (alive) qr = url;
+      })
+      .catch(() => {
+        if (alive) qr = '';
+      });
+    return () => {
+      alive = false;
+    };
+  });
 
   async function copy(text: string, label: string) {
     try {
@@ -78,6 +108,13 @@
     <span class="code">{code}</span>
   </div>
 
+  {#if remote && qr}
+    <div class="qr">
+      <img src={qr} alt="QR code to join the game" width="150" height="150" />
+      <span class="qrhint">Scan to join</span>
+    </div>
+  {/if}
+
   <button class="btn {canNativeShare ? '' : 'primary'} block" onclick={() => copy(link, 'Link')}>
     🔗 Copy link
   </button>
@@ -89,10 +126,16 @@
     <button class="btn grow" onclick={openPlayerTab}>Open a player tab</button>
   </div>
 
-  <p class="note">
-    Others on this browser can join right now — open the link in another tab or window.
-    Joining from a different device turns on once a relay is configured.
-  </p>
+  {#if remote}
+    <p class="note">
+      Scan the code or share the link — anyone can join from their own device, wherever they are.
+    </p>
+  {:else}
+    <p class="note">
+      Others on this browser can join right now — open the link in another tab or window.
+      Joining from a different device turns on once a relay is configured.
+    </p>
+  {/if}
 
   <button class="btn danger block" onclick={onend}>End live game</button>
 </div>
@@ -182,6 +225,26 @@
     font-size: 0.85rem;
     color: var(--muted);
     line-height: 1.45;
+  }
+  .qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .qr img {
+    /* A white quiet zone is required for reliable scanning, so the QR keeps a light card
+       in both themes — a deliberate exception to the surface ramp, for function. */
+    width: 150px;
+    height: 150px;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    background: #fff;
+    box-shadow: var(--shadow);
+  }
+  .qrhint {
+    font-size: 0.8rem;
+    color: var(--muted);
   }
   @keyframes rise {
     from {

@@ -1,0 +1,18 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "score-king-relay"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# One Durable Object class = the per-session room that forwards messages.
+[[durable_objects.bindings]]
+name = "SESSIONS"
+class_name = "SessionRoom"
+
+# SQLite-backed Durable Objects are required for new namespaces on the free plan.
+# (We store nothing durably — this is just the class the runtime needs declared.)
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SessionRoom"]
+
+[observability]
+enabled = true
