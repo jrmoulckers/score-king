@@ -31,6 +31,10 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
   once you deploy the tiny relay in [`relay/`](relay/README.md) and set its URL — **across devices**
   by code, link, or QR. The same engine sits behind a transport seam, so the relay swaps in without
   touching the game logic. Live play is never required — every game still works fully offline.
+- **Nearby play (no internet).** Same‑room? Skip the relay entirely. Devices connect **directly over
+  WebRTC**, set up by scanning (or pasting) a one‑time QR — no server, no code to type, nothing
+  leaves the local network. Hosts add players from the game screen (**📡 Play nearby**); guests join
+  at **/nearby**. Same host‑authoritative engine, just a serverless transport.
 - **Dark / light** themes.
 
 ### Games today
@@ -95,11 +99,13 @@ src/
       transport.ts    # SessionTransport interface (one seam, many transports)
       broadcast.ts    # same-origin BroadcastChannel transport (same browser)
       relay.ts        # cross-device transport over the relay (WebSocket)
+      webrtc.ts       # serverless nearby transport (WebRTC data channels, LAN-only)
+      signal.ts       # compact QR/paste handshake codec (deflate + base64url)
       session.ts      # the engine: leader applies intents, rebroadcasts state
     stores/           # Svelte stores (games, players, settings, toast)
     types.ts          # GameModule contract + core types
     router.ts         # tiny history-based router
-  pages/              # Home, GameType, GamePlay, LiveJoin, History, Stats, Players, Settings
+  pages/              # Home, GameType, GamePlay, LiveJoin, NearbyJoin, History, Stats, Players, Settings
 relay/                # deploy-ready Cloudflare Worker + Durable Object live relay
 ```
 

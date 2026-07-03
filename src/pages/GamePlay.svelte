@@ -25,21 +25,24 @@
   import Scoreboard from '../lib/components/Scoreboard.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
   import LiveShareSheet from '../lib/components/LiveShareSheet.svelte';
+  import NearbyHostSheet from '../lib/components/NearbyHostSheet.svelte';
   import { get } from 'svelte/store';
   import {
     startHosting,
+    startHostingNearby,
     leaveSession,
     publish,
     runHostExclusive,
     currentSelf,
     isLiveSupported,
+    isNearbySupported,
     liveActive,
     liveStatus,
     liveParticipants,
     liveCode,
     liveRemote,
   } from '../lib/live/session';
-  import type { HostHandlers } from '../lib/live/session';
+  import type { HostHandlers, NearbyHostControls } from '../lib/live/session';
   import type { LiveState, LiveIntent } from '../lib/live/protocol';
 
   let { id }: { id: string } = $props();
@@ -256,7 +259,12 @@
   // The leader keeps using this very screen; the engine just mirrors the game
   // to guests and feeds their round proposals back through the same store flow.
   const liveSupported = isLiveSupported();
+  const nearbySupported = isNearbySupported();
   let sheetOpen = $state(false);
+  let nearbyOpen = $state(false);
+  let nearbyControls = $state<NearbyHostControls | null>(null);
+  // Which transport backs the active session, so the live bar reopens the right sheet.
+  let liveKind = $state<'relay' | 'nearby' | null>(null);
   const liveLink = $derived($liveCode ? absoluteUrl(`/join/${$liveCode}`) : '');
 
   // While hosting, route the host's own durable writes through the engine's serial queue
@@ -298,19 +306,48 @@
     };
     try {
       await startHosting(generateJoinCode(), handlers);
+      liveKind = 'relay';
       sheetOpen = true;
     } catch {
       showToast('Couldn’t start live play on this device.');
     }
   }
 
+  async function startNearby() {
+    if (!game) return;
+    const self = currentSelf('leader');
+    const handlers: HostHandlers = {
+      self,
+      buildState: buildLiveState,
+      applyIntent: applyLiveIntent,
+    };
+    try {
+      nearbyControls = await startHostingNearby(generateJoinCode(), handlers);
+      liveKind = 'nearby';
+      nearbyOpen = true;
+    } catch {
+      showToast('Couldn’t start nearby play on this device.');
+    }
+  }
+
+  function openLiveSheet() {
+    if (liveKind === 'nearby') nearbyOpen = true;
+    else sheetOpen = true;
+  }
+
   async function stopLive() {
     await leaveSession();
     sheetOpen = false;
+    nearbyOpen = false;
   }
 
   $effect(() => {
-    if (!$liveActive) sheetOpen = false;
+    if (!$liveActive) {
+      sheetOpen = false;
+      nearbyOpen = false;
+      nearbyControls = null;
+      liveKind = null;
+    }
   });
 
   onDestroy(() => {
@@ -347,20 +384,25 @@
 
   {#if liveSupported && game.status === 'active'}
     {#if $liveActive}
-      <button class="card row spread livebar" onclick={() => (sheetOpen = true)}>
+      <button class="card row spread livebar" onclick={openLiveSheet}>
         <span class="row" style="gap: 10px">
           <span class="livedot" aria-hidden="true"></span>
           <span style="display: flex; flex-direction: column; text-align: left">
             <strong>Live game</strong>
             <span class="muted" style="font-size: 0.8rem">
-              {$liveParticipants.length} here · tap to share
+              {$liveParticipants.length} here · tap to {liveKind === 'nearby' ? 'add players' : 'share'}
             </span>
           </span>
         </span>
-        <span class="pill">Share</span>
+        <span class="pill">{liveKind === 'nearby' ? 'Nearby' : 'Share'}</span>
       </button>
     {:else}
-      <button class="btn ghost block playtogether" onclick={startLive}>👋 Play together</button>
+      <div class="stack" style="gap: 8px; margin-top: 12px">
+        <button class="btn ghost block" onclick={startLive}>👋 Play together</button>
+        {#if nearbySupported}
+          <button class="btn ghost block" onclick={startNearby}>📡 Play nearby — no internet</button>
+        {/if}
+      </div>
     {/if}
   {/if}
 
@@ -469,10 +511,11 @@
   />
 {/if}
 
+{#if nearbyOpen && $liveActive && nearbyControls}
+  <NearbyHostSheet controls={nearbyControls} onclose={() => (nearbyOpen = false)} onend={stopLive} />
+{/if}
+
 <style>
-  .playtogether {
-    margin-top: 12px;
-  }
   .livebar {
     margin-top: 12px;
     width: 100%;

@@ -23,8 +23,9 @@ flowchart TB
     M --- W
   end
   W <-->|"ASYNC · per-entity merge + ETag<br/>your devices · a shared group World"| Store[("Your own cloud store<br/>OneDrive today · others later")]
-  W <-->|"LIVE · host-authoritative move protocol"| T["SessionTransport<br/>relay now · P2P later"]
+  W <-->|"LIVE · host-authoritative move protocol"| T["SessionTransport<br/>relay · P2P · same-browser"]
   T -.->|"stateless rendezvous + bus<br/>stores NO game data"| Relay["Dumb relay<br/>code / QR / magic-link"]
+  T -.->|"serverless · LAN-only<br/>QR / paste handshake"| P2P["WebRTC data channel<br/>no relay · no internet"]
 ```
 
 ## Core concepts
@@ -98,13 +99,15 @@ is ephemeral propagation, not a second source of truth.
 
 A single `SessionTransport` interface (sibling to the storage `SyncProvider`):
 
-- **Relay first, peer-to-peer later** — the host-authoritative logic above it is unchanged when
+- **Relay first, peer-to-peer too** — the host-authoritative logic above it is unchanged as
   the transport swaps.
 - Members join by **code / QR / magic-link**.
 - First implementation is a **same-origin `BroadcastChannel`** transport (same-browser,
   multi-tab) — zero infrastructure, yet it exercises the whole host-authoritative engine.
   A `RelayTransport` (`src/lib/live/relay.ts`) drops in behind the same seam to add
-  cross-device play, chosen in the one `makeTransport` factory when a relay URL is set.
+  cross-device play, chosen in the one `makeTransport` factory when a relay URL is set. A
+  `WebRtcTransport` (`src/lib/live/webrtc.ts`) drops in the same way for serverless same-room
+  play — see **Nearby** below.
 
 ### The relay — dumb and stateless on purpose
 
@@ -121,6 +124,24 @@ at build time or a per-device override in **Settings → Advanced → Live play 
 (mirroring the OneDrive client-ID override). The hosted deployment + public URL is the
 operator's call; the code is ready to `wrangler deploy`.
 
+### Nearby — serverless, no relay, no internet
+
+For same-room play with no infrastructure at all, a `WebRtcTransport` (`src/lib/live/webrtc.ts`)
+sits behind the same seam. Devices connect directly over a **WebRTC data channel**; the one piece
+that normally needs a server — exchanging connection descriptions (SDP) — is instead **hand-carried
+between the devices in the room** as a QR code or copied text. `signal.ts` compacts that blob with
+deflate + base64url so a whole offer/answer fits one scannable code. Peers use `iceServers: []`, so
+only local-network candidates are gathered: nothing is relayed and no public address is discovered —
+the connection simply won't leave the LAN.
+
+The star maps cleanly because the live protocol is already **leader-centric** (guests only message
+the leader; the leader broadcasts to all — never guest↔guest). The leader holds one peer connection
+per guest, and the transport fans out / addresses frames and synthesizes disconnects, so
+`onLeaderMessage` / `onGuestMessage` are reused untouched. Hosts add players from the game screen
+(**📡 Play nearby**); guests join at **/nearby** by trading codes, then land in the same shared
+`ReplicaBoard` as relay guests. Camera scanning (jsQR) and QR rendering (qrcode) are lazy-loaded, so
+neither touches the core bundle.
+
 ## Guardrails — explicit non-goals
 
 - **Accounts are local & optional** — never a login, never a precondition to play.
@@ -128,7 +149,7 @@ operator's call; the code is ready to `wrangler deploy`.
 - **The relay never holds game data** — storage stays self-owned.
 - **Never key identity off the mutable handle** — always the stable `id`.
 - **No CRDTs for live concurrency** — host-authority removes the need.
-- **Don't build P2P first** — but keep the transport seam so it is a drop-in later.
+- **Build P2P last, not first** — it dropped in behind the transport seam with no engine changes.
 
 ## Roadmap — soul first, infrastructure last
 
@@ -139,7 +160,8 @@ operator's call; the code is ready to `wrangler deploy`.
 | 2 ✅    | Per-entity merge (`updatedAt` + tombstones, union-merge) → async shared Worlds, multi-device-you            | none       |
 | 3a ✅   | Live co-play engine: host-authoritative `SessionTransport` seam + same-origin (`BroadcastChannel`) transport; join by code / link; record-round intents | none       |
 | 3b ✅   | Cross-device live play: `RelayTransport` behind the same seam + a deploy-ready Cloudflare Worker/Durable Object relay (`relay/`) + join by QR — resolves a code, forwards messages, stores no game data | dumb relay |
-| later   | P2P transport (offline same-room) behind the same seam; field-level merge + "what changed elsewhere"        | none / relay |
+| 4 ✅    | Nearby serverless co-play: `WebRtcTransport` behind the same seam — WebRTC data channels over a hand-carried QR / copy-paste handshake (`signal.ts`), LAN-only (`iceServers: []`), no relay and no internet | none       |
+| later   | Field-level merge + a "what changed elsewhere" insight on async World sync                                  | none / relay |
 
 Identity and merge — the self-owned, local-first core — land **before** the relay, so the
 product's soul is real before any backend exists.
