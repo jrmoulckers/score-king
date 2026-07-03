@@ -23,6 +23,7 @@ import {
   isWebSocketSupported,
   effectiveRelayUrl,
 } from './relay';
+import { WebRtcTransport, isWebRtcSupported } from './webrtc';
 import type { ID } from '../types';
 import { settings } from '../stores/settings';
 import { players } from '../stores/players';
@@ -43,9 +44,14 @@ export const liveRemote = writable<boolean>(false);
 /** Convenience: a session is live when hosting or joined as a guest. */
 export const liveActive = derived(liveStatus, ($s) => $s === 'hosting' || $s === 'guest');
 
-/** Whether this browser can run live play at all (same-origin transport or the relay). */
+/** Whether this browser can run live play at all (same-origin, the relay, or nearby P2P). */
 export function isLiveSupported(): boolean {
-  return isBroadcastSupported() || isWebSocketSupported();
+  return isBroadcastSupported() || isWebSocketSupported() || isWebRtcSupported();
+}
+
+/** Whether serverless nearby (WebRTC) play can run on this device. */
+export function isNearbySupported(): boolean {
+  return isWebRtcSupported();
 }
 
 /** Handlers the leader provides so the engine can read + mutate the durable World. */
@@ -204,6 +210,113 @@ export function sendIntent(intent: LiveIntent): void {
   send({ t: 'intent', intent }, leaderId ?? undefined);
 }
 
+// ── Nearby (serverless WebRTC) play ────────────────────────────────────────────────────
+// Same host-authoritative engine, different transport: no relay, no server — the handshake
+// is hand-carried between devices in the room as a QR / copy-paste (see live/webrtc.ts).
+// The controls below let the nearby-play UI drive that out-of-band exchange; once a data
+// channel opens, everything funnels through the same onLeader/onGuestMessage paths above.
+
+/** Host-side controls to invite guests over the serverless nearby transport. */
+export interface NearbyHostControls {
+  /** Mint one invite (an offer) to show the next guest as a QR / code. */
+  createInvite(): Promise<string>;
+  /** Take that guest's scanned/pasted reply (their answer) and connect them. */
+  acceptAnswer(answer: string): Promise<void>;
+  /** Drop an invite the host backed out of before the guest replied. */
+  cancelInvite(): void;
+}
+
+/** Guest-side control to accept a host's nearby invite. */
+export interface NearbyGuestControls {
+  /** Take the host's offer, and return the answer signal to show back to the host. */
+  acceptInvite(offer: string): Promise<string>;
+}
+
+/** Start hosting a **nearby** (serverless, same-room) live session. */
+export async function startHostingNearby(
+  code: string,
+  handlers: HostHandlers,
+): Promise<NearbyHostControls> {
+  await teardown();
+  role = 'leader';
+  host = handlers;
+  selfId = handlers.self.id;
+  leaderId = handlers.self.id;
+  rev = 0;
+  setPeers([handlers.self]);
+  liveCode.set(code);
+  liveReplica.set(null);
+  liveError.set(null);
+  liveStatus.set('connecting');
+
+  const rtc = new WebRtcTransport(code, 'leader');
+  transport = rtc;
+  liveRemote.set(true);
+  unsubMessage = transport.onMessage(onLeaderMessage);
+  try {
+    await transport.open(); // a leader is ready at once; guests attach as they scan in
+    liveStatus.set('hosting');
+    attachUnload();
+  } catch (e) {
+    liveError.set(e instanceof Error ? e.message : 'Could not start nearby play.');
+    liveStatus.set('error');
+    await teardown();
+    throw e;
+  }
+  return {
+    createInvite: () => rtc.createInvite(),
+    acceptAnswer: (answer: string) => rtc.acceptAnswer(answer),
+    cancelInvite: () => rtc.cancelInvite(),
+  };
+}
+
+/** Join a **nearby** live session as a guest by accepting the host's scanned/pasted invite. */
+export async function joinSessionNearby(self: Participant): Promise<NearbyGuestControls> {
+  await teardown();
+  role = 'guest';
+  selfId = self.id;
+  rev = 0;
+  setPeers([]);
+  liveCode.set(null);
+  liveReplica.set(null);
+  liveError.set(null);
+  liveStatus.set('connecting');
+
+  const rtc = new WebRtcTransport('', 'guest');
+  transport = rtc;
+  liveRemote.set(true);
+  unsubMessage = transport.onMessage(onGuestMessage);
+
+  return {
+    acceptInvite: async (offer: string): Promise<string> => {
+      // Throws (surfaced to the UI) if the offer is malformed. Builds the peer + answer.
+      const answer = await rtc.acceptInvite(offer);
+      liveCode.set(rtc.code);
+      // The channel opens once the host scans our answer; then announce ourselves and wait
+      // for the welcome, exactly like the code-based join.
+      void rtc
+        .open()
+        .then(() => {
+          send({ t: 'hello', protocol: PROTOCOL_VERSION, participant: self });
+          joinTimer = setTimeout(() => {
+            if (get(liveStatus) === 'connecting') {
+              liveError.set('Connected, but the host didn’t respond. Ask them to try again.');
+              liveStatus.set('error');
+              void teardown();
+            }
+          }, JOIN_TIMEOUT_MS);
+        })
+        .catch((e: unknown) => {
+          if (get(liveStatus) === 'connecting') {
+            liveError.set(e instanceof Error ? e.message : 'Nearby play didn’t connect.');
+            liveStatus.set('error');
+            void teardown();
+          }
+        });
+      return answer;
+    },
+  };
+}
 /** Leave the session cleanly (leader ends it for everyone; a guest just departs). */
 export async function leaveSession(): Promise<void> {
   if (transport && selfId) {

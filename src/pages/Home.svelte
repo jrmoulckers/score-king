@@ -4,9 +4,10 @@
   import { players } from '../lib/stores/players';
   import { link, navigate } from '../lib/router';
   import { relativeTime, normalizeJoinCode } from '../lib/util';
-  import { isLiveSupported } from '../lib/live/session';
+  import { isLiveSupported, isNearbySupported } from '../lib/live/session';
 
   const liveSupported = isLiveSupported();
+  const nearbySupported = isNearbySupported();
   let codeInput = $state('');
   function submitJoin(e: Event) {
     e.preventDefault();
@@ -55,23 +56,37 @@
   {/each}
 </div>
 
-{#if liveSupported}
+{#if liveSupported || nearbySupported}
   <div class="section-title">Join a live game</div>
-  <form class="card row" onsubmit={submitJoin}>
-    <input
-      class="joincode"
-      type="text"
-      autocapitalize="characters"
-      autocomplete="off"
-      autocorrect="off"
-      spellcheck="false"
-      maxlength="8"
-      placeholder="Enter code"
-      aria-label="Live game join code"
-      bind:value={codeInput}
-    />
-    <button class="btn" type="submit" disabled={!codeInput.trim()}>Join</button>
-  </form>
+  {#if liveSupported}
+    <form class="card row" onsubmit={submitJoin}>
+      <input
+        class="joincode"
+        type="text"
+        autocapitalize="characters"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        maxlength="8"
+        placeholder="Enter code"
+        aria-label="Live game join code"
+        bind:value={codeInput}
+      />
+      <button class="btn" type="submit" disabled={!codeInput.trim()}>Join</button>
+    </form>
+  {/if}
+  {#if nearbySupported}
+    <a class="card row spread tile nearby-entry" href="/nearby" use:link>
+      <span class="row" style="gap: 12px">
+        <span class="big-emoji">📡</span>
+        <span>
+          <div><strong>Join a nearby game</strong></div>
+          <div class="muted sm">No code — scan the host’s invite. Works with no internet.</div>
+        </span>
+      </span>
+      <span class="pill">Nearby</span>
+    </a>
+  {/if}
 {/if}
 
 {#if recent.length}
