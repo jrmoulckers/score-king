@@ -203,6 +203,13 @@ export interface SyncProvider {
    */
   pull(): Promise<PulledSnapshot | null>;
   /**
+   * Cheaply read ONLY the active backup's item eTag — a metadata request, no content download —
+   * so a foreground poll can detect a remote change before paying for a full {@link pull}. Resolves
+   * to null when no backup exists yet. Pass `{ interactive: false }` so a background poll never
+   * triggers a sign-in redirect (throws {@link InteractionRequiredError} instead).
+   */
+  peekEtag(opts?: PushOptions): Promise<string | null>;
+  /**
    * List every backup file detected in the configured folder, newest first. Resolves to an
    * empty array when the folder doesn't exist yet. Pass `{ interactive: false }` so a background /
    * on-mount refresh never triggers a sign-in redirect (throws {@link InteractionRequiredError}).
@@ -281,6 +288,26 @@ export function mergeSnapshots(local: Snapshot, remote: Snapshot): Snapshot {
 }
 
 /**
+ * A version fingerprint of a World: each record's id paired with its effective merge stamp,
+ * order-independent. Two snapshots with the same fingerprint carry the same records at the
+ * same versions — device prefs and `exportedAt` are ignored, since they don't affect
+ * convergence of the shared data.
+ */
+function worldFingerprint(s: Snapshot): string {
+  const key = (arr: Mergeable[]) =>
+    arr
+      .map((e) => `${e.id}:${mergeStamp(e)}`)
+      .sort()
+      .join(',');
+  return `${key(s.players)}|${key(s.games)}|${key(s.rounds)}`;
+}
+
+/** Whether two Worlds hold the same records at the same versions. */
+function sameWorld(a: Snapshot, b: Snapshot): boolean {
+  return worldFingerprint(a) === worldFingerprint(b);
+}
+
+/**
  * Reconcile local and remote into one merged World and write it to both. Used when a
  * conditional push hits a {@link ConflictError}: pull the remote, merge per-entity,
  * persist the merge locally, then push it (conditional on the version we merged from).
@@ -308,6 +335,49 @@ export async function reconcile(
     }
   }
   throw lastErr instanceof Error ? lastErr : new ConflictError();
+}
+
+/** Outcome of a {@link pullMerge}: what changed locally and the eTag this device now tracks. */
+export interface PullMergeResult {
+  /** eTag of the backup this device is now aligned to (null when unknown). */
+  etag: string | null;
+  /** The local store gained records/edits from the remote — open screens should refresh. */
+  changedLocal: boolean;
+  /** This device held unique records, so the merge was written back to the cloud. */
+  pushed: boolean;
+}
+
+/**
+ * Read side of sync: pull the remote World and merge it into local WITHOUT forcing a write-back
+ * unless this device actually holds records the remote is missing. This lets a passive device
+ * (one that isn't editing) converge to other devices' changes on focus/online/connect, and it
+ * never clobbers local edits — union by id, newest-per-id wins, tombstones preserved.
+ *
+ * A pure catch-up (local carries nothing the remote lacks) adopts the remote and its eTag and
+ * does NOT push, so two idle devices don't ping-pong eTag bumps. When this device does hold
+ * unique edits, it delegates to {@link reconcile} (retry-safe) to fold both sides together.
+ *
+ * Returns `null` when no backup exists yet.
+ */
+export async function pullMerge(
+  provider: SyncProvider,
+  opts: { interactive?: boolean } = {},
+): Promise<PullMergeResult | null> {
+  const interactive = opts.interactive ?? false;
+  const pulled = await provider.pull();
+  if (!pulled) return null; // nothing backed up yet — nothing to catch up to
+  const local = await buildSnapshot();
+  const merged = mergeSnapshots(local, pulled.snapshot);
+  const changedLocal = !sameWorld(merged, local);
+  if (sameWorld(merged, pulled.snapshot)) {
+    // merged === remote ⇒ this device contributed nothing new (it was simply behind).
+    // Adopt the remote (and its version) without writing back.
+    if (changedLocal) await restoreSnapshot(merged);
+    return { etag: pulled.etag, changedLocal, pushed: false };
+  }
+  // We hold records the remote lacks — fold both sides together and push, retry-safe.
+  const res = await reconcile(provider, { interactive });
+  return { etag: res.etag, changedLocal: true, pushed: true };
 }
 
 /** Lazy-load the OneDrive provider (keeps MSAL out of the main bundle). */

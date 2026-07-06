@@ -1,7 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { settings, markSynced, getBackupSettings, setActiveBackupEtag } from '../stores/settings';
 import { dataVersion } from './changes';
-import { buildSnapshot, getOneDrive, reconcile, ConflictError, InteractionRequiredError } from './sync';
+import { buildSnapshot, getOneDrive, reconcile, pullMerge, ConflictError, InteractionRequiredError } from './sync';
 import type { SyncProvider } from './sync';
 import { refreshPlayers } from '../stores/players';
 import { refreshGames } from '../stores/games';
@@ -21,6 +21,16 @@ export const autoSyncStatus = writable<AutoSyncStatus>('idle');
 /** Debounce window: coalesce a burst of edits into a single upload. */
 const DEBOUNCE_MS = 2500;
 
+/** Minimum gap between foreground catch-up pulls, so rapid focus/online events don't thrash. */
+const CATCHUP_MIN_GAP_MS = 3000;
+
+/**
+ * Foreground poll cadence. While the tab is visible and sync is active, we cheaply check the
+ * remote eTag on this interval so two devices both left open still converge without anyone
+ * touching them — see {@link poll}. Not a full pull: an unchanged eTag costs one small request.
+ */
+const POLL_INTERVAL_MS = 30_000;
+
 let started = false;
 let dirty = false; // local changes awaiting upload
 let pushing = false; // an upload is in flight
@@ -29,6 +39,8 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 let lastVersion = 0;
 let wasActive = false;
 let lastPortableSig: string | undefined; // JSON of the last-seen portable settings
+let lastCatchUp = 0; // last foreground pull time, to throttle focus/online bursts
+let pollTimer: ReturnType<typeof setInterval> | undefined; // foreground eTag poll, when visible
 
 function enabled(): boolean {
   return get(settings).autoSync;
@@ -175,15 +187,142 @@ async function mergeRemote(od: SyncProvider): Promise<void> {
   }
 }
 
+/**
+ * Foreground catch-up — the *read* side of sync. Unlike {@link run} (which only fires when this
+ * device has local edits to push), this pulls the remote World and merges it in even with no
+ * pending changes, so a passive device converges to other devices' edits on
+ * focus/visibility/online/connect. Never starts an interactive sign-in; a pure catch-up doesn't
+ * write back (see {@link pullMerge}), so two idle devices don't ping-pong.
+ */
+async function catchUp(): Promise<void> {
+  if (pushing || !active() || conflicted) return;
+  const now = Date.now();
+  if (now - lastCatchUp < CATCHUP_MIN_GAP_MS) return; // throttle focus/online bursts
+  lastCatchUp = now;
+  if (!isOnline()) {
+    autoSyncStatus.set('offline');
+    return;
+  }
+
+  let od: SyncProvider;
+  try {
+    od = await getOneDrive();
+  } catch {
+    return; // provider failed to load — nothing we can do in the background
+  }
+  if (!od.isConfigured()) return;
+
+  // Reuse the provider's cached session; never start an interactive sign-in here.
+  try {
+    await od.prepare();
+  } catch {
+    /* fall through to the signed-in check below */
+  }
+  if (!od.isSignedIn()) {
+    autoSyncStatus.set('pending');
+    return;
+  }
+
+  pushing = true;
+  autoSyncStatus.set('syncing');
+  try {
+    const res = await pullMerge(od, { interactive: false });
+    if (res) {
+      setActiveBackupEtag(res.etag); // track the version we're now aligned to
+      if (res.changedLocal) await Promise.all([refreshPlayers(), refreshGames()]);
+      markSynced(Date.now());
+    }
+    if (dirty) {
+      schedule(); // edits arrived during catch-up — push them next
+    } else if (res) {
+      autoSyncStatus.set('synced');
+    } else {
+      autoSyncStatus.set('idle'); // connected but nothing backed up yet
+    }
+  } catch (e) {
+    if (e instanceof ConflictError) {
+      // The remote kept moving and we couldn't win the conditional push — hand off to a
+      // manual resolve so we never spin or clobber.
+      conflicted = true;
+      autoSyncStatus.set('conflict');
+    } else if (e instanceof InteractionRequiredError) {
+      autoSyncStatus.set('pending');
+    } else {
+      autoSyncStatus.set('error');
+    }
+  } finally {
+    pushing = false;
+  }
+}
+
+/**
+ * Foreground poll — the lightweight companion to {@link catchUp}. On a cadence, while the tab is
+ * visible and active, cheaply read *just* the remote eTag (a metadata request, no download) and
+ * only when it differs from the version this device is aligned to do we run a full {@link catchUp}
+ * to pull + merge. An unchanged eTag touches nothing locally, so two devices both left open
+ * converge within a cycle without polling the whole World or risking ping-pong. Never interactive.
+ */
+async function poll(): Promise<void> {
+  if (pushing || !active() || conflicted || !isOnline()) return;
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+
+  let od: SyncProvider;
+  try {
+    od = await getOneDrive();
+  } catch {
+    return; // provider failed to load — try again next tick
+  }
+  if (!od.isConfigured()) return;
+  try {
+    await od.prepare();
+  } catch {
+    /* fall through to the signed-in check below */
+  }
+  if (!od.isSignedIn()) return; // silent session gone — a catch-up/edit will surface 'pending'
+
+  let remoteEtag: string | null;
+  try {
+    remoteEtag = await od.peekEtag({ interactive: false });
+  } catch {
+    return; // silent-auth or transient network failure — retry next tick
+  }
+  if (remoteEtag === null) return; // nothing backed up yet — nothing to catch up to
+  if (remoteEtag === get(settings).oneDriveBackupEtag) return; // already aligned — skip the pull
+
+  await catchUp(); // remote moved — pay for the full pull + merge now
+}
+
+/** Begin foreground polling if it isn't already running and we're active + visible. */
+function startPoll(): void {
+  if (pollTimer !== undefined || !active()) return;
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+  pollTimer = setInterval(() => void poll(), POLL_INTERVAL_MS);
+}
+
+/** Stop foreground polling — call when the tab is hidden or sync is turned off/disconnected. */
+function stopPoll(): void {
+  if (pollTimer !== undefined) {
+    clearInterval(pollTimer);
+    pollTimer = undefined;
+  }
+}
+
 function onOnline(): void {
-  if (dirty && active()) void run();
+  // Reconnected — pull others' changes; catchUp also re-pushes our own pending edits.
+  if (active()) void catchUp();
 }
 
 function onVisibility(): void {
-  // Best-effort flush when the tab is backgrounded, so a pending edit isn't
-  // stranded if the user navigates away before the debounce fires.
-  if (document.visibilityState === 'hidden' && dirty && active() && isOnline()) {
-    void run();
+  if (document.visibilityState === 'hidden') {
+    stopPoll(); // don't poll a backgrounded tab — save battery/quota (timers throttle anyway)
+    // Best-effort flush when the tab is backgrounded, so a pending edit isn't stranded
+    // if the user navigates away before the debounce fires.
+    if (dirty && active() && isOnline()) void run();
+  } else {
+    // Foregrounded — pull in whatever changed on other devices while we were away, then keep
+    // watching the remote eTag for as long as we stay in the foreground.
+    void catchUp();
+    startPoll();
   }
 }
 
@@ -218,9 +357,12 @@ export function startAutoSync(): void {
     if (now !== wasActive) {
       wasActive = now;
       if (now) {
-        if (dirty) schedule(); // turned on / just connected with changes waiting
+        void catchUp(); // just connected/enabled — pull whatever is already in the cloud
+        startPoll(); // and keep watching for other devices' changes while we're foregrounded
+        if (dirty) schedule(); // and push changes made while we were disconnected
       } else {
         cancelTimer(); // turned off or disconnected — stop automatic uploads
+        stopPoll(); // and stop watching the remote
         conflicted = false; // a fresh connection starts without a stale conflict
         autoSyncStatus.set('idle');
       }
@@ -229,6 +371,13 @@ export function startAutoSync(): void {
 
   window.addEventListener('online', onOnline);
   document.addEventListener('visibilitychange', onVisibility);
+
+  // On launch, catch up to anything other devices backed up while this one was closed, then poll
+  // for further changes while this tab stays in the foreground.
+  if (active()) {
+    void catchUp();
+    startPoll();
+  }
 }
 
 /**

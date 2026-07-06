@@ -71,14 +71,6 @@
                 : 'Not backed up yet',
   );
 
-  // Restore is paired with backup but never shows a "not yet" state: connecting
-  // already pulls the latest file down, so the local data is treated as restored.
-  const restoreText = $derived(
-    $settings.lastRestore
-      ? 'Last restored ' + relativeTime($settings.lastRestore)
-      : 'Up to date with OneDrive',
-  );
-
   let folderMode = $state($settings.oneDriveFolderMode);
   let customPath = $state($settings.oneDriveCustomPath);
 
@@ -405,7 +397,7 @@
   async function restore() {
     if (
       !confirm(
-        'Restore from OneDrive?\n\nThis overwrites the data currently on this device with the latest backup. This cannot be undone.',
+        "Replace this device with the backup?\n\nThis discards anything on this device that isn't in the backup — it does not merge. Your edits and other devices' changes normally sync automatically, so you rarely need this. Continue?",
       )
     )
       return;
@@ -430,7 +422,7 @@
       markRestored(Date.now());
       setActiveBackupEtag(pulled.etag);
       markSyncSettled();
-      showToast('Restored from OneDrive');
+      showToast('Replaced this device from the backup');
     } catch (e) {
       showToast(errMsg(e));
     } finally {
@@ -533,7 +525,7 @@
       </div>
 
       <label class="sw-row row spread">
-        <span>Automatically back up changes</span>
+        <span>Automatically sync changes</span>
         <span class="switch">
           <input
             type="checkbox"
@@ -544,6 +536,11 @@
           <span class="track"><span class="thumb"></span></span>
         </span>
       </label>
+      <span class="muted sm">
+        Backs up your edits and pulls in changes from your other devices — on open, on
+        focus, when you reconnect, and periodically while it's open. Same-record edits keep
+        the newest; nothing is lost.
+      </span>
 
       <div class="pathchip" title={locationLabel}>
         <JsonIcon size={18} />
@@ -566,24 +563,15 @@
 
       <div class="syncrow stack" style="gap: 6px">
         <div class="row spread">
-          <span class="row" style="gap: 8px; min-width: 0">
-            <svg class="rdot" viewBox="0 0 16 16" role="img" aria-label="Restore up to date">
-              <circle cx="8" cy="8" r="8" fill="#29c785" />
-              <path
-                d="M4.5 8.3 7 10.8 11.5 5.6"
-                fill="none"
-                stroke="#04150d"
-                stroke-width="1.9"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span class="sm">{restoreText}</span>
-          </span>
-          <button class="btn small ghost" onclick={restore} disabled={busy}>Restore now</button>
+          <span class="sm muted">Replace this device with a backup</span>
+          <button class="btn small ghost danger" onclick={restore} disabled={busy}>
+            Replace…
+          </button>
         </div>
         <span class="muted sm">
-          Pulls the latest backup from OneDrive and replaces the data on this device.
+          Escape hatch — a one-way overwrite that discards anything on this device that isn't
+          in the chosen backup. You rarely need this; syncing above is automatic and merges
+          both sides.
         </span>
       </div>
 
