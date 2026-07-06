@@ -14,7 +14,7 @@
 import type { Game, ID, Player, Round } from '../types';
 
 /** Bumped on any breaking change to the message shapes below. */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 /** Someone present in a live session — keyed off the stable member id, never the handle. */
 export interface Participant {
@@ -22,6 +22,12 @@ export interface Participant {
   name: string;
   color: string;
   role: 'leader' | 'guest';
+  /**
+   * The scoreboard seat this device has claimed, if any. Absent/undefined means the device
+   * is a spectator ("just watching"). When a seat is claimed the participant's `name`/`color`
+   * are set to that player's, so presence reads in the board's own language.
+   */
+  playerId?: ID;
 }
 
 /** The leader's authoritative view of the live game — the guests' replica. */
@@ -54,6 +60,8 @@ export type LiveMessage =
   | { t: 'peers'; peers: Participant[] }
   // guest → leader: propose a change
   | { t: 'intent'; intent: LiveIntent }
+  // guest → leader: claim (or release) a scoreboard seat; leader re-broadcasts the roster
+  | { t: 'claim'; participant: Participant }
   // leader → one guest: a proposed intent was rejected
   | { t: 'reject'; reason: string }
   // anyone → all: leaving cleanly

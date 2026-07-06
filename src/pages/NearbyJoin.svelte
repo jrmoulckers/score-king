@@ -7,6 +7,7 @@
   import { onDestroy } from 'svelte';
   import { getModule } from '../lib/games/registry';
   import { navigate, link } from '../lib/router';
+  import { normalizeJoinCode } from '../lib/util';
   import {
     joinSessionNearby,
     leaveSession,
@@ -43,8 +44,23 @@
     controls = await joinSessionNearby(currentSelf('guest'));
   }
 
+  /**
+   * A scanned relay invite is a URL containing /join/CODE; a nearby invite is an opaque
+   * base64url blob (no slashes), so the two never collide. Route relay links to the code join.
+   */
+  function relayCodeFrom(text: string): string | null {
+    const m = text.match(/\/join\/([^/?#\s]+)/);
+    return m ? normalizeJoinCode(m[1]) : null;
+  }
+
   async function onOffer(text: string) {
     if (busy) return;
+    const relay = relayCodeFrom(text);
+    if (relay) {
+      await leaveSession();
+      navigate(`/join/${relay}`);
+      return;
+    }
     if (!controls) await begin();
     if (!controls) return;
     busy = true;
@@ -116,14 +132,14 @@
 {:else}
   <div class="join">
     <div class="row spread" style="margin: 10px 4px 2px">
-      <strong style="font-size: 1.1rem">Join a nearby game</strong>
+      <strong style="font-size: 1.1rem">Scan to join</strong>
       <a class="muted" href="/" use:link style="font-size: 0.85rem">Cancel</a>
     </div>
 
     {#if phase === 'scan'}
       <div class="step">
         <span class="stepnum" aria-hidden="true">1</span>
-        <span>Read the host’s invite:</span>
+        <span>Scan or paste the host’s invite:</span>
       </div>
       <QrScanner label="the host’s invite" onresult={onOffer} />
       {#if err}

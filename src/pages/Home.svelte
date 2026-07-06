@@ -57,36 +57,31 @@
 </div>
 
 {#if liveSupported || nearbySupported}
-  <div class="section-title">Join a live game</div>
-  {#if liveSupported}
-    <form class="card row" onsubmit={submitJoin}>
-      <input
-        class="joincode"
-        type="text"
-        autocapitalize="characters"
-        autocomplete="off"
-        autocorrect="off"
-        spellcheck="false"
-        maxlength="8"
-        placeholder="Enter code"
-        aria-label="Live game join code"
-        bind:value={codeInput}
-      />
-      <button class="btn" type="submit" disabled={!codeInput.trim()}>Join</button>
-    </form>
-  {/if}
-  {#if nearbySupported}
-    <a class="card row spread tile nearby-entry" href="/nearby" use:link>
-      <span class="row" style="gap: 12px">
-        <span class="big-emoji">📡</span>
-        <span>
-          <div><strong>Join a nearby game</strong></div>
-          <div class="muted sm">No code — scan the host’s invite. Works with no internet.</div>
-        </span>
-      </span>
-      <span class="pill">Nearby</span>
-    </a>
-  {/if}
+  <div class="section-title">Join a game</div>
+  <form class="card joincard" onsubmit={submitJoin}>
+    {#if liveSupported}
+      <div class="row codejoin">
+        <input
+          class="joincode"
+          type="text"
+          autocapitalize="characters"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          maxlength="8"
+          placeholder="Enter code"
+          aria-label="Live game join code"
+          bind:value={codeInput}
+        />
+        <button class="btn" type="submit" disabled={!codeInput.trim()}>Join</button>
+      </div>
+    {/if}
+    {#if nearbySupported}
+      {#if liveSupported}<span class="ordiv"><span>or</span></span>{/if}
+      <a class="btn ghost block scanbtn" href="/nearby" use:link>📷 Scan a QR to join</a>
+      <span class="muted sm scanhint">Scan the host’s invite — works online or with no internet at all.</span>
+    {/if}
+  </form>
 {/if}
 
 {#if recent.length}
@@ -102,7 +97,7 @@
               <strong>{m?.name ?? g.type}</strong>
               <span class="muted sm">· {relativeTime(g.finishedAt ?? g.createdAt)}</span>
             </div>
-            <div class="muted sm">👑 {winnerNames(g.winnerIds) || '—'}</div>
+            <div class="muted sm">🏆 {winnerNames(g.winnerIds) || '—'}</div>
           </span>
         </span>
       </a>
@@ -124,6 +119,15 @@
   .sm {
     font-size: 0.85rem;
   }
+  .joincard {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .codejoin {
+    gap: 10px;
+    width: 100%;
+  }
   .joincode {
     flex: 1;
     text-transform: uppercase;
@@ -134,5 +138,26 @@
     text-transform: none;
     letter-spacing: normal;
     font-weight: 400;
+  }
+  .scanbtn {
+    text-decoration: none;
+  }
+  .scanhint {
+    text-align: center;
+  }
+  /* A quiet "or" divider between the two join paths — not color-only, just a hairline + label. */
+  .ordiv {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  .ordiv::before,
+  .ordiv::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
   }
 </style>
