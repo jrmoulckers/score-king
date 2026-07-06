@@ -10,7 +10,7 @@
   import { getModule } from '../games/registry';
   import { computeTotals } from '../scoring';
   import { showToast } from '../stores/toast';
-  import { liveReplica, sendIntent, liveSelf, liveParticipants, claimSeat } from '../live/session';
+  import { liveReplica, sendIntent, liveSelf, liveParticipants, claimSeat, liveConnection } from '../live/session';
   import Scoreboard from './Scoreboard.svelte';
   import Avatar from './Avatar.svelte';
 
@@ -41,6 +41,7 @@
   );
 
   const me = $derived($liveSelf);
+  const conn = $derived($liveConnection);
   // Seats already claimed by *other* devices — disabled in the picker so two phones can't
   // both be Alice. My own claim is excluded, so re-opening the picker keeps my seat pickable.
   const takenByOthers = $derived(
@@ -99,6 +100,12 @@
 </script>
 
 {#if replica && gmodule}
+  {#if conn !== 'online'}
+    <div class="connbar" class:off={conn === 'offline'} role="status">
+      <span class="cdot" aria-hidden="true"></span>
+      <span>{conn === 'reconnecting' ? 'Reconnecting…' : 'Offline — trying to reconnect. The host still has the game.'}</span>
+    </div>
+  {/if}
   {#if choosing}
     <div class="card stack claim">
       <strong>Which one are you?</strong>
@@ -196,6 +203,49 @@
 {/if}
 
 <style>
+  .connbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--warn) 14%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+  .connbar.off {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--muted);
+  }
+  .cdot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--warn);
+    animation: pulse 1.1s ease-in-out infinite;
+  }
+  .connbar.off .cdot {
+    background: var(--muted);
+    animation: none;
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cdot {
+      animation-duration: 3s;
+    }
+  }
   .banner {
     margin-top: 12px;
     font-weight: 700;
