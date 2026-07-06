@@ -538,7 +538,8 @@
       </label>
       <span class="muted sm">
         Backs up your edits and pulls in changes from your other devices — on open, on
-        focus, and when you reconnect. Same-record edits keep the newest; nothing is lost.
+        focus, when you reconnect, and periodically while it's open. Same-record edits keep
+        the newest; nothing is lost.
       </span>
 
       <div class="pathchip" title={locationLabel}>

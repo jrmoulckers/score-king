@@ -330,6 +330,20 @@ export const oneDrive: SyncProvider = {
     if (!snapshot) return null;
     return { snapshot, etag: item.eTag ?? null };
   },
+  async peekEtag(opts?: PushOptions): Promise<string | null> {
+    const accessToken = await token(opts?.interactive ?? true);
+    // Metadata-only read, narrowed to just the eTag: the cheapest way to tell whether the remote
+    // moved. No download URL, no file body. cache:'no-store' so a poll always sees the latest.
+    const meta = await graph(
+      `${itemPath(activeFile())}?$select=eTag`,
+      { method: 'GET', cache: 'no-store' },
+      accessToken,
+    );
+    if (meta.status === 404) return null;
+    if (!meta.ok) throw new Error(`Version check failed (HTTP ${meta.status}).`);
+    const item = (await meta.json().catch(() => ({}))) as { eTag?: string };
+    return item.eTag ?? null;
+  },
   async listBackups(opts?: PushOptions): Promise<BackupInfo[]> {
     const accessToken = await token(opts?.interactive ?? true);
     // Trim the payload and bypass caches so the list reflects just-made changes.

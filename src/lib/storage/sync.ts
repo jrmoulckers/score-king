@@ -203,6 +203,13 @@ export interface SyncProvider {
    */
   pull(): Promise<PulledSnapshot | null>;
   /**
+   * Cheaply read ONLY the active backup's item eTag — a metadata request, no content download —
+   * so a foreground poll can detect a remote change before paying for a full {@link pull}. Resolves
+   * to null when no backup exists yet. Pass `{ interactive: false }` so a background poll never
+   * triggers a sign-in redirect (throws {@link InteractionRequiredError} instead).
+   */
+  peekEtag(opts?: PushOptions): Promise<string | null>;
+  /**
    * List every backup file detected in the configured folder, newest first. Resolves to an
    * empty array when the folder doesn't exist yet. Pass `{ interactive: false }` so a background /
    * on-mount refresh never triggers a sign-in redirect (throws {@link InteractionRequiredError}).

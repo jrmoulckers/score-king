@@ -24,6 +24,13 @@ const DEBOUNCE_MS = 2500;
 /** Minimum gap between foreground catch-up pulls, so rapid focus/online events don't thrash. */
 const CATCHUP_MIN_GAP_MS = 3000;
 
+/**
+ * Foreground poll cadence. While the tab is visible and sync is active, we cheaply check the
+ * remote eTag on this interval so two devices both left open still converge without anyone
+ * touching them — see {@link poll}. Not a full pull: an unchanged eTag costs one small request.
+ */
+const POLL_INTERVAL_MS = 30_000;
+
 let started = false;
 let dirty = false; // local changes awaiting upload
 let pushing = false; // an upload is in flight
@@ -33,6 +40,7 @@ let lastVersion = 0;
 let wasActive = false;
 let lastPortableSig: string | undefined; // JSON of the last-seen portable settings
 let lastCatchUp = 0; // last foreground pull time, to throttle focus/online bursts
+let pollTimer: ReturnType<typeof setInterval> | undefined; // foreground eTag poll, when visible
 
 function enabled(): boolean {
   return get(settings).autoSync;
@@ -247,6 +255,58 @@ async function catchUp(): Promise<void> {
   }
 }
 
+/**
+ * Foreground poll — the lightweight companion to {@link catchUp}. On a cadence, while the tab is
+ * visible and active, cheaply read *just* the remote eTag (a metadata request, no download) and
+ * only when it differs from the version this device is aligned to do we run a full {@link catchUp}
+ * to pull + merge. An unchanged eTag touches nothing locally, so two devices both left open
+ * converge within a cycle without polling the whole World or risking ping-pong. Never interactive.
+ */
+async function poll(): Promise<void> {
+  if (pushing || !active() || conflicted || !isOnline()) return;
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+
+  let od: SyncProvider;
+  try {
+    od = await getOneDrive();
+  } catch {
+    return; // provider failed to load — try again next tick
+  }
+  if (!od.isConfigured()) return;
+  try {
+    await od.prepare();
+  } catch {
+    /* fall through to the signed-in check below */
+  }
+  if (!od.isSignedIn()) return; // silent session gone — a catch-up/edit will surface 'pending'
+
+  let remoteEtag: string | null;
+  try {
+    remoteEtag = await od.peekEtag({ interactive: false });
+  } catch {
+    return; // silent-auth or transient network failure — retry next tick
+  }
+  if (remoteEtag === null) return; // nothing backed up yet — nothing to catch up to
+  if (remoteEtag === get(settings).oneDriveBackupEtag) return; // already aligned — skip the pull
+
+  await catchUp(); // remote moved — pay for the full pull + merge now
+}
+
+/** Begin foreground polling if it isn't already running and we're active + visible. */
+function startPoll(): void {
+  if (pollTimer !== undefined || !active()) return;
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+  pollTimer = setInterval(() => void poll(), POLL_INTERVAL_MS);
+}
+
+/** Stop foreground polling — call when the tab is hidden or sync is turned off/disconnected. */
+function stopPoll(): void {
+  if (pollTimer !== undefined) {
+    clearInterval(pollTimer);
+    pollTimer = undefined;
+  }
+}
+
 function onOnline(): void {
   // Reconnected — pull others' changes; catchUp also re-pushes our own pending edits.
   if (active()) void catchUp();
@@ -254,12 +314,15 @@ function onOnline(): void {
 
 function onVisibility(): void {
   if (document.visibilityState === 'hidden') {
+    stopPoll(); // don't poll a backgrounded tab — save battery/quota (timers throttle anyway)
     // Best-effort flush when the tab is backgrounded, so a pending edit isn't stranded
     // if the user navigates away before the debounce fires.
     if (dirty && active() && isOnline()) void run();
   } else {
-    // Foregrounded — pull in whatever changed on other devices while we were away.
+    // Foregrounded — pull in whatever changed on other devices while we were away, then keep
+    // watching the remote eTag for as long as we stay in the foreground.
     void catchUp();
+    startPoll();
   }
 }
 
@@ -295,9 +358,11 @@ export function startAutoSync(): void {
       wasActive = now;
       if (now) {
         void catchUp(); // just connected/enabled — pull whatever is already in the cloud
+        startPoll(); // and keep watching for other devices' changes while we're foregrounded
         if (dirty) schedule(); // and push changes made while we were disconnected
       } else {
         cancelTimer(); // turned off or disconnected — stop automatic uploads
+        stopPoll(); // and stop watching the remote
         conflicted = false; // a fresh connection starts without a stale conflict
         autoSyncStatus.set('idle');
       }
@@ -307,8 +372,12 @@ export function startAutoSync(): void {
   window.addEventListener('online', onOnline);
   document.addEventListener('visibilitychange', onVisibility);
 
-  // On launch, catch up to anything other devices backed up while this one was closed.
-  if (active()) void catchUp();
+  // On launch, catch up to anything other devices backed up while this one was closed, then poll
+  // for further changes while this tab stays in the foreground.
+  if (active()) {
+    void catchUp();
+    startPoll();
+  }
 }
 
 /**
