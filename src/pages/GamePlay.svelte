@@ -21,6 +21,7 @@
   import { showToast, showActionToast } from '../lib/stores/toast';
   import { relativeTime, generateJoinCode } from '../lib/util';
   import { settings } from '../lib/stores/settings';
+  import { leadMember } from '../lib/stores/identity';
   import { enableWakeLock, disableWakeLock } from '../lib/wakelock';
   import Scoreboard from '../lib/components/Scoreboard.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
@@ -406,7 +407,7 @@
     {/if}
   {/if}
 
-  <Scoreboard players={orderedPlayers} {totals} lowerIsBetter={lower} winners={game.winnerIds ?? []} />
+  <Scoreboard players={orderedPlayers} {totals} lowerIsBetter={lower} winners={game.winnerIds ?? []} youId={$leadMember?.id} />
 
   {#if game.status === 'finished'}
     <div class="card center banner">🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}</div>

@@ -35,6 +35,8 @@ export type LiveStatus = 'off' | 'connecting' | 'hosting' | 'guest' | 'error';
 export const liveStatus = writable<LiveStatus>('off');
 export const liveCode = writable<string | null>(null);
 export const liveParticipants = writable<Participant[]>([]);
+/** This device's own participant (identity + any claimed seat). Null when off. */
+export const liveSelf = writable<Participant | null>(null);
 /** The guest's replica of the leader's game. Null for the leader (who uses its own screen). */
 export const liveReplica = writable<LiveState | null>(null);
 export const liveError = writable<string | null>(null);
@@ -68,6 +70,7 @@ const JOIN_TIMEOUT_MS = 4000;
 let transport: SessionTransport | null = null;
 let role: 'leader' | 'guest' | null = null;
 let selfId: ID | null = null;
+let mySelf: Participant | null = null;
 let leaderId: ID | null = null;
 let seq = 0;
 let rev = 0;
@@ -151,6 +154,8 @@ export async function startHosting(code: string, handlers: HostHandlers): Promis
   selfId = handlers.self.id;
   leaderId = handlers.self.id;
   rev = 0;
+  mySelf = handlers.self;
+  liveSelf.set(handlers.self);
   setPeers([handlers.self]);
   liveCode.set(code);
   liveReplica.set(null);
@@ -176,6 +181,8 @@ export async function joinSession(code: string, self: Participant): Promise<void
   await teardown();
   role = 'guest';
   selfId = self.id;
+  mySelf = self;
+  liveSelf.set(self);
   rev = 0;
   setPeers([]);
   liveCode.set(code);
@@ -208,6 +215,22 @@ export async function joinSession(code: string, self: Participant): Promise<void
 export function sendIntent(intent: LiveIntent): void {
   if (role !== 'guest') return;
   send({ t: 'intent', intent }, leaderId ?? undefined);
+}
+
+/**
+ * Guest: claim a scoreboard seat (become that player) or release it (pass `null` → spectator).
+ * Adopts the seat's name+color as this device's presence identity and tells the leader, who
+ * re-broadcasts the roster so everyone reads presence in the board's own names, not handles.
+ */
+export function claimSeat(seat: { id: ID; name: string; color: string } | null): void {
+  if (role !== 'guest' || !mySelf) return;
+  const next: Participant = seat
+    ? { ...mySelf, playerId: seat.id, name: seat.name, color: seat.color }
+    : { ...mySelf, playerId: undefined };
+  mySelf = next;
+  liveSelf.set(next);
+  upsertPeer(next);
+  send({ t: 'claim', participant: next }, leaderId ?? undefined);
 }
 
 // ── Nearby (serverless WebRTC) play ────────────────────────────────────────────────────
@@ -243,6 +266,8 @@ export async function startHostingNearby(
   selfId = handlers.self.id;
   leaderId = handlers.self.id;
   rev = 0;
+  mySelf = handlers.self;
+  liveSelf.set(handlers.self);
   setPeers([handlers.self]);
   liveCode.set(code);
   liveReplica.set(null);
@@ -275,6 +300,8 @@ export async function joinSessionNearby(self: Participant): Promise<NearbyGuestC
   await teardown();
   role = 'guest';
   selfId = self.id;
+  mySelf = self;
+  liveSelf.set(self);
   rev = 0;
   setPeers([]);
   liveCode.set(null);
@@ -352,6 +379,10 @@ function onLeaderMessage(env: TransportEnvelope): void {
       if (err) send({ t: 'reject', reason: err }, from);
       else publish();
     });
+  } else if (m.t === 'claim') {
+    // A guest claimed/released a seat: update the roster and fan the new names out to all.
+    upsertPeer({ ...m.participant, role: 'guest' });
+    send({ t: 'peers', peers });
   } else if (m.t === 'bye') {
     setPeers(peers.filter((p) => p.id !== env.from));
     send({ t: 'peers', peers });
@@ -418,6 +449,8 @@ async function teardown(): Promise<void> {
   transport = null;
   role = null;
   selfId = null;
+  mySelf = null;
+  liveSelf.set(null);
   leaderId = null;
   host = null;
   seq = 0;

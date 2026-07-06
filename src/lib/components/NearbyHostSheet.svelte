@@ -98,7 +98,11 @@
 
     <div class="players">
       {#each guests as p (p.id)}
-        <span class="chip"><Avatar name={p.name} color={p.color} size={22} />{p.name}</span>
+        <span class="chip">
+          {#if p.role === 'leader'}<span title="Host" aria-label="Host">👑</span>{/if}
+          <Avatar name={p.name} color={p.color} size={22} />{p.name}
+          {#if p.role !== 'leader' && !p.playerId}<span class="tag">watching</span>{/if}
+        </span>
       {/each}
     </div>
 
@@ -210,6 +214,13 @@
     background: var(--surface-2);
     border: 1px solid var(--border);
     font-size: 0.9rem;
+  }
+  .tag {
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
   .step {
     display: flex;

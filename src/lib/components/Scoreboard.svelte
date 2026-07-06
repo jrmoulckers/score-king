@@ -8,11 +8,13 @@
     totals,
     lowerIsBetter = false,
     winners = [],
+    youId,
   }: {
     players: Player[];
     totals: Record<ID, number>;
     lowerIsBetter?: boolean;
     winners?: ID[];
+    youId?: ID;
   } = $props();
 
   const byId = $derived(new Map(players.map((p) => [p.id, p])));
@@ -31,6 +33,7 @@
         <td>
           <span class="row" style="gap: 8px">
             {#if p}<Avatar name={p.name} color={p.color} size={24} />{p.name}{/if}
+            {#if youId && s.playerId === youId}<span class="you">You</span>{/if}
             {#if winners.includes(s.playerId)}<span title="Winner">🏆</span>{/if}
           </span>
         </td>
@@ -44,6 +47,16 @@
   .num {
     font-variant-numeric: tabular-nums;
     font-weight: 700;
+  }
+  .you {
+    flex: none;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--surface-3);
+    color: var(--muted);
   }
   tr.winner td {
     background: color-mix(in srgb, var(--accent) 13%, transparent);

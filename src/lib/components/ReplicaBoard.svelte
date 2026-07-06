@@ -10,12 +10,13 @@
   import { getModule } from '../games/registry';
   import { computeTotals } from '../scoring';
   import { showToast } from '../stores/toast';
-  import { liveReplica, sendIntent } from '../live/session';
+  import { liveReplica, sendIntent, liveSelf, liveParticipants, claimSeat } from '../live/session';
   import Scoreboard from './Scoreboard.svelte';
   import Avatar from './Avatar.svelte';
 
   let draft = $state<any>(null);
   let lastRoundCount = $state(-1);
+  let choosing = $state(true);
 
   const replica = $derived($liveReplica);
   const gmodule = $derived(replica ? getModule(replica.game.type) : undefined);
@@ -38,6 +39,22 @@
           .map((wid) => replica.players.find((p) => p.id === wid)?.name ?? '?')
           .join(' & '),
   );
+
+  const me = $derived($liveSelf);
+  // Seats already claimed by *other* devices — disabled in the picker so two phones can't
+  // both be Alice. My own claim is excluded, so re-opening the picker keeps my seat pickable.
+  const takenByOthers = $derived(
+    new Set($liveParticipants.filter((p) => p.playerId && p.id !== me?.id).map((p) => p.playerId)),
+  );
+
+  function pickSeat(p: { id: string; name: string; color: string }): void {
+    claimSeat({ id: p.id, name: p.name, color: p.color });
+    choosing = false;
+  }
+  function watchOnly(): void {
+    claimSeat(null);
+    choosing = false;
+  }
 
   function buildCtx(): RoundContext {
     return {
@@ -82,11 +99,47 @@
 </script>
 
 {#if replica && gmodule}
+  {#if choosing}
+    <div class="card stack claim">
+      <strong>Which one are you?</strong>
+      <span class="muted hint">Claim your seat so everyone sees who's who — or just watch.</span>
+      <div class="seats">
+        {#each replica.players as p (p.id)}
+          {@const taken = takenByOthers.has(p.id)}
+          <button
+            class="seat"
+            class:mine={me?.playerId === p.id}
+            disabled={taken}
+            onclick={() => pickSeat(p)}
+          >
+            <Avatar name={p.name} color={p.color} size={26} />
+            <span class="seatname">{p.name}</span>
+            {#if taken}<span class="tag">taken</span>{/if}
+          </button>
+        {/each}
+      </div>
+      <button class="btn ghost block" onclick={watchOnly}>Just watching</button>
+    </div>
+  {:else}
+    <button class="whoami" onclick={() => (choosing = true)}>
+      {#if me && me.playerId}
+        <span class="row" style="gap: 8px">
+          <Avatar name={me.name} color={me.color} size={22} />
+          <span>You're <strong>{me.name}</strong></span>
+        </span>
+      {:else}
+        <span class="muted">👀 You're watching</span>
+      {/if}
+      <span class="change">Change</span>
+    </button>
+  {/if}
+
   <Scoreboard
     players={replica.players}
     {totals}
     lowerIsBetter={lower}
     winners={replica.game.winnerIds ?? []}
+    youId={me?.playerId}
   />
 
   {#if replica.game.status === 'finished'}
@@ -146,5 +199,72 @@
   .banner {
     margin-top: 12px;
     font-weight: 700;
+  }
+  .claim {
+    gap: 10px;
+  }
+  .hint {
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+  .seats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .seat {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 6px 7px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 40px;
+  }
+  .seat:hover:not(:disabled) {
+    border-color: var(--primary);
+  }
+  .seat:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .seat.mine {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 14%, var(--surface-2));
+  }
+  .tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .whoami {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .whoami:hover {
+    border-color: var(--primary);
+  }
+  .change {
+    flex: none;
+    font-size: 0.8rem;
+    color: var(--muted);
   }
 </style>

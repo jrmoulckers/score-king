@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { showToast } from '../stores/toast';
+  import { liveParticipants } from '../live/session';
+  import Avatar from './Avatar.svelte';
 
   let {
     code,
@@ -20,6 +22,8 @@
   } = $props();
 
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  const roster = $derived($liveParticipants);
 
   // A scannable QR only when a relay makes the link reachable from another device; showing one
   // for a same-browser BroadcastChannel session would be a lie (a scanning phone can't join).
@@ -107,6 +111,18 @@
     <span class="codelabel">Join code</span>
     <span class="code">{code}</span>
   </div>
+
+  {#if roster.length}
+    <div class="players">
+      {#each roster as p (p.id)}
+        <span class="chip">
+          {#if p.role === 'leader'}<span title="Host" aria-label="Host">👑</span>{/if}
+          <Avatar name={p.name} color={p.color} size={22} />{p.name}
+          {#if p.role !== 'leader' && !p.playerId}<span class="tag">watching</span>{/if}
+        </span>
+      {/each}
+    </div>
+  {/if}
 
   {#if remote && qr}
     <div class="qr">
@@ -211,6 +227,28 @@
   .codelabel {
     font-size: 0.8rem;
     color: var(--muted);
+  }
+  .players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px 5px 6px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .tag {
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
   .code {
     font-size: 2.1rem;
