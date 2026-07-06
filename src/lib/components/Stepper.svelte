@@ -35,5 +35,14 @@
     text-align: center;
     padding-left: 4px;
     padding-right: 4px;
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  /* Hide the native number spinner — the − / + buttons are the stepper. */
+  .stepper input::-webkit-outer-spin-button,
+  .stepper input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
   }
 </style>

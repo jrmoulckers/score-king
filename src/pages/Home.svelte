@@ -102,7 +102,7 @@
               <strong>{m?.name ?? g.type}</strong>
               <span class="muted sm">· {relativeTime(g.finishedAt ?? g.createdAt)}</span>
             </div>
-            <div class="muted sm">👑 {winnerNames(g.winnerIds) || '—'}</div>
+            <div class="muted sm">🏆 {winnerNames(g.winnerIds) || '—'}</div>
           </span>
         </span>
       </a>

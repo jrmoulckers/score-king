@@ -159,9 +159,10 @@ because the app boots `data-theme="dark"`.
   its own; only the darker echo of a primary action under interaction.
 
 ### Secondary
-- **Crown Gold** (`#ffd166`): The crown. Reserved for the current leader, the winner row
-  highlight, and the 👑. Scarcity is the whole point — it is never a button, link, or
-  decoration.
+- **Crown Gold** (`#ffd166`): Reserved for the current leader (👑) and the winner (🏆 +
+  the winner-row highlight) — nothing else. The **crown** marks who's reigning *right now*;
+  the **trophy** marks who *won*. Same gold, two distinct icons so the two are never
+  confused. Scarcity is the whole point — it is never a button, link, or decoration.
 - **Crown Gold Ink** (`--accent-ink`: `#ffd166` dark / `#806600` light): The text form of
   Crown Gold for the leader/winner *number* (`.lead`). Pure `#ffd166` fails WCAG on light
   surfaces, so light theme darkens it to `#806600` (≥4.5:1 on white) while keeping the gold
@@ -313,7 +314,7 @@ element shares one shape language (9px controls, 14px containers) and one state 
 ### Scoreboard (signature)
 - A right-aligned numeric table (rank · player · score). Header row in muted overline
   caps; tabular-nums body; the rank-1 score uses Crown Gold (`.lead`); the winner row gets
-  a restrained (~13%) Crown Gold wash under a Crown Gold underline — the 👑 and gold score
+  a restrained (~13%) Crown Gold wash under a Crown Gold underline — the 🏆 and gold score
   carry the win, so gold stays a hint, never a muddy block. The whole standing is legible
   at a glance from across the table.
 

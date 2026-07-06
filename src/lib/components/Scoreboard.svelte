@@ -31,7 +31,7 @@
         <td>
           <span class="row" style="gap: 8px">
             {#if p}<Avatar name={p.name} color={p.color} size={24} />{p.name}{/if}
-            {#if winners.includes(s.playerId)}<span title="Winner">👑</span>{/if}
+            {#if winners.includes(s.playerId)}<span title="Winner">🏆</span>{/if}
           </span>
         </td>
         <td class="num" class:lead={s.rank === 1}>{s.total}</td>
