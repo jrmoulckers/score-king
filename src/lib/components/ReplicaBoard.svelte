@@ -10,13 +10,31 @@
   import { getModule } from '../games/registry';
   import { computeTotals } from '../scoring';
   import { showToast } from '../stores/toast';
-  import { liveReplica, sendIntent, liveSelf, liveParticipants, claimSeat, liveConnection } from '../live/session';
+  import {
+    liveReplica,
+    sendIntent,
+    liveSelf,
+    liveParticipants,
+    claimSeat,
+    liveConnection,
+    liveIntentRejected,
+  } from '../live/session';
   import Scoreboard from './Scoreboard.svelte';
   import Avatar from './Avatar.svelte';
 
   let draft = $state<any>(null);
   let lastRoundCount = $state(-1);
   let choosing = $state(true);
+
+  // Optimistic send state. The guest only *proposes* a round, so reflect in-flight vs. landed
+  // locally: `sending` disables the action (no accidental double-record) until the round lands
+  // (rounds.length grows past `sentAtRoundCount`), the host rejects it, or a timeout elapses.
+  let sending = $state(false);
+  let justLandedId = $state<string | null>(null);
+  let sentAtRoundCount = -1;
+  let seenRoundCount = -1;
+  let sendTimer: ReturnType<typeof setTimeout> | undefined;
+  let lastRejectTick = -1;
 
   const replica = $derived($liveReplica);
   const gmodule = $derived(replica ? getModule(replica.game.type) : undefined);
@@ -81,8 +99,54 @@
     }
   });
 
+  // A round landing (mine or anyone's) is the guest's confirmation: pulse the newest scorecard
+  // row (mirrors the host's "round saved" flash) and settle any optimistic "sending" state.
+  $effect(() => {
+    if (!replica) {
+      seenRoundCount = -1;
+      return;
+    }
+    const n = replica.rounds.length;
+    if (seenRoundCount === -1) {
+      seenRoundCount = n;
+      return;
+    }
+    if (n > seenRoundCount) {
+      const landed = replica.rounds[n - 1];
+      if (landed) flashRow(landed.id);
+      if (sending && n > sentAtRoundCount) clearSending();
+    }
+    seenRoundCount = n;
+  });
+
+  // The host rejected this guest's proposed round (e.g. the game finished first). The reason is
+  // toasted by the session layer; here we just stop the spinner so the guest can try again.
+  $effect(() => {
+    const tick = $liveIntentRejected;
+    if (lastRejectTick === -1) {
+      lastRejectTick = tick;
+      return;
+    }
+    if (tick !== lastRejectTick) {
+      lastRejectTick = tick;
+      clearSending();
+    }
+  });
+
+  function clearSending(): void {
+    sending = false;
+    clearTimeout(sendTimer);
+  }
+
+  function flashRow(id: string): void {
+    justLandedId = id;
+    setTimeout(() => {
+      if (justLandedId === id) justLandedId = null;
+    }, 900);
+  }
+
   function sendRound() {
-    if (!replica || !gmodule || !draft) return;
+    if (!replica || !gmodule || !draft || sending) return;
     const ctx = buildCtx();
     const snap = $state.snapshot(draft);
     const err = gmodule.validateRound(snap, ctx);
@@ -90,6 +154,16 @@
       showToast(err);
       return;
     }
+    sending = true;
+    sentAtRoundCount = replica.rounds.length;
+    clearTimeout(sendTimer);
+    // No ack in the protocol: if no state arrives, re-enable so a stuck send can be retried.
+    sendTimer = setTimeout(() => {
+      if (sending) {
+        sending = false;
+        showToast('Still sending… tap to try again.');
+      }
+    }, 6000);
     sendIntent({ kind: 'record-round', input: snap });
   }
 
@@ -158,10 +232,16 @@
     <div class="card stack" style="margin-top: 12px">
       <strong>Round {replica.rounds.length + 1}{maxR ? ` of ${maxR}` : ''}</strong>
       <RoundEditor bind:input={draft} ctx={buildCtx()} />
-      <button class="btn primary block" onclick={sendRound}>Send round to host</button>
+      <button class="btn primary block" onclick={sendRound} disabled={sending}>
+        {sending ? 'Sending…' : `Add round ${replica.rounds.length + 1}`}
+      </button>
       <span class="muted" style="font-size: 0.8rem; text-align: center">
-        The host records it and everyone’s board updates.
+        The host records it — every board updates.
       </span>
+    </div>
+  {:else if !canAdd}
+    <div class="card center" style="margin-top: 12px">
+      All rounds in — waiting for the host to finish.
     </div>
   {:else}
     <div class="card center" style="margin-top: 12px">Waiting for the host…</div>
@@ -181,7 +261,7 @@
         </thead>
         <tbody>
           {#each replica.rounds as r (r.id)}
-            <tr>
+            <tr class:flash={r.id === justLandedId}>
               <td>{r.index + 1}</td>
               {#each replica.players as p (p.id)}
                 <td class="num">{fmt(r.deltas[p.id])}</td>
@@ -316,5 +396,24 @@
     flex: none;
     font-size: 0.8rem;
     color: var(--muted);
+  }
+  /* "It landed" confirmation: the same Win-Green pulse the host uses, so a recorded round reads
+     identically on every board. The row is already visible; the pulse points to where the entry
+     landed, and reduced motion drops the animation entirely. */
+  .matrix tbody tr.flash td {
+    animation: rowflash 0.9s ease-out;
+  }
+  @keyframes rowflash {
+    from {
+      background: color-mix(in srgb, var(--good) 26%, transparent);
+    }
+    to {
+      background: transparent;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .matrix tbody tr.flash td {
+      animation: none;
+    }
   }
 </style>

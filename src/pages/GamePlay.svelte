@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import type { Game, Player, Round, RoundContext } from '../lib/types';
+  import type { Game, ID, Player, Round, RoundContext } from '../lib/types';
   import { resolveLower } from '../lib/types';
   import * as db from '../lib/storage/db';
   import { players } from '../lib/stores/players';
@@ -159,13 +159,16 @@
     });
     if (!saved) return;
     const newest = rounds[rounds.length - 1];
-    if (newest) {
-      justSavedId = newest.id;
-      const fid = newest.id;
-      setTimeout(() => {
-        if (justSavedId === fid) justSavedId = null;
-      }, 1000);
-    }
+    if (newest) pulseRow(newest.id);
+  }
+
+  // Briefly pulse a scorecard row green to confirm it just landed. The host's own saves and
+  // guests' accepted rounds share this, so every recorded round reads the same on the board.
+  function pulseRow(id: string): void {
+    justSavedId = id;
+    setTimeout(() => {
+      if (justSavedId === id) justSavedId = null;
+    }, 1000);
   }
 
   function startEdit(r: Round) {
@@ -283,7 +286,7 @@
     };
   }
 
-  async function applyLiveIntent(intent: LiveIntent): Promise<string | null> {
+  async function applyLiveIntent(intent: LiveIntent, from: ID): Promise<string | null> {
     if (intent.kind !== 'record-round') return 'That action isn’t supported.';
     if (!game || !module) return 'The game isn’t ready yet.';
     if (game.status !== 'active') return 'This game has finished.';
@@ -294,6 +297,12 @@
     const deltas = module.scoreRound(intent.input, ctx);
     await appendRound(game, intent.input, deltas);
     await load();
+    // Surface the guest's contribution on the host (the source of truth): pulse the new row and
+    // name who added it, so a round arriving from another device never lands silently.
+    const landed = rounds[rounds.length - 1];
+    if (landed) pulseRow(landed.id);
+    const who = get(liveParticipants).find((p) => p.id === from)?.name;
+    showToast(`${who ?? 'A player'} added Round ${rounds.length}`);
     return null;
   }
 
@@ -620,6 +629,11 @@
     }
     to {
       background: transparent;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .matrix tbody tr.flash td {
+      animation: none;
     }
   }
   .acts {
