@@ -49,6 +49,12 @@ export interface Settings {
   oneDriveConnected: boolean;
   lastSync: number | null;
   lastRestore: number | null;
+  /**
+   * When this device last successfully confirmed the remote backup's state — either a
+   * cheap eTag peek from the foreground poll or a full pull. Device-local bookkeeping (a
+   * heartbeat for the "Last checked …" indicator), never backed up.
+   */
+  lastCheck: number | null;
 
   /**
    * Per-device override for the live-play relay URL (a `wss://` origin). Empty uses the
@@ -102,6 +108,7 @@ export const LOCAL_SETTING_KEYS = [
   'oneDriveConnected',
   'lastSync',
   'lastRestore',
+  'lastCheck',
   'relayUrl',
   'leadMemberId',
 ] as const;
@@ -143,6 +150,7 @@ const defaults: Settings = {
   oneDriveConnected: false,
   lastSync: null,
   lastRestore: null,
+  lastCheck: null,
   relayUrl: '',
   leadMemberId: null,
 };
@@ -189,6 +197,14 @@ export function toggleTheme() {
 
 export function markSynced(ts: number) {
   settings.update((s) => ({ ...s, lastSync: ts }));
+}
+
+/**
+ * Record that we just confirmed the remote's state (a poll eTag peek or a pull), even when
+ * nothing changed. Drives the "Last checked …" heartbeat so the background poll is visible.
+ */
+export function markChecked(ts: number) {
+  settings.update((s) => ({ ...s, lastCheck: ts }));
 }
 
 export function markRestored(ts: number) {

@@ -1,5 +1,5 @@
 import { get, writable } from 'svelte/store';
-import { settings, markSynced, getBackupSettings, setActiveBackupEtag } from '../stores/settings';
+import { settings, markSynced, markChecked, getBackupSettings, setActiveBackupEtag } from '../stores/settings';
 import { dataVersion } from './changes';
 import { buildSnapshot, getOneDrive, reconcile, pullMerge, ConflictError, InteractionRequiredError } from './sync';
 import type { SyncProvider } from './sync';
@@ -40,6 +40,7 @@ let lastVersion = 0;
 let wasActive = false;
 let lastPortableSig: string | undefined; // JSON of the last-seen portable settings
 let lastCatchUp = 0; // last foreground pull time, to throttle focus/online bursts
+let lastRemoteCheck = 0; // last successful remote confirmation (peek or pull), for interaction-gated freshness
 let pollTimer: ReturnType<typeof setInterval> | undefined; // foreground eTag poll, when visible
 
 function enabled(): boolean {
@@ -227,6 +228,8 @@ async function catchUp(): Promise<void> {
   autoSyncStatus.set('syncing');
   try {
     const res = await pullMerge(od, { interactive: false });
+    lastRemoteCheck = Date.now();
+    markChecked(lastRemoteCheck); // heartbeat: a successful pull also confirms the remote
     if (res) {
       setActiveBackupEtag(res.etag); // track the version we're now aligned to
       if (res.changedLocal) await Promise.all([refreshPlayers(), refreshGames()]);
@@ -286,6 +289,8 @@ async function poll(): Promise<void> {
   } catch {
     return; // silent-auth or transient network failure — retry next tick
   }
+  lastRemoteCheck = Date.now();
+  markChecked(lastRemoteCheck); // heartbeat: we reached the remote, even if nothing changed
   if (remoteEtag === null) return; // nothing backed up yet — nothing to catch up to
   if (remoteEtag === get(settings).oneDriveBackupEtag) return; // already aligned — skip the pull
 
@@ -324,6 +329,30 @@ function onVisibility(): void {
     void catchUp();
     startPoll();
   }
+}
+
+/**
+ * The window regained focus or was restored from the back/forward cache (`focus`/`pageshow`).
+ * On mobile these fire when you switch back to the app even when `visibilitychange` doesn't, so we
+ * treat them like a foreground: catch up on other devices' changes and (re)arm the poll.
+ */
+function onForeground(): void {
+  if (!active()) return;
+  void catchUp();
+  startPoll();
+}
+
+/**
+ * A user interaction (tap/click/keypress) is the reliable convergence moment on mobile, where a
+ * foreground-but-idle tab's `setInterval` gets throttled or suspended. If our last remote
+ * confirmation has gone stale, cheaply re-check the eTag now — {@link poll} still gates on
+ * visibility/active and only pays for a full pull on a real change — so glancing at a device
+ * converges it without hunting for "Sync now".
+ */
+function onInteract(): void {
+  if (!active() || !isOnline()) return;
+  if (Date.now() - lastRemoteCheck < POLL_INTERVAL_MS) return; // still fresh — do nothing
+  void poll();
 }
 
 /** Wire the auto-sync controller once, at app start. Safe to call repeatedly. */
@@ -370,7 +399,11 @@ export function startAutoSync(): void {
   });
 
   window.addEventListener('online', onOnline);
+  window.addEventListener('focus', onForeground);
+  window.addEventListener('pageshow', onForeground);
   document.addEventListener('visibilitychange', onVisibility);
+  // Passive: we never preventDefault. `pointerdown` covers touch, mouse and pen in one listener.
+  document.addEventListener('pointerdown', onInteract, { passive: true });
 
   // On launch, catch up to anything other devices backed up while this one was closed, then poll
   // for further changes while this tab stays in the foreground.
