@@ -85,6 +85,18 @@ export function relativeTime(ts: number): string {
   return formatDate(ts);
 }
 
+/**
+ * Like {@link relativeTime} but with seconds granularity, for fast-moving heartbeats such as the
+ * sync poll's "Last checked …" label. Pass `now` (e.g. a 1s ticker) so callers can force the label
+ * to recompute each second. Falls back to {@link relativeTime} once past a minute.
+ */
+export function relativeTimeSec(ts: number, now: number = Date.now()): string {
+  const sec = Math.max(0, Math.round((now - ts) / 1000));
+  if (sec < 3) return 'just now';
+  if (sec < 60) return `${sec}s ago`;
+  return relativeTime(ts);
+}
+
 const HANDLE_ADJECTIVES = [
   'Royal', 'Crowned', 'Sneaky', 'Lucky', 'Mighty', 'Jolly', 'Dapper', 'Cosmic',
   'Turbo', 'Wily', 'Brave', 'Cheeky', 'Noble', 'Zany', 'Swift', 'Grand',

@@ -20,7 +20,7 @@
   import { refreshGames } from '../lib/stores/games';
   import { refreshPlayers } from '../lib/stores/players';
   import { showToast } from '../lib/stores/toast';
-  import { relativeTime } from '../lib/util';
+  import { relativeTime, relativeTimeSec } from '../lib/util';
   import JsonIcon from '../lib/components/JsonIcon.svelte';
 
   let override = $state($settings.oneDriveClientId);
@@ -69,6 +69,18 @@
               : $settings.lastSync
                 ? 'Synced · Backed up ' + relativeTime($settings.lastSync)
                 : 'Not backed up yet',
+  );
+
+  // A 1s ticker so the "Last checked" heartbeat visibly counts up between polls (which land
+  // ~every 30s while the app is open). Cheap; runs only while this page is mounted.
+  let nowTick = $state(Date.now());
+  $effect(() => {
+    const id = setInterval(() => (nowTick = Date.now()), 1000);
+    return () => clearInterval(id);
+  });
+
+  const checkedText = $derived(
+    $settings.lastCheck ? 'Last checked ' + relativeTimeSec($settings.lastCheck, nowTick) : '',
   );
 
   let folderMode = $state($settings.oneDriveFolderMode);
@@ -560,6 +572,10 @@
           <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
         {/if}
       </div>
+
+      {#if $settings.autoSync && checkedText}
+        <span class="muted" style="font-size: 0.72rem; margin-top: -4px">{checkedText}</span>
+      {/if}
 
       <div class="syncrow stack" style="gap: 6px">
         <div class="row spread">
