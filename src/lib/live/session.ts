@@ -44,6 +44,12 @@ export const liveError = writable<string | null>(null);
 export const liveRemote = writable<boolean>(false);
 
 /**
+ * Bumped each time the host rejects one of *this guest's* intents. Lets the guest UI settle
+ * an optimistic "sending…" state promptly; the reject reason is also surfaced via toast.
+ */
+export const liveIntentRejected = writable<number>(0);
+
+/**
  * Health of the live connection, kept *separate* from {@link liveStatus} (the game lifecycle).
  * A dropped socket never ends the game — the host stays authoritative and local-first — it just
  * flips this to 'reconnecting' (auto-healing) or 'offline' (still retrying, game safe).
