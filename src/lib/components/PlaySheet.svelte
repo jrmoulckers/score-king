@@ -184,15 +184,17 @@
       </div>
     {/if}
 
-    <button class="btn {canNativeShare ? '' : 'primary'} block" onclick={() => copy(link, 'Link')}>
-      🔗 Copy link
-    </button>
-    {#if canNativeShare}
-      <button class="btn primary block" onclick={share}>Share…</button>
+    {#if remote}
+      <button class="btn {canNativeShare ? '' : 'primary'} block" onclick={() => copy(link, 'Link')}>
+        🔗 Copy link
+      </button>
+      {#if canNativeShare}
+        <button class="btn primary block" onclick={share}>Share…</button>
+      {/if}
     {/if}
     <div class="row" style="gap: 10px">
       <button class="btn grow" onclick={() => copy(code, 'Code')}>Copy code</button>
-      <button class="btn grow" onclick={openPlayerTab}>Open a player tab</button>
+      <button class="btn {remote ? '' : 'primary'} grow" onclick={openPlayerTab}>Open a player tab</button>
     </div>
 
     {#if remote}
@@ -201,8 +203,8 @@
       </p>
     {:else}
       <p class="note">
-        Others on this browser can join right now — open the link in another tab or window. To play
-        across devices with no internet, switch to nearby below.
+        This game lives in this browser only — “Open a player tab” adds a player on this device. To
+        invite other devices, set a relay URL in Settings → Advanced, or switch to nearby below.
       </p>
     {/if}
   {:else}

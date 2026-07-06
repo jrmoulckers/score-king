@@ -17,7 +17,14 @@
   let draft = $state<any>(null);
   let lastRoundCount = $state(-1);
   let choosing = $state(true);
+  // Id of the round whose scorecard row should briefly pulse "just saved". Set when a new
+  // round lands via sync so relay/nearby guests get the same confirmation the host shows.
+  let justSavedId = $state<string | null>(null);
+  let seenRounds = $state(-1);
 
+  // Every list below is keyed by a persisted id (player/round) and getModule() is a stable
+  // singleton, so when a new replica arrives Svelte patches rows in place instead of
+  // remounting the board. Keep these keys stable to preserve this no-"flash" sync (#24).
   const replica = $derived($liveReplica);
   const gmodule = $derived(replica ? getModule(replica.game.type) : undefined);
   const totals = $derived(replica ? computeTotals(replica.rounds, replica.game.playerIds) : {});
@@ -79,6 +86,26 @@
       draft = null;
       lastRoundCount = -1;
     }
+  });
+
+  // Pulse the newest scorecard row when a round lands after the board is already showing —
+  // host/guest parity with GamePlay's "round saved" confirmation. The row is patched in
+  // place, not remounted; this only draws the eye, and global reduced-motion (app.css)
+  // settles it instantly. Skips the initial join snapshot (seenRounds < 0) so pre-existing
+  // rounds never flash on first render.
+  $effect(() => {
+    const n = replica ? replica.rounds.length : -1;
+    if (seenRounds >= 0 && n > seenRounds) {
+      const newest = replica!.rounds[n - 1];
+      if (newest) {
+        const fid = newest.id;
+        justSavedId = fid;
+        setTimeout(() => {
+          if (justSavedId === fid) justSavedId = null;
+        }, 1000);
+      }
+    }
+    if (seenRounds !== n) seenRounds = n;
   });
 
   function sendRound() {
@@ -181,7 +208,7 @@
         </thead>
         <tbody>
           {#each replica.rounds as r (r.id)}
-            <tr>
+            <tr class:flash={r.id === justSavedId}>
               <td>{r.index + 1}</td>
               {#each replica.players as p (p.id)}
                 <td class="num">{fmt(r.deltas[p.id])}</td>
@@ -316,5 +343,20 @@
     flex: none;
     font-size: 0.8rem;
     color: var(--muted);
+  }
+  /* Round-saved pulse on the newest scorecard row — the host shows the same green
+     confirmation (GamePlay), so relay/nearby guests get identical feedback. The row is
+     already patched in place; this only draws the eye, and global reduced-motion (app.css)
+     settles it to an instant, motion-free color change. Green = success, never gold. */
+  .matrix tbody tr.flash td {
+    animation: rowflash 0.9s ease-out;
+  }
+  @keyframes rowflash {
+    from {
+      background: color-mix(in srgb, var(--good) 26%, transparent);
+    }
+    to {
+      background: transparent;
+    }
   }
 </style>
