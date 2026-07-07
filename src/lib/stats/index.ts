@@ -26,4 +26,12 @@ export {
   type RivalryCard,
   type CourtShame,
 } from './court';
+export {
+  buildWrapped,
+  buildRecap,
+  type WrappedCard,
+  type WrappedInput,
+  type WrappedKind,
+  type WrappedStat,
+} from './wrapped';
 export * from './format';

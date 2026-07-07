@@ -181,6 +181,18 @@
     </section>
   {/if}
 
+  <!-- Gateway to the Wrapped story -->
+  <a class="wrapped-cta row spread" href="/wrapped" use:link>
+    <span class="row" style="gap: 12px">
+      <span class="wrapped-emoji" aria-hidden="true">🎁</span>
+      <span>
+        <div><strong>Your Wrapped</strong></div>
+        <div class="muted sm">A swipeable year in review</div>
+      </span>
+    </span>
+    <span aria-hidden="true">→</span>
+  </a>
+
   <!-- 2 ─ Persona + badges -->
   {#if persona}
     <div class="section-title">Your style</div>
@@ -425,5 +437,23 @@
   }
   .picker:hover {
     background: var(--surface-3);
+  }
+
+  .wrapped-cta {
+    margin-top: 10px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    color: inherit;
+    text-decoration: none;
+    min-height: 46px;
+  }
+  .wrapped-cta:hover {
+    background: var(--surface-3);
+  }
+  .wrapped-emoji {
+    font-size: 1.6rem;
+    line-height: 1;
   }
 </style>
