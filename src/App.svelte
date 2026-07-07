@@ -10,6 +10,7 @@
   import Settings from './pages/Settings.svelte';
   import Accessibility from './pages/Accessibility.svelte';
   import GameplaySettings from './pages/GameplaySettings.svelte';
+  import ManageGames from './pages/ManageGames.svelte';
   import GameType from './pages/GameType.svelte';
   import GamePlay from './pages/GamePlay.svelte';
   import CustomGameEdit from './pages/CustomGameEdit.svelte';
@@ -69,6 +70,8 @@
     <Accessibility />
   {:else if route.name === 'gameplay'}
     <GameplaySettings />
+  {:else if route.name === 'managegames'}
+    <ManageGames />
   {:else if route.name === 'gametype'}
     <GameType type={route.params.type} />
   {:else if route.name === 'customedit'}
@@ -95,7 +98,7 @@
 </main>
 
 <nav class="tabbar">
-  <a href="/" use:link class:active={route.name === 'home' || route.name === 'gametype' || route.name === 'customedit'}>
+  <a href="/" use:link class:active={route.name === 'home' || route.name === 'gametype' || route.name === 'customedit' || route.name === 'managegames'}>
     <span class="ico">🏠</span>Games
   </a>
   <a href="/players" use:link class:active={route.name === 'players'}>

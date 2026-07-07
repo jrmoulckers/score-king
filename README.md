@@ -19,6 +19,10 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
   direction, a single counter or named **columns** (with per‑column penalty), plus an optional
   target and round limit. It compiles to a real game module, so it joins the catalog and gets
   players, history, stats, `/<id>` routing, and backup exactly like a built‑in.
+- **Your game catalog.** As your list of games grows, **search** it, **favorite** the ones your
+  group plays (they pin to the top, with your recently‑played games right below), and **hide** the
+  ones you never use from **Manage games**. Hiding is recoverable, and your favorites/hidden choices
+  travel with your backup.
 - **Players, history & stats** are shared across every game — reusable players, a full game log,
   and a win‑rate leaderboard.
 - **Optional OneDrive sync.** Automatic (and one‑click) backup to a compact `.json` file in your own

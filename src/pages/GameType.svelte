@@ -1,12 +1,10 @@
 <script lang="ts">
   import { getModule } from '../lib/games/registry';
   import { defaultConfig } from '../lib/types';
-  import { games, activeGames, createGame } from '../lib/stores/games';
-  import { customGameDefs, saveCustomGame, removeCustomGame, restoreCustomGame } from '../lib/stores/customGames';
-  import { isCustomType, duplicateDef } from '../lib/games/custom/types';
-  import { getCustomDef } from '../lib/games/custom/defRegistry';
+  import { activeGames, createGame } from '../lib/stores/games';
+  import { customGameDefs } from '../lib/stores/customGames';
   import { navigate, link } from '../lib/router';
-  import { showToast, showActionToast } from '../lib/stores/toast';
+  import { showToast } from '../lib/stores/toast';
   import PlayerSelect from '../lib/components/PlayerSelect.svelte';
   import ConfigForm from '../lib/components/ConfigForm.svelte';
 
@@ -16,8 +14,6 @@
     void $customGameDefs;
     return getModule(type);
   });
-
-  const isCustom = $derived(isCustomType(type));
 
   let selected = $state<string[]>([]);
   let config = $state<Record<string, any>>({});
@@ -46,35 +42,6 @@
     }
     const g = await createGame(type, [...selected], { ...config });
     navigate(`/play/${g.id}`);
-  }
-
-  function editCustom() {
-    navigate(`/create/${type}`);
-  }
-
-  async function duplicateCustom() {
-    const src = getCustomDef(type);
-    if (!src) return;
-    const copy = duplicateDef(src);
-    await saveCustomGame(copy);
-    navigate(`/create/${copy.id}`);
-  }
-
-  async function deleteCustom() {
-    const src = getCustomDef(type);
-    // "In use" = any game (active or finished) of this type exists → archive, don't destroy.
-    const inUse = $games.some((g) => g.type === type);
-    await removeCustomGame(type, inUse);
-    if (inUse) {
-      showActionToast('Archived — kept for history.', 'Undo', () => {
-        void restoreCustomGame(type);
-      });
-    } else {
-      showActionToast('Game deleted.', 'Undo', () => {
-        if (src) void saveCustomGame(src);
-      });
-    }
-    navigate('/');
   }
 </script>
 
@@ -119,27 +86,12 @@
       Start game
     </button>
   </div>
-
-  {#if isCustom}
-    <div class="section-title">Manage</div>
-    <div class="card row wrap manage">
-      <button class="btn" onclick={editCustom}>✏️ Edit</button>
-      <button class="btn" onclick={duplicateCustom}>⧉ Duplicate</button>
-      <button class="btn danger del" onclick={deleteCustom}>🗑 Delete</button>
-    </div>
-  {/if}
 {/if}
 
 <style>
   .resume {
     text-decoration: none;
     color: inherit;
-  }
-  .manage {
-    gap: 10px;
-  }
-  .manage .del {
-    margin-left: auto;
   }
   hr {
     border: none;

@@ -10,6 +10,7 @@ export const tally: GameModule = {
   name: 'Tally',
   tagline: 'Universal point counter for any game',
   emoji: '🎯',
+  keywords: ['counter', 'points', 'generic', 'any game', 'score'],
   minPlayers: 1,
   maxPlayers: 12,
   configFields: [
