@@ -74,6 +74,7 @@ export type RouteName =
   | 'players'
   | 'history'
   | 'stats'
+  | 'court'
   | 'settings'
   | 'accessibility'
   | 'gameplay'
@@ -93,6 +94,7 @@ const RESERVED: Record<string, RouteName> = {
   players: 'players',
   history: 'history',
   stats: 'stats',
+  court: 'court',
   settings: 'settings',
   accessibility: 'accessibility',
   gameplay: 'gameplay',

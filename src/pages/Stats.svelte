@@ -231,7 +231,10 @@
   {/if}
 
   {#if board.length > 0}
-    <div class="section-title">Standings</div>
+    <div class="row spread" style="margin: 18px 4px 8px">
+      <span class="section-title" style="margin: 0">Standings</span>
+      <a class="linkbtn" href="/court" use:link>Full Court 👑 →</a>
+    </div>
     <div class="card stack">
       {#each board as row, i (row.playerId)}
         {@const p = playerById.get(row.playerId)}
