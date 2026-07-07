@@ -2,6 +2,7 @@
   import { MODULES, getModule } from '../lib/games/registry';
   import { games } from '../lib/stores/games';
   import { players } from '../lib/stores/players';
+  import { customGameDefs } from '../lib/stores/customGames';
   import { link, navigate } from '../lib/router';
   import { relativeTime, normalizeJoinCode } from '../lib/util';
   import { isLiveSupported, isNearbySupported } from '../lib/live/session';
@@ -17,6 +18,9 @@
 
   const active = $derived($games.filter((g) => g.status === 'active'));
   const recent = $derived($games.filter((g) => g.status === 'finished').slice(0, 4));
+  // Custom, user-authored games — non-archived, shown alongside the built-ins.
+  // (Seam: session 1's catalog will own ordering/favorites/hidden for these.)
+  const customTiles = $derived($customGameDefs.filter((d) => !d.archived && !d.deleted));
 
   function names(ids: string[]): string {
     return ids.map((id) => $players.find((p) => p.id === id)?.name ?? '?').join(', ');
@@ -54,6 +58,18 @@
       <span class="tag">{m.tagline}</span>
     </a>
   {/each}
+  {#each customTiles as d (d.id)}
+    <a class="gametile" href={`/${d.id}`} use:link>
+      <span class="emoji">{d.emoji}</span>
+      <span class="name">{d.name}</span>
+      <span class="tag">{d.tagline}</span>
+    </a>
+  {/each}
+  <a class="gametile create" href="/create" use:link>
+    <span class="emoji" aria-hidden="true">＋</span>
+    <span class="name">Create a game</span>
+    <span class="tag">Design your own scorer</span>
+  </a>
 </div>
 
 {#if liveSupported || nearbySupported}
@@ -109,6 +125,13 @@
   .tile {
     text-decoration: none;
     color: inherit;
+  }
+  /* "Add new" affordance — dashed outline + ＋ glyph carry the meaning, not color alone. */
+  .create {
+    border-style: dashed;
+  }
+  .create .emoji {
+    color: var(--muted);
   }
   .tile:hover {
     border-color: var(--primary);

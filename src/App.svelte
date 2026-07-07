@@ -12,6 +12,7 @@
   import GameplaySettings from './pages/GameplaySettings.svelte';
   import GameType from './pages/GameType.svelte';
   import GamePlay from './pages/GamePlay.svelte';
+  import CustomGameEdit from './pages/CustomGameEdit.svelte';
   import LiveJoin from './pages/LiveJoin.svelte';
   import NearbyJoin from './pages/NearbyJoin.svelte';
   import Recap from './pages/Recap.svelte';
@@ -70,6 +71,10 @@
     <GameplaySettings />
   {:else if route.name === 'gametype'}
     <GameType type={route.params.type} />
+  {:else if route.name === 'customedit'}
+    {#key route.params.id ?? 'new'}
+      <CustomGameEdit id={route.params.id} />
+    {/key}
   {:else if route.name === 'play'}
     {#key route.params.id}
       <GamePlay id={route.params.id} />
@@ -90,7 +95,7 @@
 </main>
 
 <nav class="tabbar">
-  <a href="/" use:link class:active={route.name === 'home' || route.name === 'gametype'}>
+  <a href="/" use:link class:active={route.name === 'home' || route.name === 'gametype' || route.name === 'customedit'}>
     <span class="ico">🏠</span>Games
   </a>
   <a href="/players" use:link class:active={route.name === 'players'}>
