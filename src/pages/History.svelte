@@ -16,7 +16,9 @@
   import { crewSignature, crewNames, setCrewName } from '../lib/stores/crews';
   import Avatar from '../lib/components/Avatar.svelte';
   import Segmented from '../lib/components/Segmented.svelte';
-  import type { Game } from '../lib/types';
+  import type { Game, Player } from '../lib/types';
+  import ShareResultsSheet from '../lib/components/ShareResultsSheet.svelte';
+  import { buildRecapPayload, type RecapPayload } from '../lib/share/recap';
 
   /** Below this many games, the list is glanceable on its own — no controls shown. */
   const CONTROLS_MIN = 6;
@@ -55,6 +57,7 @@
   let showArchived = $state(false);
   let editingCrew = $state<string | null>(null);
   let crewDraft = $state('');
+  let sharePayload = $state<RecapPayload | null>(null);
 
   const playerMap = $derived(new Map($players.map((p) => [p.id, p] as const)));
   const archivedGames = $derived($games.filter((g) => g.archived));
@@ -186,6 +189,21 @@
     });
   }
 
+  /**
+   * Build a share recap on tap (never eager per-row). Rounds load async; players are
+   * ordered by the game's own playerIds through the roster map (which includes archived
+   * members). A hard-deleted member gets a positional placeholder that REUSES the
+   * original id, so buildRecapPayload's per-round deltas and winner lookups — both keyed
+   * on player.id — stay aligned; a minted id would silently zero that column's scores.
+   */
+  async function share(g: Game) {
+    const rounds = await getRounds(g.id);
+    const ordered: Player[] = g.playerIds.map(
+      (id, i) => playerMap.get(id) ?? { id, name: `Player ${i + 1}`, color: '#8a8f98', createdAt: 0 },
+    );
+    sharePayload = buildRecapPayload(g, ordered, rounds);
+  }
+
   function startCrewEdit(sig: string, current: string) {
     editingCrew = sig;
     crewDraft = current;
@@ -214,6 +232,9 @@
       </span>
     </a>
     <span class="row actions">
+      {#if g.status === 'finished'}
+        <button class="iconbtn" onclick={() => share(g)} aria-label="Share results" title="Share results">📤</button>
+      {/if}
       <button class="iconbtn" onclick={() => archive(g)} aria-label="Archive game" title="Archive">🗄</button>
       <button class="iconbtn" onclick={() => del(g)} aria-label="Delete game" title="Delete">🗑</button>
     </span>
@@ -360,6 +381,10 @@
       </div>
     {/if}
   {/if}
+{/if}
+
+{#if sharePayload}
+  <ShareResultsSheet payload={sharePayload} onclose={() => (sharePayload = null)} />
 {/if}
 
 <style>
@@ -543,5 +568,18 @@
   }
   .archtoggle {
     margin-top: 16px;
+  }
+
+  @media (max-width: 360px) {
+    /* Recover a few px of info width so the 3-icon finished row (Share · Archive ·
+       Delete) keeps a comfortable title/tap area on the narrowest phones, without
+       ever shrinking the 46×46 icon hit targets. */
+    .libitem {
+      padding: 12px;
+      gap: 8px;
+    }
+    .actions {
+      gap: 4px;
+    }
   }
 </style>
