@@ -14,6 +14,7 @@
   import GamePlay from './pages/GamePlay.svelte';
   import LiveJoin from './pages/LiveJoin.svelte';
   import NearbyJoin from './pages/NearbyJoin.svelte';
+  import Recap from './pages/Recap.svelte';
   import NotFound from './pages/NotFound.svelte';
   import SyncBubble from './lib/components/SyncBubble.svelte';
 
@@ -79,6 +80,10 @@
     {/key}
   {:else if route.name === 'nearby'}
     <NearbyJoin />
+  {:else if route.name === 'recap'}
+    {#key current}
+      <Recap />
+    {/key}
   {:else}
     <NotFound />
   {/if}
