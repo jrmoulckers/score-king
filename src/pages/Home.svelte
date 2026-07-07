@@ -16,8 +16,10 @@
     if (c) navigate(`/join/${c}`);
   }
 
-  const active = $derived($games.filter((g) => g.status === 'active'));
-  const recent = $derived($games.filter((g) => g.status === 'finished').slice(0, 4));
+  const active = $derived($games.filter((g) => g.status === 'active' && !g.archived));
+  const recent = $derived(
+    $games.filter((g) => g.status === 'finished' && !g.archived).slice(0, 4),
+  );
   // Custom, user-authored games — non-archived, shown alongside the built-ins.
   // (Seam: session 1's catalog will own ordering/favorites/hidden for these.)
   const customTiles = $derived($customGameDefs.filter((d) => !d.archived && !d.deleted));
