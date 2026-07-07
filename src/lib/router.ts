@@ -80,6 +80,7 @@ export type RouteName =
   | 'play'
   | 'join'
   | 'nearby'
+  | 'recap'
   | 'gametype'
   | 'notfound';
 
@@ -97,6 +98,7 @@ const RESERVED: Record<string, RouteName> = {
   accessibility: 'accessibility',
   gameplay: 'gameplay',
   nearby: 'nearby',
+  recap: 'recap',
 };
 
 export function parseRoute(path: string): Route {
