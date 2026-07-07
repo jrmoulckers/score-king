@@ -16,6 +16,7 @@
     restoreGame,
   } from '../lib/stores/games';
   import { getModule } from '../lib/games/registry';
+  import { customGameDefs } from '../lib/stores/customGames';
   import { computeTotals } from '../lib/scoring';
   import { navigate, link, absoluteUrl } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
@@ -59,7 +60,10 @@
   let editDraft = $state<any>(null);
   let justSavedId = $state<string | null>(null);
 
-  const module = $derived(game ? getModule(game.type) : undefined);
+  const module = $derived.by(() => {
+    void $customGameDefs;
+    return game ? getModule(game.type) : undefined;
+  });
   const orderedPlayers = $derived(
     game
       ? (game.playerIds

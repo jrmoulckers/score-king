@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Game, ID, Player, Round } from '../types';
+import type { CustomGameDef } from '../games/custom/types';
 import { uid } from '../util';
 import { markDataChanged } from './changes';
 
@@ -7,6 +8,7 @@ interface ScoreKingDB extends DBSchema {
   players: { key: string; value: Player };
   games: { key: string; value: Game; indexes: { byCreated: number } };
   rounds: { key: string; value: Round; indexes: { byGame: string } };
+  gameDefs: { key: string; value: CustomGameDef };
 }
 
 let dbp: Promise<IDBPDatabase<ScoreKingDB>> | null = null;
@@ -16,13 +18,19 @@ const raw = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 function db(): Promise<IDBPDatabase<ScoreKingDB>> {
   if (!dbp) {
-    dbp = openDB<ScoreKingDB>('score-king', 1, {
-      upgrade(database) {
-        database.createObjectStore('players', { keyPath: 'id' });
-        const games = database.createObjectStore('games', { keyPath: 'id' });
-        games.createIndex('byCreated', 'createdAt');
-        const rounds = database.createObjectStore('rounds', { keyPath: 'id' });
-        rounds.createIndex('byGame', 'gameId');
+    dbp = openDB<ScoreKingDB>('score-king', 2, {
+      upgrade(database, oldVersion) {
+        if (oldVersion < 1) {
+          database.createObjectStore('players', { keyPath: 'id' });
+          const games = database.createObjectStore('games', { keyPath: 'id' });
+          games.createIndex('byCreated', 'createdAt');
+          const rounds = database.createObjectStore('rounds', { keyPath: 'id' });
+          rounds.createIndex('byGame', 'gameId');
+        }
+        // v2: user-authored custom game definitions (part of the World).
+        if (oldVersion < 2) {
+          database.createObjectStore('gameDefs', { keyPath: 'id' });
+        }
       },
     });
   }
@@ -126,20 +134,48 @@ export async function deleteRound(id: ID): Promise<void> {
   markDataChanged();
 }
 
+// ---- Custom game definitions ----
+/** Live custom game definitions (tombstones hidden). Includes archived defs so games,
+ *  history and stats of a retired custom type still resolve. */
+export async function getAllGameDefs(): Promise<CustomGameDef[]> {
+  const all = await (await db()).getAll('gameDefs');
+  return all.filter((d) => !d.deleted).sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export async function putGameDef(def: CustomGameDef): Promise<void> {
+  await (await db()).put('gameDefs', raw({ ...def, updatedAt: Date.now() }));
+  markDataChanged();
+}
+
+/** Hard-delete a custom game definition (tombstoned so the delete propagates on merge).
+ *  Only used for a type that was never played; a played type is archived instead. */
+export async function deleteGameDef(id: ID): Promise<void> {
+  const database = await db();
+  const existing = await database.get('gameDefs', id);
+  if (existing) {
+    const now = Date.now();
+    await database.put('gameDefs', raw({ ...existing, deleted: now, updatedAt: now }));
+  }
+  markDataChanged();
+}
+
 // ---- Bulk (used by sync restore) ----
 export async function replaceAll(data: {
   players: Player[];
   games: Game[];
   rounds: Round[];
+  gameDefs?: CustomGameDef[];
 }): Promise<void> {
   const database = await db();
-  const tx = database.transaction(['players', 'games', 'rounds'], 'readwrite');
+  const tx = database.transaction(['players', 'games', 'rounds', 'gameDefs'], 'readwrite');
   await tx.objectStore('players').clear();
   await tx.objectStore('games').clear();
   await tx.objectStore('rounds').clear();
+  await tx.objectStore('gameDefs').clear();
   for (const p of data.players) await tx.objectStore('players').put(raw(p));
   for (const g of data.games) await tx.objectStore('games').put(raw(g));
   for (const r of data.rounds) await tx.objectStore('rounds').put(raw(r));
+  for (const d of data.gameDefs ?? []) await tx.objectStore('gameDefs').put(raw(d));
   await tx.done;
 }
 
@@ -157,12 +193,14 @@ export async function getAllForSync(): Promise<{
   players: Player[];
   games: Game[];
   rounds: Round[];
+  gameDefs: CustomGameDef[];
 }> {
   const database = await db();
-  const [players, games, rounds] = await Promise.all([
+  const [players, games, rounds, gameDefs] = await Promise.all([
     database.getAll('players'),
     database.getAll('games'),
     database.getAll('rounds'),
+    database.getAll('gameDefs'),
   ]);
-  return { players: players.map(normalizePlayer), games, rounds };
+  return { players: players.map(normalizePlayer), games, rounds, gameDefs };
 }
