@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getModule } from '../lib/games/registry';
   import { defaultConfig } from '../lib/types';
-  import { games, createGame } from '../lib/stores/games';
+  import { games, activeGames, createGame } from '../lib/stores/games';
   import { customGameDefs, saveCustomGame, removeCustomGame, restoreCustomGame } from '../lib/stores/customGames';
   import { isCustomType, duplicateDef } from '../lib/games/custom/types';
   import { getCustomDef } from '../lib/games/custom/defRegistry';
@@ -31,7 +31,7 @@
   });
 
   const activeOfType = $derived(
-    $games.filter((g) => g.status === 'active' && g.type === type),
+    $activeGames.filter((g) => g.status === 'active' && g.type === type),
   );
 
   async function start() {
