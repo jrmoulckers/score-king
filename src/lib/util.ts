@@ -85,6 +85,72 @@ export function relativeTime(ts: number): string {
   return formatDate(ts);
 }
 
+/**
+ * Like {@link relativeTime} but with seconds granularity, for fast-moving heartbeats such as the
+ * sync poll's "Last checked …" label. Pass `now` (e.g. a 1s ticker) so callers can force the label
+ * to recompute each second. Falls back to {@link relativeTime} once past a minute.
+ */
+export function relativeTimeSec(ts: number, now: number = Date.now()): string {
+  const sec = Math.max(0, Math.round((now - ts) / 1000));
+  if (sec < 3) return 'just now';
+  if (sec < 60) return `${sec}s ago`;
+  return relativeTime(ts);
+}
+
+const HANDLE_ADJECTIVES = [
+  'Royal', 'Crowned', 'Sneaky', 'Lucky', 'Mighty', 'Jolly', 'Dapper', 'Cosmic',
+  'Turbo', 'Wily', 'Brave', 'Cheeky', 'Noble', 'Zany', 'Swift', 'Grand',
+  'Merry', 'Bold', 'Sly', 'Epic', 'Plucky', 'Gilded', 'Rowdy', 'Fuzzy',
+];
+
+const HANDLE_NOUNS = [
+  'Otter', 'Wizard', 'Badger', 'Comet', 'Monarch', 'Jester', 'Phoenix', 'Walrus',
+  'Goose', 'Raccoon', 'Dragon', 'Penguin', 'Yeti', 'Narwhal', 'Falcon', 'Hedgehog',
+  'Bandit', 'Maverick', 'Champion', 'Gremlin', 'Knight', 'Wombat', 'Llama', 'Pixel',
+];
+
+/**
+ * A whimsical, on-brand display handle (e.g. "Royal Otter") for a not-yet-claimed
+ * member. Avoids handles already in `taken`, falling back to a numbered variant.
+ */
+export function generateHandle(taken: string[] = []): string {
+  const used = new Set(taken.map((n) => n.toLowerCase()));
+  const pick = (list: string[]) => list[Math.floor(Math.random() * list.length)];
+  const make = () => `${pick(HANDLE_ADJECTIVES)} ${pick(HANDLE_NOUNS)}`;
+  for (let i = 0; i < 24; i++) {
+    const handle = make();
+    if (!used.has(handle.toLowerCase())) return handle;
+  }
+  return `${make()} ${Math.floor(Math.random() * 90) + 10}`;
+}
+
+const JOIN_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no I, L, O, 0, 1 — unambiguous
+
+/** A short, unambiguous join code (e.g. "K7QP4") for a live session. */
+export function generateJoinCode(len = 5): string {
+  const a = JOIN_CODE_ALPHABET;
+  const pick = (n: number) => {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      return buf[0] % n;
+    }
+    return Math.floor(Math.random() * n);
+  };
+  let out = '';
+  for (let i = 0; i < len; i++) out += a[pick(a.length)];
+  return out;
+}
+
+/** Normalize user-typed codes: uppercase, strip non-alphabet chars (handles paste/typos). */
+export function normalizeJoinCode(raw: string): string {
+  return (raw || '')
+    .toUpperCase()
+    .split('')
+    .filter((c) => JOIN_CODE_ALPHABET.includes(c))
+    .join('');
+}
+
 export function initials(name: string): string {
   return name
     .split(/\s+/)

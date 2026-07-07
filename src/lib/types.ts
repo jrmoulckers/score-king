@@ -1,13 +1,37 @@
 import type { Component } from 'svelte';
 import type { GameStatsHook } from './stats/types';
+import type { BackupSettings } from './stores/settings';
 
 export type ID = string;
 
+/**
+ * A gamer — the unified "Member" entity from ARCHITECTURE.md (one record for a
+ * person: their seat in a game *and* their identity). Named `Player` because that's
+ * what it is inside a game, and the name is woven through the GameModule contract.
+ */
 export interface Player {
   id: ID;
+  /** Display handle. Auto-generated and whimsical until the gamer claims it. */
   name: string;
   color: string;
   createdAt: number;
+  /** True once the gamer renames the auto-generated handle to claim this identity. */
+  claimed?: boolean;
+  /** Soft-delete: hidden from the active roster + selection, kept in history & stats. */
+  archived?: boolean;
+  archivedAt?: number;
+  /** A temporary, session-only member (networked guest join). Reserved; no UI yet. */
+  ephemeral?: boolean;
+  /** This member's portable preferences, applied to a device when they're its lead. */
+  prefs?: Partial<BackupSettings>;
+  /** Last local mutation time — drives per-entity merge (Phase 2). */
+  updatedAt?: number;
+  /**
+   * Sync tombstone: when set, this record was permanently deleted and is retained
+   * only so the deletion propagates on merge. Distinct from {@link archived} (a
+   * recoverable, still-present member). Tombstoned records are hidden everywhere.
+   */
+  deleted?: number;
 }
 
 export type GameStatus = 'active' | 'finished' | 'abandoned';
@@ -23,6 +47,10 @@ export interface Game {
   finishedAt?: number;
   winnerIds?: ID[];
   roundCount: number;
+  /** Last local mutation time — drives per-entity merge (Phase 2). */
+  updatedAt?: number;
+  /** Sync tombstone: deletion time, retained so the delete propagates on merge. */
+  deleted?: number;
 }
 
 export interface Round {
@@ -32,6 +60,10 @@ export interface Round {
   input: unknown; // game-specific payload
   deltas: Record<ID, number>; // per-player points for this round
   createdAt: number;
+  /** Last local mutation time — drives per-entity merge (Phase 2). */
+  updatedAt?: number;
+  /** Sync tombstone: deletion time, retained so the delete propagates on merge. */
+  deleted?: number;
 }
 
 /** Context handed to a game module when editing/scoring a round. */

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import type { Game, Player, Round, RoundContext } from '../lib/types';
+  import { onMount, onDestroy } from 'svelte';
+  import type { Game, ID, Player, Round, RoundContext } from '../lib/types';
   import { resolveLower } from '../lib/types';
   import * as db from '../lib/storage/db';
   import { players } from '../lib/stores/players';
@@ -18,13 +18,34 @@
   } from '../lib/stores/games';
   import { getModule } from '../lib/games/registry';
   import { computeTotals } from '../lib/scoring';
-  import { navigate, link } from '../lib/router';
+  import { navigate, link, absoluteUrl } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
-  import { relativeTime } from '../lib/util';
+  import { relativeTime, generateJoinCode } from '../lib/util';
   import { settings } from '../lib/stores/settings';
+  import { leadMember } from '../lib/stores/identity';
   import { enableWakeLock, disableWakeLock } from '../lib/wakelock';
   import Scoreboard from '../lib/components/Scoreboard.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
+  import PlaySheet from '../lib/components/PlaySheet.svelte';
+  import { get } from 'svelte/store';
+  import {
+    startHosting,
+    startHostingNearby,
+    leaveSession,
+    publish,
+    runHostExclusive,
+    currentSelf,
+    isLiveSupported,
+    isNearbySupported,
+    liveActive,
+    liveStatus,
+    liveParticipants,
+    liveCode,
+    liveRemote,
+    liveConnection,
+  } from '../lib/live/session';
+  import type { HostHandlers, NearbyHostControls } from '../lib/live/session';
+  import type { LiveState, LiveIntent } from '../lib/live/protocol';
 
   let { id }: { id: string } = $props();
 
@@ -122,24 +143,33 @@
 
   async function saveRound() {
     if (!game || !module || !draft) return;
-    const ctx = buildCtx(rounds.length, computeTotals(rounds, game.playerIds));
     const snap = $state.snapshot(draft);
-    const err = module.validateRound(snap, ctx);
-    if (err) {
-      showToast(err);
-      return;
-    }
-    const deltas = module.scoreRound(snap, ctx);
-    await appendRound(game, snap, deltas);
-    await load();
+    const saved = await hostSerial(async () => {
+      if (!game || !module) return false;
+      const ctx = buildCtx(rounds.length, computeTotals(rounds, game.playerIds));
+      const err = module.validateRound(snap, ctx);
+      if (err) {
+        showToast(err);
+        return false;
+      }
+      const deltas = module.scoreRound(snap, ctx);
+      await appendRound(game, snap, deltas);
+      await load();
+      publish();
+      return true;
+    });
+    if (!saved) return;
     const newest = rounds[rounds.length - 1];
-    if (newest) {
-      justSavedId = newest.id;
-      const fid = newest.id;
-      setTimeout(() => {
-        if (justSavedId === fid) justSavedId = null;
-      }, 1000);
-    }
+    if (newest) pulseRow(newest.id);
+  }
+
+  // Briefly pulse a scorecard row green to confirm it just landed. The host's own saves and
+  // guests' accepted rounds share this, so every recorded round reads the same on the board.
+  function pulseRow(id: string): void {
+    justSavedId = id;
+    setTimeout(() => {
+      if (justSavedId === id) justSavedId = null;
+    }, 1000);
   }
 
   function startEdit(r: Round) {
@@ -152,42 +182,66 @@
   }
   async function saveEdit() {
     if (!game || !module || !editing) return;
-    const ctx = buildCtx(editing.index, totalsBefore(editing.index));
     const snap = $state.snapshot(editDraft);
-    const err = module.validateRound(snap, ctx);
-    if (err) {
-      showToast(err);
-      return;
-    }
-    const deltas = module.scoreRound(snap, ctx);
-    await updateRound(editing, snap, deltas);
-    await load();
+    const ed = editing;
+    await hostSerial(async () => {
+      if (!game || !module) return;
+      const ctx = buildCtx(ed.index, totalsBefore(ed.index));
+      const err = module.validateRound(snap, ctx);
+      if (err) {
+        showToast(err);
+        return;
+      }
+      const deltas = module.scoreRound(snap, ctx);
+      await updateRound(ed, snap, deltas);
+      await load();
+      publish();
+    });
   }
 
   async function del(r: Round) {
     if (!game) return;
     const gameSnap = $state.snapshot(game);
     const roundSnap = $state.snapshot(r);
-    await removeRound(r, game);
-    await load();
-    showActionToast(`Round ${r.index + 1} deleted`, 'Undo', async () => {
-      await restoreRound(gameSnap, roundSnap);
+    await hostSerial(async () => {
+      if (!game) return;
+      await removeRound(r, game);
       await load();
+      publish();
+    });
+    showActionToast(`Round ${r.index + 1} deleted`, 'Undo', async () => {
+      await hostSerial(async () => {
+        await restoreRound(gameSnap, roundSnap);
+        await load();
+        publish();
+      });
     });
   }
 
   async function doFinish() {
     if (!game) return;
-    game = await finishGame(game);
+    await hostSerial(async () => {
+      if (!game) return;
+      game = await finishGame(game);
+      publish();
+    });
   }
   async function doReopen() {
     if (!game) return;
-    game = await reopenGame(game);
-    resetDraft();
+    await hostSerial(async () => {
+      if (!game) return;
+      game = await reopenGame(game);
+      resetDraft();
+      publish();
+    });
   }
   async function doAbandon() {
     if (!game) return;
-    game = await abandonGame(game);
+    await hostSerial(async () => {
+      if (!game) return;
+      game = await abandonGame(game);
+      publish();
+    });
   }
   async function playAgain() {
     if (!game) return;
@@ -213,6 +267,124 @@
   const winnerNames = $derived(
     (game?.winnerIds ?? []).map((wid) => plist.find((p) => p.id === wid)?.name ?? '?').join(' & '),
   );
+
+  // ── Live co-play (host-authoritative) ──────────────────────────────────
+  // The leader keeps using this very screen; the engine just mirrors the game
+  // to guests and feeds their round proposals back through the same store flow.
+  const liveSupported = isLiveSupported();
+  const nearbySupported = isNearbySupported();
+  let sheetOpen = $state(false);
+  let nearbyControls = $state<NearbyHostControls | null>(null);
+  // Which transport backs the active session (online = relay/broadcast, nearby = WebRTC).
+  let liveKind = $state<'relay' | 'nearby' | null>(null);
+  const liveLink = $derived($liveCode ? absoluteUrl(`/join/${$liveCode}`) : '');
+  const liveMode = $derived(liveKind === 'nearby' ? 'nearby' : 'online');
+
+  // While hosting, route the host's own durable writes through the engine's serial queue
+  // so a guest's intent can't interleave with a local save on the non-atomic append/reindex.
+  function hostSerial<T>(fn: () => Promise<T>): Promise<T> {
+    return get(liveStatus) === 'hosting' ? runHostExclusive(fn) : fn();
+  }
+
+  function buildLiveState(): LiveState {
+    return {
+      game: $state.snapshot(game)!,
+      players: $state.snapshot(orderedPlayers),
+      rounds: $state.snapshot(rounds),
+      rev: 0,
+    };
+  }
+
+  async function applyLiveIntent(intent: LiveIntent, from: ID): Promise<string | null> {
+    if (intent.kind !== 'record-round') return 'That action isn’t supported.';
+    if (!game || !module) return 'The game isn’t ready yet.';
+    if (game.status !== 'active') return 'This game has finished.';
+    if (!canAddRound) return `All ${maxR} rounds have been played.`;
+    const ctx = buildCtx(rounds.length, computeTotals(rounds, game.playerIds));
+    const err = module.validateRound(intent.input, ctx);
+    if (err) return err;
+    const deltas = module.scoreRound(intent.input, ctx);
+    await appendRound(game, intent.input, deltas);
+    await load();
+    // Surface the guest's contribution on the host (the source of truth): pulse the new row and
+    // name who added it, so a round arriving from another device never lands silently.
+    const landed = rounds[rounds.length - 1];
+    if (landed) pulseRow(landed.id);
+    const who = get(liveParticipants).find((p) => p.id === from)?.name;
+    showToast(`${who ?? 'A player'} added Round ${rounds.length}`);
+    return null;
+  }
+
+  function hostHandlers(): HostHandlers {
+    return { self: currentSelf('leader'), buildState: buildLiveState, applyIntent: applyLiveIntent };
+  }
+
+  /** One entry point: "play together". Leads online, or nearby when the device is offline. */
+  async function startTogether() {
+    if (!game) return;
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (offline && nearbySupported) await startNearby();
+    else await startLive();
+  }
+
+  async function startLive() {
+    if (!game) return;
+    try {
+      await startHosting(generateJoinCode(), hostHandlers());
+      nearbyControls = null;
+      liveKind = 'relay';
+      sheetOpen = true;
+    } catch {
+      showToast('Couldn’t start live play on this device.');
+    }
+  }
+
+  async function startNearby() {
+    if (!game) return;
+    try {
+      nearbyControls = await startHostingNearby(generateJoinCode(), hostHandlers());
+      liveKind = 'nearby';
+      sheetOpen = true;
+    } catch {
+      showToast('Couldn’t start nearby play on this device.');
+    }
+  }
+
+  /** Swap transports from inside the sheet without ending the session (host's explicit choice). */
+  async function switchMode(to: 'online' | 'nearby') {
+    if (
+      $liveParticipants.length > 1 &&
+      typeof window !== 'undefined' &&
+      !window.confirm('Switching will disconnect the players who already joined. Continue?')
+    ) {
+      return;
+    }
+    if (to === 'nearby') await startNearby();
+    else await startLive();
+  }
+
+  function openLiveSheet() {
+    sheetOpen = true;
+  }
+
+  async function stopLive() {
+    await leaveSession();
+    sheetOpen = false;
+  }
+
+  $effect(() => {
+    // Clean up only when the session truly ends — not during a transport swap, which passes
+    // briefly through 'connecting' on its way back to 'hosting'.
+    if ($liveStatus === 'off' || $liveStatus === 'error') {
+      sheetOpen = false;
+      nearbyControls = null;
+      liveKind = null;
+    }
+  });
+
+  onDestroy(() => {
+    if (get(liveStatus) === 'hosting') void leaveSession();
+  });
 </script>
 
 {#if loading}
@@ -246,7 +418,39 @@
     <button class="iconbtn" onclick={deleteGame} aria-label="Delete game" title="Delete game">🗑</button>
   </div>
 
-  <Scoreboard players={orderedPlayers} {totals} lowerIsBetter={lower} winners={game.winnerIds ?? []} />
+  {#if liveSupported && game.status === 'active'}
+    {#if $liveActive}
+      <button class="card row spread livebar" onclick={openLiveSheet}>
+        <span class="row" style="gap: 10px">
+          <span
+            class="livedot"
+            class:reconnecting={$liveConnection === 'reconnecting'}
+            class:offline={$liveConnection === 'offline'}
+            aria-hidden="true"
+          ></span>
+          <span style="display: flex; flex-direction: column; text-align: left">
+            <strong>Live game</strong>
+            <span class="muted" style="font-size: 0.8rem">
+              {#if $liveConnection === 'reconnecting'}
+                Reconnecting…
+              {:else if $liveConnection === 'offline'}
+                Offline · your game is safe
+              {:else}
+                {$liveParticipants.length} here · tap to {liveKind === 'nearby' ? 'add players' : 'share'}
+              {/if}
+            </span>
+          </span>
+        </span>
+        <span class="pill">{liveKind === 'nearby' ? 'Nearby' : 'Share'}</span>
+      </button>
+    {:else}
+      <button class="btn ghost block" style="margin-top: 12px" onclick={startTogether}>
+        👋 Play together
+      </button>
+    {/if}
+  {/if}
+
+  <Scoreboard players={orderedPlayers} {totals} lowerIsBetter={lower} winners={game.winnerIds ?? []} youId={$leadMember?.id} />
 
   {#if game.status === 'finished'}
     <div class="card center banner">🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}</div>
@@ -352,7 +556,65 @@
   {/if}
 {/if}
 
+{#if sheetOpen && $liveActive}
+  {#key liveKind}
+    <PlaySheet
+      mode={liveMode}
+      code={$liveCode ?? ''}
+      link={liveLink}
+      remote={$liveRemote}
+      controls={nearbyControls}
+      canGoOnline={liveSupported}
+      canGoNearby={nearbySupported}
+      onclose={() => (sheetOpen = false)}
+      onend={stopLive}
+      onswitch={switchMode}
+    />
+  {/key}
+{/if}
+
 <style>
+  .livebar {
+    margin-top: 12px;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+  }
+  .livebar:hover {
+    border-color: var(--primary);
+  }
+  .livedot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--good);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 22%, transparent);
+  }
+  .livedot.reconnecting {
+    background: var(--warn);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 22%, transparent);
+    animation: livepulse 1.1s ease-in-out infinite;
+  }
+  .livedot.offline {
+    background: var(--muted);
+    box-shadow: none;
+  }
+  @keyframes livepulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .livedot.reconnecting {
+      animation-duration: 3s;
+    }
+  }
   .banner {
     margin-top: 12px;
     font-size: 1.15rem;
@@ -392,6 +654,11 @@
     }
     to {
       background: transparent;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .matrix tbody tr.flash td {
+      animation: none;
     }
   }
   .acts {

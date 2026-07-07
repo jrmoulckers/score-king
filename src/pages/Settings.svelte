@@ -1,14 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { settings, markSynced, markRestored } from '../lib/stores/settings';
+  import { settings, markSynced, markRestored, setActiveBackupEtag } from '../lib/stores/settings';
   import { link } from '../lib/router';
   import {
     buildSnapshot,
     restoreSnapshot,
+    serializeSnapshot,
+    deserializeSnapshot,
     getOneDrive,
+    reconcile,
     DEFAULT_BACKUP_FILE,
     fileNameForTitle,
     titleFromFileName,
+    ConflictError,
   } from '../lib/storage/sync';
   import type { BackupInfo } from '../lib/storage/sync';
   import { autoSyncStatus, markSyncSettled } from '../lib/storage/autosync';
@@ -16,10 +20,11 @@
   import { refreshGames } from '../lib/stores/games';
   import { refreshPlayers } from '../lib/stores/players';
   import { showToast } from '../lib/stores/toast';
-  import { relativeTime } from '../lib/util';
-  import ExcelIcon from '../lib/components/ExcelIcon.svelte';
+  import { relativeTime, relativeTimeSec } from '../lib/util';
+  import JsonIcon from '../lib/components/JsonIcon.svelte';
 
   let override = $state($settings.oneDriveClientId);
+  let relayInput = $state($settings.relayUrl);
   let busy = $state(false);
   let signedIn = $state(false);
   let fileInput: HTMLInputElement;
@@ -39,7 +44,9 @@
   const dotClass = $derived(
     $autoSyncStatus === 'syncing'
       ? 'busy'
-      : $autoSyncStatus === 'pending' || $autoSyncStatus === 'error'
+      : $autoSyncStatus === 'pending' ||
+          $autoSyncStatus === 'error' ||
+          $autoSyncStatus === 'conflict'
         ? 'warn'
         : $autoSyncStatus === 'offline'
           ? 'off'
@@ -51,23 +58,29 @@
   const backupText = $derived(
     $autoSyncStatus === 'syncing'
       ? 'Syncing…'
-      : $autoSyncStatus === 'pending'
-        ? 'Sync pending — reconnect to OneDrive'
-        : $autoSyncStatus === 'offline'
-          ? 'Offline — changes will back up when you reconnect'
-          : $autoSyncStatus === 'error'
-            ? 'Sync failed — will retry shortly'
-            : $settings.lastSync
-              ? 'Synced · Backed up ' + relativeTime($settings.lastSync)
-              : 'Not backed up yet',
+      : $autoSyncStatus === 'conflict'
+        ? 'Backup changed on another device — tap Merge'
+        : $autoSyncStatus === 'pending'
+          ? 'Sync pending — reconnect to OneDrive'
+          : $autoSyncStatus === 'offline'
+            ? 'Offline — changes will back up when you reconnect'
+            : $autoSyncStatus === 'error'
+              ? 'Sync failed — will retry shortly'
+              : $settings.lastSync
+                ? 'Synced · Backed up ' + relativeTime($settings.lastSync)
+                : 'Not backed up yet',
   );
 
-  // Restore is paired with backup but never shows a "not yet" state: connecting
-  // already pulls the latest file down, so the local data is treated as restored.
-  const restoreText = $derived(
-    $settings.lastRestore
-      ? 'Last restored ' + relativeTime($settings.lastRestore)
-      : 'Up to date with OneDrive',
+  // A 1s ticker so the "Last checked" heartbeat visibly counts up between polls (which land
+  // ~every 30s while the app is open). Cheap; runs only while this page is mounted.
+  let nowTick = $state(Date.now());
+  $effect(() => {
+    const id = setInterval(() => (nowTick = Date.now()), 1000);
+    return () => clearInterval(id);
+  });
+
+  const checkedText = $derived(
+    $settings.lastCheck ? 'Last checked ' + relativeTimeSec($settings.lastCheck, nowTick) : '',
   );
 
   let folderMode = $state($settings.oneDriveFolderMode);
@@ -136,6 +149,7 @@
         isDefault: activeFileName === DEFAULT_BACKUP_FILE,
         modifiedAt: null,
         size: null,
+        etag: null,
       },
       ...list,
     ];
@@ -179,14 +193,16 @@
     }
     backupBusy = true;
     const prev = activeFileName;
+    const prevEtag = $settings.oneDriveBackupEtag;
     try {
-      settings.update((s) => ({ ...s, oneDriveBackupFile: file }));
-      await performBackup();
+      // New file: no eTag baseline yet, and 'create' refuses to clobber a same-named file.
+      settings.update((s) => ({ ...s, oneDriveBackupFile: file, oneDriveBackupEtag: '' }));
+      await performBackup({ mode: 'create' });
       newTitle = '';
       await loadBackups(true);
       showToast('Created backup “' + titleFromFileName(file) + '”');
     } catch (e) {
-      settings.update((s) => ({ ...s, oneDriveBackupFile: prev }));
+      settings.update((s) => ({ ...s, oneDriveBackupFile: prev, oneDriveBackupEtag: prevEtag }));
       showToast(errMsg(e));
     } finally {
       backupBusy = false;
@@ -206,21 +222,25 @@
       return;
     backupBusy = true;
     const prev = activeFileName;
+    const prevEtag = $settings.oneDriveBackupEtag;
     try {
-      settings.update((s) => ({ ...s, oneDriveBackupFile: b.file }));
+      settings.update((s) => ({ ...s, oneDriveBackupFile: b.file, oneDriveBackupEtag: '' }));
       const od = await getOneDrive();
-      const snap = await od.pull();
-      if (snap) {
-        await restoreSnapshot(snap);
+      const pulled = await od.pull();
+      if (pulled) {
+        await restoreSnapshot(pulled.snapshot);
         await refreshPlayers();
         await refreshGames();
         markRestored(Date.now());
+        setActiveBackupEtag(pulled.etag);
+      } else {
+        setActiveBackupEtag(null);
       }
       markSyncSettled();
       await loadBackups(true);
       showToast('Now using “' + b.title + '”');
     } catch (e) {
-      settings.update((s) => ({ ...s, oneDriveBackupFile: prev }));
+      settings.update((s) => ({ ...s, oneDriveBackupFile: prev, oneDriveBackupEtag: prevEtag }));
       showToast(errMsg(e));
     } finally {
       backupBusy = false;
@@ -256,6 +276,7 @@
       // The file name changed — keep pointing at it if it was the active backup.
       if (b.file === activeFileName) {
         settings.update((s) => ({ ...s, oneDriveBackupFile: info.file }));
+        setActiveBackupEtag(info.etag);
       }
       cancelRename();
       await loadBackups(true);
@@ -273,7 +294,7 @@
       !confirm(
         'Delete backup “' +
           b.title +
-          '”?\nThe workbook will be removed from OneDrive.\nWARNING: This cannot be undone.',
+          '”?\nThe backup file will be removed from OneDrive.\nWARNING: This cannot be undone.',
       )
     )
       return;
@@ -287,6 +308,7 @@
         settings.update((s) => ({
           ...s,
           oneDriveBackupFile: next ? next.file : DEFAULT_BACKUP_FILE,
+          oneDriveBackupEtag: next?.etag ?? '',
         }));
       }
       await loadBackups(true);
@@ -303,6 +325,11 @@
     showToast('Client ID saved');
   }
 
+  function saveRelay() {
+    settings.update((s) => ({ ...s, relayUrl: relayInput.trim() }));
+    showToast(relayInput.trim() ? 'Relay URL saved' : 'Relay URL cleared');
+  }
+
   async function connect() {
     busy = true;
     try {
@@ -316,11 +343,17 @@
     }
   }
 
-  async function performBackup() {
+  async function performBackup(opts: { mode?: 'create' | 'update' } = {}) {
     const od = await getOneDrive();
-    await od.push(await buildSnapshot());
+    const mode = opts.mode ?? 'update';
+    const { etag } = await od.push(await buildSnapshot(), {
+      mode,
+      // Update writes are conditional on our last-known eTag; a brand-new 'create' has none.
+      baseEtag: mode === 'update' ? $settings.oneDriveBackupEtag || null : null,
+    });
     signedIn = od.isSignedIn();
     markSynced(Date.now());
+    setActiveBackupEtag(etag);
     markSyncSettled();
   }
 
@@ -331,7 +364,43 @@
       void loadBackups(false);
       showToast('Backed up to OneDrive');
     } catch (e) {
+      if (e instanceof ConflictError) {
+        await resolveConflict();
+      } else {
+        showToast(errMsg(e));
+      }
+    } finally {
+      busy = false;
+    }
+  }
+
+  /**
+   * The active backup changed on another device since our last sync. Merge the two
+   * copies per entity (union by id, newest write wins) and write the result to both
+   * sides — so edits from this device and the other one both survive. Only a same-record
+   * collision falls back to last-writer-wins.
+   */
+  async function resolveConflict() {
+    try {
+      const od = await getOneDrive();
+      const { etag } = await reconcile(od, { interactive: true });
+      await refreshPlayers();
+      await refreshGames();
+      signedIn = od.isSignedIn();
+      markSynced(Date.now());
+      setActiveBackupEtag(etag);
+      markSyncSettled();
+      void loadBackups(false);
+      showToast('Merged changes from your other device');
+    } catch (e) {
       showToast(errMsg(e));
+    }
+  }
+
+  async function resolveNow() {
+    busy = true;
+    try {
+      await resolveConflict();
     } finally {
       busy = false;
     }
@@ -340,15 +409,15 @@
   async function restore() {
     if (
       !confirm(
-        'Restore from OneDrive?\n\nThis overwrites the data currently on this device with the latest backup. This cannot be undone.',
+        "Replace this device with the backup?\n\nThis discards anything on this device that isn't in the backup — it does not merge. Your edits and other devices' changes normally sync automatically, so you rarely need this. Continue?",
       )
     )
       return;
     busy = true;
     try {
       const od = await getOneDrive();
-      const snap = await od.pull();
-      if (!snap) {
+      const pulled = await od.pull();
+      if (!pulled) {
         // The file is missing on OneDrive (never created, or deleted). We're still connected —
         // offer to create the backup from local data instead of leaving the user stuck.
         if (confirm('No backup found in OneDrive. Back up your current data there now?')) {
@@ -359,12 +428,13 @@
         }
         return;
       }
-      await restoreSnapshot(snap);
+      await restoreSnapshot(pulled.snapshot);
       await refreshPlayers();
       await refreshGames();
       markRestored(Date.now());
+      setActiveBackupEtag(pulled.etag);
       markSyncSettled();
-      showToast('Restored from OneDrive');
+      showToast('Replaced this device from the backup');
     } catch (e) {
       showToast(errMsg(e));
     } finally {
@@ -386,8 +456,9 @@
   }
 
   async function exportJson() {
-    const snap = await buildSnapshot();
-    const blob = new Blob([JSON.stringify(snap, null, 2)], { type: 'application/json' });
+    const blob = new Blob([serializeSnapshot(await buildSnapshot())], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -400,7 +471,11 @@
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
     try {
-      const snap = JSON.parse(await file.text());
+      const snap = deserializeSnapshot(await file.text());
+      if (!snap) {
+        showToast('Invalid backup file');
+        return;
+      }
       if (!confirm('Replace local data with this file?')) return;
       await restoreSnapshot(snap);
       await refreshPlayers();
@@ -438,7 +513,7 @@
   <span class="chev" aria-hidden="true">›</span>
 </a>
 
-<div class="section-title">OneDrive backup (Excel)</div>
+<div class="section-title">OneDrive backup</div>
 <div class="card stack">
   {#if !configured}
     <div class="muted sm">
@@ -462,7 +537,7 @@
       </div>
 
       <label class="sw-row row spread">
-        <span>Automatically back up changes</span>
+        <span>Automatically sync changes</span>
         <span class="switch">
           <input
             type="checkbox"
@@ -473,9 +548,14 @@
           <span class="track"><span class="thumb"></span></span>
         </span>
       </label>
+      <span class="muted sm">
+        Backs up your edits and pulls in changes from your other devices — on open, on
+        focus, when you reconnect, and periodically while it's open. Same-record edits keep
+        the newest; nothing is lost.
+      </span>
 
       <div class="pathchip" title={locationLabel}>
-        <ExcelIcon size={18} />
+        <JsonIcon size={18} />
         <code>{prettyPath}</code>
       </div>
 
@@ -486,29 +566,28 @@
           <span class="dot {dotClass}"></span>
           <span class="sm">{backupText}</span>
         </span>
-        <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
+        {#if $autoSyncStatus === 'conflict'}
+          <button class="btn small primary" onclick={resolveNow} disabled={busy}>Merge</button>
+        {:else}
+          <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
+        {/if}
       </div>
+
+      {#if $settings.autoSync && checkedText}
+        <span class="muted" style="font-size: 0.72rem; margin-top: -4px">{checkedText}</span>
+      {/if}
 
       <div class="syncrow stack" style="gap: 6px">
         <div class="row spread">
-          <span class="row" style="gap: 8px; min-width: 0">
-            <svg class="rdot" viewBox="0 0 16 16" role="img" aria-label="Restore up to date">
-              <circle cx="8" cy="8" r="8" fill="#29c785" />
-              <path
-                d="M4.5 8.3 7 10.8 11.5 5.6"
-                fill="none"
-                stroke="#04150d"
-                stroke-width="1.9"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span class="sm">{restoreText}</span>
-          </span>
-          <button class="btn small ghost" onclick={restore} disabled={busy}>Restore now</button>
+          <span class="sm muted">Replace this device with a backup</span>
+          <button class="btn small ghost danger" onclick={restore} disabled={busy}>
+            Replace…
+          </button>
         </div>
         <span class="muted sm">
-          Pulls the latest backup from OneDrive and replaces the data on this device.
+          Escape hatch — a one-way overwrite that discards anything on this device that isn't
+          in the chosen backup. You rarely need this; syncing above is automatic and merges
+          both sides.
         </span>
       </div>
 
@@ -522,7 +601,7 @@
           </button>
         </div>
         <span class="muted sm">
-          Each backup is its own workbook in this folder — keep one per group or occasion. The active
+          Each backup is its own JSON file in this folder — keep one per group or occasion. The active
           one is what auto-sync, Sync now, and Restore now use.
         </span>
 
@@ -648,7 +727,7 @@
             <strong>Custom folder</strong>
             <span class="muted sm block">
               Store your backups anywhere you like — Score King treats every
-              <code>.xlsx</code> workbook in this folder as a backup it can read and write.
+              <code>.json</code> file in this folder as a backup it can read and write.
               Microsoft can't limit access to a single folder, so this grants the broader
               <code>Files.ReadWrite</code> permission to your entire OneDrive.
             </span>
@@ -664,7 +743,7 @@
         {/if}
 
         <div class="muted sm row" style="gap: 8px">
-          <ExcelIcon size={16} />
+          <JsonIcon size={16} />
           <code>{locationLabel}</code>
         </div>
         <div class="muted sm">
@@ -691,6 +770,23 @@
         />
         <button class="btn small" onclick={saveOverride}>Save ID</button>
       </div>
+
+      <hr class="sep" />
+
+      <div class="stack" style="gap: 10px">
+        <div class="fieldlabel">Live play relay URL</div>
+        <div class="muted sm">
+          Play a live game together across different devices. Deploy the tiny relay in
+          <code>relay/</code> (see its <a
+            href="https://github.com/jrmoulckers/score-king/blob/main/relay/README.md"
+            target="_blank"
+            rel="noopener noreferrer">README</a
+          >) and paste its <code>wss://</code> address here — the same one on every device that
+          plays together. Leave blank to keep live play to this browser only.
+        </div>
+        <input type="text" bind:value={relayInput} placeholder="wss://your-relay.workers.dev" />
+        <button class="btn small" onclick={saveRelay}>Save relay</button>
+      </div>
     </div>
   </details>
 </div>
@@ -711,7 +807,7 @@
 <div class="section-title">About</div>
 <div class="card muted sm">
   Score King · a local-first scorekeeping PWA. Your data lives on this device and, when you connect
-  it, your own OneDrive Excel workbook.
+  it, a JSON backup in your own OneDrive.
 </div>
 
 <style>

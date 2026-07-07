@@ -45,16 +45,32 @@ export interface Settings {
   oneDriveCustomPath: string;
   /** File name of the active backup within the configured folder (the sync target). */
   oneDriveBackupFile: string;
+  /** OneDrive eTag of the active backup, for optimistic-concurrency writes (device-local). */
+  oneDriveBackupEtag: string;
   autoSync: boolean;
   oneDriveConnected: boolean;
   lastSync: number | null;
   lastRestore: number | null;
   /**
-   * Which member this device treats as "you" — the personal lens for Stats,
-   * Daily Crown and Wrapped. Device-local: the member record lives in the World,
-   * but which one is *you* is per-device, so it never rides a backup.
+   * When this device last successfully confirmed the remote backup's state — either a
+   * cheap eTag peek from the foreground poll or a full pull. Device-local bookkeeping (a
+   * heartbeat for the "Last checked …" indicator), never backed up.
    */
-  mePlayerId: string | null;
+  lastCheck: number | null;
+
+  /**
+   * Per-device override for the live-play relay URL (a `wss://` origin). Empty uses the
+   * built-in {@link RELAY_URL} default. Device-local like the OneDrive client-ID override:
+   * a relay endpoint is connection state, not a portable preference, so it isn't backed up.
+   */
+  relayUrl: string;
+
+  // ── Device identity ───────────────────────────────────────────────────────
+  // Which member is the active "lead" on THIS device; their portable prefs are
+  // applied to the device — and the personal lens for Stats, Daily Crown & Wrapped.
+  // Device-specific (each device picks its own lead), so it is NOT backed up — the
+  // members themselves (each carrying their own prefs) are.
+  leadMemberId: string | null;
 }
 
 /**
@@ -80,22 +96,25 @@ export const PORTABLE_SETTING_KEYS = [
 ] as const;
 
 /**
- * Settings intentionally kept OUT of the backup: the OneDrive client-ID override,
- * the backup file's folder location, the auto-backup toggle, the "connected" flag,
- * and the last-sync/last-restore stamps. Backing these up risks dead state on
- * restore (e.g. a custom folder path that doesn't exist on the new device, or a
- * "connected" flag for an account this device isn't signed into).
+ * Settings intentionally kept OUT of the backup: the OneDrive client-ID override, the
+ * backup file's folder location, the active backup file and its eTag, the auto-backup
+ * toggle, the "connected" flag, and the last-sync/last-restore stamps. Backing these up
+ * risks dead state on restore (e.g. a custom folder path or active file that doesn't exist
+ * on the new device, or a "connected" flag for an account this device isn't signed into).
  */
 export const LOCAL_SETTING_KEYS = [
   'oneDriveClientId',
   'oneDriveFolderMode',
   'oneDriveCustomPath',
   'oneDriveBackupFile',
+  'oneDriveBackupEtag',
   'autoSync',
   'oneDriveConnected',
   'lastSync',
   'lastRestore',
-  'mePlayerId',
+  'lastCheck',
+  'relayUrl',
+  'leadMemberId',
 ] as const;
 
 export type PortableSettingKey = (typeof PORTABLE_SETTING_KEYS)[number];
@@ -130,17 +149,27 @@ const defaults: Settings = {
   oneDriveClientId: '',
   oneDriveFolderMode: 'app',
   oneDriveCustomPath: '',
-  oneDriveBackupFile: 'Main.xlsx',
+  oneDriveBackupFile: 'Main.json',
+  oneDriveBackupEtag: '',
   autoSync: true,
   oneDriveConnected: false,
   lastSync: null,
   lastRestore: null,
-  mePlayerId: null,
+  lastCheck: null,
+  relayUrl: '',
+  leadMemberId: null,
 };
 
 function load(): Settings {
   try {
-    return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+    const merged = { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+    // Clean break from the old Excel format: any non-.json active file (e.g. a "Main.xlsx"
+    // persisted by a previous version) is reset to the JSON default, and its stale eTag cleared.
+    if (!/\.json$/i.test(merged.oneDriveBackupFile || '')) {
+      merged.oneDriveBackupFile = 'Main.json';
+      merged.oneDriveBackupEtag = '';
+    }
+    return merged;
   } catch {
     return defaults;
   }
@@ -171,17 +200,28 @@ export function toggleTheme() {
   settings.update((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }));
 }
 
-/** Point this device's personal lens at a member (or clear it). */
-export function setMePlayer(id: string | null) {
-  settings.update((s) => ({ ...s, mePlayerId: id }));
-}
-
 export function markSynced(ts: number) {
   settings.update((s) => ({ ...s, lastSync: ts }));
 }
 
+/**
+ * Record that we just confirmed the remote's state (a poll eTag peek or a pull), even when
+ * nothing changed. Drives the "Last checked …" heartbeat so the background poll is visible.
+ */
+export function markChecked(ts: number) {
+  settings.update((s) => ({ ...s, lastCheck: ts }));
+}
+
 export function markRestored(ts: number) {
   settings.update((s) => ({ ...s, lastRestore: ts }));
+}
+
+/** Remember the active backup's OneDrive eTag (device-local) for the next conditional write. */
+export function setActiveBackupEtag(etag: string | null) {
+  settings.update((s) => {
+    const next = etag ?? '';
+    return s.oneDriveBackupEtag === next ? s : { ...s, oneDriveBackupEtag: next };
+  });
 }
 
 /** The portable subset of the current settings, ready to embed in a backup. */

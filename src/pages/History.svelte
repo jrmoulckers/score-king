@@ -37,7 +37,7 @@
             <div class="muted sm">{names(g.playerIds)}</div>
             <div class="muted sm">
               {formatDateTime(g.finishedAt ?? g.createdAt)}
-              {#if g.status === 'finished'} · 👑 {winners(g.winnerIds) || '—'}{/if}
+              {#if g.status === 'finished'} · 🏆 {winners(g.winnerIds) || '—'}{/if}
               {#if g.status === 'abandoned'} · no winner{/if}
             </div>
           </span>

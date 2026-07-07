@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { games } from '../lib/stores/games';
-  import { players } from '../lib/stores/players';
-  import { settings, setMePlayer } from '../lib/stores/settings';
+  import { players, activePlayers } from '../lib/stores/players';
+  import { settings } from '../lib/stores/settings';
+  import { setLeadMember } from '../lib/stores/identity';
   import { getModule } from '../lib/games/registry';
   import { link } from '../lib/router';
   import * as db from '../lib/storage/db';
@@ -29,7 +30,7 @@
     loaded = true;
   });
 
-  const meId = $derived($settings.mePlayerId);
+  const meId = $derived($settings.leadMemberId);
   const playerById = $derived(new Map<string, Player>($players.map((p) => [p.id, p])));
   const nameOf = (id: string): string => playerById.get(id)?.name ?? 'Someone';
 
@@ -126,7 +127,7 @@
     }
   }
 
-  const chooserPlayers = $derived([...$players].sort((a, b) => a.name.localeCompare(b.name)));
+  const chooserPlayers = $derived([...$activePlayers].sort((a, b) => a.name.localeCompare(b.name)));
   const recordLosses = $derived(me ? me.played - me.wins : 0);
   const winnerNames = (ids: string[] | undefined) => (ids ?? []).map(nameOf).join(' & ');
 </script>
@@ -148,7 +149,7 @@
     {:else}
       <div class="stack" style="gap: 8px">
         {#each chooserPlayers as p (p.id)}
-          <button class="picker row" onclick={() => setMePlayer(p.id)}>
+          <button class="picker row" onclick={() => setLeadMember(p.id)}>
             <Avatar name={p.name} color={p.color} size={32} />
             <span class="grow" style="text-align: left">{p.name}</span>
             <span aria-hidden="true">👑</span>
@@ -175,7 +176,7 @@
       </div>
       <div class="row spread hero-foot">
         <span class="muted sm">as {nameOf(meId)}</span>
-        <button class="linkbtn" onclick={() => setMePlayer(null)}>Not you?</button>
+        <button class="linkbtn" onclick={() => setLeadMember(null)}>Not you?</button>
       </div>
     </section>
   {/if}

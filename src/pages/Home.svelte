@@ -2,8 +2,18 @@
   import { MODULES, getModule } from '../lib/games/registry';
   import { games } from '../lib/stores/games';
   import { players } from '../lib/stores/players';
-  import { link } from '../lib/router';
-  import { relativeTime } from '../lib/util';
+  import { link, navigate } from '../lib/router';
+  import { relativeTime, normalizeJoinCode } from '../lib/util';
+  import { isLiveSupported, isNearbySupported } from '../lib/live/session';
+
+  const liveSupported = isLiveSupported();
+  const nearbySupported = isNearbySupported();
+  let codeInput = $state('');
+  function submitJoin(e: Event) {
+    e.preventDefault();
+    const c = normalizeJoinCode(codeInput);
+    if (c) navigate(`/join/${c}`);
+  }
 
   const active = $derived($games.filter((g) => g.status === 'active'));
   const recent = $derived($games.filter((g) => g.status === 'finished').slice(0, 4));
@@ -46,6 +56,34 @@
   {/each}
 </div>
 
+{#if liveSupported || nearbySupported}
+  <div class="section-title">Join a game</div>
+  <form class="card joincard" onsubmit={submitJoin}>
+    {#if liveSupported}
+      <div class="row codejoin">
+        <input
+          class="joincode"
+          type="text"
+          autocapitalize="characters"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          maxlength="8"
+          placeholder="Enter code"
+          aria-label="Live game join code"
+          bind:value={codeInput}
+        />
+        <button class="btn" type="submit" disabled={!codeInput.trim()}>Join</button>
+      </div>
+    {/if}
+    {#if nearbySupported}
+      {#if liveSupported}<span class="ordiv"><span>or</span></span>{/if}
+      <a class="btn ghost block scanbtn" href="/nearby" use:link>📷 Scan a QR to join</a>
+      <span class="muted sm scanhint">Scan the host’s invite — works online or with no internet at all.</span>
+    {/if}
+  </form>
+{/if}
+
 {#if recent.length}
   <div class="section-title">Recent results</div>
   <div class="stack">
@@ -59,7 +97,7 @@
               <strong>{m?.name ?? g.type}</strong>
               <span class="muted sm">· {relativeTime(g.finishedAt ?? g.createdAt)}</span>
             </div>
-            <div class="muted sm">👑 {winnerNames(g.winnerIds) || '—'}</div>
+            <div class="muted sm">🏆 {winnerNames(g.winnerIds) || '—'}</div>
           </span>
         </span>
       </a>
@@ -80,5 +118,46 @@
   }
   .sm {
     font-size: 0.85rem;
+  }
+  .joincard {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .codejoin {
+    gap: 10px;
+    width: 100%;
+  }
+  .joincode {
+    flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+  }
+  .joincode::placeholder {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+  }
+  .scanbtn {
+    text-decoration: none;
+  }
+  .scanhint {
+    text-align: center;
+  }
+  /* A quiet "or" divider between the two join paths — not color-only, just a hairline + label. */
+  .ordiv {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  .ordiv::before,
+  .ordiv::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
   }
 </style>
