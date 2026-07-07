@@ -166,6 +166,11 @@ export function computeStats(
     const closeGame = spread > 0 && f.margin !== undefined && f.margin <= 0.1 * spread;
 
     for (const id of f.playerIds) {
+      // Deleted (tombstoned) members are hidden everywhere: they keep their seat
+      // so surviving players' finish positions and field size stay accurate, but
+      // they never become stat subjects. Archived members remain in playerById,
+      // so they keep their full stats.
+      if (!playerById.has(id)) continue;
       const a = acc(id);
       const rank = f.rankOf[id] ?? f.playerIds.length;
       const isWin = f.winners.includes(id);
@@ -207,9 +212,9 @@ export function computeStats(
         a.run = 0;
       }
 
-      // Head-to-head vs every co-finisher.
+      // Head-to-head vs every co-finisher (skip deleted members — hidden everywhere).
       for (const opp of f.playerIds) {
-        if (opp === id) continue;
+        if (opp === id || !playerById.has(opp)) continue;
         const row = h2hRow(a, opp);
         row.games += 1;
         const oppRank = f.rankOf[opp] ?? f.playerIds.length;

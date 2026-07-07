@@ -131,6 +131,32 @@ describe('computeStats — head to head', () => {
   });
 });
 
+describe('computeStats — deleted (tombstoned) members are hidden everywhere', () => {
+  // C was tombstoned, so getAllPlayers() drops them: they're absent from
+  // data.players but still referenced by past games. They must vanish from the
+  // leaderboard and H2H, yet keep their seat so A/B ranks and counts stay correct.
+  const { games, rounds } = trio();
+  const res = computeStats({ players: [player('A'), player('B')], games, rounds });
+
+  it('omits the deleted member from perPlayer and the leaderboard', () => {
+    expect(res.perPlayer['C']).toBeUndefined();
+    expect(res.leaderboard.map((r) => r.playerId)).toEqual(['A', 'B']);
+  });
+
+  it('keeps surviving players’ counts and finish positions intact', () => {
+    // A still played all 3 games and won 2 — deleting C doesn’t rewrite history.
+    expect(res.perPlayer['A'].played).toBe(3);
+    expect(res.perPlayer['A'].wins).toBe(2);
+    // A finished 1st, 3rd, 1st: the deleted seat still occupied 2nd/3rd.
+    expect(res.perPlayer['A'].avgFinish).toBeCloseTo(5 / 3, 5);
+  });
+
+  it('drops head-to-head rows against the deleted member', () => {
+    expect(res.perPlayer['A'].headToHead['C']).toBeUndefined();
+    expect(res.perPlayer['A'].headToHead['B']).toMatchObject({ games: 3 });
+  });
+});
+
 describe('computeStats — lower-is-better direction inference', () => {
   it('infers from winnerIds vs totals (no game module needed)', () => {
     const players = [player('A'), player('B')];
