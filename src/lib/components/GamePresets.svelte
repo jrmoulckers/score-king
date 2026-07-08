@@ -180,7 +180,7 @@
   {:else if active}
     <div class="ptools">
       <span class="applied">
-        {#if dirty}Modified “{active.name}”{:else}Using “{active.name}”{/if}
+        {#if dirty}Using modified preset: {active.name}{:else}Using preset: {active.name}{/if}
       </span>
       <span class="spacer"></span>
       {#if dirty}
