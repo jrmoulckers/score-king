@@ -1,6 +1,7 @@
 <script lang="ts">
   import { settings } from '../lib/stores/settings';
   import { link } from '../lib/router';
+  import BackLink from '../lib/components/BackLink.svelte';
   import {
     startableTypes,
     toggleFavorite,
@@ -30,6 +31,8 @@
   const searching = $derived(query.trim().length > 0);
   const nothing = $derived(visible.length === 0 && hiddenModules.length === 0);
 </script>
+
+<BackLink href="/" label="Games" />
 
 <h1>Manage games</h1>
 <p class="lede muted">

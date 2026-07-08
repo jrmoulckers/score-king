@@ -3,6 +3,7 @@
   import { PALETTE } from '../lib/util';
   import Segmented from '../lib/components/Segmented.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
+  import BackLink from '../lib/components/BackLink.svelte';
 
   let theme = $state($settings.theme);
   let fontScale = $state($settings.fontScale);
@@ -44,6 +45,8 @@
     settings.update((s) => ({ ...s, [key]: v }));
   }
 </script>
+
+<BackLink href="/settings" label="Settings" />
 
 <h1>Accessibility &amp; display</h1>
 <p class="lede muted">Tune Score King to your eyes, your hands, and your table. Changes apply instantly and stick on this device.</p>

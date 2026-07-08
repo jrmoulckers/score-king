@@ -1,6 +1,7 @@
 <script lang="ts">
   import { settings } from '../lib/stores/settings';
   import { link } from '../lib/router';
+  import BackLink from '../lib/components/BackLink.svelte';
   import {
     startableTypes,
     groupByCategory,
@@ -66,6 +67,8 @@
     <span class="tag">Build your own scorer</span>
   </a>
 {/snippet}
+
+<BackLink href="/" label="Games" />
 
 <div class="browse-head">
   <h1>All games</h1>
