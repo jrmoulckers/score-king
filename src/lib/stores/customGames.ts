@@ -4,6 +4,7 @@ import { buildCustomModule } from '../games/custom/factory';
 import { setCustomDefsRegistry } from '../games/custom/defRegistry';
 import { setCustomModules } from '../games/registry';
 import * as db from '../storage/db';
+import { prunePresetsForType } from './presets';
 
 /**
  * Custom (user-authored) games.
@@ -50,6 +51,8 @@ export async function removeCustomGame(id: string, inUse: boolean): Promise<void
     if (current) await db.putGameDef({ ...current, archived: true, archivedAt: Date.now() });
   } else {
     await db.deleteGameDef(id);
+    // Type is gone for good — drop its now-unreachable presets.
+    prunePresetsForType(id);
   }
   await refreshCustomGames();
 }

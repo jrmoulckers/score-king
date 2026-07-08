@@ -1,4 +1,5 @@
 import { get, writable } from 'svelte/store';
+import type { GamePreset } from '../types';
 
 export type Theme = 'dark' | 'light';
 
@@ -46,6 +47,11 @@ export interface Settings {
    * Orthogonal to a custom type being retired or a played game being archived.
    */
   catalogHidden: string[];
+  /**
+   * Saved per-game setups (lineup + rules) the group can start again in one tap. Portable
+   * so a crew's presets travel with a restore, just like {@link Settings.catalogFavorites}.
+   */
+  gamePresets: GamePreset[];
 
   // ── Device-local sync state ───────────────────────────────────────────────
   // OneDrive connection, the backup file's own location, and per-device sync
@@ -106,6 +112,7 @@ export const PORTABLE_SETTING_KEYS = [
   'roastMode',
   'catalogFavorites',
   'catalogHidden',
+  'gamePresets',
 ] as const;
 
 /**
@@ -161,6 +168,7 @@ const defaults: Settings = {
   roastMode: true,
   catalogFavorites: [],
   catalogHidden: [],
+  gamePresets: [],
   oneDriveClientId: '',
   oneDriveFolderMode: 'app',
   oneDriveCustomPath: '',

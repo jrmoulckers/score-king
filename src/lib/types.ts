@@ -34,6 +34,30 @@ export interface Player {
   deleted?: number;
 }
 
+/**
+ * A reusable, per-game-type setup: the lineup and rules you like for a specific game,
+ * saved so you can start it again in one tap ("The Friday crew, Avalon with Morgana on").
+ *
+ * Deliberately *not* a locked configuration — a preset only pre-fills the New game form.
+ * You can apply it and then freely retune players or config before starting; the preset
+ * only changes when you explicitly Update it. Keyed by `type` (a built-in slug like
+ * `avalon` or a custom def id `def_…`). Stored as a portable setting so a group's presets
+ * travel with a backup/restore, exactly like {@link Player} ids and catalog favorites do.
+ */
+export interface GamePreset {
+  id: ID;
+  /** Game type this preset belongs to — a built-in slug or a custom def id. */
+  type: string;
+  /** User-given label, e.g. "Friday crew + Morgana". */
+  name: string;
+  /** The saved lineup, in seating order. May be empty for a rules-only preset. */
+  playerIds: ID[];
+  /** The saved game configuration (game-specific keys). */
+  config: Record<string, unknown>;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export type GameStatus = 'active' | 'finished' | 'abandoned';
 
 export interface Game {
