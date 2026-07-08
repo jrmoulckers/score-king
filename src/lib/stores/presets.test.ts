@@ -48,6 +48,12 @@ describe('game presets store', () => {
     expect(p.name).toBe('Preset');
   });
 
+  it('saves a rules-only preset with no players selected', () => {
+    const p = savePreset('avalon', 'Morgana on', [], { morgana: true });
+    expect(p.playerIds).toEqual([]);
+    expect(getPresetsForType('avalon')[0].config).toEqual({ morgana: true });
+  });
+
   it('updates a preset in place, keeping its name and id', () => {
     const p = savePreset('avalon', 'Crew', ['p1'], { target: 100, morgana: false });
     updatePreset(p.id, ['p1', 'p2'], { target: 120, morgana: true });

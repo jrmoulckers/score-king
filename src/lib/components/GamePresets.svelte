@@ -142,7 +142,7 @@
         bind:value={draftName}
         autofocus
       />
-      <button class="btn" type="submit" disabled={!selected.length}>Save</button>
+      <button class="btn" type="submit">Save</button>
       <button class="btn ghost" type="button" onclick={cancel}>Cancel</button>
     </form>
   {:else if mode === 'renaming' && active}
@@ -174,7 +174,7 @@
       <button class="btn small ghost" type="button" onclick={remove}>Delete</button>
     </div>
   {:else}
-    <button class="linkbtn" type="button" onclick={startSave} disabled={!selected.length}>
+    <button class="linkbtn" type="button" onclick={startSave}>
       ＋ Save current setup
     </button>
   {/if}
