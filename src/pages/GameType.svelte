@@ -7,6 +7,7 @@
   import { showToast } from '../lib/stores/toast';
   import PlayerSelect from '../lib/components/PlayerSelect.svelte';
   import ConfigForm from '../lib/components/ConfigForm.svelte';
+  import BackLink from '../lib/components/BackLink.svelte';
 
   let { type }: { type: string } = $props();
   // Re-resolve when custom defs load so a deep-link to /def_… lands once IndexedDB answers.
@@ -52,6 +53,7 @@
     <a class="btn primary" href="/" use:link>Back to games</a>
   </div>
 {:else}
+  <BackLink href="/" label="Games" />
   <div class="row" style="gap: 12px; margin: 10px 4px 4px">
     <span style="font-size: 2rem">{module.emoji}</span>
     <div>

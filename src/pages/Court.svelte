@@ -4,7 +4,7 @@
   import { players } from '../lib/stores/players';
   import { settings } from '../lib/stores/settings';
   import { getModule } from '../lib/games/registry';
-  import { link } from '../lib/router';
+  import BackLink from '../lib/components/BackLink.svelte';
   import * as db from '../lib/storage/db';
   import Avatar from '../lib/components/Avatar.svelte';
   import type { Player, Round } from '../lib/types';
@@ -73,10 +73,8 @@
     p >= 0.66 ? 'Anyone’s crown' : p >= 0.33 ? 'A clear favourite' : 'One-horse race';
 </script>
 
-<div class="row spread" style="margin: 2px 4px 6px">
-  <h1 style="margin: 0">👑 The Court</h1>
-  <a class="linkbtn" href="/stats" use:link>← Your stats</a>
-</div>
+<BackLink href="/stats" label="Stats" />
+<h1 style="margin: 0 4px 8px">👑 The Court</h1>
 
 {#if !loaded}
   <div class="empty">Gathering the court…</div>
@@ -324,17 +322,6 @@
   .sm {
     font-size: 0.82rem;
   }
-  .linkbtn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 8px 4px;
-    min-height: 44px;
-    font: inherit;
-  }
-
   /* Lens + sort chips — a quiet segmented control on the surface ramp. */
   .seg {
     gap: 6px;

@@ -29,6 +29,7 @@
   import Avatar from '../lib/components/Avatar.svelte';
   import PlaySheet from '../lib/components/PlaySheet.svelte';
   import ShareResultsSheet from '../lib/components/ShareResultsSheet.svelte';
+  import BackLink from '../lib/components/BackLink.svelte';
   import { buildRecapPayload } from '../lib/share/recap';
   import { get } from 'svelte/store';
   import {
@@ -411,6 +412,7 @@
     <a class="btn primary" href="/" use:link>Back to games</a>
   </div>
 {:else}
+  <BackLink href="/" label="Games" />
   <div class="row spread" style="margin: 10px 4px 6px">
     <span class="row" style="gap: 10px">
       <span style="font-size: 1.7rem">{module.emoji}</span>
