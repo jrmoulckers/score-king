@@ -469,13 +469,15 @@
     <button class="btn block" style="margin-top: 12px" onclick={() => (shareOpen = true)}>
       📤 Share results
     </button>
+    <a class="btn block" style="margin-top: 10px" href="/tonight" use:link>🎁 Tonight’s Recap</a>
     <div class="row" style="gap: 10px; margin-top: 10px">
       <button class="btn" onclick={doReopen} title="Reopen to add more rounds">Reopen</button>
       <button class="btn primary grow" onclick={playAgain}>Play again</button>
     </div>
   {:else if game.status === 'abandoned'}
     <div class="card center banner">🪦 Game abandoned — no winner recorded.</div>
-    <div class="row" style="gap: 10px; margin-top: 12px">
+    <a class="btn block" style="margin-top: 12px" href="/tonight" use:link>🎁 Tonight’s Recap</a>
+    <div class="row" style="gap: 10px; margin-top: 10px">
       <button class="btn" onclick={doReopen} title="Reopen to keep playing">Reopen</button>
       <button class="btn primary grow" onclick={playAgain}>Play again</button>
     </div>

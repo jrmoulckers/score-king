@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { games } from '../lib/stores/games';
   import { players, activePlayers } from '../lib/stores/players';
   import { settings } from '../lib/stores/settings';
@@ -30,7 +30,8 @@
   });
 
   type Preset = 'year' | 'rolling' | 'tonight';
-  let preset = $state<Preset>('year');
+  let { initialPreset = 'year' }: { initialPreset?: Preset } = $props();
+  let preset = $state<Preset>(untrack(() => initialPreset));
   let index = $state(0);
 
   const meId = $derived($settings.leadMemberId);
