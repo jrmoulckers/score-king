@@ -501,6 +501,18 @@
   <span class="chev" aria-hidden="true">›</span>
 </a>
 
+<div class="section-title">Games</div>
+<a class="card navrow row spread" href="/manage-games" use:link>
+  <span class="row" style="gap: 12px">
+    <span class="navico" aria-hidden="true">🎴</span>
+    <span class="navmeta">
+      <span class="navname">Manage games</span>
+      <span class="muted sm">Favorite, hide, and organize your game catalog</span>
+    </span>
+  </span>
+  <span class="chev" aria-hidden="true">›</span>
+</a>
+
 <div class="section-title">Display & accessibility</div>
 <a class="card navrow row spread" href="/accessibility" use:link>
   <span class="row" style="gap: 12px">

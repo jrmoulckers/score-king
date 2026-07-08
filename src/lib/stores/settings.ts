@@ -33,6 +33,17 @@ export interface Settings {
   keepAwake: boolean;
   /** Blur scores with a tap-to-reveal veil after the phone is set down. */
   privacyGuard: boolean;
+  /**
+   * Game *type* ids pinned to the top of the catalog, in display order. A "type id"
+   * is a built-in slug (`skullking`) or a custom def id (`def_…`). Portable so a
+   * group's chosen games travel with a restore.
+   */
+  catalogFavorites: string[];
+  /**
+   * Game *type* ids hidden from the catalog view — recoverable from Manage games.
+   * Orthogonal to a custom type being retired or a played game being archived.
+   */
+  catalogHidden: string[];
 
   // ── Device-local sync state ───────────────────────────────────────────────
   // OneDrive connection, the backup file's own location, and per-device sync
@@ -89,6 +100,8 @@ export const PORTABLE_SETTING_KEYS = [
   'colorBlind',
   'keepAwake',
   'privacyGuard',
+  'catalogFavorites',
+  'catalogHidden',
 ] as const;
 
 /**
@@ -141,6 +154,8 @@ const defaults: Settings = {
   colorBlind: false,
   keepAwake: false,
   privacyGuard: false,
+  catalogFavorites: [],
+  catalogHidden: [],
   oneDriveClientId: '',
   oneDriveFolderMode: 'app',
   oneDriveCustomPath: '',

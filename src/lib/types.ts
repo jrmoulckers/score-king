@@ -118,6 +118,8 @@ export interface GameModule {
   name: string;
   tagline: string;
   emoji: string;
+  /** Optional search aliases/keywords for catalog discovery (matched alongside name + tagline). */
+  keywords?: string[];
   minPlayers: number;
   maxPlayers: number;
   /** true when the lowest total wins (e.g. Hearts). */

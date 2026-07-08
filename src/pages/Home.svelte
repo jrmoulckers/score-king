@@ -1,11 +1,20 @@
 <script lang="ts">
-  import { MODULES, getModule } from '../lib/games/registry';
+  import { getModule } from '../lib/games/registry';
   import { games } from '../lib/stores/games';
   import { players } from '../lib/stores/players';
-  import { customGameDefs } from '../lib/stores/customGames';
+  import { settings } from '../lib/stores/settings';
   import { link, navigate } from '../lib/router';
   import { relativeTime, normalizeJoinCode } from '../lib/util';
   import { isLiveSupported, isNearbySupported } from '../lib/live/session';
+  import {
+    startableTypes,
+    sectionize,
+    matchModule,
+    SEARCH_THRESHOLD,
+    CUSTOM_GAMES_ENABLED,
+    CREATE_ROUTE,
+    type CatalogType,
+  } from '../lib/stores/catalog';
 
   const liveSupported = isLiveSupported();
   const nearbySupported = isNearbySupported();
@@ -20,9 +29,27 @@
   const recent = $derived(
     $games.filter((g) => g.status === 'finished' && !g.archived).slice(0, 4),
   );
-  // Custom, user-authored games — non-archived, shown alongside the built-ins.
-  // (Seam: session 1's catalog will own ordering/favorites/hidden for these.)
-  const customTiles = $derived($customGameDefs.filter((d) => !d.archived && !d.deleted));
+
+  // ── Catalog: search + mutually-exclusive sections over the startable game types ──
+  let search = $state('');
+  const mods = $derived($startableTypes);
+  const showSearch = $derived(mods.length >= SEARCH_THRESHOLD);
+  const searching = $derived(search.trim().length > 0);
+  const sections = $derived(
+    sectionize(mods, $games, $settings.catalogFavorites, $settings.catalogHidden),
+  );
+  const searchResults = $derived(
+    searching
+      ? mods.filter((m) => !$settings.catalogHidden.includes(m.id) && matchModule(m, search))
+      : [],
+  );
+  const firstSection = $derived(
+    sections.favorites.length ? 'fav' : sections.recent.length ? 'recent' : 'rem',
+  );
+  const remainderTitle = $derived(
+    sections.favorites.length || sections.recent.length ? 'All games' : 'Start a game',
+  );
+  const showRemainder = $derived(sections.remainder.length > 0 || CUSTOM_GAMES_ENABLED);
 
   function names(ids: string[]): string {
     return ids.map((id) => $players.find((p) => p.id === id)?.name ?? '?').join(', ');
@@ -51,28 +78,74 @@
   </div>
 {/if}
 
-<div class="section-title">Start a game</div>
-<div class="grid">
-  {#each MODULES as m (m.id)}
-    <a class="gametile" href={`/${m.id}`} use:link>
-      <span class="emoji">{m.emoji}</span>
-      <span class="name">{m.name}</span>
-      <span class="tag">{m.tagline}</span>
-    </a>
-  {/each}
-  {#each customTiles as d (d.id)}
-    <a class="gametile" href={`/${d.id}`} use:link>
-      <span class="emoji">{d.emoji}</span>
-      <span class="name">{d.name}</span>
-      <span class="tag">{d.tagline}</span>
-    </a>
-  {/each}
-  <a class="gametile create" href="/create" use:link>
-    <span class="emoji" aria-hidden="true">＋</span>
-    <span class="name">Create a game</span>
-    <span class="tag">Design your own scorer</span>
+{#snippet tile(m: CatalogType)}
+  <a class="gametile" href={`/${m.id}`} use:link>
+    <span class="emoji">{m.emoji}</span>
+    <span class="name">{m.name}</span>
+    <span class="tag">{m.tagline}</span>
   </a>
-</div>
+{/snippet}
+
+{#snippet head(label: string, withManage: boolean)}
+  <div class="section-title cathead">
+    <span>{label}</span>
+    {#if withManage}
+      <a class="manage-link" href="/manage-games" use:link>Manage</a>
+    {/if}
+  </div>
+{/snippet}
+
+{#if showSearch}
+  <div class="catalog-bar">
+    <input
+      class="catalog-search"
+      type="text"
+      placeholder="Search games…"
+      aria-label="Search games"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      bind:value={search}
+    />
+    <a class="manage-link inbar" href="/manage-games" use:link>Manage</a>
+  </div>
+{/if}
+
+{#if searching}
+  {#if searchResults.length}
+    <div class="grid">
+      {#each searchResults as m (m.id)}{@render tile(m)}{/each}
+    </div>
+  {:else}
+    <div class="empty">No games match “{search.trim()}”.</div>
+  {/if}
+{:else}
+  {#if sections.favorites.length}
+    {@render head('Favorites', !showSearch && firstSection === 'fav')}
+    <div class="grid">
+      {#each sections.favorites as m (m.id)}{@render tile(m)}{/each}
+    </div>
+  {/if}
+  {#if sections.recent.length}
+    {@render head('Recently played', !showSearch && firstSection === 'recent')}
+    <div class="grid">
+      {#each sections.recent as m (m.id)}{@render tile(m)}{/each}
+    </div>
+  {/if}
+  {#if showRemainder}
+    {@render head(remainderTitle, !showSearch && firstSection === 'rem')}
+    <div class="grid">
+      {#each sections.remainder as m (m.id)}{@render tile(m)}{/each}
+      {#if CUSTOM_GAMES_ENABLED}
+        <a class="gametile createtile" href={CREATE_ROUTE} use:link>
+          <span class="emoji" aria-hidden="true">＋</span>
+          <span class="name">Create a game</span>
+          <span class="tag">Build your own scorer</span>
+        </a>
+      {/if}
+    </div>
+  {/if}
+{/if}
 
 {#if liveSupported || nearbySupported}
   <div class="section-title">Join a game</div>
@@ -128,18 +201,47 @@
     text-decoration: none;
     color: inherit;
   }
-  /* "Add new" affordance — dashed outline + ＋ glyph carry the meaning, not color alone. */
-  .create {
-    border-style: dashed;
-  }
-  .create .emoji {
-    color: var(--muted);
-  }
   .tile:hover {
     border-color: var(--primary);
   }
   .big-emoji {
     font-size: 1.6rem;
+  }
+  .catalog-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 4px 4px;
+  }
+  .catalog-search {
+    flex: 1;
+  }
+  .cathead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  /* A quiet violet text link (allowed) — not a second violet fill. Opts out of the
+     section-title's uppercase/tracked treatment. */
+  .manage-link {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 6px 4px;
+  }
+  .manage-link.inbar {
+    padding: 8px;
+  }
+  /* The single "add" accent on Home: a dashed tile with a violet ＋ — never a solid fill. */
+  .createtile {
+    border-style: dashed;
+  }
+  .createtile .emoji {
+    color: var(--primary);
+    font-weight: 700;
   }
   .sm {
     font-size: 0.85rem;
