@@ -26,6 +26,15 @@
   onMount(() => pathStore.subscribe((v) => (current = v)));
   const route = $derived(parseRoute(current));
 
+  // Which primary nav item is active — shared by the mobile tab bar and the
+  // desktop sidebar rail so both stay in lockstep.
+  const navActive = $derived({
+    games: ['home', 'gametype', 'customedit', 'managegames'].includes(route.name),
+    players: route.name === 'players',
+    history: route.name === 'history',
+    stats: ['stats', 'court', 'wrapped', 'tonight'].includes(route.name),
+  });
+
   let veiled = $state(false);
   onMount(() => {
     const onVis = () => {
@@ -46,16 +55,39 @@
   }
 </script>
 
-<header class="appbar">
-  <a class="brand" href="/" use:link>
-    <img src="/favicon.svg" alt="" />
-    Score King
-  </a>
-  <div class="appbar-actions">
-    <SyncBubble />
-    <a class="iconbtn" href="/settings" use:link aria-label="Settings" title="Settings">⚙️</a>
-  </div>
-</header>
+{#snippet navLinks()}
+  <a href="/" use:link class:active={navActive.games}><span class="ico" aria-hidden="true">🏠</span><span class="lbl">Games</span></a>
+  <a href="/players" use:link class:active={navActive.players}><span class="ico" aria-hidden="true">👥</span><span class="lbl">Players</span></a>
+  <a href="/history" use:link class:active={navActive.history}><span class="ico" aria-hidden="true">📜</span><span class="lbl">History</span></a>
+  <a href="/stats" use:link class:active={navActive.stats}><span class="ico" aria-hidden="true">📊</span><span class="lbl">Stats</span></a>
+{/snippet}
+
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand sidebar-brand" href="/" use:link>
+      <img src="/favicon.svg" alt="" />
+      <span>Score King</span>
+    </a>
+    <nav class="sidebar-nav" aria-label="Primary">
+      {@render navLinks()}
+    </nav>
+    <div class="sidebar-foot">
+      <SyncBubble />
+      <a class="iconbtn" href="/settings" use:link aria-label="Settings" title="Settings">⚙️</a>
+    </div>
+  </aside>
+
+  <div class="viewport">
+    <header class="appbar">
+      <a class="brand" href="/" use:link>
+        <img src="/favicon.svg" alt="" />
+        Score King
+      </a>
+      <div class="appbar-actions">
+        <SyncBubble />
+        <a class="iconbtn" href="/settings" use:link aria-label="Settings" title="Settings">⚙️</a>
+      </div>
+    </header>
 
 <main class="app">
   {#if route.name === 'home'}
@@ -105,20 +137,11 @@
   {/if}
 </main>
 
-<nav class="tabbar">
-  <a href="/" use:link class:active={route.name === 'home' || route.name === 'gametype' || route.name === 'customedit' || route.name === 'managegames'}>
-    <span class="ico">🏠</span>Games
-  </a>
-  <a href="/players" use:link class:active={route.name === 'players'}>
-    <span class="ico">👥</span>Players
-  </a>
-  <a href="/history" use:link class:active={route.name === 'history'}>
-    <span class="ico">📜</span>History
-  </a>
-  <a href="/stats" use:link class:active={route.name === 'stats' || route.name === 'court' || route.name === 'wrapped' || route.name === 'tonight'}>
-    <span class="ico">📊</span>Stats
-  </a>
-</nav>
+    <nav class="tabbar" aria-label="Primary">
+      {@render navLinks()}
+    </nav>
+  </div>
+</div>
 
 {#if $toast}
   <div class="toast" role="status" aria-live="polite">

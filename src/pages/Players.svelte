@@ -63,14 +63,14 @@
 {#if $activePlayers.length === 0 && archived.length === 0}
   <div class="empty">No players yet — add your regulars above.</div>
 {:else if $activePlayers.length > 0}
-  <div class="stack">
+  <div class="player-grid">
     {#each $activePlayers as p (p.id)}
-      <div class="card" class:lead={$leadMember?.id === p.id}>
+      <div class="card" class:lead={$leadMember?.id === p.id} class:editing={editingId === p.id}>
         <div class="row spread">
-          <span class="row" style="gap: 10px">
+          <span class="row grow" style="gap: 10px; min-width: 0">
             <Avatar name={p.name} color={p.color} size={34} />
             {#if editingId === p.id}
-              <input type="text" bind:value={editName} style="width: auto" />
+              <input class="grow" type="text" bind:value={editName} aria-label="Player name" />
             {:else}
               <span class="who">
                 <strong>{p.name}</strong>
@@ -83,11 +83,8 @@
               </span>
             {/if}
           </span>
-          <span class="row" style="gap: 6px">
-            {#if editingId === p.id}
-              <button class="btn small primary" onclick={() => saveEdit(p)}>Save</button>
-              <button class="btn small ghost" onclick={() => (editingId = null)}>Cancel</button>
-            {:else}
+          {#if editingId !== p.id}
+            <span class="row" style="gap: 6px">
               <button
                 class="iconbtn"
                 class:on={$leadMember?.id === p.id}
@@ -96,22 +93,33 @@
                 aria-label={$leadMember?.id === p.id ? 'Stop playing on this device' : 'Play as this member on this device'}
                 title="Play on this device"
               >👑</button>
-              <button class="iconbtn" onclick={() => startEdit(p)} aria-label="Rename">✎</button>
-              <button class="iconbtn" onclick={() => archive(p)} aria-label="Archive">🗄</button>
-            {/if}
-          </span>
+              <button class="iconbtn" onclick={() => startEdit(p)} aria-label="Edit player" title="Rename & recolour">✎</button>
+            </span>
+          {/if}
         </div>
-        <div class="row wrap" style="gap: 6px; margin-top: 10px">
-          {#each PALETTE as c (c)}
-            <button
-              class="dot"
-              class:sel={p.color === c}
-              style="background: {resolvePlayerColor(c, $settings.colorBlind)}"
-              onclick={() => recolorPlayer(p, c)}
-              aria-label="Set colour"
-            ></button>
-          {/each}
-        </div>
+        {#if editingId === p.id}
+          <div class="editpanel">
+            <div class="row wrap swatches" role="group" aria-label="Player colour">
+              {#each PALETTE as c (c)}
+                <button
+                  class="dot"
+                  class:sel={p.color === c}
+                  style="background: {resolvePlayerColor(c, $settings.colorBlind)}"
+                  onclick={() => recolorPlayer(p, c)}
+                  aria-label="Set colour"
+                  aria-pressed={p.color === c}
+                ></button>
+              {/each}
+            </div>
+            <div class="row spread editactions">
+              <button class="btn small ghost danger" onclick={() => archive(p)}>Archive</button>
+              <span class="row" style="gap: 6px">
+                <button class="btn small ghost" onclick={() => (editingId = null)}>Cancel</button>
+                <button class="btn small primary" onclick={() => saveEdit(p)}>Save</button>
+              </span>
+            </div>
+          </div>
+        {/if}
       </div>
     {/each}
   </div>
@@ -144,12 +152,41 @@
 {/if}
 
 <style>
+  .player-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+  @media (min-width: 640px) {
+    .player-grid {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+  }
+  .card {
+    transition: border-color 0.15s ease;
+  }
+  .editpanel {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .swatches {
+    gap: 8px;
+  }
   .dot {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     border: 2px solid transparent;
     cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .dot:hover {
+    transform: scale(1.12);
   }
   .dot.sel {
     border-color: var(--text);
@@ -165,6 +202,21 @@
     display: inline-flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
+  }
+  .who strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card,
+    .dot {
+      transition: none;
+    }
+    .dot:hover {
+      transform: none;
+    }
   }
   .tags {
     display: inline-flex;

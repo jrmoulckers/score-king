@@ -123,7 +123,7 @@ button, input, select { font: inherit; }
 .btn.small { min-height: 36px; padding: 7px 12px; font-size: 0.9rem; }
 .btn.block { width: 100%; }
 
-input[type="text"], input[type="number"], select {
+input[type="text"], input[type="number"], input[type="search"], select {
   width: 100%;
   padding: 11px 12px;
   min-height: 46px;
@@ -131,6 +131,10 @@ input[type="text"], input[type="number"], select {
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
+}
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
 }
 input:focus, select:focus, .btn:focus-visible {
   outline: 2px solid var(--primary);
@@ -210,6 +214,64 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .tabbar a.active { color: var(--text); background: var(--surface-2); }
 .tabbar a .ico { font-size: 1.2rem; line-height: 1; }
+
+/* ── Responsive app shell ──────────────────────────────────────────────────
+   Mobile keeps the glass top app bar + bottom tab bar above. On desktop those
+   collapse into a solid left sidebar rail and the page becomes a comfortable
+   centered column, so the layout no longer reads as a phone stranded in a wide
+   viewport. The sidebar is a solid surface (not glass) so backdrop blur stays
+   exclusive to the two mobile bars, per the Glass-Chrome Rule. */
+.viewport { min-width: 0; }
+.sidebar { display: none; }
+.brand:hover { text-decoration: none; }
+
+@media (min-width: 900px) {
+  .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); align-items: start; }
+  .appbar, .tabbar { display: none; }
+
+  .sidebar {
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh;
+    padding: 22px 14px calc(18px + env(safe-area-inset-bottom));
+    padding-left: calc(14px + env(safe-area-inset-left));
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+  .sidebar-brand {
+    gap: 10px;
+    padding: 4px 10px 0;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+  }
+  .sidebar-brand img { width: 30px; height: 30px; }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
+  .sidebar-nav a {
+    display: flex; align-items: center; gap: 12px;
+    min-height: 46px; padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--muted); text-decoration: none; font-weight: 600;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .sidebar-nav a .ico { font-size: 1.2rem; line-height: 1; }
+  .sidebar-nav a .lbl { font-size: 0.95rem; }
+  .sidebar-nav a:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
+  .sidebar-nav a.active { background: var(--surface-2); color: var(--text); }
+  .sidebar-nav a:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .sidebar-foot {
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 14px 6px 0;
+  }
+
+  .app {
+    max-width: 860px;
+    padding: 28px 24px 56px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .shell { grid-template-columns: 264px minmax(0, 1fr); }
+}
 
 .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 
