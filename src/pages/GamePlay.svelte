@@ -17,6 +17,7 @@
     restoreGame,
   } from '../lib/stores/games';
   import { getModule } from '../lib/games/registry';
+  import { customGameDefs } from '../lib/stores/customGames';
   import { computeTotals } from '../lib/scoring';
   import { navigate, link, absoluteUrl } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
@@ -27,6 +28,8 @@
   import Scoreboard from '../lib/components/Scoreboard.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
   import PlaySheet from '../lib/components/PlaySheet.svelte';
+  import ShareResultsSheet from '../lib/components/ShareResultsSheet.svelte';
+  import { buildRecapPayload } from '../lib/share/recap';
   import { get } from 'svelte/store';
   import {
     startHosting,
@@ -58,7 +61,10 @@
   let editDraft = $state<any>(null);
   let justSavedId = $state<string | null>(null);
 
-  const module = $derived(game ? getModule(game.type) : undefined);
+  const module = $derived.by(() => {
+    void $customGameDefs;
+    return game ? getModule(game.type) : undefined;
+  });
   const orderedPlayers = $derived(
     game
       ? (game.playerIds
@@ -268,6 +274,12 @@
     (game?.winnerIds ?? []).map((wid) => plist.find((p) => p.id === wid)?.name ?? '?').join(' & '),
   );
 
+  // ── Share results (read-only recap) ────────────────────────────────────
+  let shareOpen = $state(false);
+  const sharePayload = $derived(
+    game && game.status === 'finished' ? buildRecapPayload(game, orderedPlayers, rounds) : null,
+  );
+
   // ── Live co-play (host-authoritative) ──────────────────────────────────
   // The leader keeps using this very screen; the engine just mirrors the game
   // to guests and feeds their round proposals back through the same store flow.
@@ -454,7 +466,10 @@
 
   {#if game.status === 'finished'}
     <div class="card center banner">🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}</div>
-    <div class="row" style="gap: 10px; margin-top: 12px">
+    <button class="btn block" style="margin-top: 12px" onclick={() => (shareOpen = true)}>
+      📤 Share results
+    </button>
+    <div class="row" style="gap: 10px; margin-top: 10px">
       <button class="btn" onclick={doReopen} title="Reopen to add more rounds">Reopen</button>
       <button class="btn primary grow" onclick={playAgain}>Play again</button>
     </div>
@@ -571,6 +586,10 @@
       onswitch={switchMode}
     />
   {/key}
+{/if}
+
+{#if shareOpen && sharePayload}
+  <ShareResultsSheet payload={sharePayload} onclose={() => (shareOpen = false)} />
 {/if}
 
 <style>

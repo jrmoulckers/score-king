@@ -15,6 +15,14 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
 - **Installable PWA.** Add to home screen; launches full‑screen and works offline.
 - **Pluggable game modules.** Each game is a self‑contained module (config, round entry, scoring,
   validation). Adding a new game doesn't touch the rest of the app.
+- **Create your own game (no code).** Build a custom scorer right in the app — name, emoji, win
+  direction, a single counter or named **columns** (with per‑column penalty), plus an optional
+  target and round limit. It compiles to a real game module, so it joins the catalog and gets
+  players, history, stats, `/<id>` routing, and backup exactly like a built‑in.
+- **Your game catalog.** As your list of games grows, **search** it, **favorite** the ones your
+  group plays (they pin to the top, with your recently‑played games right below), and **hide** the
+  ones you never use from **Manage games**. Hiding is recoverable, and your favorites/hidden choices
+  travel with your backup.
 - **Players, history & stats** are shared across every game — reusable players, a full game log,
   and a win‑rate leaderboard.
 - **Optional OneDrive sync.** Automatic (and one‑click) backup to a compact `.json` file in your own
@@ -136,6 +144,35 @@ relay/                # deploy-ready Cloudflare Worker + Durable Object live rel
 
 That's it — routing (`/<id>`), players, history, stats, and persistence all work automatically.
 
+### Custom games (no code)
+
+Players can author games from the app — no build step. Tap **＋ Create a game** on the home
+catalog (or open `/create`) and fill in:
+
+- **Name, emoji, tagline** — how it shows in the catalog (a live preview updates as you type).
+- **Who wins** — highest or lowest total.
+- **Round entry** — a single number per player, or named **columns** (e.g. Bid + Tricks), each
+  column optionally flagged to **subtract** (a penalty column).
+- **Target score** and **round limit** — both optional: a target ends the game when any total
+  reaches it; a limit caps the number of rounds.
+- **Players** min/max and the **points‑per‑tap** step used during entry.
+
+Each custom game is stored as a small declarative `CustomGameDef` (in the IndexedDB `gameDefs`
+store) that the factory in [`src/lib/games/custom/`](src/lib/games/custom/) compiles into a real
+`GameModule` at runtime — **no `eval`**, just data → deterministic scoring (a round score is the
+sum of its columns, penalties subtracted). Because it resolves through the same `getModule`
+registry as the built‑ins, a custom type is first‑class: `/<def‑id>` routing, players, history,
+and stats all work with no extra wiring.
+
+**Edit · Duplicate · Delete.** A custom game's page has an **Edit**, a **Duplicate**
+(clone‑and‑tweak into a new game), and a **Delete**. Deleting a game that was never played removes
+it; deleting one that already has games **archives** it instead (hidden from the catalog but
+retained) so its history and stats keep the right name, emoji, and scoring — mirroring how players
+archive. Both actions are undoable from the toast.
+
+Custom games are part of the self‑owned **World**, so they ride along in every backup (local JSON
+export/import and OneDrive) and merge per‑entity across devices, tombstones included.
+
 ---
 
 ## ☁️ OneDrive sync setup (optional)
@@ -228,7 +265,8 @@ override with their own client ID under **Settings → Advanced**.
 A backup carries your game data **and** your portable preferences — theme, OLED, text size, high
 contrast, motion, colour‑blind palette, keep‑awake, and privacy guard — in the `settings` object, so
 restoring on a new device brings your accessibility/display setup along. The local JSON
-export/import covers the same set.
+export/import covers the same set. **Custom game definitions** ride along too (the `gameDefs`
+array), so a restored device can play, edit, and continue the history of games you invented.
 
 Deliberately **left out**, to avoid dead or conflicting state on another device: the OneDrive
 client‑ID override, the backup file's folder location, the active backup file and its ETag, the

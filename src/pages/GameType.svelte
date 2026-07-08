@@ -1,14 +1,19 @@
 <script lang="ts">
   import { getModule } from '../lib/games/registry';
   import { defaultConfig } from '../lib/types';
-  import { games, createGame } from '../lib/stores/games';
+  import { activeGames, createGame } from '../lib/stores/games';
+  import { customGameDefs } from '../lib/stores/customGames';
   import { navigate, link } from '../lib/router';
   import { showToast } from '../lib/stores/toast';
   import PlayerSelect from '../lib/components/PlayerSelect.svelte';
   import ConfigForm from '../lib/components/ConfigForm.svelte';
 
   let { type }: { type: string } = $props();
-  const module = $derived(getModule(type));
+  // Re-resolve when custom defs load so a deep-link to /def_… lands once IndexedDB answers.
+  const module = $derived.by(() => {
+    void $customGameDefs;
+    return getModule(type);
+  });
 
   let selected = $state<string[]>([]);
   let config = $state<Record<string, any>>({});
@@ -22,7 +27,7 @@
   });
 
   const activeOfType = $derived(
-    $games.filter((g) => g.status === 'active' && g.type === type),
+    $activeGames.filter((g) => g.status === 'active' && g.type === type),
   );
 
   async function start() {

@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import type { Game, ID, Round } from '../types';
 import { defaultWinners } from '../types';
 import * as db from '../storage/db';
@@ -7,6 +7,9 @@ import { getModule } from '../games/registry';
 import { computeTotals } from '../scoring';
 
 export const games = writable<Game[]>([]);
+
+/** Games shown in the library's main list + on Home: everything not user-archived. */
+export const activeGames = derived(games, ($games) => $games.filter((g) => !g.archived));
 
 export async function refreshGames(): Promise<void> {
   games.set(await db.getAllGames());
@@ -136,6 +139,18 @@ export async function abandonGame(game: Game): Promise<Game> {
 
 export async function removeGame(id: ID): Promise<void> {
   await db.deleteGame(id);
+  await refreshGames();
+}
+
+/** Hide a game from the library's main list + Home, recoverably (kept in Stats). */
+export async function archiveGame(game: Game): Promise<void> {
+  await db.putGame({ ...game, archived: true, archivedAt: Date.now() });
+  await refreshGames();
+}
+
+/** Bring an archived game back into the main list (undo of {@link archiveGame}). */
+export async function unarchiveGame(game: Game): Promise<void> {
+  await db.putGame({ ...game, archived: false, archivedAt: undefined });
   await refreshGames();
 }
 

@@ -20,6 +20,7 @@ export const hearts: GameModule = {
   name: 'Hearts',
   tagline: 'Avoid hearts & the Queen of Spades',
   emoji: '♥️',
+  keywords: ['trick taking', 'shooting the moon', 'queen of spades', 'cards'],
   minPlayers: 3,
   maxPlayers: 6,
   lowerIsBetter: true,

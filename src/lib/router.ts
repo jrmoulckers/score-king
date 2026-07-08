@@ -78,11 +78,14 @@ export type RouteName =
   | 'wrapped'
   | 'settings'
   | 'accessibility'
+  | 'managegames'
   | 'gameplay'
   | 'play'
   | 'join'
   | 'nearby'
+  | 'recap'
   | 'gametype'
+  | 'customedit'
   | 'notfound';
 
 export interface Route {
@@ -99,8 +102,11 @@ const RESERVED: Record<string, RouteName> = {
   wrapped: 'wrapped',
   settings: 'settings',
   accessibility: 'accessibility',
+  'manage-games': 'managegames',
   gameplay: 'gameplay',
   nearby: 'nearby',
+  recap: 'recap',
+  create: 'customedit',
 };
 
 export function parseRoute(path: string): Route {
@@ -112,6 +118,10 @@ export function parseRoute(path: string): Route {
     if (name) return { name, params: {} };
     // single unknown segment => a game type landing page (e.g. /skullking)
     return { name: 'gametype', params: { type: segs[0] } };
+  }
+  if (segs[0] === 'create' && segs[1]) {
+    // /create/<defId> => edit an existing custom game
+    return { name: 'customedit', params: { id: segs[1] } };
   }
   if (segs[0] === 'play' && segs[1]) {
     return { name: 'play', params: { id: segs[1] } };

@@ -14,6 +14,8 @@
  * Wire form: `sk1.<z|r>.<base64url>` — `z` = deflate-raw, `r` = uncompressed.
  */
 
+import { bytesToBase64url, base64urlToBytes, deflate, inflate } from '../share/codec';
+
 export type SignalKind = 'offer' | 'answer';
 
 /** Bumped on any breaking change to the {@link Signal} shape or framing below. */
@@ -32,51 +34,6 @@ export interface Signal {
   i: string;
   /** The SDP blob. */
   s: string;
-}
-
-// ── base64url over raw bytes (works in the browser and in Node) ──────────────────────────
-
-function bytesToBase64url(bytes: Uint8Array): string {
-  let bin = '';
-  const CHUNK = 0x8000; // chunk the spread so a big SDP can't blow the call stack
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  }
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function base64urlToBytes(text: string): Uint8Array {
-  const b64 = text.replace(/-/g, '+').replace(/_/g, '/');
-  const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4));
-  const bin = atob(b64 + pad);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-// ── deflate-raw via the Streams API, with graceful absence ───────────────────────────────
-
-async function pipeThrough(bytes: Uint8Array, stream: 'CompressionStream' | 'DecompressionStream'): Promise<Uint8Array> {
-  const Ctor = (globalThis as Record<string, unknown>)[stream] as
-    | (new (format: string) => ReadableWritablePair<Uint8Array, Uint8Array>)
-    | undefined;
-  if (!Ctor) throw new Error('no-stream');
-  const transform = new Ctor('deflate-raw');
-  const piped = new Blob([bytes as BlobPart]).stream().pipeThrough(transform as unknown as ReadableWritablePair);
-  const buf = await new Response(piped as unknown as BodyInit).arrayBuffer();
-  return new Uint8Array(buf);
-}
-
-async function deflate(bytes: Uint8Array): Promise<Uint8Array | null> {
-  try {
-    return await pipeThrough(bytes, 'CompressionStream');
-  } catch {
-    return null; // CompressionStream unavailable → caller falls back to raw
-  }
-}
-
-async function inflate(bytes: Uint8Array): Promise<Uint8Array> {
-  return pipeThrough(bytes, 'DecompressionStream');
 }
 
 // ── public codec ─────────────────────────────────────────────────────────────────────────

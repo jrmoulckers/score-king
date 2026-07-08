@@ -32,6 +32,7 @@ export const skullking: GameModule = {
   name: 'Skull King',
   tagline: 'Bid your tricks. Hunt the bonuses.',
   emoji: '🏴‍☠️',
+  keywords: ['trick taking', 'pirate', 'bidding', 'cards'],
   minPlayers: 2,
   maxPlayers: 8,
   configFields: [

@@ -1,5 +1,6 @@
 import * as db from './db';
 import type { Game, ID, Player, Round } from '../types';
+import type { CustomGameDef } from '../games/custom/types';
 import type { Settings } from '../stores/settings';
 import { getBackupSettings, applyBackupSettings } from '../stores/settings';
 
@@ -7,6 +8,12 @@ export interface Snapshot {
   players: Player[];
   games: Game[];
   rounds: Round[];
+  /**
+   * User-authored custom game definitions (part of the World). Optional so older backups —
+   * written before custom games existed — still restore cleanly; when absent it's treated
+   * as an empty list.
+   */
+  gameDefs?: CustomGameDef[];
   /**
    * Backed-up user preferences (the portable subset of {@link Settings}).
    * Optional so older backups — and JSON files written before settings sync —
@@ -92,6 +99,7 @@ export function serializeSnapshot(snapshot: Snapshot): string {
     players: snapshot.players,
     games: snapshot.games,
     rounds: snapshot.rounds,
+    gameDefs: snapshot.gameDefs ?? [],
     settings: snapshot.settings ?? {},
   };
   return JSON.stringify(envelope, null, 2);
@@ -121,6 +129,7 @@ export function deserializeSnapshot(text: string): Snapshot | null {
     players: obj.players as Snapshot['players'],
     games: obj.games as Snapshot['games'],
     rounds: obj.rounds as Snapshot['rounds'],
+    gameDefs: (obj.gameDefs as Snapshot['gameDefs']) ?? [],
     settings: (obj.settings as Snapshot['settings']) ?? {},
     exportedAt: typeof obj.exportedAt === 'number' ? obj.exportedAt : Date.now(),
   };
@@ -225,8 +234,8 @@ export interface SyncProvider {
 }
 
 export async function buildSnapshot(): Promise<Snapshot> {
-  const { players, games, rounds } = await db.getAllForSync();
-  return { players, games, rounds, settings: getBackupSettings(), exportedAt: Date.now() };
+  const { players, games, rounds, gameDefs } = await db.getAllForSync();
+  return { players, games, rounds, gameDefs, settings: getBackupSettings(), exportedAt: Date.now() };
 }
 
 export async function restoreSnapshot(snapshot: Snapshot): Promise<void> {
@@ -234,8 +243,13 @@ export async function restoreSnapshot(snapshot: Snapshot): Promise<void> {
     players: snapshot.players,
     games: snapshot.games,
     rounds: snapshot.rounds,
+    gameDefs: snapshot.gameDefs ?? [],
   });
   applyBackupSettings(snapshot.settings);
+  // Rebuild the in-memory custom registries so restored/merged-in custom types resolve
+  // immediately (dynamic import keeps the store out of the sync module's static graph).
+  const { refreshCustomGames } = await import('../stores/customGames');
+  await refreshCustomGames();
 }
 
 // ── Per-entity merge (Phase 2) ───────────────────────────────────────────────
@@ -282,6 +296,7 @@ export function mergeSnapshots(local: Snapshot, remote: Snapshot): Snapshot {
     players: mergeById(local.players, remote.players),
     games: mergeById(local.games, remote.games),
     rounds: mergeById(local.rounds, remote.rounds),
+    gameDefs: mergeById(local.gameDefs ?? [], remote.gameDefs ?? []),
     settings: local.settings,
     exportedAt: Date.now(),
   };
@@ -299,7 +314,7 @@ function worldFingerprint(s: Snapshot): string {
       .map((e) => `${e.id}:${mergeStamp(e)}`)
       .sort()
       .join(',');
-  return `${key(s.players)}|${key(s.games)}|${key(s.rounds)}`;
+  return `${key(s.players)}|${key(s.games)}|${key(s.rounds)}|${key(s.gameDefs ?? [])}`;
 }
 
 /** Whether two Worlds hold the same records at the same versions. */

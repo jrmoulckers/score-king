@@ -47,6 +47,13 @@ export interface Game {
   finishedAt?: number;
   winnerIds?: ID[];
   roundCount: number;
+  /**
+   * User archive: hidden from the History library's main list and from Home, kept
+   * in Stats and fully recoverable. Distinct from {@link deleted} (a hard-delete
+   * sync tombstone) — an archived game is still present. Mirrors {@link Player.archived}.
+   */
+  archived?: boolean;
+  archivedAt?: number;
   /** Last local mutation time — drives per-entity merge (Phase 2). */
   updatedAt?: number;
   /** Sync tombstone: deletion time, retained so the delete propagates on merge. */
@@ -112,6 +119,8 @@ export interface GameModule {
   name: string;
   tagline: string;
   emoji: string;
+  /** Optional search aliases/keywords for catalog discovery (matched alongside name + tagline). */
+  keywords?: string[];
   minPlayers: number;
   maxPlayers: number;
   /** true when the lowest total wins (e.g. Hearts). */
