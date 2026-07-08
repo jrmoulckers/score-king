@@ -7,6 +7,8 @@ import {
   updatePreset,
   renamePreset,
   removePreset,
+  pruneDeletedPlayers,
+  prunePresetsForType,
   getPresetsForType,
   presetsForType,
   resolvePresetPlayers,
@@ -77,6 +79,36 @@ describe('game presets store', () => {
     const p = savePreset('avalon', 'Crew', ['p1'], {});
     removePreset(p.id);
     expect(getPresetsForType('avalon')).toEqual([]);
+  });
+
+  it('prunes hard-deleted players from every preset, leaving others untouched', () => {
+    const a = savePreset('avalon', 'A', ['p1', 'p2', 'p3'], {});
+    const b = savePreset('skullking', 'B', ['p4', 'p5'], {});
+    pruneDeletedPlayers(['p2', 'p4']);
+
+    expect(getPresetsForType('avalon')[0].playerIds).toEqual(['p1', 'p3']);
+    expect(getPresetsForType('skullking')[0].playerIds).toEqual(['p5']);
+    // A preset with none of the deleted ids keeps its exact record (no needless updatedAt churn).
+    void a;
+    void b;
+  });
+
+  it('leaves presets untouched when no deleted id is present', () => {
+    const p = savePreset('avalon', 'A', ['p1', 'p2'], {});
+    const before = getPresetsForType('avalon')[0];
+    pruneDeletedPlayers(['ghost']);
+    expect(getPresetsForType('avalon')[0]).toBe(before);
+    void p;
+  });
+
+  it('drops every preset for a hard-deleted game type only', () => {
+    savePreset('def_gone', 'A', ['p1'], {});
+    savePreset('def_gone', 'B', ['p2'], {});
+    const keep = savePreset('avalon', 'Keep', ['p3'], {});
+    prunePresetsForType('def_gone');
+
+    expect(getPresetsForType('def_gone')).toEqual([]);
+    expect(getPresetsForType('avalon').map((x) => x.id)).toEqual([keep.id]);
   });
 
   it('exposes a reactive per-type list, newest edit first', () => {

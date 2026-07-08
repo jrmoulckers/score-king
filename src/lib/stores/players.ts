@@ -3,6 +3,7 @@ import type { Player, ID } from '../types';
 import type { BackupSettings } from './settings';
 import * as db from '../storage/db';
 import { pickColor, generateHandle } from '../util';
+import { pruneDeletedPlayers } from './presets';
 
 /** Every member, archived included — Stats and History need the full roster. */
 export const players = writable<Player[]>([]);
@@ -67,6 +68,8 @@ export async function savePlayerPrefs(
 /** Permanently remove a member and forget them entirely. */
 export async function removePlayer(id: ID): Promise<void> {
   await db.deletePlayer(id);
+  // A permanent removal: strip the ghost id from any saved presets so it can't linger or re-sync.
+  pruneDeletedPlayers([id]);
   await refreshPlayers();
 }
 

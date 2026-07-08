@@ -34,6 +34,17 @@
 
   const validIds = $derived($activePlayers.map((p) => p.id));
 
+  // How a preset resolves against today's roster — the source of truth for what it will seat,
+  // so archived/removed members are reflected live (see resolvePresetPlayers).
+  function seatedCount(p: GamePreset): number {
+    return resolvePresetPlayers(p, validIds, max).length;
+  }
+  /** Saved players who aren't in the current roster (archived, or absent after a partial restore). */
+  function unavailableCount(p: GamePreset): number {
+    const valid = new Set(validIds);
+    return new Set(p.playerIds.filter((id) => !valid.has(id))).size;
+  }
+
   // Which preset (if any) the form was last filled from — drives the Update/Rename/Delete tools.
   let activeId = $state<string | null>(null);
   const active = $derived($presets.find((p) => p.id === activeId) ?? null);
@@ -122,7 +133,13 @@
           title={`Use “${p.name}”`}
         >
           <span class="pname">{p.name}</span>
-          <span class="pcount">{p.playerIds.length}👤</span>
+          <span class="pcount">
+            {seatedCount(p)}👤{#if unavailableCount(p)}<span
+                class="away"
+                title={`${unavailableCount(p)} saved player${unavailableCount(p) > 1 ? 's are' : ' is'} no longer in the roster and will be skipped`}
+                >· {unavailableCount(p)} away</span
+              >{/if}
+          </span>
         </button>
       {/each}
     </div>
@@ -223,6 +240,9 @@
     font-size: 0.75rem;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
+  }
+  .away {
+    margin-left: 4px;
   }
   .prow {
     display: flex;

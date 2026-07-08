@@ -90,6 +90,43 @@ export function removePreset(id: ID): void {
   settings.update((s) => ({ ...s, gamePresets: s.gamePresets.filter((p) => p.id !== id) }));
 }
 
+/**
+ * Strip hard-deleted player ids from every stored preset. Called when a member is permanently
+ * removed (a tombstone, never coming back), so presets don't keep a ghost id that would
+ * silently re-sync or resurrect. Archived (recoverable) members are deliberately NOT pruned —
+ * those are hidden reactively so restoring the member restores them to the preset.
+ */
+export function pruneDeletedPlayers(deletedIds: Iterable<ID>): void {
+  const gone = new Set(deletedIds);
+  if (gone.size === 0) return;
+  settings.update((s) => {
+    let changed = false;
+    const next = s.gamePresets.map((p) => {
+      if (!p.playerIds.some((id) => gone.has(id))) return p;
+      changed = true;
+      return {
+        ...p,
+        playerIds: p.playerIds.filter((id) => !gone.has(id)),
+        updatedAt: Date.now(),
+      };
+    });
+    return changed ? { ...s, gamePresets: next } : s;
+  });
+}
+
+/**
+ * Drop every preset belonging to a game type that no longer exists — a hard-deleted custom
+ * type (an *archived* type is still resolvable, so its presets are kept). Without this, its
+ * presets would be orphaned forever with no surface to reach or clean them from.
+ */
+export function prunePresetsForType(type: string): void {
+  settings.update((s) =>
+    s.gamePresets.some((p) => p.type === type)
+      ? { ...s, gamePresets: s.gamePresets.filter((p) => p.type !== type) }
+      : s,
+  );
+}
+
 /** Delete a preset with an Undo toast — the app's standard recoverable-destructive pattern. */
 export function deletePresetWithUndo(preset: GamePreset): void {
   removePreset(preset.id);
