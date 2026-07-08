@@ -51,10 +51,11 @@ export const startableTypes: Readable<CatalogType[]> = derived(
 
 /**
  * A custom (user-authored, session 2) game type — its id is prefixed `def_`; built-ins have no
- * editable def, so custom-only affordances (Edit) gate on this. Re-exported from the canonical
- * source (`CUSTOM_ID_PREFIX = 'def_'`) so there's a single definition.
+ * editable def, so custom-only affordances (Edit) gate on this. Imported from the canonical
+ * source (`CUSTOM_ID_PREFIX = 'def_'`) and re-exported so there's a single definition.
  */
-export { isCustomType } from '../games/custom/types';
+import { isCustomType } from '../games/custom/types';
+export { isCustomType };
 
 /**
  * The custom-game builder route (session 2). `/create` opens a fresh builder; `/create/<defId>`
@@ -194,4 +195,105 @@ export function matchModule(t: CatalogType, query: string): boolean {
   if (!q) return true;
   const hay = [t.name, t.tagline, ...(t.keywords ?? [])].join(' ').toLowerCase();
   return hay.includes(q);
+}
+
+// ── Categories: group the catalog by game "type" for the browse page ──────────────
+
+/**
+ * The kind of game a catalog type is, used to categorize the full "All games" browse
+ * page. Custom (user-authored) types group under `custom`; any built-in not listed in
+ * {@link BUILTIN_CATEGORY} falls back to `other`, so a newly-dropped-in game still shows
+ * up (just uncategorized) until it's mapped here.
+ */
+export type GameCategory =
+  | 'universal'
+  | 'cards'
+  | 'tiles'
+  | 'party'
+  | 'board'
+  | 'sports'
+  | 'video'
+  | 'custom'
+  | 'other';
+
+export interface CategoryMeta {
+  id: GameCategory;
+  label: string;
+  emoji: string;
+}
+
+/** Display order for both the category sections and the filter chips on the browse page. */
+export const CATEGORY_ORDER: CategoryMeta[] = [
+  { id: 'universal', label: 'Universal', emoji: '🧮' },
+  { id: 'cards', label: 'Card Games', emoji: '🃏' },
+  { id: 'tiles', label: 'Tiles & Dice', emoji: '🎲' },
+  { id: 'party', label: 'Party & Social', emoji: '🎭' },
+  { id: 'board', label: 'Board Games', emoji: '♟️' },
+  { id: 'sports', label: 'Sports & Yard', emoji: '🥏' },
+  { id: 'video', label: 'Video Games', emoji: '🎮' },
+  { id: 'custom', label: 'Your Games', emoji: '✨' },
+  { id: 'other', label: 'More', emoji: '📦' },
+];
+
+/** Built-in type id → category. New built-ins default to `other` until mapped here. */
+const BUILTIN_CATEGORY: Record<string, GameCategory> = {
+  tally: 'universal',
+  hearts: 'cards',
+  skullking: 'cards',
+  spades: 'cards',
+  euchre: 'cards',
+  uno: 'cards',
+  unogolf: 'cards',
+  golf: 'cards',
+  explodingkittens: 'cards',
+  chickenfoot: 'tiles',
+  rummikub: 'tiles',
+  fluff: 'tiles',
+  botc: 'party',
+  avalon: 'party',
+  codenames: 'party',
+  saladbowl: 'party',
+  werewords: 'party',
+  tworooms: 'party',
+  wingspan: 'board',
+  wyrmspan: 'board',
+  finspan: 'board',
+  cornhole: 'sports',
+  spikeball: 'sports',
+  volleyball: 'sports',
+  mariokart: 'video',
+};
+
+/** The category a catalog type belongs to (custom types group under `custom`). */
+export function categoryOf(id: string): GameCategory {
+  if (isCustomType(id)) return 'custom';
+  return BUILTIN_CATEGORY[id] ?? 'other';
+}
+
+export interface CategoryGroup {
+  meta: CategoryMeta;
+  types: CatalogType[];
+}
+
+/**
+ * Group the visible catalog into ordered, non-empty category sections for the browse page.
+ * Hidden types are excluded; within a category the incoming (name-sorted registry) order is
+ * preserved. Empty categories are dropped so the page never shows a bare header.
+ */
+export function groupByCategory(
+  types: CatalogType[],
+  hidden: string[] = get(settings).catalogHidden,
+): CategoryGroup[] {
+  const hiddenSet = new Set(hidden);
+  const buckets = new Map<GameCategory, CatalogType[]>();
+  for (const t of types) {
+    if (hiddenSet.has(t.id)) continue;
+    const cat = categoryOf(t.id);
+    const bucket = buckets.get(cat);
+    if (bucket) bucket.push(t);
+    else buckets.set(cat, [t]);
+  }
+  return CATEGORY_ORDER.map((meta) => ({ meta, types: buckets.get(meta.id) ?? [] })).filter(
+    (g) => g.types.length > 0,
+  );
 }

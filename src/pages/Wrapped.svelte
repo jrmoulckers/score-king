@@ -5,7 +5,7 @@
   import { settings } from '../lib/stores/settings';
   import { setLeadMember } from '../lib/stores/identity';
   import { getModule } from '../lib/games/registry';
-  import { link } from '../lib/router';
+  import BackLink from '../lib/components/BackLink.svelte';
   import * as db from '../lib/storage/db';
   import Avatar from '../lib/components/Avatar.svelte';
   import type { Player, Round } from '../lib/types';
@@ -160,10 +160,8 @@
 
 <svelte:window onkeydown={onKey} />
 
-<div class="row spread" style="margin: 2px 4px 8px">
-  <h1 style="margin: 0">🎁 Wrapped</h1>
-  <a class="linkbtn" href="/stats" use:link>← Your stats</a>
-</div>
+<BackLink href="/stats" label="Stats" />
+<h1 style="margin: 0 4px 8px">🎁 Wrapped</h1>
 
 {#if !loaded}
   <div class="empty">Wrapping up your year…</div>
@@ -258,17 +256,6 @@
   }
   .sm {
     font-size: 0.82rem;
-  }
-
-  .linkbtn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 8px 4px;
-    min-height: 44px;
-    font: inherit;
   }
 
   .seg {

@@ -7,6 +7,7 @@
   import { showToast } from '../lib/stores/toast';
   import PlayerSelect from '../lib/components/PlayerSelect.svelte';
   import ConfigForm from '../lib/components/ConfigForm.svelte';
+  import BackLink from '../lib/components/BackLink.svelte';
   import GamePresets from '../lib/components/GamePresets.svelte';
 
   let { type }: { type: string } = $props();
@@ -53,6 +54,7 @@
     <a class="btn primary" href="/" use:link>Back to games</a>
   </div>
 {:else}
+  <BackLink href="/" label="Games" />
   <div class="row" style="gap: 12px; margin: 10px 4px 4px">
     <span style="font-size: 2rem">{module.emoji}</span>
     <div>

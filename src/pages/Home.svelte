@@ -51,6 +51,11 @@
   );
   const showRemainder = $derived(sections.remainder.length > 0 || CUSTOM_GAMES_ENABLED);
 
+  // "All games" on Home is only a preview — the full, categorized catalog lives on /browse.
+  const REMAINDER_PREVIEW = 6;
+  const remainderPreview = $derived(sections.remainder.slice(0, REMAINDER_PREVIEW));
+  const moreCount = $derived(sections.remainder.length - remainderPreview.length);
+
   function names(ids: string[]): string {
     return ids.map((id) => $players.find((p) => p.id === id)?.name ?? '?').join(', ');
   }
@@ -133,9 +138,16 @@
     </div>
   {/if}
   {#if showRemainder}
-    {@render head(remainderTitle, !showSearch && firstSection === 'rem')}
+    <div class="section-title cathead">
+      <span>{remainderTitle}</span>
+      {#if moreCount > 0}
+        <a class="manage-link" href="/browse" use:link>See all →</a>
+      {:else if !showSearch && firstSection === 'rem'}
+        <a class="manage-link" href="/manage-games" use:link>Manage</a>
+      {/if}
+    </div>
     <div class="grid">
-      {#each sections.remainder as m (m.id)}{@render tile(m)}{/each}
+      {#each remainderPreview as m (m.id)}{@render tile(m)}{/each}
       {#if CUSTOM_GAMES_ENABLED}
         <a class="gametile createtile" href={CREATE_ROUTE} use:link>
           <span class="emoji" aria-hidden="true">＋</span>

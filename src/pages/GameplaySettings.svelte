@@ -1,6 +1,7 @@
 <script lang="ts">
   import { settings } from '../lib/stores/settings';
   import { isWakeLockSupported } from '../lib/wakelock';
+  import BackLink from '../lib/components/BackLink.svelte';
 
   const wakeSupported = isWakeLockSupported();
 
@@ -8,6 +9,8 @@
     settings.update((s) => ({ ...s, [key]: v }));
   }
 </script>
+
+<BackLink href="/settings" label="Settings" />
 
 <h1>Gameplay</h1>
 <p class="lede muted">Tune how Score King behaves while a game is in play. Changes apply instantly and stick on this device.</p>
