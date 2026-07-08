@@ -80,6 +80,7 @@ export type RouteName =
   | 'settings'
   | 'accessibility'
   | 'managegames'
+  | 'browse'
   | 'gameplay'
   | 'play'
   | 'join'
@@ -105,6 +106,7 @@ const RESERVED: Record<string, RouteName> = {
   settings: 'settings',
   accessibility: 'accessibility',
   'manage-games': 'managegames',
+  browse: 'browse',
   gameplay: 'gameplay',
   nearby: 'nearby',
   recap: 'recap',

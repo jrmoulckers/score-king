@@ -13,6 +13,7 @@
   import Accessibility from './pages/Accessibility.svelte';
   import GameplaySettings from './pages/GameplaySettings.svelte';
   import ManageGames from './pages/ManageGames.svelte';
+  import Browse from './pages/Browse.svelte';
   import GameType from './pages/GameType.svelte';
   import GamePlay from './pages/GamePlay.svelte';
   import CustomGameEdit from './pages/CustomGameEdit.svelte';
@@ -29,7 +30,7 @@
   // Which primary nav item is active — shared by the mobile tab bar and the
   // desktop sidebar rail so both stay in lockstep.
   const navActive = $derived({
-    games: ['home', 'gametype', 'customedit', 'managegames'].includes(route.name),
+    games: ['home', 'gametype', 'customedit', 'managegames', 'browse'].includes(route.name),
     players: route.name === 'players',
     history: route.name === 'history',
     stats: ['stats', 'court', 'wrapped', 'tonight'].includes(route.name),
@@ -112,6 +113,8 @@
     <GameplaySettings />
   {:else if route.name === 'managegames'}
     <ManageGames />
+  {:else if route.name === 'browse'}
+    <Browse />
   {:else if route.name === 'gametype'}
     <GameType type={route.params.type} />
   {:else if route.name === 'customedit'}
