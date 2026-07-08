@@ -7,6 +7,7 @@
   import { showToast } from '../lib/stores/toast';
   import PlayerSelect from '../lib/components/PlayerSelect.svelte';
   import ConfigForm from '../lib/components/ConfigForm.svelte';
+  import GamePresets from '../lib/components/GamePresets.svelte';
 
   let { type }: { type: string } = $props();
   // Re-resolve when custom defs load so a deep-link to /def_… lands once IndexedDB answers.
@@ -74,6 +75,14 @@
 
   <div class="section-title">New game</div>
   <div class="card stack">
+    <GamePresets
+      {type}
+      fields={module.configFields}
+      max={module.maxPlayers}
+      bind:selected
+      bind:config
+    />
+    <hr />
     <div>
       <div class="fieldlabel">Players ({module.minPlayers}–{module.maxPlayers})</div>
       <PlayerSelect bind:selected max={module.maxPlayers} min={module.minPlayers} />
