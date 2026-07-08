@@ -222,12 +222,13 @@
       <span class="meta">
         <span class="titleline">
           <strong>{m?.name ?? g.type}</strong>
-          {#if g.status === 'active'}<span class="pill">in progress</span>{/if}
+          {#if g.status === 'active'}<span class="pill">in progress</span>{:else if g.status === 'abandoned'}<span class="pill">🪦 abandoned</span>{/if}
         </span>
         <span class="muted sm oneline">{names(g.playerIds)}</span>
         <span class="muted sm oneline">
           {formatDateTime(ts(g))}
           {#if g.status === 'finished'} · 🏆 {winners(g.winnerIds) || '—'}{/if}
+          {#if g.status === 'abandoned'} · no winner{/if}
         </span>
       </span>
     </a>

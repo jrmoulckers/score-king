@@ -7,6 +7,8 @@
   import Players from './pages/Players.svelte';
   import History from './pages/History.svelte';
   import Stats from './pages/Stats.svelte';
+  import Court from './pages/Court.svelte';
+  import Wrapped from './pages/Wrapped.svelte';
   import Settings from './pages/Settings.svelte';
   import Accessibility from './pages/Accessibility.svelte';
   import GameplaySettings from './pages/GameplaySettings.svelte';
@@ -64,6 +66,12 @@
     <History />
   {:else if route.name === 'stats'}
     <Stats />
+  {:else if route.name === 'court'}
+    <Court />
+  {:else if route.name === 'wrapped'}
+    <Wrapped />
+  {:else if route.name === 'tonight'}
+    <Wrapped initialPreset="tonight" />
   {:else if route.name === 'settings'}
     <Settings />
   {:else if route.name === 'accessibility'}
@@ -107,7 +115,7 @@
   <a href="/history" use:link class:active={route.name === 'history'}>
     <span class="ico">📜</span>History
   </a>
-  <a href="/stats" use:link class:active={route.name === 'stats'}>
+  <a href="/stats" use:link class:active={route.name === 'stats' || route.name === 'court' || route.name === 'wrapped' || route.name === 'tonight'}>
     <span class="ico">📊</span>Stats
   </a>
 </nav>

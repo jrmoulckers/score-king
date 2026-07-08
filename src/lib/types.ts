@@ -1,4 +1,5 @@
 import type { Component } from 'svelte';
+import type { GameStatsHook } from './stats/types';
 import type { BackupSettings } from './stores/settings';
 
 export type ID = string;
@@ -33,7 +34,7 @@ export interface Player {
   deleted?: number;
 }
 
-export type GameStatus = 'active' | 'finished';
+export type GameStatus = 'active' | 'finished' | 'abandoned';
 
 export interface Game {
   id: ID;
@@ -153,6 +154,13 @@ export interface GameModule {
   help?: string;
   /** Short summary of a recorded round for the history table. */
   describeRound?(round: Round, players: Player[]): string;
+  /**
+   * Optional game-specific stats over this game's finished games. Pure, no I/O —
+   * mirrors {@link describeRound}: a new game contributes stats the same way it
+   * contributes scoring. The stats engine injects this via the registry so it
+   * never imports Svelte components.
+   */
+  stats?: GameStatsHook;
 }
 
 export function defaultConfig(fields: ConfigField[] | undefined): Record<string, unknown> {

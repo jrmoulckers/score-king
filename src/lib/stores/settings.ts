@@ -33,6 +33,8 @@ export interface Settings {
   keepAwake: boolean;
   /** Blur scores with a tap-to-reveal veil after the phone is set down. */
   privacyGuard: boolean;
+  /** Let the Daily Crown & Court surface playful roasts/rivalries, not just flexes. */
+  roastMode: boolean;
   /**
    * Game *type* ids pinned to the top of the catalog, in display order. A "type id"
    * is a built-in slug (`skullking`) or a custom def id (`def_…`). Portable so a
@@ -76,8 +78,9 @@ export interface Settings {
 
   // ── Device identity ───────────────────────────────────────────────────────
   // Which member is the active "lead" on THIS device; their portable prefs are
-  // applied to the device. Device-specific (each device picks its own lead), so it
-  // is NOT backed up — the members themselves (each carrying their own prefs) are.
+  // applied to the device — and the personal lens for Stats, Daily Crown & Wrapped.
+  // Device-specific (each device picks its own lead), so it is NOT backed up — the
+  // members themselves (each carrying their own prefs) are.
   leadMemberId: string | null;
 }
 
@@ -100,6 +103,7 @@ export const PORTABLE_SETTING_KEYS = [
   'colorBlind',
   'keepAwake',
   'privacyGuard',
+  'roastMode',
   'catalogFavorites',
   'catalogHidden',
 ] as const;
@@ -154,6 +158,7 @@ const defaults: Settings = {
   colorBlind: false,
   keepAwake: false,
   privacyGuard: false,
+  roastMode: true,
   catalogFavorites: [],
   catalogHidden: [],
   oneDriveClientId: '',

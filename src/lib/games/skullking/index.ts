@@ -1,5 +1,6 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import Editor from './SkullKingEditor.svelte';
+import { skullkingStats } from './stats';
 
 export interface SKRow {
   bid: number;
@@ -95,6 +96,8 @@ export const skullking: GameModule = {
     '• +50 Skull King over Mermaid',
     'Bonuses vary by edition — confirm your set.',
   ].join('\n'),
+
+  stats: skullkingStats,
 
   RoundEditor: Editor,
 };

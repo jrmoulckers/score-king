@@ -11,6 +11,7 @@
     restoreRound,
     finishGame,
     reopenGame,
+    abandonGame,
     createGame,
     removeGame,
     restoreGame,
@@ -240,6 +241,14 @@
       publish();
     });
   }
+  async function doAbandon() {
+    if (!game) return;
+    await hostSerial(async () => {
+      if (!game) return;
+      game = await abandonGame(game);
+      publish();
+    });
+  }
   async function playAgain() {
     if (!game) return;
     const g = await createGame(game.type, [...game.playerIds], { ...game.config });
@@ -408,7 +417,11 @@
       <span>
         <div><strong>{module.name}</strong></div>
         <div class="muted" style="font-size: 0.8rem">
-          {game.status === 'finished' ? 'Finished' : 'Started'} · {relativeTime(
+          {game.status === 'finished'
+            ? 'Finished'
+            : game.status === 'abandoned'
+              ? 'Abandoned'
+              : 'Started'} · {relativeTime(
             game.finishedAt ?? game.createdAt,
           )}
         </div>
@@ -456,8 +469,16 @@
     <button class="btn block" style="margin-top: 12px" onclick={() => (shareOpen = true)}>
       📤 Share results
     </button>
+    <a class="btn block" style="margin-top: 10px" href="/tonight" use:link>🎁 Tonight’s Recap</a>
     <div class="row" style="gap: 10px; margin-top: 10px">
       <button class="btn" onclick={doReopen} title="Reopen to add more rounds">Reopen</button>
+      <button class="btn primary grow" onclick={playAgain}>Play again</button>
+    </div>
+  {:else if game.status === 'abandoned'}
+    <div class="card center banner">🪦 Game abandoned — no winner recorded.</div>
+    <a class="btn block" style="margin-top: 12px" href="/tonight" use:link>🎁 Tonight’s Recap</a>
+    <div class="row" style="gap: 10px; margin-top: 10px">
+      <button class="btn" onclick={doReopen} title="Reopen to keep playing">Reopen</button>
       <button class="btn primary grow" onclick={playAgain}>Play again</button>
     </div>
   {:else if editing}
@@ -497,6 +518,12 @@
     {:else}
       <button class="btn ghost block" style="margin-top: 12px" onclick={doFinish}>Finish game now</button>
     {/if}
+    <button
+      class="btn ghost block"
+      style="margin-top: 8px; color: var(--muted)"
+      onclick={doAbandon}
+      title="Stop this game without recording a winner"
+    >🪦 Abandon game</button>
   {/if}
 
   {#if rounds.length}
@@ -520,7 +547,7 @@
                 <td class="num">{fmt(r.deltas[p.id])}</td>
               {/each}
               <td class="acts">
-                {#if game.status !== 'finished'}
+                {#if game.status === 'active'}
                   <button
                     class="rowbtn"
                     onclick={() => startEdit(r)}
