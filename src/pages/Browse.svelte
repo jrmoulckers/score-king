@@ -12,7 +12,8 @@
   } from '../lib/stores/catalog';
 
   let search = $state('');
-  let activeCat = $state<GameCategory | 'all'>('all');
+  // Empty = no filter (show every category). Categories are multi-select toggles.
+  let activeCats = $state<GameCategory[]>([]);
 
   const mods = $derived($startableTypes);
   const searching = $derived(search.trim().length > 0);
@@ -26,14 +27,27 @@
       ? mods.filter((m) => !$settings.catalogHidden.includes(m.id) && matchModule(m, search))
       : [],
   );
-  const activeGroup = $derived(
-    activeCat === 'all' ? null : (groups.find((g) => g.meta.id === activeCat) ?? null),
+
+  // No filter → show every group; otherwise show only the toggled-on categories. Either way
+  // each section keeps its header, so the category context never disappears when filtering.
+  const visibleGroups = $derived(
+    activeCats.length === 0 ? groups : groups.filter((g) => activeCats.includes(g.meta.id)),
   );
 
-  // If the focused category empties out (e.g. every game in it gets hidden), fall back to All
-  // so the page never lands on a category that no longer exists.
+  const showCreate = $derived(
+    CUSTOM_GAMES_ENABLED && (activeCats.length === 0 || activeCats.includes('custom')),
+  );
+
+  function toggleCat(id: GameCategory) {
+    activeCats = activeCats.includes(id)
+      ? activeCats.filter((c) => c !== id)
+      : [...activeCats, id];
+  }
+
+  // Drop any selected category that no longer exists (e.g. every game in it got hidden).
   $effect(() => {
-    if (activeCat !== 'all' && !groups.some((g) => g.meta.id === activeCat)) activeCat = 'all';
+    const valid = new Set(groups.map((g) => g.meta.id));
+    if (activeCats.some((c) => !valid.has(c))) activeCats = activeCats.filter((c) => valid.has(c));
   });
 </script>
 
@@ -76,9 +90,9 @@
     <button
       type="button"
       class="chip"
-      class:on={activeCat === 'all'}
-      aria-pressed={activeCat === 'all'}
-      onclick={() => (activeCat = 'all')}
+      class:on={activeCats.length === 0}
+      aria-pressed={activeCats.length === 0}
+      onclick={() => (activeCats = [])}
     >
       All <span class="count">{total}</span>
     </button>
@@ -86,9 +100,9 @@
       <button
         type="button"
         class="chip"
-        class:on={activeCat === g.meta.id}
-        aria-pressed={activeCat === g.meta.id}
-        onclick={() => (activeCat = g.meta.id)}
+        class:on={activeCats.includes(g.meta.id)}
+        aria-pressed={activeCats.includes(g.meta.id)}
+        onclick={() => toggleCat(g.meta.id)}
       >
         <span aria-hidden="true">{g.meta.emoji}</span>
         {g.meta.label}
@@ -106,13 +120,8 @@
   {:else}
     <div class="empty">No games match “{search.trim()}”.</div>
   {/if}
-{:else if activeGroup}
-  <div class="grid">
-    {#each activeGroup.types as m (m.id)}{@render tile(m)}{/each}
-    {#if CUSTOM_GAMES_ENABLED && activeGroup.meta.id === 'custom'}{@render createTile()}{/if}
-  </div>
 {:else}
-  {#each groups as g (g.meta.id)}
+  {#each visibleGroups as g (g.meta.id)}
     <div class="section-title cathead">
       <span><span class="cat-emoji" aria-hidden="true">{g.meta.emoji}</span> {g.meta.label}</span>
       <span class="cat-count">{g.types.length}</span>
@@ -121,7 +130,7 @@
       {#each g.types as m (m.id)}{@render tile(m)}{/each}
     </div>
   {/each}
-  {#if CUSTOM_GAMES_ENABLED}
+  {#if showCreate}
     <div class="create-wrap">
       <div class="grid">{@render createTile()}</div>
     </div>
