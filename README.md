@@ -95,7 +95,7 @@ Requires Node 20.19+ or 22.12+ (Vite 8).
 src/
   lib/
     games/            # one folder per game = a GameModule + its round editor
-      registry.ts     # MODULES array — register new games here
+      registry.ts     # auto-discovers every games/<id>/index.ts (no manual registration)
       skullking/  hearts/  tally/
     components/        # shared UI (Scoreboard, Stepper, Avatar, PlayerSelect, …)
     storage/
@@ -140,9 +140,11 @@ relay/                # deploy-ready Cloudflare Worker + Durable Object live rel
    - `maxRounds?`, `isFinished?`, `pickWinners?`, `resolveLowerIsBetter?`, `describeRound?`
    - `RoundEditor` — a Svelte component bound to the round draft
 2. Create `src/lib/games/<id>/<Name>Editor.svelte` for round entry.
-3. Register it in `src/lib/games/registry.ts`.
 
-That's it — routing (`/<id>`), players, history, stats, and persistence all work automatically.
+That's it — the registry **auto-discovers** every `src/lib/games/<id>/index.ts` (via
+`import.meta.glob`), so routing (`/<id>`), players, history, stats, and persistence all work with
+no registration step. Keep unit-testable scoring in a Svelte-free helper (e.g. `logic.ts`) that
+`index.ts` imports, so a `*.test.ts` can exercise the real scoring without pulling in the editor.
 
 ### Custom games (no code)
 
