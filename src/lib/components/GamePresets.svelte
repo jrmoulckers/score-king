@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ConfigField, GamePreset, ID } from '../types';
+  import { defaultConfig } from '../types';
   import { activePlayers } from '../stores/players';
   import { crewNames, crewSignature } from '../stores/crews';
   import {
@@ -72,6 +73,18 @@
   }
 
   function apply(p: GamePreset) {
+    // Clicking the already-active preset toggles it off. If the form still matches the preset
+    // (untouched), fall back to the game's default empty state; if you've since edited it, keep
+    // your changes and just detach the preset label ("barring any input changes I have made").
+    if (activeId === p.id) {
+      if (!dirty) {
+        selected = [];
+        config = defaultConfig(fields);
+      }
+      activeId = null;
+      mode = 'idle';
+      return;
+    }
     selected = resolvePresetPlayers(p, validIds, max);
     config = resolvePresetConfig(p, fields);
     activeId = p.id;
@@ -130,7 +143,7 @@
           class:on={activeId === p.id}
           aria-pressed={activeId === p.id}
           onclick={() => apply(p)}
-          title={`Use “${p.name}”`}
+          title={activeId === p.id ? `Turn off “${p.name}”` : `Use “${p.name}”`}
         >
           <span class="pname">{p.name}</span>
           <span class="pcount">
