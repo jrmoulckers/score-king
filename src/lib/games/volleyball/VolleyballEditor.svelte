@@ -1,161 +1,457 @@
 <script lang="ts">
   import type { RoundContext } from '../../types';
   import Avatar from '../../components/Avatar.svelte';
-  import type { VolleyballInput } from './index';
-  import { isDecidingSet, readConfig, setWinner, targetForSet, type Side } from './logic';
+  import { PALETTE } from '../../util';
+  import type { VolleyballInput } from './logic';
+  import {
+    cloneTeams,
+    foldStandings,
+    makeTeam,
+    readConfig,
+    setWinner,
+    type Team,
+    unassigned,
+  } from './logic';
+  import { rosterDnd } from './drag';
 
   let { input = $bindable(), ctx }: { input: VolleyballInput; ctx: RoundContext } = $props();
 
   const cfg = $derived(readConfig(ctx.config));
-  const pa = $derived(ctx.players[0]);
-  const pb = $derived(ctx.players[1]);
+  const pool = $derived(ctx.players);
+  const playerById = $derived(new Map(pool.map((p) => [p.id, p])));
 
-  // Sets won so far (the running match score) come from the totals-before-this-round.
-  const setsA = $derived(Number(ctx.totals[pa?.id]) || 0);
-  const setsB = $derived(Number(ctx.totals[pb?.id]) || 0);
-  const setNumber = $derived(setsA + setsB + 1);
-  const deciding = $derived(isDecidingSet(setsA, setsB, cfg.setsToWin));
-  const target = $derived(targetForSet(cfg, setsA, setsB));
+  // Recorded sets so far (this round is not among them) → live team standings.
+  const priorSets = $derived(
+    [...ctx.rounds]
+      .sort((a, b) => a.index - b.index)
+      .map((r) => r.input as VolleyballInput)
+      .filter((i) => i && Array.isArray(i.teams)),
+  );
+  const standings = $derived(foldStandings(input.teams ?? [], priorSets, cfg));
+  const leaderId = $derived(standings[0]?.setsWon > 0 ? standings[0].team.id : null);
+  const setNumber = $derived(ctx.roundIndex + 1);
 
-  const ptsA = $derived(Number(input.points[pa?.id]) || 0);
-  const ptsB = $derived(Number(input.points[pb?.id]) || 0);
-  const result = $derived(setWinner(ptsA, ptsB, target, cfg.winBy2, cfg.hardCap));
+  const home = $derived(input.teams?.find((t) => t.id === input.home));
+  const away = $derived(input.teams?.find((t) => t.id === input.away));
+  const ptsHome = $derived(Number(input.points?.home) || 0);
+  const ptsAway = $derived(Number(input.points?.away) || 0);
+  const target = $derived(cfg.pointsPerSet);
+  const result = $derived(setWinner(ptsHome, ptsAway, target, cfg.winBy2, cfg.hardCap));
 
-  function bump(id: string, delta: number) {
-    input.points[id] = Math.max(0, (Number(input.points[id]) || 0) + delta);
+  const benchIds = $derived(unassigned(input.teams ?? [], pool.map((p) => p.id)));
+
+  // ── Score entry ──────────────────────────────────────────────────────────
+  function bump(slot: 'home' | 'away', delta: number) {
+    const next = Math.max(0, (Number(input.points?.[slot]) || 0) + delta);
+    input.points = { ...input.points, [slot]: next };
   }
-  function onType(id: string, value: string) {
+  function onType(slot: 'home' | 'away', value: string) {
     const n = Math.floor(Number(value));
-    input.points[id] = Number.isFinite(n) && n > 0 ? n : 0;
+    input.points = { ...input.points, [slot]: Number.isFinite(n) && n > 0 ? n : 0 };
+  }
+  function swapSides() {
+    const h = input.home;
+    input.home = input.away;
+    input.away = h;
+    input.points = { home: ptsAway, away: ptsHome };
   }
 
-  /** Would one more point here win the set — and would that win the match? */
-  function pointKind(side: Side): 'match' | 'set' | null {
-    if (result) return null;
-    const na = side === 'a' ? ptsA + 1 : ptsA;
-    const nb = side === 'b' ? ptsB + 1 : ptsB;
-    if (setWinner(na, nb, target, cfg.winBy2, cfg.hardCap) !== side) return null;
-    const setsAfter = (side === 'a' ? setsA : setsB) + 1;
-    return setsAfter >= cfg.setsToWin ? 'match' : 'set';
+  /** Would one more point here win the set? */
+  function isSetPoint(slot: 'home' | 'away'): boolean {
+    if (result) return false;
+    const na = slot === 'home' ? ptsHome + 1 : ptsHome;
+    const nb = slot === 'away' ? ptsAway + 1 : ptsAway;
+    const side = slot === 'home' ? 'a' : 'b';
+    return setWinner(na, nb, target, cfg.winBy2, cfg.hardCap) === side;
   }
-
-  const kindA = $derived(pointKind('a'));
-  const kindB = $derived(pointKind('b'));
-  const deuce = $derived(!result && cfg.winBy2 && ptsA >= target - 1 && ptsB >= target - 1);
-
-  const sideList = $derived([
-    { side: 'a' as Side, player: pa, sets: setsA, points: ptsA, won: result === 'a', kind: kindA },
-    { side: 'b' as Side, player: pb, sets: setsB, points: ptsB, won: result === 'b', kind: kindB },
-  ]);
+  const spHome = $derived(isSetPoint('home'));
+  const spAway = $derived(isSetPoint('away'));
+  const deuce = $derived(!result && cfg.winBy2 && ptsHome >= target - 1 && ptsAway >= target - 1);
 
   const status = $derived.by(() => {
     if (result) {
-      const w = result === 'a' ? pa : pb;
-      const hi = Math.max(ptsA, ptsB);
-      const lo = Math.min(ptsA, ptsB);
-      return { emoji: '✅', text: `${w?.name ?? 'Winner'} takes the set ${hi}–${lo}`, tone: 'good' };
+      const w = result === 'a' ? home : away;
+      const hi = Math.max(ptsHome, ptsAway);
+      const lo = Math.min(ptsHome, ptsAway);
+      return { emoji: '✅', text: `${w?.name ?? 'Winner'} take the set ${hi}–${lo}`, tone: 'good' };
     }
-    if (kindA || kindB) {
-      const side = kindA ? pa : pb;
-      const kind = kindA ?? kindB;
-      return {
-        emoji: kind === 'match' ? '🏆' : '🎯',
-        text: `${kind === 'match' ? 'Match point' : 'Set point'} — ${side?.name ?? ''}`,
-        tone: 'warn',
-      };
+    if (spHome || spAway) {
+      const t = spHome ? home : away;
+      return { emoji: '🎯', text: `Set point — ${t?.name ?? ''}`, tone: 'warn' };
     }
     if (deuce) return { emoji: '🔁', text: 'Deuce — must win by two', tone: 'muted' };
-    return {
-      emoji: '🏐',
-      text: `Rally to ${target}${cfg.winBy2 ? ', win by two' : ''}`,
-      tone: 'muted',
-    };
+    return { emoji: '🏐', text: `Rally to ${target}${cfg.winBy2 ? ', win by two' : ''}`, tone: 'muted' };
   });
+
+  // ── Team management ──────────────────────────────────────────────────────
+  let managing = $state(false);
+  let picking = $state<'home' | 'away' | null>(null);
+  let selectedMember = $state<string | null>(null);
+
+  const EMOJIS = ['🦈', '🦅', '🐉', '🐺', '🦁', '🐯', '🦂', '🐍', '🔥', '⚡', '🌊', '🏐', '🚀', '👑', '💥', '🌟'];
+
+  function commit(teams: Team[]) {
+    input.teams = teams;
+  }
+  function updateTeam(id: string, patch: Partial<Team>) {
+    commit((input.teams ?? []).map((t) => (t.id === id ? { ...t, ...patch, memberIds: patch.memberIds ?? t.memberIds } : t)));
+  }
+  function cycleEmoji(t: Team) {
+    const i = EMOJIS.indexOf(t.emoji);
+    updateTeam(t.id, { emoji: EMOJIS[(i + 1) % EMOJIS.length] });
+  }
+  function addTeam() {
+    const teams = cloneTeams(input.teams ?? []);
+    teams.push(makeTeam(teams.length));
+    commit(teams);
+  }
+  function removeTeam(id: string) {
+    if ((input.teams?.length ?? 0) <= 2) return;
+    commit((input.teams ?? []).filter((t) => t.id !== id));
+    if (input.home === id) input.home = (input.teams?.find((t) => t.id !== id && t.id !== input.away)?.id) ?? '';
+    if (input.away === id) input.away = (input.teams?.find((t) => t.id !== id && t.id !== input.home)?.id) ?? '';
+  }
+  /** Move a member to a team, or to the bench (toTeamId = null). Clears the selection. */
+  function moveMember(memberId: string | null, toTeamId: string | null) {
+    if (!memberId) return;
+    const teams = (input.teams ?? []).map((t) => ({
+      ...t,
+      memberIds: t.memberIds.filter((m) => m !== memberId),
+    }));
+    if (toTeamId) {
+      const t = teams.find((x) => x.id === toTeamId);
+      if (t) t.memberIds = [...t.memberIds, memberId];
+    }
+    commit(teams);
+    selectedMember = null;
+  }
+  function toggleSelect(memberId: string) {
+    selectedMember = selectedMember === memberId ? null : memberId;
+  }
+
+  /** Drop-zone target -> moveMember. The bench zone reports the string "bench". */
+  function onDrop(playerId: string, target: string) {
+    moveMember(playerId, target === 'bench' ? null : target);
+  }
+
+  function overCap(t: Team): boolean {
+    return cfg.teamSize > 0 && t.memberIds.length > cfg.teamSize;
+  }
+
+  const selectedName = $derived(selectedMember ? playerById.get(selectedMember)?.name ?? '' : '');
 </script>
 
-<div class="stack">
-  <div class="row spread meta">
-    <span class="pill">🏐 Set {setNumber} · to {target}</span>
-    {#if deciding}
-      <span class="pill decider">⭐ Deciding set</span>
-    {:else}
-      <span class="pill">Best of {cfg.setsToWin * 2 - 1}</span>
-    {/if}
+<div class="stack" use:rosterDnd={{ onMove: onDrop }}>
+  <!-- ── Standings board ── -->
+  <div class="board" role="table" aria-label="Team standings">
+    {#each standings as s (s.team.id)}
+      {@const lead = s.team.id === leaderId}
+      <div class="trow" class:lead role="row">
+        <span class="tident">
+          <span class="temoji" style={`--tc:${s.team.color}`}>{s.team.emoji}</span>
+          <span class="tmeta">
+            <span class="tname">{s.team.name}</span>
+            <span class="troster">
+              {#each s.team.memberIds.slice(0, 6) as m (m)}
+                {@const p = playerById.get(m)}
+                {#if p}<Avatar name={p.name} color={p.color} size={16} />{/if}
+              {/each}
+              {#if s.team.memberIds.length === 0}<span class="muted xs">no players yet</span>{/if}
+            </span>
+          </span>
+        </span>
+        <span class="tsets">
+          {#if lead}<span class="crown" aria-hidden="true">👑</span>{/if}
+          <span class="setn tnum" class:goldnum={lead}>{s.setsWon}</span>
+          <span class="setl">{s.setsWon === 1 ? 'set' : 'sets'}</span>
+        </span>
+      </div>
+    {/each}
   </div>
 
-  <p
-    class="status"
-    class:good={status.tone === 'good'}
-    class:warn={status.tone === 'warn'}
-    aria-live="polite"
-  >
+  <!-- ── This set ── -->
+  <div class="row spread meta">
+    <span class="pill">🏐 Set {setNumber} · to {target}</span>
+    <button type="button" class="linklike" onclick={() => (managing = !managing)} aria-expanded={managing}>
+      {managing ? '✕ Done editing' : '⚙ Manage teams'}
+    </button>
+  </div>
+
+  <p class="status" class:good={status.tone === 'good'} class:warn={status.tone === 'warn'} aria-live="polite">
     <span aria-hidden="true">{status.emoji}</span>
     <span>{status.text}</span>
   </p>
 
-  <div class="sides">
-    {#each sideList as s (s.player?.id)}
-      <div class="side" class:won={s.won}>
-        <div class="shead">
-          <span class="who">
-            <Avatar name={s.player?.name ?? '?'} color={s.player?.color ?? '#7c5cff'} />
-            <strong class="nm">{s.player?.name ?? '—'}</strong>
-          </span>
-          <span class="pips" role="img" aria-label={`${s.sets} of ${cfg.setsToWin} sets won`}>
-            {#each Array(cfg.setsToWin) as _, i (i)}
-              <span class="pip" class:on={i < s.sets}></span>
+  <div class="match">
+    {#each [{ slot: 'home' as const, team: home, pts: ptsHome, sp: spHome }, { slot: 'away' as const, team: away, pts: ptsAway, sp: spAway }] as s (s.slot)}
+      <div class="side" class:won={(s.slot === 'home' ? result === 'a' : result === 'b')} data-drop={s.team?.id ?? undefined} style={`--tc:${s.team?.color ?? 'var(--primary)'}`}>
+        <button
+          type="button"
+          class="sidehead"
+          onclick={() => (picking = picking === s.slot ? null : s.slot)}
+          aria-label={`Choose the ${s.slot} team (currently ${s.team?.name ?? 'none'})`}
+        >
+          <span class="temoji sm" style={`--tc:${s.team?.color ?? '#7c5cff'}`}>{s.team?.emoji ?? '🏐'}</span>
+          <span class="pickname">{s.team?.name ?? 'Pick team'}</span>
+          {#if (input.teams?.length ?? 0) > 2}<span class="caret" aria-hidden="true">▾</span>{/if}
+        </button>
+
+        {#if picking === s.slot && (input.teams?.length ?? 0) > 2}
+          <div class="picklist" role="listbox">
+            {#each input.teams as t (t.id)}
+              {@const taken = t.id === (s.slot === 'home' ? input.away : input.home)}
+              <button
+                type="button"
+                class="pickopt"
+                class:on={t.id === s.team?.id}
+                disabled={taken}
+                onclick={() => {
+                  if (s.slot === 'home') input.home = t.id; else input.away = t.id;
+                  picking = null;
+                }}
+              >
+                <span class="temoji xs" style={`--tc:${t.color}`}>{t.emoji}</span>
+                <span>{t.name}</span>
+                {#if taken}<span class="muted xs">playing</span>{/if}
+              </button>
             {/each}
-          </span>
-        </div>
+          </div>
+        {/if}
 
         <label class="scorewrap">
-          <span class="sr-only">{s.player?.name} points this set</span>
+          <span class="sr-only">{s.team?.name} points this set</span>
           <input
             class="score"
-            class:score-good={s.won}
+            class:score-good={s.slot === 'home' ? result === 'a' : result === 'b'}
             type="number"
             inputmode="numeric"
             min="0"
-            value={s.points}
-            oninput={(e) => onType(s.player?.id, e.currentTarget.value)}
+            value={s.pts}
+            oninput={(e) => onType(s.slot, e.currentTarget.value)}
           />
         </label>
 
         <div class="ctrls">
-          <button
-            type="button"
-            class="minus"
-            onclick={() => bump(s.player?.id, -1)}
-            disabled={s.points <= 0}
-            aria-label={`Take a point back from ${s.player?.name}`}
-          >
-            −1
-          </button>
-          <button
-            type="button"
-            class="plus"
-            class:pt={!!s.kind}
-            onclick={() => bump(s.player?.id, 1)}
-            aria-label={`Add a point for ${s.player?.name}`}
-          >
+          <button type="button" class="minus" onclick={() => bump(s.slot, -1)} disabled={s.pts <= 0} aria-label={`Take a point back from ${s.team?.name}`}>−1</button>
+          <button type="button" class="plus" class:pt={s.sp} onclick={() => bump(s.slot, 1)} aria-label={`Add a point for ${s.team?.name}`}>
             <span class="big">+1</span>
-            {#if s.kind}<span class="ptlabel">{s.kind === 'match' ? 'match pt' : 'set pt'}</span>{/if}
+            {#if s.sp}<span class="ptlabel">set pt</span>{/if}
           </button>
         </div>
       </div>
     {/each}
   </div>
+
+  <button type="button" class="swap" onclick={swapSides} aria-label="Swap which side is home and away">⇄ Swap sides</button>
+
+  <!-- ── Manage teams ── -->
+  {#if managing}
+    <div class="manage stack">
+      {#if selectedMember}
+        <div class="movebar" aria-live="polite">
+          <span class="mvlabel">Move <strong>{selectedName}</strong> to</span>
+          <div class="mvtargets">
+            {#each input.teams as t (t.id)}
+              <button type="button" class="mvbtn" onclick={() => moveMember(selectedMember, t.id)}>
+                <span aria-hidden="true">{t.emoji}</span> {t.name}
+              </button>
+            {/each}
+            <button type="button" class="mvbtn bench" onclick={() => moveMember(selectedMember, null)}>🪑 Bench</button>
+            <button type="button" class="mvbtn ghost" onclick={() => (selectedMember = null)}>Cancel</button>
+          </div>
+        </div>
+      {:else}
+        <p class="draghint"><span aria-hidden="true">✋</span> Drag players between teams and the bench — or tap one to pick a spot.</p>
+      {/if}
+
+      {#each input.teams as t (t.id)}
+        <div class="tcard" data-drop={t.id} style={`--tc:${t.color}`}>
+          <div class="tcard-head">
+            <button type="button" class="temoji btn-emoji" style={`--tc:${t.color}`} onclick={() => cycleEmoji(t)} aria-label="Change team emoji" title="Tap to change emoji">{t.emoji}</button>
+            <input class="tnameinput" value={t.name} oninput={(e) => updateTeam(t.id, { name: e.currentTarget.value })} aria-label="Team name" />
+            <span class="tcount" class:over={overCap(t)}>
+              {t.memberIds.length}{cfg.teamSize > 0 ? `/${cfg.teamSize}` : ''}
+            </span>
+            {#if (input.teams?.length ?? 0) > 2}
+              <button type="button" class="iconx" onclick={() => removeTeam(t.id)} aria-label={`Remove ${t.name}`}>🗑</button>
+            {/if}
+          </div>
+
+          <div class="palette" role="group" aria-label="Team colour">
+            {#each PALETTE as c (c)}
+              <button type="button" class="dot" class:sel={t.color === c} style={`background:${c}`} onclick={() => updateTeam(t.id, { color: c })} aria-label="Set team colour"></button>
+            {/each}
+          </div>
+
+          <div class="chips dropzone">
+            {#each t.memberIds as m (m)}
+              {@const p = playerById.get(m)}
+              {#if p}
+                <button
+                  type="button"
+                  class="chip draggable"
+                  class:sel={selectedMember === m}
+                  data-player-id={m}
+                  data-player-name={p.name}
+                  data-player-color={p.color}
+                  onclick={() => toggleSelect(m)}
+                >
+                  <span class="grip" aria-hidden="true">⠿</span>
+                  <Avatar name={p.name} color={p.color} size={20} />
+                  <span>{p.name}</span>
+                </button>
+              {/if}
+            {/each}
+            {#if t.memberIds.length === 0}
+              <span class="muted xs emptyhint">Drop players here</span>
+            {/if}
+          </div>
+        </div>
+      {/each}
+
+      <button type="button" class="addteam" onclick={addTeam} disabled={(input.teams?.length ?? 0) >= 8}>＋ Add team</button>
+
+      <div class="bench-area" data-drop="bench">
+        <div class="section-lbl">🪑 Bench</div>
+        <div class="chips dropzone">
+          {#each benchIds as m (m)}
+            {@const p = playerById.get(m)}
+            {#if p}
+              <button
+                type="button"
+                class="chip draggable"
+                class:sel={selectedMember === m}
+                data-player-id={m}
+                data-player-name={p.name}
+                data-player-color={p.color}
+                onclick={() => toggleSelect(m)}
+              >
+                <span class="grip" aria-hidden="true">⠿</span>
+                <Avatar name={p.name} color={p.color} size={20} />
+                <span>{p.name}</span>
+              </button>
+            {/if}
+          {/each}
+          {#if benchIds.length === 0}<span class="muted xs emptyhint">Everyone's on a team</span>{/if}
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
   .meta {
     align-items: center;
   }
-  .pill.decider {
+  .linklike {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 6px 2px;
+    min-height: 40px;
+  }
+  .linklike:hover {
     color: var(--text);
-    border-color: color-mix(in srgb, var(--text) 22%, var(--border));
   }
 
+  /* ── Standings board ── */
+  .board {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .trow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .trow.lead {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
+  }
+  .tident {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .temoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex: none;
+    font-size: 1.1rem;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--tc, var(--primary)) 20%, var(--surface-3));
+    border: 1px solid color-mix(in srgb, var(--tc, var(--primary)) 45%, var(--border));
+  }
+  .temoji.sm {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+  .temoji.xs {
+    width: 22px;
+    height: 22px;
+    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+  }
+  .tmeta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .tname {
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .troster {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .tsets {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    flex: none;
+  }
+  .crown {
+    font-size: 0.9rem;
+    align-self: center;
+  }
+  .setn {
+    font-size: 1.5rem;
+    font-weight: 800;
+  }
+  .goldnum {
+    color: var(--accent-ink);
+  }
+  .setl {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Status ── */
   .status {
     display: flex;
     align-items: center;
@@ -181,12 +477,12 @@
     background: color-mix(in srgb, var(--warn) 12%, var(--surface-2));
   }
 
-  .sides {
+  /* ── Match (two contesting sides) ── */
+  .match {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
   }
-
   .side {
     display: flex;
     flex-direction: column;
@@ -195,45 +491,78 @@
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
+    position: relative;
   }
   .side.won {
     border-color: color-mix(in srgb, var(--good) 55%, var(--border));
   }
-
-  .shead {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 30px;
-  }
-  .who {
+  .sidehead {
     display: flex;
     align-items: center;
     gap: 8px;
-    min-width: 0;
+    min-height: 40px;
+    padding: 4px 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
   }
-  .nm {
+  .sidehead:hover {
+    border-color: var(--primary);
+  }
+  .pickname {
+    font-weight: 700;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+    min-width: 0;
   }
-
-  .pips {
-    display: inline-flex;
-    gap: 4px;
+  .caret {
+    color: var(--muted);
     flex: none;
   }
-  .pip {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    border: 1.5px solid var(--muted);
-    box-sizing: border-box;
+  .picklist {
+    position: absolute;
+    z-index: 5;
+    top: 54px;
+    left: 6px;
+    right: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
   }
-  .pip.on {
-    background: var(--text);
-    border-color: var(--text);
+  .pickopt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    min-height: 40px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+  }
+  .pickopt:hover {
+    background: var(--surface-2);
+  }
+  .pickopt.on {
+    background: color-mix(in srgb, var(--primary) 20%, var(--surface-2));
+  }
+  .pickopt:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .scorewrap {
@@ -294,9 +623,6 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
-
-  /* The +1 is the courtside hero: large, thumb-friendly. It stays a neutral
-     raised control so the screen keeps a single Royal Violet primary (Save). */
   .plus {
     flex: 1;
     min-height: 56px;
@@ -327,9 +653,315 @@
     color: var(--warn);
   }
 
+  .swap {
+    align-self: center;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+  .swap:hover {
+    color: var(--text);
+  }
+
+  /* ── Manage teams ── */
+  .manage {
+    padding: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    gap: 12px;
+  }
+  .movebar {
+    position: sticky;
+    top: 6px;
+    z-index: 4;
+    padding: 10px;
+    background: var(--surface-3);
+    border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--border));
+    border-radius: var(--radius-sm);
+  }
+  .mvlabel {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+  .mvtargets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .mvbtn {
+    min-height: 40px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .mvbtn:hover {
+    border-color: var(--primary);
+  }
+  .mvbtn.bench {
+    background: var(--surface-2);
+  }
+  .mvbtn.ghost {
+    color: var(--muted);
+    border-style: dashed;
+  }
+
+  .tcard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .tcard-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-emoji {
+    cursor: pointer;
+  }
+  .tnameinput {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    padding: 0 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+  }
+  .tcount {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .tcount.over {
+    color: var(--warn);
+  }
+  .iconx {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .iconx:hover {
+    border-color: var(--bad);
+  }
+
+  .palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  .dot.sel {
+    border-color: var(--text);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 5px;
+    min-height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .chip.sel {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 18%, var(--surface));
+  }
+  .chip.draggable {
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    transition:
+      transform 0.12s ease,
+      border-color 0.15s ease,
+      background 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .chip.draggable:active {
+    cursor: grabbing;
+  }
+  .chip.draggable:hover {
+    border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  }
+  .grip {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1;
+    letter-spacing: -0.15em;
+    padding-left: 2px;
+    opacity: 0.7;
+  }
+
+  .draghint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  /* Drop zones: the chip trays inside team cards / bench, and live match sides. */
+  .dropzone {
+    min-height: 46px;
+    align-content: flex-start;
+    padding: 4px;
+    margin: -4px;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s ease;
+  }
+  .emptyhint {
+    align-self: center;
+    padding: 6px 2px;
+  }
+  .tcard {
+    border-left: 3px solid color-mix(in srgb, var(--tc, var(--primary)) 70%, var(--border));
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.12s ease;
+  }
+  /* A team card / bench / match side lit up as the active drop target. */
+  :global(.tcard.drop-hot),
+  :global(.bench-area.drop-hot),
+  :global(.side.drop-hot) {
+    border-color: color-mix(in srgb, var(--tc, var(--primary)) 70%, var(--border));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--tc, var(--primary)) 55%, transparent);
+  }
+  :global(.tcard.drop-hot) .dropzone,
+  :global(.bench-area.drop-hot) .dropzone {
+    background: color-mix(in srgb, var(--tc, var(--primary)) 12%, transparent);
+  }
+
+  /* Floating drag ghost — appended to <body>, so styled globally. */
+  :global(.vb-drag-ghost) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    pointer-events: none;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+    background: color-mix(in srgb, var(--ghost-color, #7c5cff) 92%, #000);
+    border: 1px solid color-mix(in srgb, #fff 30%, transparent);
+    box-shadow: 0 10px 24px -6px color-mix(in srgb, var(--ghost-color, #7c5cff) 60%, transparent);
+    transition: transform 0.04s linear;
+  }
+  :global(body.vb-dragging) {
+    cursor: grabbing;
+  }
+  :global(body.vb-dragging) * {
+    cursor: grabbing !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chip.draggable,
+    .tcard,
+    .dropzone,
+    :global(.vb-drag-ghost) {
+      transition: none;
+    }
+  }
+
+  .addteam {
+    align-self: flex-start;
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .addteam:hover:not(:disabled) {
+    border-color: var(--primary);
+  }
+  .addteam:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .bench-area {
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .section-lbl {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+  .xs {
+    font-size: 0.75rem;
+  }
+
   .minus:focus-visible,
   .plus:focus-visible,
-  .score:focus-visible {
+  .score:focus-visible,
+  .sidehead:focus-visible,
+  .chip:focus-visible,
+  .mvbtn:focus-visible,
+  .dot:focus-visible,
+  .addteam:focus-visible,
+  .tnameinput:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 1px;
   }
