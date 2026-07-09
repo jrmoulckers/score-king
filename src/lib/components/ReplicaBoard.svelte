@@ -9,6 +9,7 @@
   import { resolveLower } from '../types';
   import { getModule } from '../games/registry';
   import { computeTotals } from '../scoring';
+  import { haptic } from '../haptics';
   import { showToast } from '../stores/toast';
   import {
     liveReplica,
@@ -122,6 +123,7 @@
     if (n > seenRoundCount) {
       const landed = replica.rounds[n - 1];
       if (landed) flashRow(landed.id);
+      haptic('save');
       if (sending && n > sentAtRoundCount) clearSending();
     }
     seenRoundCount = n;

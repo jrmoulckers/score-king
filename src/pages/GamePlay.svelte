@@ -22,12 +22,14 @@
   import { navigate, link, absoluteUrl } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
   import { announce } from '../lib/stores/announcer';
+  import { haptic } from '../lib/haptics';
   import { relativeTime, generateJoinCode, rosterFor } from '../lib/util';
   import { settings } from '../lib/stores/settings';
   import { leadMember } from '../lib/stores/identity';
   import { enableWakeLock, disableWakeLock } from '../lib/wakelock';
   import Scoreboard from '../lib/components/Scoreboard.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
+  import WinnerCelebration from '../lib/components/WinnerCelebration.svelte';
   import PlaySheet from '../lib/components/PlaySheet.svelte';
   import ShareResultsSheet from '../lib/components/ShareResultsSheet.svelte';
   import BackLink from '../lib/components/BackLink.svelte';
@@ -217,6 +219,7 @@
     const newest = rounds[rounds.length - 1];
     if (newest) {
       pulseRow(newest.id);
+      haptic('save');
       announce(`Round ${newest.index + 1} saved. ${leaderSummary()}`);
     }
   }
@@ -279,6 +282,7 @@
         await load();
         publish();
       });
+      haptic('undo');
     });
   }
 
@@ -293,6 +297,7 @@
       .map((wid) => plist.find((p) => p.id === wid)?.name ?? '?')
       .join(' and ');
     if (names) {
+      haptic('win');
       announce(`Game finished. ${names} ${(game?.winnerIds?.length ?? 0) > 1 ? 'tie for the win' : 'wins'}.`);
     }
   }
@@ -327,6 +332,7 @@
     showActionToast('Game deleted', 'Undo', async () => {
       await restoreGame(gameSnap, roundsSnap);
       navigate(`/play/${gameSnap.id}`);
+      haptic('undo');
     });
   }
 
@@ -525,7 +531,10 @@
   <Scoreboard players={orderedPlayers} {totals} lowerIsBetter={lower} winners={game.winnerIds ?? []} youId={$leadMember?.id} />
 
   {#if game.status === 'finished'}
-    <div class="card center banner">🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}</div>
+    <div class="card center banner winner-banner">
+      <WinnerCelebration />
+      <span class="banner-text">🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}</span>
+    </div>
     <button class="btn block" style="margin-top: 12px" onclick={() => (shareOpen = true)}>
       📤 Share results
     </button>
@@ -753,6 +762,31 @@
     font-weight: 800;
     background: color-mix(in srgb, var(--accent) 22%, var(--surface));
     border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  }
+  /* The winner banner is the celebration stage: it hosts the one-shot confetti
+     (positioned relative so the pieces rain from its top edge) and gives itself a
+     single gentle pop as it mounts. It only ever mounts when a game finishes, so
+     the entrance plays exactly once; reduced motion collapses it to a static card
+     and the confetti component renders nothing. The 🏆 + "wins!" text always
+     carries the outcome, so none of this is state-by-motion. */
+  .winner-banner {
+    position: relative;
+    overflow: visible;
+    animation: winner-pop 0.5s var(--ease-out, cubic-bezier(0.22, 0.61, 0.36, 1)) both;
+  }
+  .banner-text {
+    position: relative;
+    z-index: 2;
+  }
+  @keyframes winner-pop {
+    0% { transform: scale(0.94); opacity: 0; }
+    55% { transform: scale(1.03); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .winner-banner {
+      animation: none;
+    }
   }
   .scroll {
     overflow-x: auto;

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
+  import { fly } from 'svelte/transition';
+  import { prefersReducedMotion } from './lib/motion';
   import { pathStore, parseRoute, link, titleForRoute } from './lib/router';
   import { toast } from './lib/stores/toast';
   import { settings } from './lib/stores/settings';
@@ -34,11 +36,24 @@
       return;
     }
     announce(title.split(' · ')[0]);
+    playRouteTransition();
     void (async () => {
       await tick();
       mainEl?.focus();
     })();
   });
+
+  // Retrigger the quick content crossfade on each navigation by removing and
+  // re-adding the class on the next frame. Purely decorative: the reduced-motion
+  // CSS collapses the animation to nothing, and navigation never waits on it.
+  function playRouteTransition() {
+    const el = mainEl;
+    if (!el) return;
+    el.classList.remove('route-in');
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => el.classList.add('route-in'));
+    });
+  }
 
   // Which primary nav item is active — shared by the mobile tab bar and the
   // desktop sidebar rail so both stay in lockstep.
@@ -80,6 +95,11 @@
   $effect(() => {
     if (veiled) veilBtn?.focus();
   });
+
+  // Toast slide-up: rises from the thumb zone so an Undo affordance draws the eye
+  // without a jarring pop. Reduced motion collapses it to an instant appearance
+  // (duration 0), so the toast still shows — it just doesn't travel.
+  const toastFly = $derived(prefersReducedMotion() ? { duration: 0 } : { y: 16, duration: 220 });
 </script>
 
 {#snippet navLinks()}
@@ -183,11 +203,13 @@
 </div>
 
 {#if $toast}
-  <div class="toast" role="status" aria-live="polite" aria-atomic="true">
-    <span>{$toast.message}</span>
-    {#if $toast.action}
-      <button class="toast-action" onclick={$toast.action.run}>{$toast.action.label}</button>
-    {/if}
+  <div class="toast-host">
+    <div class="toast" role="status" aria-live="polite" aria-atomic="true" in:fly={toastFly} out:fly={toastFly}>
+      <span>{$toast.message}</span>
+      {#if $toast.action}
+        <button class="toast-action" onclick={$toast.action.run}>{$toast.action.label}</button>
+      {/if}
+    </div>
   </div>
 {/if}
 
