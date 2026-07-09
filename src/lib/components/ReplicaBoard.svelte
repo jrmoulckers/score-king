@@ -17,6 +17,9 @@
     liveParticipants,
     claimSeat,
     liveConnection,
+    liveReconnectable,
+    connectionNote,
+    retryReconnectNow,
     liveIntentRejected,
   } from '../live/session';
   import Scoreboard from './Scoreboard.svelte';
@@ -64,6 +67,7 @@
 
   const me = $derived($liveSelf);
   const conn = $derived($liveConnection);
+  const connNote = $derived(connectionNote(conn, $liveReconnectable));
   // Seats already claimed by *other* devices — disabled in the picker so two phones can't
   // both be Alice. My own claim is excluded, so re-opening the picker keeps my seat pickable.
   const takenByOthers = $derived(
@@ -178,10 +182,13 @@
 </script>
 
 {#if replica && gmodule}
-  {#if conn !== 'online'}
-    <div class="connbar" class:off={conn === 'offline'} role="status">
+  {#if connNote}
+    <div class="connbar" class:off={conn === 'offline'} role="status" aria-live="polite">
       <span class="cdot" aria-hidden="true"></span>
-      <span>{conn === 'reconnecting' ? 'Reconnecting…' : 'Offline — trying to reconnect. The host still has the game.'}</span>
+      <span class="cnote">{connNote}</span>
+      {#if conn === 'offline' && $liveReconnectable}
+        <button class="trynow" onclick={retryReconnectNow}>Try now</button>
+      {/if}
     </div>
   {/if}
   {#if choosing}
@@ -298,6 +305,30 @@
     border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
     font-size: 0.85rem;
     line-height: 1.35;
+  }
+  .cnote {
+    flex: 1;
+  }
+  /* Low-emphasis retry — never a second Royal-Violet primary; the board's one primary stays
+     "Add round". Kept ≥44px wide with a legible tap area for one-handed use. */
+  .trynow {
+    flex: none;
+    min-height: 34px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .trynow:hover {
+    border-color: var(--primary);
+  }
+  .trynow:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
   }
   .connbar.off {
     background: var(--surface-2);

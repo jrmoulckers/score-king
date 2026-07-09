@@ -363,15 +363,10 @@
     }
   }
 
-  /** Swap transports from inside the sheet without ending the session (host's explicit choice). */
+  /** Swap transports from inside the sheet without ending the session (host's explicit choice).
+   * PlaySheet owns the "this disconnects joined players" confirm (an in-app themed dialog), so by
+   * the time this runs the host has already agreed. */
   async function switchMode(to: 'online' | 'nearby') {
-    if (
-      $liveParticipants.length > 1 &&
-      typeof window !== 'undefined' &&
-      !window.confirm('Switching will disconnect the players who already joined. Continue?')
-    ) {
-      return;
-    }
     if (to === 'nearby') await startNearby();
     else await startLive();
   }

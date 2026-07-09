@@ -273,8 +273,9 @@ export class WebRtcTransport implements SessionTransport {
       // Tell the engine this guest left, so it drops them and re-broadcasts the roster.
       if (conn.peerId) this.deliver({ from: conn.peerId, seq: -1, msg: { t: 'bye' } });
     } else {
-      // The host is gone — the engine tears the guest session down on `closed`.
-      this.deliver({ from: conn.peerId ?? '', seq: -1, msg: { t: 'closed' } });
+      // The host is gone — the engine tears the guest session down on `closed`. Flag it 'lost'
+      // (a dropped link, not a deliberate host-end) so the guest reads honest copy + a rejoin.
+      this.deliver({ from: conn.peerId ?? '', seq: -1, msg: { t: 'closed', reason: 'lost' } });
     }
   }
 
