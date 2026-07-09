@@ -6,14 +6,16 @@
     GAMEPLAY_SETTING_KEYS,
   } from '../lib/stores/settings';
   import { isWakeLockSupported } from '../lib/wakelock';
+  import { hapticsSupported } from '../lib/haptics';
   import BackLink from '../lib/components/BackLink.svelte';
   import Switch from '../lib/components/Switch.svelte';
 
   const wakeSupported = isWakeLockSupported();
+  const canHaptics = hapticsSupported();
 
   const canReset = $derived(differsFromDefaults($settings, GAMEPLAY_SETTING_KEYS));
 
-  function setBool(key: 'keepAwake' | 'privacyGuard' | 'roastMode', v: boolean) {
+  function setBool(key: 'keepAwake' | 'privacyGuard' | 'roastMode' | 'haptics', v: boolean) {
     settings.update((s) => ({ ...s, [key]: v }));
   }
 </script>
@@ -50,6 +52,22 @@
     <span class="muted sm">Blurs the board when you set the phone down, so a passer-by can’t read the scores. Tap to reveal.</span>
   </span>
   <Switch checked={$settings.privacyGuard} onchange={(v) => setBool('privacyGuard', v)} />
+</label>
+
+<label class="card sw-row row spread">
+  <span class="meta">
+    <span class="name">Haptic feedback</span>
+    <span class="muted sm">
+      {canHaptics
+        ? 'A gentle buzz when a round saves, an undo fires, or someone wins. Follows your Reduced-motion setting.'
+        : 'This device doesn’t support vibration.'}
+    </span>
+  </span>
+  <Switch
+    checked={$settings.haptics}
+    disabled={!canHaptics}
+    onchange={(v) => setBool('haptics', v)}
+  />
 </label>
 
 <div class="section-title">Personality</div>

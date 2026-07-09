@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ID, Player } from '../types';
   import { standings, leaders } from '../scoring';
+  import { bumpOnChange, popIn } from '../motion';
   import Avatar from './Avatar.svelte';
 
   let {
@@ -58,14 +59,14 @@
             {#if p}<Avatar name={p.name} color={p.color} size={24} decorative />{p.name}{/if}
             {#if youId && s.playerId === youId}<span class="you">You</span>{/if}
             {#if winnerSet.has(s.playerId)}
-              <span aria-hidden="true" title="Winner">🏆</span><span class="sr-only">Winner</span>
+              <span aria-hidden="true" title="Winner" use:popIn>🏆</span><span class="sr-only">Winner</span>
             {:else if leaderSet.has(s.playerId)}
-              <span aria-hidden="true" title="Leading">👑</span><span class="sr-only">Leading</span>
+              <span aria-hidden="true" title="Leading" use:popIn>👑</span><span class="sr-only">Leading</span>
             {/if}
           </span>
         </td>
         <td class="num" class:lead={isGold(s.playerId)}>
-          <span class="total">{s.total}</span>
+          <span class="total" use:bumpOnChange={s.total}>{s.total}</span>
           {#if leaderSet.size && !leaderSet.has(s.playerId) && !winnerSet.has(s.playerId)}
             <span class="gap">{behind} back</span>
           {:else if singleLeader && leaderSet.has(s.playerId) && winnerSet.size === 0 && ranked.length > 1}

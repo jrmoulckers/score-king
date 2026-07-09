@@ -65,3 +65,35 @@ export function animateMotion(...args: Parameters<typeof animate>): AnimateContr
   if (prefersReducedMotion()) return skippedAnimation();
   return animate(...args);
 }
+
+/**
+ * Svelte action: give an element a quick scale "bump" whenever the bound value
+ * changes — never on mount. Perfect for a score total that updates in place, so
+ * the eye is drawn to the number that moved without any layout shift or colour
+ * change (the number itself still carries the state). Auto-skips under reduced
+ * motion via {@link animateMotion}.
+ */
+export function bumpOnChange(node: HTMLElement, value: unknown) {
+  let prev = value;
+  return {
+    update(next: unknown) {
+      if (Object.is(next, prev)) return;
+      prev = next;
+      animateMotion(node, { scale: [1, 1.18, 1] }, { duration: 0.18, ease: 'easeOut' });
+    },
+  };
+}
+
+/**
+ * Svelte action: a small celebratory pop when an element first appears — used
+ * for the leader 👑 and winner 🏆 as they mount, so a change of reign gets a
+ * beat of delight. Motion-only decoration (the icon + text carry the meaning),
+ * so it's fully skipped under reduced motion.
+ */
+export function popIn(node: HTMLElement) {
+  animateMotion(
+    node,
+    { scale: [0.4, 1.25, 1], rotate: [-12, 4, 0] },
+    { duration: 0.42, ease: 'easeOut' },
+  );
+}
