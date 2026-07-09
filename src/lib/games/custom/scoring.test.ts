@@ -10,6 +10,7 @@ import {
 import {
   blankDef,
   duplicateDef,
+  moveColumn,
   validateDef,
   defWarnings,
   firstEmoji,
@@ -18,6 +19,7 @@ import {
   COUNTER_COLUMN_KEY,
   MAX_NAME_LEN,
   MAX_COLUMN_LABEL_LEN,
+  MAX_HELP_LEN,
   type CustomGameDef,
 } from './types';
 
@@ -149,6 +151,13 @@ describe('validateDef', () => {
     expect(validateDef(counterDef({ name: 'x'.repeat(MAX_NAME_LEN + 1) }))).toMatch(/under/i);
   });
 
+  it('caps the how-to-play length', () => {
+    expect(validateDef(counterDef({ name: 'Rummy', help: 'y'.repeat(MAX_HELP_LEN + 1) }))).toMatch(
+      /how-to-play under/i,
+    );
+    expect(validateDef(counterDef({ name: 'Rummy', help: 'y'.repeat(MAX_HELP_LEN) }))).toBeNull();
+  });
+
   it('rejects min < 1 and max < min', () => {
     expect(validateDef(counterDef({ minPlayers: 0 }))).toMatch(/Minimum/i);
     expect(validateDef(counterDef({ minPlayers: 4, maxPlayers: 2 }))).toMatch(/Max players/i);
@@ -225,5 +234,36 @@ describe('duplicateDef', () => {
     expect(dup.columns).not.toBe(src.columns);
     dup.columns[0].label = 'Changed';
     expect(src.columns[0].label).toBe('Gain');
+  });
+
+  it('truncates the copy name so a duplicate of a max-length name stays savable', () => {
+    const src = counterDef({ name: 'x'.repeat(MAX_NAME_LEN) });
+    const dup = duplicateDef(src);
+    expect(dup.name.length).toBeLessThanOrEqual(MAX_NAME_LEN);
+    // A truncated-but-valid name must not itself trip the length validation.
+    expect(validateDef(dup)).toBeNull();
+  });
+});
+
+describe('moveColumn', () => {
+  const cols = () => [
+    { ...newColumn('A'), key: 'a' },
+    { ...newColumn('B'), key: 'b' },
+    { ...newColumn('C'), key: 'c' },
+  ];
+
+  it('moves a column up and down, returning a new array', () => {
+    const src = cols();
+    const up = moveColumn(src, 2, -1);
+    expect(up.map((c) => c.key)).toEqual(['a', 'c', 'b']);
+    expect(up).not.toBe(src);
+    expect(moveColumn(src, 0, 1).map((c) => c.key)).toEqual(['b', 'a', 'c']);
+  });
+
+  it('is a no-op at the bounds or for out-of-range indices', () => {
+    const src = cols();
+    expect(moveColumn(src, 0, -1)).toBe(src);
+    expect(moveColumn(src, 2, 1)).toBe(src);
+    expect(moveColumn(src, 5, -1)).toBe(src);
   });
 });

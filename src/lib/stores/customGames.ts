@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, derived, type Readable } from 'svelte/store';
 import type { CustomGameDef } from '../games/custom/types';
 import { buildCustomModule } from '../games/custom/factory';
 import { setCustomDefsRegistry } from '../games/custom/defRegistry';
@@ -19,6 +19,18 @@ export const customGameDefs = writable<CustomGameDef[]>([]);
 
 /** Flips to true after the first load from IndexedDB, so UI can tell "loading" from "empty". */
 export const customGamesLoaded = writable<boolean>(false);
+
+/**
+ * Retired (archived, not tombstoned) custom games. Kept out of the catalog but resolvable so
+ * their history/stats stay correct — this is the reactive source the Manage-games "Retired
+ * games" section reads so an archived type can always be found and restored (not just from the
+ * transient undo toast). Newest-retired first.
+ */
+export const archivedCustomGames: Readable<CustomGameDef[]> = derived(customGameDefs, ($defs) =>
+  $defs
+    .filter((d) => d.archived && !d.deleted)
+    .sort((a, b) => (b.archivedAt ?? 0) - (a.archivedAt ?? 0)),
+);
 
 /** Rebuild the synchronous registries (def lookup + compiled module map) from a def list. */
 function syncRegistries(defs: CustomGameDef[]): void {
