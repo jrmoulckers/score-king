@@ -1,5 +1,5 @@
 import type { ID } from '../../types';
-import type { HeartsInput } from './index';
+import { shooter, type HeartsInput } from './logic';
 import type { GameSpecificStats, GameStatsInput, Metric } from '../../stats/types';
 import { fmtPct } from '../../stats/format';
 
@@ -8,14 +8,6 @@ interface HeartsAgg {
   queens: number;
   clean: number;
   rounds: number;
-}
-
-/** Who shot the moon this round (took all 13 hearts + the ♠Q), by original id. */
-function moonShooter(input: HeartsInput): ID | null {
-  for (const [id, h] of Object.entries(input.hearts)) {
-    if ((Number(h) || 0) === 13 && input.queen === id) return id;
-  }
-  return null;
 }
 
 /**
@@ -48,7 +40,7 @@ export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameS
       const points = (Number(h) || 0) + (tookQueen ? 13 : 0);
       if (points === 0) a.clean += 1;
     }
-    const moon = moonShooter(input);
+    const moon = shooter(input);
     if (moon) get(canonical(moon)).moons += 1;
   }
 

@@ -1,19 +1,16 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
 import { heartsStats } from './stats';
+import {
+  emptyInput,
+  isFinished as heartsFinished,
+  scoreRound as scoreHearts,
+  shooter,
+  validateRound as validateHearts,
+  type HeartsInput,
+} from './logic';
 
-export interface HeartsInput {
-  hearts: Record<ID, number>;
-  queen: ID | null;
-  jack: ID | null;
-}
-
-function shooter(input: HeartsInput): ID | null {
-  for (const [id, h] of Object.entries(input.hearts)) {
-    if (h === 13 && input.queen === id) return id;
-  }
-  return null;
-}
+export type { HeartsInput, HeartsConfig, MoonRule } from './logic';
 
 export const hearts: GameModule = {
   id: 'hearts',
@@ -31,6 +28,7 @@ export const hearts: GameModule = {
       label: 'Jack of Diamonds = −10 (Omnibus variant)',
       type: 'boolean',
       default: false,
+      help: 'Adds one good card worth grabbing: whoever takes the ♦J shaves 10 off their round.',
     },
     {
       key: 'moonRule',
@@ -41,62 +39,49 @@ export const hearts: GameModule = {
         { value: 'add26', label: 'Everyone else +26' },
         { value: 'subtract', label: 'Shooter −26' },
       ],
+      help: 'Take all 13 hearts and the ♠Q to shoot the moon and flip the round on its head.',
     },
   ],
 
-  createRoundInput: (ctx: RoundContext): HeartsInput => ({
-    hearts: Object.fromEntries(ctx.players.map((p) => [p.id, 0])),
-    queen: null,
-    jack: null,
-  }),
+  createRoundInput: (ctx: RoundContext): HeartsInput =>
+    emptyInput(ctx.players.map((p) => p.id)),
 
-  validateRound: (input: HeartsInput, ctx: RoundContext): string | null => {
-    const total = Object.values(input.hearts).reduce((a, b) => a + (Number(b) || 0), 0);
-    if (total !== 13) return `Hearts must total 13 (currently ${total}).`;
-    if (!input.queen) return 'Assign the Queen of Spades (♠Q) to whoever took it.';
-    if (ctx.config.variantJack && !input.jack) {
-      return 'Assign the Jack of Diamonds (♦J) to whoever took it.';
-    }
-    return null;
-  },
+  validateRound: (input: HeartsInput, ctx: RoundContext): string | null =>
+    validateHearts(input, ctx.players, ctx.config),
 
-  scoreRound: (input: HeartsInput, ctx: RoundContext): Record<ID, number> => {
-    const variantJack = !!ctx.config.variantJack;
-    const moonRule = ctx.config.moonRule ?? 'add26';
-    const base: Record<ID, number> = {};
-    for (const p of ctx.players) {
-      const id = p.id;
-      base[id] =
-        (Number(input.hearts[id]) || 0) +
-        (input.queen === id ? 13 : 0) -
-        (variantJack && input.jack === id ? 10 : 0);
-    }
-    const moon = shooter(input);
-    if (!moon) return base;
+  scoreRound: (input: HeartsInput, ctx: RoundContext): Record<ID, number> =>
+    scoreHearts(input, ctx.players.map((p) => p.id), ctx.config),
 
-    const out: Record<ID, number> = {};
-    for (const p of ctx.players) {
-      if (moonRule === 'subtract') {
-        out[p.id] = p.id === moon ? -26 : base[p.id];
-      } else {
-        out[p.id] = p.id === moon ? 0 : base[p.id] + 26;
-      }
-    }
-    return out;
-  },
-
-  isFinished: (totals, { config }) => {
-    const end = Number(config.endScore) || 100;
-    return Object.values(totals).some((t) => t >= end);
-  },
+  isFinished: (totals, { config }) => heartsFinished(totals, config),
 
   describeRound: (round: Round, players): string => {
     const input = round.input as HeartsInput;
     const name = (id: ID | null) => players.find((p) => p.id === id)?.name ?? '?';
     const moon = shooter(input);
     if (moon) return `🌙 ${name(moon)} shot the moon`;
-    return `♠Q: ${name(input.queen)}`;
+    const parts: string[] = [`♠Q ${name(input.queen)}`];
+    if (input.jack) parts.push(`♦J ${name(input.jack)}`);
+    return parts.join(' · ');
   },
+
+  help: [
+    'Hearts is a dodging game: lowest score wins. Every round hands out 26 penalty',
+    'points — 13 hearts (♥ = 1 each) and the Queen of Spades (♠Q = 13). Take as few',
+    'as you can.',
+    '',
+    'Each round: give every heart to whoever took it (they must total 13), then tap',
+    'the ♠Q onto whoever got stuck with her.',
+    '',
+    '🌙 Shoot the moon: take ALL 13 hearts AND the ♠Q in one round. Instead of eating',
+    '26, you flip it — either everyone else takes +26, or you take −26 (set in setup).',
+    'A huge, risky swing: miss it by one heart and you just took the whole load.',
+    '',
+    '♦J Omnibus (optional): the Jack of Diamonds is a good card — whoever takes it',
+    'shaves 10 points off their round.',
+    '',
+    'The game ends when someone reaches the end score (100 by default). Lowest total',
+    'at that moment wins the crown.',
+  ].join('\n'),
 
   stats: heartsStats,
 
