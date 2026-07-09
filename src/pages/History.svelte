@@ -11,7 +11,7 @@
   import { getModule } from '../lib/games/registry';
   import { getRounds } from '../lib/storage/db';
   import { link } from '../lib/router';
-  import { formatDateTime } from '../lib/util';
+  import { formatDateTime, relativeTime } from '../lib/util';
   import { showActionToast } from '../lib/stores/toast';
   import { crewSignature, crewNames, setCrewName } from '../lib/stores/crews';
   import Avatar from '../lib/components/Avatar.svelte';
@@ -19,6 +19,7 @@
   import type { Game, Player } from '../lib/types';
   import ShareResultsSheet from '../lib/components/ShareResultsSheet.svelte';
   import { buildRecapPayload, type RecapPayload } from '../lib/share/recap';
+  import { gameTime as ts, dateBucket, haystack, nameResolver } from './history';
 
   /** Below this many games, the list is glanceable on its own — no controls shown. */
   const CONTROLS_MIN = 6;
@@ -63,27 +64,24 @@
   const archivedGames = $derived($games.filter((g) => g.archived));
   const showControls = $derived($activeGames.length >= CONTROLS_MIN);
 
+  // When the controls are hidden (few active games) the search/status inputs are
+  // unmounted, so honoring a stale value here would silently hide games with no visible
+  // way to clear it. Gate the filters on the controls actually being shown.
+  const effSearch = $derived(showControls ? search : '');
+  const effStatus = $derived(showControls ? status : 'all');
+
   const viewSummary = $derived(
     [groupBy === 'date' ? null : GROUP_LABEL[groupBy], sort === 'oldest' ? 'Oldest' : null]
       .filter(Boolean)
       .join(' · '),
   );
 
-  function ts(g: Game): number {
-    return g.finishedAt ?? g.createdAt;
-  }
+  const nameOf = $derived(nameResolver(playerMap));
   function names(ids: string[]): string {
-    return ids.map((id) => playerMap.get(id)?.name ?? '?').join(', ');
+    return ids.map(nameOf).join(', ');
   }
   function winners(ids: string[] | undefined): string {
-    return (ids ?? []).map((id) => playerMap.get(id)?.name ?? '?').join(' & ');
-  }
-  function haystack(g: Game): string {
-    const m = getModule(g.type);
-    const parts = [m?.name ?? g.type, g.name ?? ''];
-    for (const id of g.playerIds) parts.push(playerMap.get(id)?.name ?? '');
-    for (const id of g.winnerIds ?? []) parts.push(playerMap.get(id)?.name ?? '');
-    return parts.join(' ').toLowerCase();
+    return (ids ?? []).map(nameOf).join(' & ');
   }
   function push<K, V>(m: Map<K, V[]>, k: K, v: V): void {
     const a = m.get(k);
@@ -93,9 +91,12 @@
 
   const filtered = $derived.by(() => {
     let list = $activeGames;
-    if (status !== 'all') list = list.filter((g) => g.status === status);
-    const q = search.trim().toLowerCase();
-    if (q) list = list.filter((g) => haystack(g).includes(q));
+    if (effStatus !== 'all') list = list.filter((g) => g.status === effStatus);
+    const q = effSearch.trim().toLowerCase();
+    if (q) {
+      const typeName = (type: string) => getModule(type)?.name ?? type;
+      list = list.filter((g) => haystack(g, typeName, nameOf).includes(q));
+    }
     return list;
   });
 
@@ -106,13 +107,8 @@
 
     if (groupBy === 'date') {
       const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const startOfWeek = startOfToday - ((now.getDay() + 6) % 7) * 86400000;
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-      const bucket = (t: number) =>
-        t >= startOfToday ? 'today' : t >= startOfWeek ? 'week' : t >= startOfMonth ? 'month' : 'earlier';
       const map = new Map<string, Game[]>();
-      for (const g of list) push(map, bucket(ts(g)), g);
+      for (const g of list) push(map, dateBucket(ts(g), now), g);
       const order = sort === 'oldest' ? [...DATE_BUCKETS].reverse() : DATE_BUCKETS;
       return order
         .filter((b) => map.has(b.key))
@@ -225,9 +221,10 @@
           {#if g.status === 'active'}<span class="pill">in progress</span>{:else if g.status === 'abandoned'}<span class="pill">🪦 abandoned</span>{/if}
         </span>
         <span class="muted sm oneline">{names(g.playerIds)}</span>
-        <span class="muted sm oneline">
-          {formatDateTime(ts(g))}
-          {#if g.status === 'finished'} · 🏆 {winners(g.winnerIds) || '—'}{/if}
+        <span class="muted sm oneline" title={formatDateTime(ts(g))}>
+          {relativeTime(ts(g))}
+          {#if g.roundCount} · {g.roundCount} {g.roundCount === 1 ? 'round' : 'rounds'}{/if}
+          {#if g.status === 'finished'} · 🏆 {winners(g.winnerIds) || '—'}{#if g.winnerScore != null} <strong class="lead score">{g.winnerScore}</strong>{/if}{/if}
           {#if g.status === 'abandoned'} · no winner{/if}
         </span>
       </span>
@@ -328,7 +325,10 @@
               placeholder="Crew name…"
               aria-label="Crew name"
               bind:value={crewDraft}
-              onkeydown={(e) => { if (e.key === 'Enter') saveCrewEdit(grp.signature!); }}
+              onkeydown={(e) => {
+                if (e.key === 'Enter') saveCrewEdit(grp.signature!);
+                else if (e.key === 'Escape') editingCrew = null;
+              }}
             />
             <button class="btn small primary" onclick={() => saveCrewEdit(grp.signature!)}>Save</button>
             <button class="btn small ghost" onclick={() => (editingCrew = null)}>Cancel</button>
@@ -371,6 +371,11 @@
               <span class="meta">
                 <span class="titleline"><strong>{m?.name ?? g.type}</strong></span>
                 <span class="muted sm oneline">{names(g.playerIds)}</span>
+                <span class="muted sm oneline" title={formatDateTime(ts(g))}>
+                  {relativeTime(ts(g))}
+                  {#if g.status === 'finished'} · 🏆 {winners(g.winnerIds) || '—'}{/if}
+                  {#if g.status === 'abandoned'} · no winner{/if}
+                </span>
               </span>
             </a>
             <span class="row actions">
@@ -563,6 +568,11 @@
   }
   .sm {
     font-size: 0.85rem;
+  }
+  /* Winner's final total in the summary — Crown Gold (.lead) + tabular so the
+     glanceable "who won and by how much" stays legible and non-jittering. */
+  .score {
+    font-variant-numeric: tabular-nums;
   }
   .arch {
     opacity: 0.82;
