@@ -22,6 +22,40 @@ export const DEFAULT_EMOJI = '🎲';
 /** The single implicit column used by a `counter`-shaped game. */
 export const COUNTER_COLUMN_KEY = 'v';
 
+/**
+ * Field length caps. Kept small so a game name/tagline never overflows a catalog tile or the
+ * live preview, and a column label stays readable on the round-entry stepper. Enforced both by
+ * the inputs' `maxlength` (soft, in the builder) and by {@link validateDef} (hard, on save).
+ */
+export const MAX_NAME_LEN = 24;
+export const MAX_TAGLINE_LEN = 48;
+export const MAX_COLUMN_LABEL_LEN = 16;
+
+/** A curated palette of game-night emojis offered as one-tap picks in the builder. */
+export const EMOJI_CHOICES = [
+  '🎲', '🃏', '👑', '🏆', '🎯', '🀄', '♠️', '♥️', '♦️', '♣️',
+  '🎰', '🎳', '🏀', '⚽', '🏈', '🥏', '🏓', '🎱', '🧩', '🕹️',
+  '🍻', '🎉', '🔥', '⭐', '💎', '🚀', '🐉', '🦄', '🐔', '🎩',
+];
+
+/**
+ * The first *grapheme* of an emoji field — collapses a whole ZWJ sequence (e.g. 🏴‍☠️) to one
+ * visible glyph and drops trailing text, so the catalog tile always shows a single clean emoji
+ * instead of whatever a user pasted or typed. Returns '' when the input has no usable glyph.
+ */
+export function firstEmoji(input: string | undefined): string {
+  const trimmed = (input ?? '').trim();
+  if (!trimmed) return '';
+  // Prefer grapheme segmentation where available (keeps ZWJ/flag/keycap sequences intact).
+  const Seg = (Intl as unknown as { Segmenter?: typeof Intl.Segmenter }).Segmenter;
+  if (Seg) {
+    const seg = new Seg(undefined, { granularity: 'grapheme' });
+    for (const s of seg.segment(trimmed)) return s.segment;
+    return '';
+  }
+  return Array.from(trimmed)[0] ?? '';
+}
+
 export type CustomInputShape = 'counter' | 'columns';
 
 export interface CustomColumn {
@@ -129,12 +163,44 @@ export function duplicateDef(src: CustomGameDef): CustomGameDef {
 
 /** Validate a def for saving. Returns a human-readable error, or null when valid. */
 export function validateDef(def: CustomGameDef): string | null {
-  if (!def.name.trim()) return 'Give your game a name.';
+  const name = def.name.trim();
+  if (!name) return 'Give your game a name.';
+  if (name.length > MAX_NAME_LEN) return `Keep the name under ${MAX_NAME_LEN} characters.`;
+  if (def.tagline.trim().length > MAX_TAGLINE_LEN) {
+    return `Keep the tagline under ${MAX_TAGLINE_LEN} characters.`;
+  }
   if (!Number.isFinite(def.minPlayers) || def.minPlayers < 1) return 'Minimum players must be at least 1.';
   if (def.maxPlayers < def.minPlayers) return "Max players can't be less than min players.";
   if (def.inputShape === 'columns') {
     if (def.columns.length < 1) return 'Add at least one scoring column.';
     if (def.columns.some((c) => !c.label.trim())) return 'Every column needs a label.';
+    if (def.columns.some((c) => c.label.trim().length > MAX_COLUMN_LABEL_LEN)) {
+      return `Keep column names under ${MAX_COLUMN_LABEL_LEN} characters.`;
+    }
+    const seen = new Set<string>();
+    for (const c of def.columns) {
+      const key = c.label.trim().toLowerCase();
+      if (seen.has(key)) return 'Give each column a different name.';
+      seen.add(key);
+    }
+    if (def.columns.every((c) => c.negative)) {
+      return 'At least one column must add to the score, or no one can win.';
+    }
   }
   return null;
+}
+
+/**
+ * Non-blocking guidance shown live in the builder — things that are *valid* but probably not what
+ * the author intended, surfaced as gentle nudges rather than hard errors. Pure and testable.
+ */
+export function defWarnings(def: CustomGameDef): string[] {
+  const out: string[] = [];
+  if (def.target && def.target > 0 && def.roundLimit && def.roundLimit > 0) {
+    out.push('Whichever comes first ends the game: the target or the round limit.');
+  }
+  if (def.inputShape === 'columns' && def.columns.length === 1) {
+    out.push('One column works, but “One number” is simpler for a single value.');
+  }
+  return out;
 }
