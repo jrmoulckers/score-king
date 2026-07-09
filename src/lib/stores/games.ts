@@ -104,6 +104,7 @@ export async function finishGame(game: Game): Promise<Game> {
     status: 'finished',
     finishedAt: Date.now(),
     winnerIds: winners,
+    winnerScore: winners.length ? totals[winners[0]] : undefined,
     roundCount: rounds.length,
   };
   await db.putGame(updated);
@@ -112,7 +113,13 @@ export async function finishGame(game: Game): Promise<Game> {
 }
 
 export async function reopenGame(game: Game): Promise<Game> {
-  const updated: Game = { ...game, status: 'active', finishedAt: undefined, winnerIds: undefined };
+  const updated: Game = {
+    ...game,
+    status: 'active',
+    finishedAt: undefined,
+    winnerIds: undefined,
+    winnerScore: undefined,
+  };
   await db.putGame(updated);
   await refreshGames();
   return updated;
@@ -130,6 +137,7 @@ export async function abandonGame(game: Game): Promise<Game> {
     status: 'abandoned',
     finishedAt: Date.now(),
     winnerIds: undefined,
+    winnerScore: undefined,
     roundCount: rounds.length,
   };
   await db.putGame(updated);

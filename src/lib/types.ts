@@ -70,6 +70,13 @@ export interface Game {
   createdAt: number;
   finishedAt?: number;
   winnerIds?: ID[];
+  /**
+   * The winning total captured at finish time — a glanceable summary value for the
+   * History log (the leader's final score). Stored so History needn't re-read every
+   * game's rounds to show it. Cleared when a game is reopened or abandoned. Absent on
+   * games finished before this field existed (History degrades to no score for those).
+   */
+  winnerScore?: number;
   roundCount: number;
   /**
    * User archive: hidden from the History library's main list and from Home, kept
