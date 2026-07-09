@@ -7,7 +7,13 @@
     blankDef,
     newColumn,
     validateDef,
+    defWarnings,
+    firstEmoji,
+    EMOJI_CHOICES,
     DEFAULT_EMOJI,
+    MAX_NAME_LEN,
+    MAX_TAGLINE_LEN,
+    MAX_COLUMN_LABEL_LEN,
     type CustomGameDef,
   } from '../lib/games/custom/types';
   import { customGameDefs, customGamesLoaded, saveCustomGame } from '../lib/stores/customGames';
@@ -22,6 +28,15 @@
   let dir = $state<'high' | 'low'>('high');
   let shape = $state<'counter' | 'columns'>('counter');
   let loadedKey = $state<string | null>(null);
+  // Snapshot of the def as loaded, so Cancel can warn before discarding real edits.
+  let snapshot = $state<string>('');
+
+  function serialize(d: CustomGameDef): string {
+    // Everything the author can change; volatile timestamps are excluded so an untouched
+    // form never reads as "dirty".
+    const { createdAt: _c, updatedAt: _u, ...rest } = d;
+    return JSON.stringify(rest);
+  }
 
   // Load the def to edit (or a blank one) once it's resolvable. Depends on the store so a
   // cold deep-link to /create/<id> fills in as soon as IndexedDB answers.
@@ -33,6 +48,7 @@
         dir = 'high';
         shape = 'counter';
         loadedKey = '__new__';
+        snapshot = serialize(def);
       }
       return;
     }
@@ -42,6 +58,7 @@
       dir = def.lowerIsBetter ? 'low' : 'high';
       shape = def.inputShape;
       loadedKey = id;
+      snapshot = serialize(def);
     }
   });
 
@@ -54,6 +71,8 @@
     if (shape === 'columns' && def.columns.length === 0) def.columns = [newColumn('')];
   });
 
+  const dirty = $derived(serialize(def) !== snapshot);
+
   const notFound = $derived(!!id && $customGamesLoaded && !$customGameDefs.some((d) => d.id === id));
 
   // A plain-language recap of what the author has built — reinforces meaning without color.
@@ -63,7 +82,7 @@
       const n = def.columns.length;
       parts.push(`${n} column${n === 1 ? '' : 's'}`);
     }
-    if (def.target && def.target > 0) parts.push(`first to ${def.target}`);
+    if (def.target && def.target > 0) parts.push(`${targetPhrase} ${def.target}`);
     if (def.roundLimit && def.roundLimit > 0) {
       parts.push(`${def.roundLimit} round${def.roundLimit === 1 ? '' : 's'}`);
     }
@@ -79,18 +98,18 @@
     { value: 'columns', label: 'Columns' },
   ];
 
-  function addColumn() {
-    def.columns = [...def.columns, newColumn('')];
-  }
-  function removeColumn(i: number) {
-    def.columns = def.columns.filter((_, j) => j !== i);
-  }
+  // For a "lowest wins" game a target isn't "first to N" — it's a bust ceiling that *ends*
+  // the game (like Hearts to 100), so the label/summary copy flips with the win direction.
+  const targetLabel = $derived(dir === 'low' ? 'End the game at' : 'Target score');
+  const targetPhrase = $derived(dir === 'low' ? 'ends at' : 'first to');
 
-  async function save() {
-    const clean: CustomGameDef = {
+  // Normalize the working def exactly as it will be saved — shared by the live validation
+  // preview and save() so the two never disagree.
+  function buildClean(): CustomGameDef {
+    return {
       ...def,
       name: def.name.trim(),
-      emoji: (def.emoji || '').trim() || DEFAULT_EMOJI,
+      emoji: firstEmoji(def.emoji) || DEFAULT_EMOJI,
       tagline: def.tagline.trim(),
       help: (def.help ?? '').trim(),
       minPlayers: Math.max(1, Math.round(def.minPlayers) || 1),
@@ -104,18 +123,52 @@
           : def.columns,
       updatedAt: Date.now(),
     };
+  }
+
+  // Live guidance: the blocking error (if any) and any soft, non-blocking nudges. Surfaced
+  // in-place so the author is guided *before* tapping the button — not only via a save toast.
+  const error = $derived(validateDef(buildClean()));
+  const warnings = $derived.by(() => {
+    const list = defWarnings(buildClean());
+    const name = def.name.trim().toLowerCase();
+    if (name) {
+      const clash = $customGameDefs.some(
+        (d) => d.id !== def.id && !d.archived && !d.deleted && d.name.trim().toLowerCase() === name,
+      );
+      if (clash) list.push(`You already have a game called “${def.name.trim()}”.`);
+    }
+    return list;
+  });
+
+  function addColumn() {
+    def.columns = [...def.columns, newColumn('')];
+  }
+  function removeColumn(i: number) {
+    def.columns = def.columns.filter((_, j) => j !== i);
+  }
+
+  async function save() {
+    const clean = buildClean();
     const err = validateDef(clean);
     if (err) {
       showToast(err);
       return;
     }
+    // Snapshot the saved state so the follow-up navigation isn't treated as discarding edits.
+    snapshot = serialize(clean);
     await saveCustomGame(clean);
     showToast(editing ? 'Game updated.' : 'Game created.');
     navigate(`/${clean.id}`);
   }
 
   function cancel() {
+    if (dirty && !confirm('Discard your changes?')) return;
     navigate(editing ? `/${def.id}` : '/');
+  }
+
+  /** One-tap emoji from the curated palette. */
+  function pickEmoji(e: string) {
+    def.emoji = e;
   }
 </script>
 
@@ -135,8 +188,8 @@
   </div>
 
   <div class="section-title">Preview</div>
-  <div class="preview gametile" aria-hidden="true">
-    <span class="emoji">{def.emoji || DEFAULT_EMOJI}</span>
+  <div class="preview gametile" aria-label={`Preview: ${def.name.trim() || 'Untitled game'}. ${def.tagline.trim() || summary}`}>
+    <span class="emoji" aria-hidden="true">{firstEmoji(def.emoji) || DEFAULT_EMOJI}</span>
     <span class="name">{def.name.trim() || 'Untitled game'}</span>
     <span class="tag">{def.tagline.trim() || summary}</span>
   </div>
@@ -160,16 +213,32 @@
         <input
           type="text"
           bind:value={def.name}
+          maxlength={MAX_NAME_LEN}
           placeholder="Rummy to 500"
           aria-label="Game name"
         />
       </div>
+    </div>
+    <div class="emoji-pick" role="group" aria-label="Suggested emojis">
+      {#each EMOJI_CHOICES as e (e)}
+        <button
+          type="button"
+          class="emoji-opt"
+          class:on={firstEmoji(def.emoji) === e}
+          aria-pressed={firstEmoji(def.emoji) === e}
+          aria-label={`Use ${e}`}
+          onclick={() => pickEmoji(e)}
+        >
+          {e}
+        </button>
+      {/each}
     </div>
     <div>
       <div class="fieldlabel">Tagline <span class="muted">(optional)</span></div>
       <input
         type="text"
         bind:value={def.tagline}
+        maxlength={MAX_TAGLINE_LEN}
         placeholder="Low score takes it"
         aria-label="Tagline"
       />
@@ -204,6 +273,7 @@
                 class="collabel"
                 type="text"
                 bind:value={col.label}
+                maxlength={MAX_COLUMN_LABEL_LEN}
                 placeholder={`Column ${i + 1}`}
                 aria-label={`Column ${i + 1} name`}
               />
@@ -232,7 +302,7 @@
   <div class="card stack">
     <div class="row spread optrow">
       <div>
-        <div class="fieldlabel">Target score</div>
+        <div class="fieldlabel">{targetLabel}</div>
         <div class="muted sm">0 = no target</div>
       </div>
       <Stepper bind:value={def.target} min={0} step={def.step && def.step > 1 ? def.step : 10} />
@@ -274,7 +344,17 @@
   </div>
 
   <div class="actions stack">
-    <button class="btn primary block" onclick={save} disabled={!def.name.trim()}>
+    {#if warnings.length}
+      <div class="notes" role="note">
+        {#each warnings as w (w)}
+          <div class="note muted sm">💡 {w}</div>
+        {/each}
+      </div>
+    {/if}
+    {#if error && def.name.trim()}
+      <div class="formerror sm" role="alert">⚠ {error}</div>
+    {/if}
+    <button class="btn primary block" onclick={save} disabled={!!error}>
       {editing ? 'Save changes' : 'Create game'}
     </button>
     <button class="btn ghost block" onclick={cancel}>Cancel</button>
@@ -304,6 +384,51 @@
     width: 64px;
     text-align: center;
     font-size: 1.4rem;
+  }
+  /* One-tap suggested emojis — a wrapping grid of neutral chips (no gold, no second violet). */
+  .emoji-pick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .emoji-opt {
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    line-height: 1;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    cursor: pointer;
+    transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  .emoji-opt:hover {
+    background: var(--surface-3);
+  }
+  .emoji-opt:active {
+    transform: translateY(1px);
+  }
+  .emoji-opt.on {
+    border-color: var(--primary);
+    background: var(--surface-3);
+  }
+  .emoji-opt:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+  .notes {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  /* Errors carry a ⚠ glyph + words so meaning never rides on color alone. */
+  .formerror {
+    color: var(--bad);
+    margin-bottom: 4px;
   }
   /* Column rows are a form group on the next surface step up — not nested cards (no shadow). */
   .colrow {

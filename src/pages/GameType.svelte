@@ -1,10 +1,17 @@
 <script lang="ts">
   import { getModule } from '../lib/games/registry';
   import { defaultConfig } from '../lib/types';
-  import { activeGames, createGame } from '../lib/stores/games';
-  import { customGameDefs } from '../lib/stores/customGames';
+  import { activeGames, createGame, games } from '../lib/stores/games';
+  import {
+    customGameDefs,
+    removeCustomGame,
+    restoreCustomGame,
+    saveCustomGame,
+  } from '../lib/stores/customGames';
+  import { isCustomType, duplicateDef } from '../lib/games/custom/types';
+  import { editCustomHref } from '../lib/stores/catalog';
   import { navigate, link } from '../lib/router';
-  import { showToast } from '../lib/stores/toast';
+  import { showToast, showActionToast } from '../lib/stores/toast';
   import PlayerSelect from '../lib/components/PlayerSelect.svelte';
   import ConfigForm from '../lib/components/ConfigForm.svelte';
   import BackLink from '../lib/components/BackLink.svelte';
@@ -16,6 +23,12 @@
     void $customGameDefs;
     return getModule(type);
   });
+
+  // The editable definition behind a custom type (undefined for built-ins), plus whether any
+  // game of this type was ever played — which turns Delete into an archive (retain history).
+  const def = $derived($customGameDefs.find((d) => d.id === type));
+  const isCustom = $derived(isCustomType(type));
+  const playedCount = $derived($games.filter((g) => g.type === type).length);
 
   let selected = $state<string[]>([]);
   let config = $state<Record<string, any>>({});
@@ -45,6 +58,30 @@
     const g = await createGame(type, [...selected], { ...config });
     navigate(`/play/${g.id}`);
   }
+
+  // Clone-and-tweak: save a fresh copy, then open it in the builder to adjust.
+  async function duplicate() {
+    if (!def) return;
+    const copy = duplicateDef(def);
+    await saveCustomGame(copy);
+    showToast('Duplicated — tweak your copy.');
+    navigate(editCustomHref(copy.id));
+  }
+
+  // Delete a custom type. Played types archive (history/stats keep the right scoring); unplayed
+  // ones hard-delete. Either way it's undoable from the toast — the app's standard pattern.
+  async function del() {
+    if (!def) return;
+    const inUse = playedCount > 0;
+    const snapshot = { ...def, columns: def.columns.map((c) => ({ ...c })) };
+    await removeCustomGame(def.id, inUse);
+    const label = inUse ? `${def.name} archived` : `${def.name} deleted`;
+    showActionToast(label, 'Undo', () => {
+      if (inUse) void restoreCustomGame(snapshot.id);
+      else void saveCustomGame(snapshot);
+    });
+    navigate('/');
+  }
 </script>
 
 {#if !module}
@@ -62,6 +99,14 @@
       <div class="muted">{module.tagline}</div>
     </div>
   </div>
+
+  {#if isCustom && def}
+    <div class="authoring" aria-label="Custom game actions">
+      <a class="btn small" href={editCustomHref(type)} use:link>Edit</a>
+      <button class="btn small ghost" type="button" onclick={duplicate}>Duplicate</button>
+      <button class="btn small danger" type="button" onclick={del}>Delete</button>
+    </div>
+  {/if}
 
   {#if activeOfType.length}
     <div class="section-title">In progress</div>
@@ -100,6 +145,15 @@
 {/if}
 
 <style>
+  .authoring {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 6px 4px 2px;
+  }
+  .authoring .btn {
+    text-decoration: none;
+  }
   .resume {
     text-decoration: none;
     color: inherit;
