@@ -356,8 +356,8 @@
     margin: 0 2px 8px;
   }
   .chip {
-    min-height: 40px;
-    padding: 6px 12px;
+    min-height: 46px;
+    padding: 6px 14px;
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--surface);

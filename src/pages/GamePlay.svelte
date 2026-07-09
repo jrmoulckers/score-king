@@ -563,7 +563,7 @@
         {#if draftError}
           <p class="entry-error" role="alert">⚠️ {draftError}</p>
         {/if}
-        <button class="btn primary block" onclick={saveRound} disabled={!!draftError}>Save round</button>
+        <button class="btn primary block save-round" onclick={saveRound} disabled={!!draftError}>Save round</button>
       </div>
     {:else}
       <div class="card center" style="margin-top: 12px">All {maxR} rounds played.</div>
@@ -710,6 +710,22 @@
     align-items: center;
     margin-top: 18px;
     margin-bottom: 8px;
+  }
+  /* Sticky round-entry commit: the single Royal Violet action stays pinned in the
+     thumb zone (just above the bottom tab bar) so a tall editor with many players
+     can never push "Save round" below the fold. It rides normally when the card
+     already fits; on desktop the tab bar is gone, so it returns to inline flow. */
+  .save-round {
+    position: sticky;
+    bottom: calc(74px + env(safe-area-inset-bottom));
+    z-index: 6;
+    box-shadow: var(--shadow);
+  }
+  @media (min-width: 900px) {
+    .save-round {
+      position: static;
+      box-shadow: none;
+    }
   }
   /* Inline round-entry error: an assertive alert co-signalled with ⚠️ and words
      (never colour alone) so an invalid round is clear before Save is even tapped.

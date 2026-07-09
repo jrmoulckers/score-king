@@ -255,8 +255,8 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    min-height: 40px;
-    padding: 0 16px;
+    min-height: 46px;
+    padding: 0 18px;
     border-radius: 999px;
     border: 1px solid var(--border);
     background: var(--surface-3);
