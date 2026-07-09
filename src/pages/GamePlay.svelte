@@ -18,7 +18,7 @@
   } from '../lib/stores/games';
   import { getModule } from '../lib/games/registry';
   import { customGameDefs } from '../lib/stores/customGames';
-  import { computeTotals } from '../lib/scoring';
+  import { computeTotals, leaders } from '../lib/scoring';
   import { navigate, link, absoluteUrl } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
   import { announce } from '../lib/stores/announcer';
@@ -62,6 +62,9 @@
   let editing = $state<Round | null>(null);
   let editDraft = $state<any>(null);
   let justSavedId = $state<string | null>(null);
+  // Scorecard cells can show each round's delta (default) or the running total
+  // through that round, so you can see how the lead was built and when it changed.
+  let showRunning = $state(false);
 
   const module = $derived.by(() => {
     void $customGameDefs;
@@ -76,18 +79,47 @@
   );
   const totals = $derived(game ? computeTotals(rounds, game.playerIds) : {});
   const lower = $derived(game && module ? resolveLower(module, game.config) : false);
-  const leaderIds = $derived.by(() => {
-    const ids = new Set<string>();
-    if (!game || rounds.length === 0 || orderedPlayers.length === 0) return ids;
-    const vals = orderedPlayers.map((p) => totals[p.id] ?? 0);
-    const best = lower ? Math.min(...vals) : Math.max(...vals);
-    for (const p of orderedPlayers) if ((totals[p.id] ?? 0) === best) ids.add(p.id);
-    return ids;
-  });
+  // Shared "who's actually ahead" rule: empty until scores diverge, so the gold
+  // footer total and the leader announcement never crown a tied-at-zero table.
+  const leaderIds = $derived(game ? leaders(totals, game.playerIds, lower) : new Set<string>());
   const maxR = $derived(
     game && module && module.maxRounds ? module.maxRounds(game.config, game.playerIds.length) : null,
   );
   const canAddRound = $derived(maxR == null || rounds.length < maxR);
+  // Validate the in-progress entry live so an invalid round is caught inline —
+  // Save is disabled with the reason shown — instead of only surfacing as a
+  // transient toast after a tap that's easy to miss one-handed in dim light.
+  const draftError = $derived.by(() => {
+    if (!game || !module || !draft) return null;
+    try {
+      return module.validateRound($state.snapshot(draft), buildCtx(rounds.length, totals));
+    } catch {
+      return null;
+    }
+  });
+  const editError = $derived.by(() => {
+    if (!game || !module || !editing || editDraft == null) return null;
+    try {
+      return module.validateRound(
+        $state.snapshot(editDraft),
+        buildCtx(editing.index, totalsBefore(editing.index)),
+      );
+    } catch {
+      return null;
+    }
+  });
+  // Cumulative total for each player through each round, keyed by round id, for
+  // the "Running totals" scorecard view.
+  const runningTotals = $derived.by(() => {
+    const acc: Record<string, number> = {};
+    for (const pid of game?.playerIds ?? []) acc[pid] = 0;
+    const map: Record<string, Record<string, number>> = {};
+    for (const r of rounds) {
+      for (const [pid, d] of Object.entries(r.deltas)) acc[pid] = (acc[pid] ?? 0) + d;
+      map[r.id] = { ...acc };
+    }
+    return map;
+  });
   const finishedReady = $derived.by(() => {
     if (!game || !module) return false;
     if (maxR != null && rounds.length >= maxR) return true;
@@ -513,9 +545,12 @@
     <div class="card stack" style="margin-top: 12px">
       <strong>Editing round {editing.index + 1}</strong>
       <EditorC bind:input={editDraft} ctx={ectx} />
+      {#if editError}
+        <p class="entry-error" role="alert">⚠️ {editError}</p>
+      {/if}
       <div class="row" style="gap: 10px">
         <button class="btn grow" onclick={cancelEdit}>Cancel</button>
-        <button class="btn primary grow" onclick={saveEdit}>Save changes</button>
+        <button class="btn primary grow" onclick={saveEdit} disabled={!!editError}>Save changes</button>
       </div>
       <button class="btn danger block" onclick={() => editing && del(editing)}>
         Delete round {editing.index + 1}
@@ -530,7 +565,10 @@
         {#if draft}
           <AddEditor bind:input={draft} ctx={actx} />
         {/if}
-        <button class="btn primary block" onclick={saveRound}>Save round</button>
+        {#if draftError}
+          <p class="entry-error" role="alert">⚠️ {draftError}</p>
+        {/if}
+        <button class="btn primary block" onclick={saveRound} disabled={!!draftError}>Save round</button>
       </div>
     {:else}
       <div class="card center" style="margin-top: 12px">All {maxR} rounds played.</div>
@@ -542,7 +580,9 @@
         <button class="btn {canAddRound ? '' : 'primary'}" onclick={doFinish}>Finish &amp; record winner</button>
       </div>
     {:else}
-      <button class="btn ghost block" style="margin-top: 12px" onclick={doFinish}>Finish game now</button>
+      {#if rounds.length}
+        <button class="btn ghost block" style="margin-top: 12px" onclick={doFinish}>Finish game now</button>
+      {/if}
     {/if}
     <button
       class="btn ghost block"
@@ -553,7 +593,16 @@
   {/if}
 
   {#if rounds.length}
-    <div class="section-title">Scorecard</div>
+    <div class="row spread scorecard-head">
+      <div class="section-title" style="margin: 0">Scorecard</div>
+      <button
+        type="button"
+        class="btn small ghost"
+        onclick={() => (showRunning = !showRunning)}
+        aria-pressed={showRunning}
+        title="Toggle between each round's points and the running total"
+      >{showRunning ? '∑ Running totals' : '± Per round'}</button>
+    </div>
     <div class="scroll">
       <table class="matrix">
         <thead>
@@ -570,7 +619,7 @@
             <tr class:flash={r.id === justSavedId}>
               <td>{r.index + 1}</td>
               {#each orderedPlayers as p (p.id)}
-                <td class="num">{fmt(r.deltas[p.id])}</td>
+                <td class="num">{showRunning ? (runningTotals[r.id]?.[p.id] ?? 0) : fmt(r.deltas[p.id])}</td>
               {/each}
               <td class="acts">
                 {#if game.status === 'active'}
@@ -589,7 +638,7 @@
           <tr>
             <th scope="row">Total</th>
             {#each orderedPlayers as p (p.id)}
-              <td class="num" class:lead={leaderIds.has(p.id)}>{totals[p.id] ?? 0}</td>
+              <td class="num" class:lead={leaderIds.has(p.id) || (game.winnerIds ?? []).includes(p.id)}>{totals[p.id] ?? 0}</td>
             {/each}
             <td></td>
           </tr>
@@ -661,6 +710,24 @@
     .livedot.reconnecting {
       animation-duration: 3s;
     }
+  }
+  .scorecard-head {
+    align-items: center;
+    margin-top: 18px;
+    margin-bottom: 8px;
+  }
+  /* Inline round-entry error: an assertive alert co-signalled with ⚠️ and words
+     (never colour alone) so an invalid round is clear before Save is even tapped.
+     Save is disabled while this shows, so the reason is always on screen. */
+  .entry-error {
+    margin: 0;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bad) 12%, var(--surface-2));
+    border: 1px solid color-mix(in srgb, var(--bad) 45%, var(--border));
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
   }
   .banner {
     margin-top: 12px;

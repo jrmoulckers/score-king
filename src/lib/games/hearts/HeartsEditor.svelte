@@ -77,12 +77,4 @@
   .toggle.on .sub {
     color: rgba(255, 255, 255, 0.8);
   }
-  .toggle.jack.on {
-    background: var(--accent);
-    border-color: #b88600;
-    color: #1c1d2e;
-  }
-  .toggle.jack.on .sub {
-    color: rgba(0, 0, 0, 0.6);
-  }
 </style>
