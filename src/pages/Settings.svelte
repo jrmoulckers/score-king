@@ -9,9 +9,12 @@
     deserializeSnapshot,
     getOneDrive,
     reconcile,
+    pullMerge,
     DEFAULT_BACKUP_FILE,
     fileNameForTitle,
     titleFromFileName,
+    isValidBackupTitle,
+    sameBackupFile,
     ConflictError,
   } from '../lib/storage/sync';
   import type { BackupInfo } from '../lib/storage/sync';
@@ -20,7 +23,7 @@
   import { refreshGames } from '../lib/stores/games';
   import { refreshPlayers } from '../lib/stores/players';
   import { showToast } from '../lib/stores/toast';
-  import { relativeTime, relativeTimeSec } from '../lib/util';
+  import { relativeTime, relativeTimeSec, formatDate } from '../lib/util';
   import JsonIcon from '../lib/components/JsonIcon.svelte';
 
   let override = $state($settings.oneDriveClientId);
@@ -39,6 +42,15 @@
 
   const activeFileName = $derived($settings.oneDriveBackupFile || DEFAULT_BACKUP_FILE);
 
+  // The active backup's own last-modified time on OneDrive (from the loaded list). Lets the
+  // status reflect an existing cloud backup even before THIS device has synced this session —
+  // otherwise a freshly connected device wrongly reads "Not backed up yet".
+  const activeBackupModified = $derived(
+    backups.find((b) => sameBackupFile(b.file, activeFileName))?.modifiedAt ?? null,
+  );
+  // Prefer this device's own last-sync stamp; fall back to the file's remote modified time.
+  const lastBackedUp = $derived($settings.lastSync ?? activeBackupModified);
+
   const configured = $derived(!!(override.trim() || ONEDRIVE_CLIENT_ID));
 
   const dotClass = $derived(
@@ -50,7 +62,7 @@
         ? 'warn'
         : $autoSyncStatus === 'offline'
           ? 'off'
-          : $settings.lastSync
+          : lastBackedUp
             ? 'ok'
             : '',
   );
@@ -59,15 +71,15 @@
     $autoSyncStatus === 'syncing'
       ? 'Syncing…'
       : $autoSyncStatus === 'conflict'
-        ? 'Backup changed on another device — tap Merge'
+        ? 'Backup also changed on another device — tap Merge (nothing is lost)'
         : $autoSyncStatus === 'pending'
           ? 'Sync pending — reconnect to OneDrive'
           : $autoSyncStatus === 'offline'
             ? 'Offline — changes will back up when you reconnect'
             : $autoSyncStatus === 'error'
               ? 'Sync failed — will retry shortly'
-              : $settings.lastSync
-                ? 'Synced · Backed up ' + relativeTime($settings.lastSync)
+              : lastBackedUp
+                ? 'Synced · Backed up ' + relativeTime(lastBackedUp)
                 : 'Not backed up yet',
   );
 
@@ -186,8 +198,12 @@
   async function addBackup() {
     const title = newTitle.trim();
     if (!title || backupBusy) return;
+    if (!isValidBackupTitle(title)) {
+      showToast('Give the backup a name with letters or numbers');
+      return;
+    }
     const file = fileNameForTitle(title);
-    if (displayBackups.some((b) => b.file === file)) {
+    if (displayBackups.some((b) => sameBackupFile(b.file, file))) {
       showToast('A backup with that name already exists');
       return;
     }
@@ -260,12 +276,16 @@
   async function commitRename(b: BackupInfo) {
     const title = renameTitle.trim();
     if (!title || backupBusy) return;
+    if (!isValidBackupTitle(title)) {
+      showToast('Give the backup a name with letters or numbers');
+      return;
+    }
     const newFile = fileNameForTitle(title);
     if (newFile === b.file) {
       cancelRename();
       return;
     }
-    if (displayBackups.some((x) => x.file === newFile)) {
+    if (displayBackups.some((x) => !sameBackupFile(x.file, b.file) && sameBackupFile(x.file, newFile))) {
       showToast('A backup with that name already exists');
       return;
     }
@@ -375,6 +395,43 @@
   }
 
   /**
+   * Pull the active backup and merge in anything newer from other devices, WITHOUT requiring a
+   * local edit first. Useful when auto-sync is off, or to reassure the user that this device is
+   * caught up. Never destructive — union by id, newest-per-record wins, tombstones preserved.
+   */
+  async function checkForUpdates() {
+    busy = true;
+    try {
+      const od = await getOneDrive();
+      const res = await pullMerge(od, { interactive: true });
+      signedIn = od.isSignedIn();
+      if (!res) {
+        showToast('Nothing backed up yet');
+      } else {
+        setActiveBackupEtag(res.etag);
+        markSynced(Date.now());
+        if (res.changedLocal) {
+          await refreshPlayers();
+          await refreshGames();
+          showToast('Pulled in the latest changes');
+        } else {
+          showToast('Already up to date');
+        }
+        markSyncSettled();
+      }
+      void loadBackups(false);
+    } catch (e) {
+      if (e instanceof ConflictError) {
+        await resolveConflict();
+      } else {
+        showToast(errMsg(e));
+      }
+    } finally {
+      busy = false;
+    }
+  }
+
+  /**
    * The active backup changed on another device since our last sync. Merge the two
    * copies per entity (union by id, newest write wins) and write the result to both
    * sides — so edits from this device and the other one both survive. Only a same-record
@@ -456,19 +513,25 @@
   }
 
   async function exportJson() {
-    const blob = new Blob([serializeSnapshot(await buildSnapshot())], {
+    const snap = await buildSnapshot();
+    const blob = new Blob([serializeSnapshot(snap)], {
       type: 'application/json',
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'score-king-backup.json';
+    // Date the file so repeated exports sit side by side instead of colliding/auto-numbering.
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    a.download = `score-king-backup-${stamp}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    showToast('Saved ' + a.download);
   }
 
   async function importJson(e: Event) {
-    const file = (e.target as HTMLInputElement).files?.[0];
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
     try {
       const snap = deserializeSnapshot(await file.text());
@@ -476,13 +539,23 @@
         showToast('Invalid backup file');
         return;
       }
-      if (!confirm('Replace local data with this file?')) return;
+      const summary = `${snap.players.length} players, ${snap.games.length} games, ${snap.rounds.length} rounds`;
+      const when = snap.exportedAt ? ` (saved ${formatDate(snap.exportedAt)})` : '';
+      if (
+        !confirm(
+          `Replace this device's data with this file${when}?\n\nIt contains ${summary}. Anything on this device that isn't in the file is discarded.`,
+        )
+      )
+        return;
       await restoreSnapshot(snap);
       await refreshPlayers();
       await refreshGames();
-      showToast('Imported backup');
+      showToast('Imported ' + summary);
     } catch {
       showToast('Invalid backup file');
+    } finally {
+      // Clear the picker so re-importing the same file fires onchange again.
+      input.value = '';
     }
   }
 </script>
@@ -588,6 +661,13 @@
       {#if $settings.autoSync && checkedText}
         <span class="muted" style="font-size: 0.72rem; margin-top: -4px">{checkedText}</span>
       {/if}
+
+      <div class="syncrow row spread">
+        <span class="sm muted" style="min-width: 0">Pull in changes from your other devices</span>
+        <button class="btn small ghost" onclick={checkForUpdates} disabled={busy}>
+          Check for updates
+        </button>
+      </div>
 
       <div class="syncrow stack" style="gap: 6px">
         <div class="row spread">
@@ -1076,8 +1156,8 @@
     flex: none;
   }
   .bkicon {
-    width: 38px;
-    height: 38px;
+    width: 46px;
+    height: 46px;
     font-size: 1rem;
   }
   .bkicon:disabled {

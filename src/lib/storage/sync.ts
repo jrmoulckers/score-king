@@ -65,10 +65,22 @@ const ILLEGAL_NAME_CHARS = /[\\/:*?"<>|]/g;
 /** Clean a user title into something safe to use as a file name. */
 export function sanitizeBackupTitle(title: string): string {
   return title
+    // Drop a trailing ".json" the user typed themselves, so "Backup.json" doesn't
+    // become the file "Backup.json.json" (and round-trip to the wrong display title).
+    .replace(/\.json$/i, '')
     .replace(ILLEGAL_NAME_CHARS, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 60);
+}
+
+/**
+ * Whether a user-typed title yields a usable, non-empty file name. A title made only of
+ * illegal characters (e.g. "***") sanitizes to empty and would otherwise silently fall back
+ * to the Default "Main" backup — so callers should reject it with a clear message instead.
+ */
+export function isValidBackupTitle(title: string): boolean {
+  return sanitizeBackupTitle(title).length > 0;
 }
 
 /** Build the file name for a user title (the title is the file name). */
@@ -81,6 +93,16 @@ export function fileNameForTitle(title: string): string {
 /** Derive a display title from a backup file name. */
 export function titleFromFileName(file: string): string {
   return file.replace(/\.json$/i, '').trim();
+}
+
+/**
+ * Whether two backup file names address the same OneDrive file. OneDrive/SharePoint file
+ * names are case-insensitive, so "Crew.json" and "crew.json" are the same file — comparing
+ * case-sensitively would let a "duplicate" slip past the add/rename guards and then fail
+ * with a confusing server error.
+ */
+export function sameBackupFile(a: string, b: string): boolean {
+  return a.toLowerCase() === b.toLowerCase();
 }
 
 /** Whether a folder child looks like one of our backup files. */

@@ -30,7 +30,7 @@
       : status === 'synced'
         ? 'Synced!'
         : status === 'conflict'
-          ? 'Conflict'
+          ? 'Needs merge'
           : status === 'pending'
             ? 'Pending'
             : status === 'offline'
@@ -47,7 +47,7 @@
     status === 'syncing'
       ? 'Backing up to OneDrive…'
       : status === 'conflict'
-        ? 'Backup changed on another device — tap to resolve'
+        ? 'Also edited on another device — tap to merge; nothing is lost'
         : status === 'pending'
           ? 'Sync pending — reconnect to OneDrive'
           : status === 'offline'
@@ -58,6 +58,11 @@
                 ? 'Backed up · ' + relativeTime($settings.lastSync)
                 : 'Not backed up yet',
   );
+
+  // A shape/glyph co-signal so the two collapsed resting states (backed up vs not) never read
+  // by color alone — honoring the Color-Is-Never-Alone rule for color-blind players. The
+  // expanded states already carry a text label, so they need no extra glyph.
+  const glyph = $derived(tone === 'ok' ? '✓' : tone === 'idle' ? '↑' : '');
 
   // --- progress fill (slow >1s syncs only); never carries into the synced state ---
   let showFill = $state(false);
@@ -166,7 +171,11 @@
       <span class="sb-fill" style="width: {Math.round(progress * 100)}%" aria-hidden="true"></span>
     {/if}
     <span class="sb-dot" class:spin={status === 'syncing'} bind:this={dotEl}></span>
-    {#if expanded}<span class="sb-text">{label}</span>{/if}
+    {#if expanded}
+      <span class="sb-text">{label}</span>
+    {:else if glyph}
+      <span class="sb-glyph" aria-hidden="true">{glyph}</span>
+    {/if}
   </a>
 {/if}
 
@@ -251,6 +260,23 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* Compact shape co-signal for the collapsed resting states (backed up ✓ vs not ↑),
+     so status never reads by color alone. */
+  .sb-glyph {
+    position: relative;
+    z-index: 1;
+    margin-left: -2px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--tone);
+  }
+  /* Not-backed-up: a hollow ring reinforces "nothing stored yet" beyond the muted hue. */
+  .syncbubble.idle .sb-dot {
+    background: none;
+    border: 2px solid var(--tone);
   }
 
   .syncbubble.celebrate {
