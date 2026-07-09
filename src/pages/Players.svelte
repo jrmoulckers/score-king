@@ -61,7 +61,12 @@
 </form>
 
 {#if $activePlayers.length === 0 && archived.length === 0}
-  <div class="empty">No players yet — add your regulars above.</div>
+  <div class="empty firstrun">
+    <div class="firstrun-emoji" aria-hidden="true">👥</div>
+    <p><strong>Add your regulars once.</strong></p>
+    <p class="muted">Players are shared across every game and leaderboard — add them here and
+    they'll be ready to pick whenever you start a game. Tap 🎲 for a surprise name.</p>
+  </div>
 {:else if $activePlayers.length > 0}
   <div class="player-grid">
     {#each $activePlayers as p (p.id)}
@@ -250,5 +255,20 @@
   }
   .card.arch {
     opacity: 0.82;
+  }
+  .firstrun {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .firstrun p {
+    margin: 0;
+    max-width: 46ch;
+  }
+  .firstrun-emoji {
+    font-size: 2.2rem;
+    line-height: 1;
+    margin-bottom: 4px;
   }
 </style>

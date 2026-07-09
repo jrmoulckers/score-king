@@ -242,7 +242,12 @@
 <h1>History</h1>
 
 {#if $activeGames.length === 0 && archivedGames.length === 0}
-  <div class="empty">No games yet. Start one from the Games tab.</div>
+  <div class="empty firstrun">
+    <div class="firstrun-emoji" aria-hidden="true">📜</div>
+    <p><strong>No games yet.</strong></p>
+    <p class="muted">Finished and in-progress games land here, grouped by date, crew, and game.</p>
+    <a class="btn primary" href="/" use:link>Start a game</a>
+  </div>
 {:else}
   {#if showControls}
     <div class="controls">
@@ -394,6 +399,25 @@
 {/if}
 
 <style>
+  .firstrun {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .firstrun p {
+    margin: 0;
+    max-width: 46ch;
+  }
+  .firstrun-emoji {
+    font-size: 2.2rem;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .firstrun .btn {
+    margin-top: 10px;
+    text-decoration: none;
+  }
   .controls {
     display: flex;
     flex-direction: column;
