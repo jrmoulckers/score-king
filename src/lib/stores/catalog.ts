@@ -189,12 +189,37 @@ export function sectionize(
   return { favorites, recent, remainder };
 }
 
-/** Case-insensitive match over name + tagline + optional keyword aliases. */
+/**
+ * Fold a string for searching: lower-cased and diacritic-stripped (NFD → drop combining
+ * marks), so "Uno" matches "Úno" and an accented tagline still matches its plain typing.
+ */
+export function foldSearch(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/** Case- and diacritic-insensitive match over name + tagline + optional keyword aliases. */
 export function matchModule(t: CatalogType, query: string): boolean {
-  const q = query.trim().toLowerCase();
+  const q = foldSearch(query);
   if (!q) return true;
-  const hay = [t.name, t.tagline, ...(t.keywords ?? [])].join(' ').toLowerCase();
+  const hay = foldSearch([t.name, t.tagline, ...(t.keywords ?? [])].join(' '));
   return hay.includes(q);
+}
+
+/**
+ * The most-recently-*finished* games, newest first — the source for Home's "Recent results".
+ * Ordered by `finishedAt` (falling back to `createdAt`) rather than the store's create order,
+ * so a long-running game that wrapped up today ranks above a quick one started later but never
+ * finished-later. Archived games are excluded.
+ */
+export function recentlyFinished(games: Game[], limit = RECENT_LIMIT): Game[] {
+  return games
+    .filter((g) => g.status === 'finished' && !g.archived)
+    .sort((a, b) => (b.finishedAt ?? b.createdAt) - (a.finishedAt ?? a.createdAt))
+    .slice(0, limit);
 }
 
 // ── Categories: group the catalog by game "type" for the browse page ──────────────

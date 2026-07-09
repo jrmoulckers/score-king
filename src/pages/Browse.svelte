@@ -2,13 +2,13 @@
   import { settings } from '../lib/stores/settings';
   import { link } from '../lib/router';
   import BackLink from '../lib/components/BackLink.svelte';
+  import GameTile from '../lib/components/GameTile.svelte';
+  import CreateTile from '../lib/components/CreateTile.svelte';
   import {
     startableTypes,
     groupByCategory,
     matchModule,
     CUSTOM_GAMES_ENABLED,
-    CREATE_ROUTE,
-    type CatalogType,
     type GameCategory,
   } from '../lib/stores/catalog';
 
@@ -17,6 +17,7 @@
   let activeCats = $state<GameCategory[]>([]);
 
   const mods = $derived($startableTypes);
+  const favs = $derived($settings.catalogFavorites);
   const searching = $derived(search.trim().length > 0);
 
   // Ordered, non-empty category sections over the visible (non-hidden) catalog.
@@ -50,23 +51,11 @@
     const valid = new Set(groups.map((g) => g.meta.id));
     if (activeCats.some((c) => !valid.has(c))) activeCats = activeCats.filter((c) => valid.has(c));
   });
+
+  function clearSearch(e: KeyboardEvent) {
+    if (e.key === 'Escape') search = '';
+  }
 </script>
-
-{#snippet tile(m: CatalogType)}
-  <a class="gametile" href={`/${m.id}`} use:link>
-    <span class="emoji">{m.emoji}</span>
-    <span class="name">{m.name}</span>
-    <span class="tag">{m.tagline}</span>
-  </a>
-{/snippet}
-
-{#snippet createTile()}
-  <a class="gametile createtile" href={CREATE_ROUTE} use:link>
-    <span class="emoji" aria-hidden="true">＋</span>
-    <span class="name">Create a game</span>
-    <span class="tag">Build your own scorer</span>
-  </a>
-{/snippet}
 
 <BackLink href="/" label="Games" />
 
@@ -85,7 +74,13 @@
     autocorrect="off"
     spellcheck="false"
     bind:value={search}
+    onkeydown={clearSearch}
   />
+</div>
+
+<div class="sr-only" aria-live="polite" role="status">
+  {#if searching}{searchResults.length}
+    {searchResults.length === 1 ? 'game' : 'games'} match “{search.trim()}”{/if}
 </div>
 
 {#if !searching}
@@ -118,7 +113,7 @@
 {#if searching}
   {#if searchResults.length}
     <div class="grid">
-      {#each searchResults as m (m.id)}{@render tile(m)}{/each}
+      {#each searchResults as m (m.id)}<GameTile type={m} favorite={favs.includes(m.id)} />{/each}
     </div>
   {:else}
     <div class="empty">No games match “{search.trim()}”.</div>
@@ -130,12 +125,12 @@
       <span class="cat-count">{g.types.length}</span>
     </div>
     <div class="grid">
-      {#each g.types as m (m.id)}{@render tile(m)}{/each}
+      {#each g.types as m (m.id)}<GameTile type={m} favorite={favs.includes(m.id)} />{/each}
     </div>
   {/each}
   {#if showCreate}
     <div class="create-wrap">
-      <div class="grid">{@render createTile()}</div>
+      <div class="grid"><CreateTile /></div>
     </div>
   {/if}
 {/if}
@@ -229,14 +224,6 @@
   }
   .create-wrap {
     margin-top: 18px;
-  }
-  /* The single "add" accent: a dashed tile with a violet ＋ — never a solid fill. */
-  .createtile {
-    border-style: dashed;
-  }
-  .createtile .emoji {
-    color: var(--primary);
-    font-weight: 700;
   }
   @media (prefers-reduced-motion: reduce) {
     .chip {
