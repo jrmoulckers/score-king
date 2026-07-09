@@ -862,7 +862,7 @@
     padding: 6px 2px;
   }
   .tcard {
-    border-left: 3px solid color-mix(in srgb, var(--tc, var(--primary)) 70%, var(--border));
+    border-color: color-mix(in srgb, var(--tc, var(--primary)) 40%, var(--border));
     transition:
       border-color 0.15s ease,
       box-shadow 0.15s ease,
@@ -894,7 +894,7 @@
     color: #fff;
     background: color-mix(in srgb, var(--ghost-color, #7c5cff) 92%, #000);
     border: 1px solid color-mix(in srgb, #fff 30%, transparent);
-    box-shadow: 0 10px 24px -6px color-mix(in srgb, var(--ghost-color, #7c5cff) 60%, transparent);
+    box-shadow: var(--shadow);
     transition: transform 0.04s linear;
   }
   :global(body.vb-dragging) {

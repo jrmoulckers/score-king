@@ -386,8 +386,8 @@
     gap: 8px;
   }
   .nom.executed {
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-    background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
+    border-color: var(--border);
+    background: var(--surface-3);
   }
   .nom-line {
     display: flex;
@@ -441,7 +441,7 @@
   .exec.on {
     background: var(--surface-3);
     color: var(--text);
-    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    border-color: var(--text);
   }
   .add {
     color: var(--muted);
