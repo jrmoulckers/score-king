@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { settings } from '../lib/stores/settings';
+  import {
+    settings,
+    resolveTheme,
+    resetPreferences,
+    differsFromDefaults,
+    APPEARANCE_SETTING_KEYS,
+  } from '../lib/stores/settings';
   import { PALETTE } from '../lib/util';
   import Segmented from '../lib/components/Segmented.svelte';
   import Switch from '../lib/components/Switch.svelte';
@@ -19,6 +25,7 @@
   });
 
   const themeOptions = [
+    { value: 'system', label: '🖥️ Auto' },
     { value: 'dark', label: '🌙 Dark' },
     { value: 'light', label: '☀️ Light' },
   ];
@@ -34,7 +41,9 @@
     { value: 'full', label: 'Full' },
   ];
 
-  const oledDisabled = $derived($settings.theme !== 'dark');
+  // Gate OLED on the *resolved* theme so "Auto" that currently reads light can't go true-black.
+  const oledDisabled = $derived(resolveTheme($settings.theme) !== 'dark');
+  const canReset = $derived(differsFromDefaults($settings, APPEARANCE_SETTING_KEYS));
 
   const previewPlayers = [
     { name: 'Ada Lovelace', color: PALETTE[0], score: 42 },
@@ -45,12 +54,23 @@
   function setBool(key: 'oled' | 'highContrast' | 'colorBlind', v: boolean) {
     settings.update((s) => ({ ...s, [key]: v }));
   }
+
+  function resetAppearance() {
+    resetPreferences(APPEARANCE_SETTING_KEYS);
+    // Pull the reset values back into the local segmented bindings so the controls repaint.
+    theme = $settings.theme;
+    fontScale = $settings.fontScale;
+    motion = $settings.motion;
+  }
 </script>
 
 <BackLink href="/settings" label="Settings" />
 
 <h1>Accessibility &amp; display</h1>
-<p class="lede muted">Tune Score King to your eyes, your hands, and your table. Changes apply instantly and stick on this device.</p>
+<p class="lede muted">
+  Tune Score King to your eyes, your hands, and your table. Changes apply instantly and, because
+  they're part of your backup, follow you to your other devices.
+</p>
 
 <div class="card preview">
   <div class="row spread">
@@ -84,7 +104,7 @@
 <div class="card set-stack">
   <span class="meta">
     <span class="name">Theme</span>
-    <span class="muted sm">Dark keeps things calm under low light; light suits bright rooms.</span>
+    <span class="muted sm">Auto follows your device’s day/night. Dark keeps things calm under low light; light suits bright rooms.</span>
   </span>
   <Segmented label="Theme" options={themeOptions} bind:value={theme} />
 </div>
@@ -132,6 +152,24 @@
   </span>
   <Switch checked={$settings.colorBlind} onchange={(v) => setBool('colorBlind', v)} />
 </label>
+
+<div class="card reset row spread">
+  <span class="meta">
+    <span class="name">Reset appearance</span>
+    <span class="muted sm">
+      Put theme, text size, contrast, motion, and colour back to Score King’s defaults. Only
+      these display choices change — your games, players, and backup are untouched.
+    </span>
+  </span>
+  <button class="btn ghost danger" onclick={resetAppearance} disabled={!canReset}>
+    {canReset ? 'Reset to defaults' : 'All default'}
+  </button>
+</div>
+
+<p class="portable muted sm">
+  <span aria-hidden="true">☁️</span>
+  These preferences are saved in your backup, so a restore carries them to your other devices.
+</p>
 
 <style>
   .lede {
@@ -203,5 +241,19 @@
   }
   .sw-row.dim {
     opacity: 0.55;
+  }
+  .reset {
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .reset .btn {
+    flex: none;
+  }
+  .portable {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 12px 4px 4px;
+    max-width: 60ch;
   }
 </style>

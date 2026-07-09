@@ -1,12 +1,19 @@
 <script lang="ts">
-  import { settings } from '../lib/stores/settings';
+  import {
+    settings,
+    resetPreferences,
+    differsFromDefaults,
+    GAMEPLAY_SETTING_KEYS,
+  } from '../lib/stores/settings';
   import { isWakeLockSupported } from '../lib/wakelock';
   import BackLink from '../lib/components/BackLink.svelte';
   import Switch from '../lib/components/Switch.svelte';
 
   const wakeSupported = isWakeLockSupported();
 
-  function setBool(key: 'keepAwake' | 'privacyGuard', v: boolean) {
+  const canReset = $derived(differsFromDefaults($settings, GAMEPLAY_SETTING_KEYS));
+
+  function setBool(key: 'keepAwake' | 'privacyGuard' | 'roastMode', v: boolean) {
     settings.update((s) => ({ ...s, [key]: v }));
   }
 </script>
@@ -14,7 +21,10 @@
 <BackLink href="/settings" label="Settings" />
 
 <h1>Gameplay</h1>
-<p class="lede muted">Tune how Score King behaves while a game is in play. Changes apply instantly and stick on this device.</p>
+<p class="lede muted">
+  Tune how Score King behaves during and after a game. Changes apply instantly and, because
+  they're part of your backup, follow you to your other devices.
+</p>
 
 <div class="section-title">While playing</div>
 
@@ -42,6 +52,34 @@
   <Switch checked={$settings.privacyGuard} onchange={(v) => setBool('privacyGuard', v)} />
 </label>
 
+<div class="section-title">Personality</div>
+
+<label class="card sw-row row spread">
+  <span class="meta">
+    <span class="name">Playful roasts</span>
+    <span class="muted sm">
+      Lets the Daily Crown &amp; Court dish out lighthearted rivalries and a “Wall of shame,” not
+      just flexes. Turn off to keep the recaps purely celebratory.
+    </span>
+  </span>
+  <Switch checked={$settings.roastMode} onchange={(v) => setBool('roastMode', v)} />
+</label>
+
+<div class="card reset row spread">
+  <span class="meta">
+    <span class="name">Reset gameplay</span>
+    <span class="muted sm">Put these behaviours back to Score King’s defaults. Nothing else changes.</span>
+  </span>
+  <button class="btn ghost danger" onclick={() => resetPreferences(GAMEPLAY_SETTING_KEYS)} disabled={!canReset}>
+    {canReset ? 'Reset to defaults' : 'All default'}
+  </button>
+</div>
+
+<p class="portable muted sm">
+  <span aria-hidden="true">☁️</span>
+  These preferences are saved in your backup, so a restore carries them to your other devices.
+</p>
+
 <style>
   .lede {
     margin: -2px 4px 18px;
@@ -60,5 +98,19 @@
   .sw-row {
     cursor: pointer;
     gap: 14px;
+  }
+  .reset {
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .reset .btn {
+    flex: none;
+  }
+  .portable {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 12px 4px 4px;
+    max-width: 60ch;
   }
 </style>
