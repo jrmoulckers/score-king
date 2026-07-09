@@ -75,6 +75,31 @@ html[data-contrast] .btn:focus-visible {
   outline-offset: 2px;
 }
 
+/* Honor the OS "increase contrast" preference the same way the manual toggle
+   does, so users who set it system-wide get stronger borders, muted text and
+   focus rings without hunting for the in-app switch. */
+@media (prefers-contrast: more) {
+  html[data-theme="dark"] {
+    --text: #ffffff;
+    --muted: #c8cbef;
+    --border: #5a5d8a;
+  }
+  html[data-theme="light"] {
+    --text: #000000;
+    --muted: #3a3c54;
+    --border: #9a9ab0;
+  }
+  input:focus,
+  select:focus,
+  .btn:focus-visible,
+  a:focus-visible,
+  .iconbtn:focus-visible,
+  .gametile:focus-visible,
+  .tabbar a:focus-visible {
+    outline-width: 3px;
+  }
+}
+
 * { box-sizing: border-box; }
 
 html, body { margin: 0; padding: 0; }
@@ -139,6 +164,17 @@ input[type="search"]::-webkit-search-cancel-button {
 input:focus, select:focus, .btn:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 1px;
+}
+/* One focus vocabulary everywhere: links, icon buttons, game tiles and the
+   bottom tab bar share the same Royal Violet ring so every interactive element
+   is visibly focusable for keyboard and switch users (WCAG 2.4.7). */
+a:focus-visible,
+.iconbtn:focus-visible,
+.gametile:focus-visible,
+.tabbar a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 label,
 .fieldlabel { display: block; font-size: 0.9rem; color: var(--muted); margin-bottom: 6px; }

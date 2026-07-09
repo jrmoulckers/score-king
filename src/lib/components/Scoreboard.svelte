@@ -26,8 +26,13 @@
 </script>
 
 <table>
+  <caption class="sr-only">Standings by rank</caption>
   <thead>
-    <tr><th>#</th><th>Player</th><th>Score</th></tr>
+    <tr>
+      <th scope="col"><span class="sr-only">Rank</span><span aria-hidden="true">#</span></th>
+      <th scope="col">Player</th>
+      <th scope="col">Score</th>
+    </tr>
   </thead>
   <tbody>
     {#each ranked as s (s.playerId)}
@@ -36,7 +41,7 @@
         <td>{s.rank}</td>
         <td>
           <span class="row" style="gap: 8px">
-            {#if p}<Avatar name={p.name} color={p.color} size={24} />{p.name}{/if}
+            {#if p}<Avatar name={p.name} color={p.color} size={24} decorative />{p.name}{/if}
             {#if youId && s.playerId === youId}<span class="you">You</span>{/if}
             {#if winners.includes(s.playerId)}
               <span aria-hidden="true" title="Winner">🏆</span><span class="sr-only">Winner</span>

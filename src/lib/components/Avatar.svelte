@@ -5,7 +5,8 @@
     name,
     color,
     size = 28,
-  }: { name: string; color: string; size?: number } = $props();
+    decorative = false,
+  }: { name: string; color: string; size?: number; decorative?: boolean } = $props();
 
   const resolved = $derived(resolvePlayerColor(color, $settings.colorBlind));
   const ink = $derived(textOn(resolved));
@@ -14,7 +15,8 @@
 <span
   class="avatar"
   style="--c:{resolved}; --ink:{ink}; width:{size}px; height:{size}px; font-size:{Math.round(size * 0.38)}px"
-  title={name}
+  title={decorative ? undefined : name}
+  aria-hidden={decorative ? 'true' : undefined}
 >
   {initials(name)}
 </span>

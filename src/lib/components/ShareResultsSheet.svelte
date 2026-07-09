@@ -17,6 +17,7 @@
     type RecapView,
   } from '../share/recap';
   import Scoreboard from './Scoreboard.svelte';
+  import { focusTrap } from '../a11y/focusTrap';
 
   let { payload, onclose }: { payload: RecapPayload; onclose: () => void } = $props();
 
@@ -155,7 +156,7 @@
   onkeydown={(e) => e.key === 'Enter' && onclose()}
 ></div>
 
-<div class="sheet" role="dialog" aria-modal="true" aria-label="Share results" tabindex="-1" bind:this={sheet}>
+<div class="sheet" role="dialog" aria-modal="true" aria-label="Share results" tabindex="-1" bind:this={sheet} use:focusTrap>
   <div class="grabber" aria-hidden="true"></div>
 
   <div class="row spread">

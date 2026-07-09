@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { clamp } from '../util';
+
   let {
     value = $bindable(0),
     min = -Infinity,
@@ -15,10 +17,16 @@
   const incLabel = $derived(label ? `Increase ${label}` : 'Increase');
 
   function dec() {
-    value = Math.max(min, (Number(value) || 0) - step);
+    value = clamp((Number(value) || 0) - step, min, max);
   }
   function inc() {
-    value = Math.min(max, (Number(value) || 0) + step);
+    value = clamp((Number(value) || 0) + step, min, max);
+  }
+  // Keyboard users can type straight into the field; clamp on change so a typed
+  // value can't slip past the bounds the − / + buttons enforce.
+  function clampTyped() {
+    if (value == null || Number.isNaN(Number(value))) return;
+    value = clamp(Number(value), min, max);
   }
 </script>
 
@@ -26,7 +34,16 @@
   <button type="button" class="iconbtn" onclick={dec} disabled={value <= min} aria-label={decLabel}>
     −
   </button>
-  <input type="number" bind:value {min} {max} {step} inputmode="numeric" aria-label={fieldLabel} />
+  <input
+    type="number"
+    bind:value
+    {min}
+    {max}
+    {step}
+    inputmode="numeric"
+    aria-label={fieldLabel}
+    onchange={clampTyped}
+  />
   <button type="button" class="iconbtn" onclick={inc} disabled={value >= max} aria-label={incLabel}>
     +
   </button>
