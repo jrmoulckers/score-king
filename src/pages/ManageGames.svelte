@@ -6,6 +6,7 @@
     startableTypes,
     toggleFavorite,
     setHidden,
+    hideWithUndo,
     matchModule,
     isCustomType,
     editCustomHref,
@@ -83,7 +84,7 @@
               <span aria-hidden="true">{fav ? '★' : '☆'}</span>
               <span class="sr-only">{fav ? `Unfavorite ${m.name}` : `Favorite ${m.name}`}</span>
             </button>
-            <button class="btn small ghost" type="button" onclick={() => setHidden(m.id, true)}>
+            <button class="btn small ghost" type="button" onclick={() => hideWithUndo(m.id, m.name)}>
               Hide
             </button>
           </span>

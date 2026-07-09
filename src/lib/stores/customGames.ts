@@ -67,5 +67,7 @@ export async function restoreCustomGame(id: string): Promise<void> {
 }
 
 // Populate on startup so getModule resolves custom types for deep links (e.g. /def_… or
-// /play/<id> of a custom game) as soon as IndexedDB answers.
-void refreshCustomGames();
+// /play/<id> of a custom game) as soon as IndexedDB answers. Best-effort: if storage is
+// unavailable (private-mode quirks, SSR, or a test environment without IndexedDB), the app
+// still boots with just the built-in games rather than crashing on an unhandled rejection.
+void refreshCustomGames().catch(() => {});
