@@ -208,7 +208,7 @@
   }
 
   .syncbubble.busy {
-    --tone: #f7b955;
+    --tone: var(--warn);
   }
   .syncbubble.warn {
     --tone: var(--bad, #f87171);
@@ -217,7 +217,7 @@
     --tone: var(--muted);
   }
   .syncbubble.ok {
-    --tone: #29c785;
+    --tone: var(--good);
   }
   .syncbubble.idle {
     --tone: var(--muted);
@@ -231,7 +231,7 @@
     top: 0;
     bottom: 0;
     width: 0;
-    background: color-mix(in srgb, #f7b955 34%, transparent);
+    background: color-mix(in srgb, var(--warn) 34%, transparent);
     transition: width 0.2s ease;
     z-index: 0;
   }
@@ -280,7 +280,7 @@
   }
 
   .syncbubble.celebrate {
-    border-color: color-mix(in srgb, #29c785 55%, var(--border));
+    border-color: color-mix(in srgb, var(--good) 55%, var(--border));
   }
 
   @keyframes sb-spin {

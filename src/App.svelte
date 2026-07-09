@@ -259,8 +259,7 @@
     padding: 0 16px;
     border-radius: 999px;
     border: 1px solid var(--border);
-    background: color-mix(in srgb, var(--surface-3) 92%, transparent);
-    backdrop-filter: blur(8px);
+    background: var(--surface-3);
     color: var(--text);
     font-weight: 700;
     font-size: 0.85rem;

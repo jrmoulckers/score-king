@@ -943,10 +943,10 @@
     background: var(--muted);
   }
   .dot.ok {
-    background: #29c785;
+    background: var(--good);
   }
   .dot.busy {
-    background: #f7b955;
+    background: var(--warn);
   }
   .dot.warn {
     background: var(--bad, #f87171);
@@ -974,7 +974,7 @@
     min-width: 0;
     padding: 7px 10px;
     border: 1px solid var(--border, rgba(127, 127, 127, 0.2));
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: var(--surface-2, rgba(127, 127, 127, 0.08));
   }
   .pathchip code {
@@ -1019,7 +1019,7 @@
     font-size: 0.64rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    background: #29c785;
+    background: var(--good);
     color: #04150d;
     padding: 1px 6px;
     border-radius: 999px;

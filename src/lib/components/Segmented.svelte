@@ -84,7 +84,7 @@
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease;
   }
   .seg:hover {
     color: var(--text);
@@ -92,7 +92,6 @@
   .seg.on {
     background: var(--primary);
     color: #fff;
-    box-shadow: 0 2px 12px color-mix(in srgb, var(--primary) 38%, transparent);
   }
   .seg:focus-visible {
     outline: 2px solid var(--primary);
