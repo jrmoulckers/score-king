@@ -133,6 +133,24 @@
     phase = 'idle';
   }
 
+  // Switching transports disconnects anyone already joined, so guard it with the same inline
+  // themed confirm the app uses for destructive actions — never a native window.confirm (a
+  // DESIGN non-negotiable). Only when someone besides the host is present.
+  let confirmSwitch = $state<null | 'online' | 'nearby'>(null);
+  function requestSwitch(to: 'online' | 'nearby') {
+    if (roster.length > 1) confirmSwitch = to;
+    else onswitch(to);
+  }
+
+  // Ending closes the game for every guest at once, so guard it with an inline confirm when
+  // there's more than just the host present — mirroring the app's confirm/undo pattern for
+  // destructive actions rather than ending on a single stray tap.
+  let confirmEnd = $state(false);
+  function requestEnd() {
+    if (roster.length > 1) confirmEnd = true;
+    else onend();
+  }
+
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') onclose();
   }
@@ -238,13 +256,44 @@
     {/if}
   {/if}
 
-  {#if mode === 'online' && canGoNearby}
-    <button class="switch" onclick={() => onswitch('nearby')}>📡 No internet? Switch to nearby</button>
+  {#if confirmSwitch}
+    <div class="endconfirm">
+      <p class="note">
+        Switching to {confirmSwitch === 'nearby' ? 'nearby' : 'online'} disconnects the
+        {roster.length - 1}
+        {roster.length - 1 === 1 ? 'player' : 'players'} who already joined — they’ll need a fresh invite. Continue?
+      </p>
+      <div class="row" style="gap: 10px">
+        <button class="btn grow" onclick={() => (confirmSwitch = null)}>Keep this game</button>
+        <button
+          class="btn grow"
+          onclick={() => {
+            const to = confirmSwitch;
+            confirmSwitch = null;
+            if (to) onswitch(to);
+          }}
+        >
+          Switch anyway
+        </button>
+      </div>
+    </div>
+  {:else if mode === 'online' && canGoNearby}
+    <button class="switch" onclick={() => requestSwitch('nearby')}>📡 No internet? Switch to nearby</button>
   {:else if mode === 'nearby' && canGoOnline}
-    <button class="switch" onclick={() => onswitch('online')}>🌐 Switch to online — share a link</button>
+    <button class="switch" onclick={() => requestSwitch('online')}>🌐 Switch to online — share a link</button>
   {/if}
 
-  <button class="btn danger block" onclick={onend}>End live game</button>
+  {#if confirmEnd}
+    <div class="endconfirm">
+      <p class="note">End the game for everyone? Guests drop out — your scoreboard stays safe on this device.</p>
+      <div class="row" style="gap: 10px">
+        <button class="btn grow" onclick={() => (confirmEnd = false)}>Keep playing</button>
+        <button class="btn danger grow" onclick={onend}>End for everyone</button>
+      </div>
+    </div>
+  {:else}
+    <button class="btn danger block" onclick={requestEnd}>End live game</button>
+  {/if}
 </div>
 
 <style>
@@ -432,6 +481,11 @@
   .switch:hover {
     border-color: var(--primary);
     color: var(--text);
+  }
+  .endconfirm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
   @keyframes rise {
     from {

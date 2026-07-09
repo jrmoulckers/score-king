@@ -17,6 +17,9 @@
     liveReplica,
     liveParticipants,
     liveError,
+    liveEndReason,
+    endedTitle,
+    endedBody,
     type NearbyGuestControls,
   } from '../lib/live/session';
   import ReplicaBoard from '../lib/components/ReplicaBoard.svelte';
@@ -110,24 +113,32 @@
         <div class="muted" style="font-size: 0.8rem">Nearby game</div>
       </span>
     </span>
-    <span class="live"><span class="dot" aria-hidden="true"></span>{$liveParticipants.length}</span>
+    <span class="live" aria-label={`${$liveParticipants.length} connected`}>
+      <span class="dot" aria-hidden="true"></span>{$liveParticipants.length}
+    </span>
   </div>
 
   <ReplicaBoard />
 
   <button class="btn ghost block" style="margin-top: 14px" onclick={leave}>Leave game</button>
 {:else if $liveStatus === 'error'}
-  <div class="empty">
+  <div class="empty" role="alert">
     <h2>Couldn’t connect</h2>
     <p class="muted">{$liveError ?? 'The nearby game isn’t reachable.'}</p>
     <button class="btn primary" onclick={restart}>Try again</button>
     <a class="btn ghost" href="/" use:link style="margin-top: 8px">Back to games</a>
+    <p class="muted reassure">Nearby play is optional — every game still works on its own.</p>
   </div>
 {:else if everConnected}
-  <div class="empty">
-    <h2>The game ended</h2>
-    <p class="muted">The host closed the session.</p>
-    <a class="btn primary" href="/" use:link>Back to games</a>
+  <div class="empty" role="status">
+    <h2>{endedTitle($liveEndReason)}</h2>
+    <p class="muted">{endedBody($liveEndReason)}</p>
+    {#if $liveEndReason === 'lost'}
+      <button class="btn primary" onclick={restart}>Scan a new invite</button>
+      <a class="btn ghost" href="/" use:link style="margin-top: 8px">Back to games</a>
+    {:else}
+      <a class="btn primary" href="/" use:link>Back to games</a>
+    {/if}
   </div>
 {:else}
   <div class="join">
@@ -151,7 +162,7 @@
         <span>Show this reply to the host:</span>
       </div>
       <SignalShare text={answer} caption="The host scans or pastes this to connect you" />
-      <div class="waiting">
+      <div class="waiting" role="status" aria-live="polite">
         <div class="spinner" aria-hidden="true"></div>
         <span class="muted">Waiting for the host to connect you…</span>
       </div>
@@ -205,6 +216,11 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+  }
+  .reassure {
+    margin-top: 4px;
+    font-size: 0.82rem;
+    text-align: center;
   }
   .spinner {
     width: 22px;

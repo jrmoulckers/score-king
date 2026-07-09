@@ -29,6 +29,7 @@ import { settings } from '../stores/settings';
 import { players } from '../stores/players';
 import { showToast } from '../stores/toast';
 import { uid, generateHandle, PALETTE } from '../util';
+import type { LiveConnection } from './connection';
 
 export type LiveStatus = 'off' | 'connecting' | 'hosting' | 'guest' | 'error';
 
@@ -52,10 +53,28 @@ export const liveIntentRejected = writable<number>(0);
 /**
  * Health of the live connection, kept *separate* from {@link liveStatus} (the game lifecycle).
  * A dropped socket never ends the game — the host stays authoritative and local-first — it just
- * flips this to 'reconnecting' (auto-healing) or 'offline' (still retrying, game safe).
+ * flips this to 'reconnecting' (auto-healing) or 'offline' (still retrying, game safe). The copy
+ * helper lives in {@link ./connection} so it can be unit-tested without booting the engine.
  */
-export type LiveConnection = 'online' | 'reconnecting' | 'offline';
+export { connectionNote, endedTitle, endedBody } from './connection';
+export type { LiveConnection } from './connection';
 export const liveConnection = writable<LiveConnection>('online');
+
+/**
+ * Why a live session ended, for the guest's exit screen: 'ended' = the host deliberately closed
+ * it; 'lost' = the transport synthesised a close because the link dropped (nearby WebRTC can't
+ * re-signal). Null when no session has ended. Lets a nearby guest be told the honest truth — and
+ * offered a rejoin — instead of always reading "the host closed the session".
+ */
+export const liveEndReason = writable<'ended' | 'lost' | null>(null);
+
+/**
+ * Whether the active transport can silently heal a dropped connection (the relay) or not
+ * (nearby WebRTC, whose handshake is hand-carried and can't be re-signaled, and same-browser
+ * BroadcastChannel). Drives honest connection copy: a nearby guest must be told to ask for a
+ * fresh invite, never that we're "trying to reconnect" — which we can't.
+ */
+export const liveReconnectable = writable<boolean>(false);
 
 /** Convenience: a session is live when hosting or joined as a guest. */
 export const liveActive = derived(liveStatus, ($s) => $s === 'hosting' || $s === 'guest');
@@ -99,6 +118,10 @@ let joinTimer: ReturnType<typeof setTimeout> | undefined;
 // automatically, so it reflects health but does not auto-reconnect.
 let unsubStatus: (() => void) | null = null;
 let reconnectable = false;
+function setReconnectable(v: boolean): void {
+  reconnectable = v;
+  liveReconnectable.set(v);
+}
 let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 let reconnectAttempts = 0;
 let reconnecting = false;
@@ -160,11 +183,11 @@ function makeTransport(code: string): SessionTransport {
   // browser profile). The engine above this line is identical either way.
   if (isRelayConfigured()) {
     liveRemote.set(true);
-    reconnectable = true;
+    setReconnectable(true);
     return new RelayTransport(effectiveRelayUrl(), code);
   }
   liveRemote.set(false);
-  reconnectable = false;
+  setReconnectable(false);
   return new BroadcastChannelTransport(code);
 }
 
@@ -221,6 +244,7 @@ export async function joinSession(code: string, self: Participant): Promise<void
   liveCode.set(code);
   liveReplica.set(null);
   liveError.set(null);
+  liveEndReason.set(null);
   liveStatus.set('connecting');
 
   transport = makeTransport(code);
@@ -312,7 +336,7 @@ export async function startHostingNearby(
   const rtc = new WebRtcTransport(code, 'leader');
   transport = rtc;
   liveRemote.set(true);
-  reconnectable = false;
+  setReconnectable(false);
   unsubMessage = transport.onMessage(onLeaderMessage);
   unsubStatus = transport.onStatus(onTransportStatus);
   try {
@@ -345,12 +369,13 @@ export async function joinSessionNearby(self: Participant): Promise<NearbyGuestC
   liveCode.set(null);
   liveReplica.set(null);
   liveError.set(null);
+  liveEndReason.set(null);
   liveStatus.set('connecting');
 
   const rtc = new WebRtcTransport('', 'guest');
   transport = rtc;
   liveRemote.set(true);
-  reconnectable = false;
+  setReconnectable(false);
   unsubMessage = transport.onMessage(onGuestMessage);
   unsubStatus = transport.onStatus(onTransportStatus);
 
@@ -426,8 +451,11 @@ function onLeaderMessage(env: TransportEnvelope): void {
     upsertPeer({ ...m.participant, role: 'guest' });
     send({ t: 'peers', peers });
   } else if (m.t === 'bye') {
+    // Name who left so the host isn't left guessing why the roster count dropped.
+    const gone = peers.find((p) => p.id === env.from);
     setPeers(peers.filter((p) => p.id !== env.from));
     send({ t: 'peers', peers });
+    if (gone) showToast(`${gone.name} left the game.`);
   }
 }
 
@@ -449,9 +477,23 @@ function onGuestMessage(env: TransportEnvelope): void {
   } else if (m.t === 'peers') {
     setPeers(m.peers);
   } else if (m.t === 'reject') {
-    showToast(m.reason);
+    // A reject during the initial handshake (still 'connecting') means we never actually got in —
+    // e.g. a protocol-version mismatch. Surface it as the join error right away instead of a toast
+    // the user might miss followed by a misleading "no game found" once the join timer elapses.
+    if (get(liveStatus) === 'connecting') {
+      clearJoinTimer();
+      liveError.set(m.reason);
+      liveStatus.set('error');
+      void teardown();
+    } else {
+      showToast(m.reason);
+    }
   } else if (m.t === 'closed') {
-    showToast('The host ended the live game.');
+    // 'lost' = the link dropped (nearby can't re-signal); 'ended' (default) = a deliberate
+    // host-end. The guest exit screen reads this to tell the honest truth + offer a rejoin.
+    const reason = m.reason ?? 'ended';
+    liveEndReason.set(reason);
+    if (reason === 'ended') showToast('The host ended the live game.');
     void teardown();
     liveStatus.set('off');
     liveCode.set(null);
@@ -559,6 +601,21 @@ function stopReconnect(): void {
   reconnecting = false;
 }
 
+/**
+ * Guest/host control: force a reconnect attempt right now instead of waiting out the backoff.
+ * Only meaningful for a reconnectable (relay) session that has gone offline; a no-op otherwise,
+ * so the UI can wire it up unconditionally. Resets the backoff so the retry fires immediately.
+ */
+export function retryReconnectNow(): void {
+  if (tearing || !reconnectable || !isEstablished()) return;
+  reconnectAttempts = 0;
+  if (reconnectTimer !== undefined) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = undefined;
+  }
+  beginReconnect();
+}
+
 let netAttached = false;
 function onNetOnline(): void {
   // Connectivity is back — reset backoff and retry now instead of waiting out the timer.
@@ -607,7 +664,7 @@ async function teardown(): Promise<void> {
   seq = 0;
   opChain = Promise.resolve();
   liveRemote.set(false);
-  reconnectable = false;
+  setReconnectable(false);
   liveConnection.set('online');
   tearing = false;
 }

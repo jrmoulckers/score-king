@@ -66,5 +66,7 @@ export type LiveMessage =
   | { t: 'reject'; reason: string }
   // anyone → all: leaving cleanly
   | { t: 'bye' }
-  // leader → all: the session is ending
-  | { t: 'closed' };
+  // leader → all: the session is ending. `reason` separates a deliberate host-end ('ended',
+  // the default when omitted) from a transport synthesising a close because the link dropped
+  // ('lost') — so a guest can be told the honest truth instead of always "the host closed it".
+  | { t: 'closed'; reason?: 'ended' | 'lost' };

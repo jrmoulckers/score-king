@@ -12,6 +12,9 @@
     liveReplica,
     liveParticipants,
     liveError,
+    liveEndReason,
+    endedTitle,
+    endedBody,
   } from '../lib/live/session';
   import ReplicaBoard from '../lib/components/ReplicaBoard.svelte';
 
@@ -57,33 +60,42 @@
         <div class="muted" style="font-size: 0.8rem">Live game · code {joinCode}</div>
       </span>
     </span>
-    <span class="live"><span class="dot" aria-hidden="true"></span>{$liveParticipants.length}</span>
+    <span class="live" aria-label={`${$liveParticipants.length} connected`}>
+      <span class="dot" aria-hidden="true"></span>{$liveParticipants.length}
+    </span>
   </div>
 
   <ReplicaBoard />
 
   <button class="btn ghost block" style="margin-top: 14px" onclick={leave}>Leave game</button>
 {:else if $liveStatus === 'error'}
-  <div class="empty">
+  <div class="empty" role="alert">
     <h2>Couldn’t join</h2>
     <p class="muted">{$liveError ?? 'That live game isn’t reachable.'}</p>
     <a class="btn primary" href="/" use:link>Back to games</a>
+    <p class="muted reassure">No worries — you can still keep score on your own device.</p>
   </div>
 {:else if everConnected}
-  <div class="empty">
-    <h2>The live game ended</h2>
-    <p class="muted">The host closed the session.</p>
+  <div class="empty" role="status">
+    <h2>{endedTitle($liveEndReason)}</h2>
+    <p class="muted">{endedBody($liveEndReason)}</p>
     <a class="btn primary" href="/" use:link>Back to games</a>
   </div>
 {:else}
-  <div class="empty">
+  <div class="empty" role="status" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
     <h2>Joining game {joinCode}…</h2>
     <p class="muted">Connecting you to the host.</p>
+    <button class="btn ghost" onclick={leave}>Cancel</button>
+    <p class="muted reassure">Live play is optional — every game still works fully offline.</p>
   </div>
 {/if}
 
 <style>
+  .reassure {
+    margin-top: 4px;
+    font-size: 0.82rem;
+  }
   .live {
     display: inline-flex;
     align-items: center;
