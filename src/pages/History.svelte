@@ -231,7 +231,7 @@
       <span class="meta">
         <span class="titleline">
           <strong>{m?.name ?? g.type}</strong>
-          {#if g.status === 'active'}<span class="pill">in progress</span>{:else if g.status === 'abandoned'}<span class="pill">🪦 abandoned</span>{/if}
+          {#if g.status === 'active'}<span class="pill">In progress</span>{:else if g.status === 'abandoned'}<span class="pill">🪦 Abandoned</span>{/if}
         </span>
         <span class="muted sm oneline">{names(g.playerIds)}</span>
         <span class="muted sm oneline" title={formatDateTime(ts(g))}>

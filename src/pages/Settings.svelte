@@ -499,7 +499,7 @@
   async function restore() {
     if (
       !confirm(
-        "Replace this device with the backup?\n\nThis discards anything on this device that isn't in the backup — it does not merge. Your edits and other devices' changes normally sync automatically, so you rarely need this. Continue?",
+        'Replace this device with the backup?\n\nThis discards anything on this device that isn’t in the backup — it does not merge. Your edits and other devices’ changes normally sync automatically, so you rarely need this. Continue?',
       )
     )
       return;
@@ -576,7 +576,7 @@
       const when = snap.exportedAt ? ` (saved ${formatDate(snap.exportedAt)})` : '';
       if (
         !confirm(
-          `Replace this device's data with this file${when}?\n\nIt contains ${summary}. Anything on this device that isn't in the file is discarded.`,
+          `Replace this device’s data with this file${when}?\n\nIt contains ${summary}. Anything on this device that isn’t in the file is discarded.`,
         )
       )
         return;
@@ -635,8 +635,8 @@
 <div class="card stack">
   {#if !configured}
     <div class="muted sm">
-      OneDrive sync isn't enabled in this build yet. Your scores are still saved on this device,
-      and you can use the local JSON backup below. (To turn on OneDrive, add the app's client ID
+      OneDrive sync isn’t enabled in this build yet. Your scores are still saved on this device,
+      and you can use the local JSON backup below. (To turn on OneDrive, add the app’s client ID
       under Advanced or in <code>src/lib/config.ts</code>.)
     </div>
   {:else}
@@ -664,7 +664,7 @@
       </label>
       <span class="muted sm">
         Backs up your edits and pulls in changes from your other devices — on open, on
-        focus, when you reconnect, and periodically while it's open. Same-record edits keep
+        focus, when you reconnect, and periodically while it’s open. Same-record edits keep
         the newest; nothing is lost.
       </span>
 
@@ -706,7 +706,7 @@
           </button>
         </div>
         <span class="muted sm">
-          Escape hatch — a one-way overwrite that discards anything on this device that isn't
+          Escape hatch — a one-way overwrite that discards anything on this device that isn’t
           in the chosen backup. You rarely need this; syncing above is automatic and merges
           both sides.
         </span>
@@ -849,7 +849,7 @@
             <span class="muted sm block">
               Store your backups anywhere you like — Score King treats every
               <code>.json</code> file in this folder as a backup it can read and write.
-              Microsoft can't limit access to a single folder, so this grants the broader
+              Microsoft can’t limit access to a single folder, so this grants the broader
               <code>Files.ReadWrite</code> permission to your entire OneDrive.
             </span>
           </span>
@@ -877,7 +877,7 @@
       <div class="stack" style="gap: 10px">
         <div class="fieldlabel">Use your own Azure app Client ID</div>
         <div class="muted sm">
-          Don't trust us at all? No hard feelings! Override the built-in Azure app registration with
+          Don’t trust us at all? No hard feelings! Override the built-in Azure app registration with
           your own. See our <a
             href="https://github.com/jrmoulckers/score-king/blob/main/README.md#onetime-developer-setup-register-the-shared-app"
             target="_blank"

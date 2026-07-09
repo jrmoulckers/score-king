@@ -52,7 +52,7 @@
     if (!def) return;
     const copy = duplicateDef(def);
     await saveCustomGame(copy);
-    showToast('Duplicated — tweak your copy.');
+    showToast('Duplicated — tweak your copy');
     navigate(editCustomHref(copy.id));
   }
 

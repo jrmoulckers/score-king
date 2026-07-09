@@ -162,7 +162,7 @@
 {:else}
   <!-- 1 ─ Daily Crown hero -->
   {#if hero}
-    <section class="hero" class:gold={hero.gold} aria-label="Today's headline">
+    <section class="hero" class:gold={hero.gold} aria-label="Today’s headline">
       <span class="hero-emoji" aria-hidden="true">{hero.emoji}</span>
       <p class="hero-text">{hero.text}</p>
       <div class="row wrap hero-stats">

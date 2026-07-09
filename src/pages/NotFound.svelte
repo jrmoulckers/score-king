@@ -4,8 +4,8 @@
 
 <div class="empty notfound">
   <div class="nf-emoji" aria-hidden="true">🃏</div>
-  <h2>This card isn't in the deck</h2>
-  <p class="muted">That page doesn't exist — it may have been a mistyped link or an old bookmark.</p>
+  <h2>This card isn’t in the deck</h2>
+  <p class="muted">That page doesn’t exist — it may have been a mistyped link or an old bookmark.</p>
   <a class="btn primary" href="/" use:link>Back to games</a>
   <nav class="nf-links" aria-label="Other places">
     <a class="btn small ghost" href="/players" use:link>Players</a>

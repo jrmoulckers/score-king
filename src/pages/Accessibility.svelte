@@ -68,8 +68,7 @@
 
 <h1>Accessibility &amp; display</h1>
 <p class="lede muted">
-  Tune Score King to your eyes, your hands, and your table. Changes apply instantly and, because
-  they're part of your backup, follow you to your other devices.
+  Tune Score King to your eyes, your hands, and your table. Changes apply instantly.
 </p>
 
 <div class="card preview">

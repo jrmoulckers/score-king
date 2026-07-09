@@ -119,7 +119,7 @@
   {#if isFinal}
     <div class="reveal">
       <div class="revhead">🎭 The Reveal</div>
-      <p class="muted revlede">Everyone flips their card. Did the Bomber end up in the President's room?</p>
+      <p class="muted revlede">Everyone flips their card. Did the Bomber end up in the President’s room?</p>
 
       <div class="picks">
         <button type="button" class="pick" class:on={winner === 'red'} aria-pressed={winner === 'red'} onclick={() => setWinner('red')}>
