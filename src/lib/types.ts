@@ -77,6 +77,14 @@ export interface Game {
    * games finished before this field existed (History degrades to no score for those).
    */
   winnerScore?: number;
+  /**
+   * The runner-up's final total captured at finish time (best score among the
+   * non-winners). Paired with {@link winnerScore} it gives History a glanceable
+   * margin of victory ("won by N") without re-reading every game's rounds.
+   * Cleared when a game is reopened or abandoned. Absent on games finished before
+   * this field existed and on solo/all-tie games (no runner-up to compare).
+   */
+  runnerUpScore?: number;
   roundCount: number;
   /**
    * User archive: hidden from the History library's main list and from Home, kept

@@ -6,6 +6,7 @@
   import { setLeadMember } from '../lib/stores/identity';
   import { getModule } from '../lib/games/registry';
   import { link } from '../lib/router';
+  import { relativeTime } from '../lib/util';
   import * as db from '../lib/storage/db';
   import Avatar from '../lib/components/Avatar.svelte';
   import type { Player, Round } from '../lib/types';
@@ -225,7 +226,7 @@
     <div class="section-title">Record book</div>
     <div class="card stack">
       {#each records as r (r.key)}
-        <div class="row spread">
+        {#snippet recBody()}
           <span class="row" style="gap: 8px">
             <span aria-hidden="true">{r.emoji}</span>{r.label}
           </span>
@@ -236,8 +237,14 @@
               {#if h}<Avatar name={h.name} color={h.color} size={20} />{/if}
               {#if r.holderId === meId}<span class="you">You</span>{/if}
             {/if}
+            {#if r.gameId}<span class="recgo" aria-hidden="true">›</span>{/if}
           </span>
-        </div>
+        {/snippet}
+        {#if r.gameId}
+          <a class="row spread reclink" href={`/play/${r.gameId}`} use:link aria-label={`${r.label} — view game`}>{@render recBody()}</a>
+        {:else}
+          <div class="row spread">{@render recBody()}</div>
+        {/if}
       {/each}
     </div>
   {/if}
@@ -295,7 +302,7 @@
               </div>
             </span>
           </span>
-          <span class="muted sm">{new Date(g.finishedAt ?? g.createdAt).toLocaleDateString()}</span>
+          <span class="muted sm" title={new Date(g.finishedAt ?? g.createdAt).toLocaleString()}>{relativeTime(g.finishedAt ?? g.createdAt)}</span>
         </a>
       {/each}
     </div>
@@ -421,6 +428,24 @@
     text-decoration: none;
     color: inherit;
     min-height: 46px;
+  }
+
+  /* Record-book rows link to the game that set the record. */
+  .reclink {
+    color: inherit;
+    text-decoration: none;
+    min-height: 44px;
+    margin: 0 -8px;
+    padding: 0 8px;
+    border-radius: var(--radius-sm);
+  }
+  .reclink:hover {
+    background: var(--surface-2);
+  }
+  .recgo {
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1;
   }
 
   .picker {

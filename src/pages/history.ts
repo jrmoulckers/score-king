@@ -42,3 +42,34 @@ export function haystack(
 export function nameResolver(playerMap: Map<string, Player>): (id: string) => string {
   return (id) => playerMap.get(id)?.name ?? '?';
 }
+
+export interface GroupLeader {
+  /** Display name of the group's most-winning player. */
+  name: string;
+  /** How many finished games they won within the group. */
+  wins: number;
+  /** True when two or more players share the top win count. */
+  tie: boolean;
+}
+
+/**
+ * The player who won the most finished games within a group (crew or game type) —
+ * the "who owns this group" glance. Returns `undefined` when the group has no
+ * finished games with a recorded winner. `tie` is set when the top win count is
+ * shared, so the UI can say "Tied" rather than crown one of several equals.
+ */
+export function groupLeader(
+  games: Game[],
+  nameFor: (id: string) => string,
+): GroupLeader | undefined {
+  const wins = new Map<string, number>();
+  for (const g of games) {
+    if (g.status !== 'finished') continue;
+    for (const id of g.winnerIds ?? []) wins.set(id, (wins.get(id) ?? 0) + 1);
+  }
+  if (wins.size === 0) return undefined;
+  const max = Math.max(...wins.values());
+  if (max === 0) return undefined;
+  const top = [...wins.entries()].filter(([, n]) => n === max).map(([id]) => id);
+  return { name: nameFor(top[0]), wins: max, tie: top.length > 1 };
+}

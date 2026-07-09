@@ -1,10 +1,10 @@
 import { writable, derived } from 'svelte/store';
 import type { Game, ID, Round } from '../types';
-import { defaultWinners } from '../types';
+import { defaultWinners, resolveLower } from '../types';
 import * as db from '../storage/db';
 import { uid } from '../util';
 import { getModule } from '../games/registry';
-import { computeTotals } from '../scoring';
+import { computeTotals, runnerUpTotal } from '../scoring';
 
 export const games = writable<Game[]>([]);
 
@@ -94,7 +94,9 @@ export async function finishGame(game: Game): Promise<Game> {
   const totals = computeTotals(rounds, game.playerIds);
   const module = getModule(game.type);
   let winners: ID[] = [];
+  let lower = false;
   if (module) {
+    lower = resolveLower(module, game.config);
     winners = module.pickWinners
       ? module.pickWinners(totals, game.config)
       : defaultWinners(module, totals, game.config);
@@ -105,6 +107,7 @@ export async function finishGame(game: Game): Promise<Game> {
     finishedAt: Date.now(),
     winnerIds: winners,
     winnerScore: winners.length ? totals[winners[0]] : undefined,
+    runnerUpScore: winners.length ? runnerUpTotal(totals, winners, lower) : undefined,
     roundCount: rounds.length,
   };
   await db.putGame(updated);
@@ -119,6 +122,7 @@ export async function reopenGame(game: Game): Promise<Game> {
     finishedAt: undefined,
     winnerIds: undefined,
     winnerScore: undefined,
+    runnerUpScore: undefined,
   };
   await db.putGame(updated);
   await refreshGames();
@@ -138,6 +142,7 @@ export async function abandonGame(game: Game): Promise<Game> {
     finishedAt: Date.now(),
     winnerIds: undefined,
     winnerScore: undefined,
+    runnerUpScore: undefined,
     roundCount: rounds.length,
   };
   await db.putGame(updated);
