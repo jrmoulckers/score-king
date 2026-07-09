@@ -25,6 +25,39 @@
   import { showToast } from '../lib/stores/toast';
   import { relativeTime, relativeTimeSec, formatDate } from '../lib/util';
   import JsonIcon from '../lib/components/JsonIcon.svelte';
+  import Switch from '../lib/components/Switch.svelte';
+
+  // Live one-line summaries of the current values behind each hub row, so state is
+  // legible without drilling in (a settings index should reflect what's set).
+  const themeLabel = $derived(
+    $settings.theme === 'system' ? 'Auto' : $settings.theme === 'dark' ? 'Dark' : 'Light',
+  );
+  const sizeLabel = $derived(
+    ({ sm: 'Small', md: 'Medium', lg: 'Large', xl: 'XL' } as const)[$settings.fontScale],
+  );
+  const motionLabel = $derived(
+    $settings.motion === 'reduce' ? 'Reduced motion' : $settings.motion === 'full' ? 'Full motion' : 'System motion',
+  );
+  const displaySummary = $derived(
+    [
+      `${themeLabel} theme`,
+      `${sizeLabel} text`,
+      motionLabel,
+      $settings.highContrast ? 'High contrast' : null,
+      $settings.colorBlind ? 'Colour-blind' : null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  );
+  const gameplaySummary = $derived(
+    [
+      $settings.keepAwake ? 'Keep awake' : null,
+      $settings.privacyGuard ? 'Peek-guard' : null,
+      $settings.roastMode ? 'Roasts' : null,
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'All off',
+  );
 
   let override = $state($settings.oneDriveClientId);
   let relayInput = $state($settings.relayUrl);
@@ -568,7 +601,7 @@
     <span class="navico" aria-hidden="true">🎲</span>
     <span class="navmeta">
       <span class="navname">Gameplay</span>
-      <span class="muted sm">Keep screen awake, privacy peek-guard</span>
+      <span class="muted sm">{gameplaySummary}</span>
     </span>
   </span>
   <span class="chev" aria-hidden="true">›</span>
@@ -586,13 +619,13 @@
   <span class="chev" aria-hidden="true">›</span>
 </a>
 
-<div class="section-title">Display & accessibility</div>
+<div class="section-title">Display &amp; accessibility</div>
 <a class="card navrow row spread" href="/accessibility" use:link>
   <span class="row" style="gap: 12px">
     <span class="navico" aria-hidden="true">👁️</span>
     <span class="navmeta">
       <span class="navname">Accessibility &amp; display</span>
-      <span class="muted sm">Theme, text size, contrast, motion, colour-blind palette</span>
+      <span class="muted sm">{displaySummary}</span>
     </span>
   </span>
   <span class="chev" aria-hidden="true">›</span>
@@ -623,15 +656,11 @@
 
       <label class="sw-row row spread">
         <span>Automatically sync changes</span>
-        <span class="switch">
-          <input
-            type="checkbox"
-            checked={$settings.autoSync}
-            onchange={(e) =>
-              settings.update((s) => ({ ...s, autoSync: e.currentTarget.checked }))}
-          />
-          <span class="track"><span class="thumb"></span></span>
-        </span>
+        <Switch
+          label="Automatically sync changes"
+          checked={$settings.autoSync}
+          onchange={(v) => settings.update((s) => ({ ...s, autoSync: v }))}
+        />
       </label>
       <span class="muted sm">
         Backs up your edits and pulls in changes from your other devices — on open, on
@@ -959,49 +988,6 @@
   }
   .sw-row {
     cursor: pointer;
-  }
-  .switch {
-    position: relative;
-    display: inline-flex;
-    flex: none;
-  }
-  .switch input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-  .track {
-    width: 40px;
-    height: 22px;
-    border-radius: 999px;
-    background: var(--surface-3, rgba(127, 127, 127, 0.3));
-    border: 1px solid var(--border, rgba(127, 127, 127, 0.2));
-    display: inline-flex;
-    align-items: center;
-    padding: 2px;
-    transition: background 0.15s ease;
-  }
-  .thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    transition: transform 0.15s ease;
-  }
-  .switch input:checked + .track {
-    background: var(--primary);
-    border-color: var(--primary);
-  }
-  .switch input:checked + .track .thumb {
-    transform: translateX(18px);
-  }
-  .switch input:focus-visible + .track {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
   }
   details summary {
     cursor: pointer;

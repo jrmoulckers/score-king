@@ -1,7 +1,8 @@
 import { get, writable } from 'svelte/store';
 import type { GamePreset } from '../types';
 
-export type Theme = 'dark' | 'light';
+/** Stored theme choice. `system` follows the OS `prefers-color-scheme`. */
+export type Theme = 'dark' | 'light' | 'system';
 
 export type OneDriveFolderMode = 'app' | 'custom';
 
@@ -200,12 +201,33 @@ function load(): Settings {
 
 function apply(s: Settings) {
   const el = document.documentElement;
-  el.setAttribute('data-theme', s.theme);
-  el.toggleAttribute('data-oled', s.oled);
+  const effective = resolveTheme(s.theme);
+  el.setAttribute('data-theme', effective);
+  // True-black only makes sense on a dark surface, so gate it on the *resolved*
+  // theme — a `system` choice that currently reads light must not go OLED.
+  el.toggleAttribute('data-oled', s.oled && effective === 'dark');
   el.setAttribute('data-motion', s.motion);
   el.toggleAttribute('data-contrast', s.highContrast);
   el.style.setProperty('--font-scale', String(FONT_SCALE_VALUES[s.fontScale] ?? 1));
 }
+
+const prefersDark =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : null;
+
+/** Resolve a stored {@link Theme} to the concrete `dark`/`light` actually painted. */
+export function resolveTheme(theme: Theme): 'dark' | 'light' {
+  if (theme === 'system') return prefersDark?.matches ? 'dark' : 'light';
+  return theme;
+}
+
+// Re-paint when the OS scheme flips while the user is on `system`, so the app
+// tracks day/night without a reload.
+prefersDark?.addEventListener?.('change', () => {
+  const s = get(settings);
+  if (s.theme === 'system') apply(s);
+});
 
 export const settings = writable<Settings>(load());
 
@@ -272,4 +294,43 @@ export function applyBackupSettings(incoming: Partial<Settings> | undefined): vo
     }
     return next;
   });
+}
+
+/**
+ * Reset a chosen group of portable preferences back to their factory defaults.
+ * Only portable keys are accepted, so this can never wipe device/connection state
+ * (OneDrive, sync bookkeeping, the active lead). Used by the per-page
+ * "Reset to defaults" affordances so a user who over-tweaked can start clean.
+ */
+export function resetPreferences(keys: readonly PortableSettingKey[]): void {
+  settings.update((s) => {
+    const next: Settings = { ...s };
+    for (const key of keys) next[key] = defaults[key] as never;
+    return next;
+  });
+}
+
+/** Portable display/accessibility prefs, reset together from the Accessibility page. */
+export const APPEARANCE_SETTING_KEYS = [
+  'theme',
+  'oled',
+  'fontScale',
+  'motion',
+  'highContrast',
+  'colorBlind',
+] as const satisfies readonly PortableSettingKey[];
+
+/** Portable gameplay/personality prefs, reset together from the Gameplay page. */
+export const GAMEPLAY_SETTING_KEYS = [
+  'keepAwake',
+  'privacyGuard',
+  'roastMode',
+] as const satisfies readonly PortableSettingKey[];
+
+/** True when any key in `keys` currently differs from its factory default. */
+export function differsFromDefaults(
+  s: Settings,
+  keys: readonly PortableSettingKey[],
+): boolean {
+  return keys.some((k) => JSON.stringify(s[k]) !== JSON.stringify(defaults[k]));
 }
