@@ -557,8 +557,8 @@
   }
   .grouphead .small-icon {
     flex: none;
-    width: 38px;
-    height: 38px;
+    width: 46px;
+    height: 46px;
     font-size: 0.95rem;
   }
   .avstack {
@@ -614,7 +614,7 @@
   }
   .actions {
     flex: none;
-    gap: 6px;
+    gap: 8px;
   }
   .sm {
     font-size: 0.85rem;
@@ -640,7 +640,7 @@
       gap: 8px;
     }
     .actions {
-      gap: 4px;
+      gap: 6px;
     }
   }
 </style>

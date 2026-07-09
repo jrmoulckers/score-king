@@ -57,6 +57,7 @@
   }
   .toggle {
     flex: 1;
+    min-height: 46px;
     padding: 9px;
     border: 1px solid var(--border);
     border-radius: 10px;

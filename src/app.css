@@ -103,6 +103,22 @@ html[data-contrast] .btn:focus-visible {
 
 * { box-sizing: border-box; }
 
+/* Kill the 300ms tap delay and double-tap-to-zoom on interactive controls so
+   rapid one-handed score entry (steppers, toggles, tabs) responds instantly and
+   never accidentally zooms the board mid-round. */
+button,
+a,
+input,
+select,
+label,
+.btn,
+.iconbtn,
+.pill,
+[role="radio"],
+[role="button"] {
+  touch-action: manipulation;
+}
+
 html, body { margin: 0; padding: 0; }
 
 body {
@@ -218,14 +234,15 @@ tbody tr:last-child td { border-bottom: none; }
 .app {
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 0 14px calc(96px + env(safe-area-inset-bottom));
+  padding: 0 calc(14px + env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom))
+    calc(14px + env(safe-area-inset-left));
 }
 
 .appbar {
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; justify-content: space-between;
   gap: 10px;
-  padding: 12px 14px calc(12px);
+  padding: 12px calc(14px + env(safe-area-inset-right)) 12px calc(14px + env(safe-area-inset-left));
   padding-top: calc(12px + env(safe-area-inset-top));
   background: color-mix(in srgb, var(--bg) 86%, transparent);
   backdrop-filter: blur(10px);
@@ -239,15 +256,16 @@ tbody tr:last-child td { border-bottom: none; }
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   display: flex; justify-content: space-around;
-  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  padding: 8px calc(6px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom))
+    calc(6px + env(safe-area-inset-left));
   background: color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
 }
 .tabbar a {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   font-size: 0.7rem; color: var(--muted); text-decoration: none;
-  padding: 4px 10px; border-radius: var(--radius-chip); min-width: 56px;
+  padding: 4px 10px; border-radius: var(--radius-chip); min-width: 56px; min-height: 46px;
 }
 .tabbar a.active { color: var(--text); background: var(--surface-2); }
 .tabbar a .ico { font-size: 1.2rem; line-height: 1; }
@@ -365,7 +383,7 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .toast-action {
   flex: none;
-  min-height: 38px; padding: 0 16px;
+  min-height: 44px; padding: 0 16px;
   border-radius: 999px; border: 1px solid var(--border);
   background: var(--surface); color: var(--text);
   font-weight: 700; font-size: 0.9rem; cursor: pointer;
