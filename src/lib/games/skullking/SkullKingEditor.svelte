@@ -50,8 +50,8 @@
         </span>
       </div>
       <div class="fields">
-        <label class="f">Bid<Stepper bind:value={row.bid} min={0} max={n} /></label>
-        <label class="f">Won<Stepper bind:value={row.actual} min={0} max={n} /></label>
+        <label class="f">Bid<Stepper bind:value={row.bid} min={0} max={n} label={`${p.name} bid`} /></label>
+        <label class="f">Won<Stepper bind:value={row.actual} min={0} max={n} label={`${p.name} won`} /></label>
         <label class="f">Bonus<input type="number" step="10" bind:value={row.bonus} /></label>
       </div>
     </div>

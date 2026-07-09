@@ -39,7 +39,7 @@
           <Avatar name={p.name} color={p.color} />
           <strong>{p.name}</strong>
         </span>
-        <Stepper bind:value={input.scores[p.id]} min={floor} max={ceil} />
+        <Stepper bind:value={input.scores[p.id]} min={floor} max={ceil} label={p.name} />
       </div>
       <div class="row spread foot">
         <span class="tag" class:under={tag === 'under'}>

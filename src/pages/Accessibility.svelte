@@ -2,6 +2,7 @@
   import { settings } from '../lib/stores/settings';
   import { PALETTE } from '../lib/util';
   import Segmented from '../lib/components/Segmented.svelte';
+  import Switch from '../lib/components/Switch.svelte';
   import Avatar from '../lib/components/Avatar.svelte';
   import BackLink from '../lib/components/BackLink.svelte';
 
@@ -101,14 +102,7 @@
     <span class="name">High contrast</span>
     <span class="muted sm">Bolder text, stronger borders, chunkier focus rings.</span>
   </span>
-  <span class="switch">
-    <input
-      type="checkbox"
-      checked={$settings.highContrast}
-      onchange={(e) => setBool('highContrast', e.currentTarget.checked)}
-    />
-    <span class="track"><span class="thumb"></span></span>
-  </span>
+  <Switch checked={$settings.highContrast} onchange={(v) => setBool('highContrast', v)} />
 </label>
 
 <label class="card sw-row row spread" class:dim={oledDisabled}>
@@ -118,15 +112,7 @@
       {oledDisabled ? 'Switch to the dark theme to use true black.' : 'Pure-black surfaces save power and deepen contrast.'}
     </span>
   </span>
-  <span class="switch">
-    <input
-      type="checkbox"
-      checked={$settings.oled}
-      disabled={oledDisabled}
-      onchange={(e) => setBool('oled', e.currentTarget.checked)}
-    />
-    <span class="track"><span class="thumb"></span></span>
-  </span>
+  <Switch checked={$settings.oled} disabled={oledDisabled} onchange={(v) => setBool('oled', v)} />
 </label>
 
 <div class="section-title">Motion &amp; colour</div>
@@ -144,14 +130,7 @@
     <span class="name">Colour-blind palette</span>
     <span class="muted sm">Swaps player colours for a set that stays distinct across colour vision types.</span>
   </span>
-  <span class="switch">
-    <input
-      type="checkbox"
-      checked={$settings.colorBlind}
-      onchange={(e) => setBool('colorBlind', e.currentTarget.checked)}
-    />
-    <span class="track"><span class="thumb"></span></span>
-  </span>
+  <Switch checked={$settings.colorBlind} onchange={(v) => setBool('colorBlind', v)} />
 </label>
 
 <style>
@@ -224,52 +203,5 @@
   }
   .sw-row.dim {
     opacity: 0.55;
-  }
-
-  .switch {
-    position: relative;
-    display: inline-flex;
-    flex: none;
-  }
-  .switch input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-  .switch input:disabled {
-    cursor: not-allowed;
-  }
-  .track {
-    width: 46px;
-    height: 26px;
-    border-radius: 999px;
-    background: var(--surface-3);
-    border: 1px solid var(--border);
-    display: inline-flex;
-    align-items: center;
-    padding: 2px;
-    transition: background 0.15s ease;
-  }
-  .thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #fff;
-    transition: transform 0.15s ease;
-  }
-  .switch input:checked + .track {
-    background: var(--primary);
-    border-color: var(--primary);
-  }
-  .switch input:checked + .track .thumb {
-    transform: translateX(20px);
-  }
-  .switch input:focus-visible + .track {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
   }
 </style>
