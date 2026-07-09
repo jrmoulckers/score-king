@@ -9,10 +9,12 @@
     archivePlayer,
     restorePlayer,
     removePlayer,
+    nameExists,
   } from '../lib/stores/players';
   import { leadMember, setLeadMember } from '../lib/stores/identity';
-  import { PALETTE, resolvePlayerColor } from '../lib/util';
+  import { PALETTE, resolvePlayerColor, MAX_NAME_LEN } from '../lib/util';
   import { settings } from '../lib/stores/settings';
+  import { showToast } from '../lib/stores/toast';
   import Avatar from '../lib/components/Avatar.svelte';
   import type { Player } from '../lib/types';
 
@@ -20,14 +22,21 @@
   let editingId = $state<string | null>(null);
   let editName = $state('');
   let showArchived = $state(false);
+  let confirmDeleteId = $state<string | null>(null);
 
   const archived = $derived($players.filter((p) => p.archived));
+  // Live hint while typing so a duplicate is caught before it lands on the board.
+  const dupWarning = $derived(nameExists(newName) ? `Already a player named “${newName.trim()}”.` : '');
 
   async function add() {
     const n = newName.trim();
     if (!n) return;
+    const dup = nameExists(n);
     await createPlayer(n);
     newName = '';
+    // Non-blocking: twins are allowed, but say so — two identical rows are otherwise
+    // indistinguishable except by avatar colour.
+    if (dup) showToast(`Two players named “${n}” — rename one to tell them apart.`);
   }
   function startEdit(p: Player) {
     editingId = p.id;
@@ -45,20 +54,23 @@
     await archivePlayer(p);
   }
   async function remove(p: Player) {
-    if (confirm(`Delete ${p.name} for good? Past games keep their recorded scores.`)) {
-      if ($leadMember?.id === p.id) setLeadMember(null);
-      await removePlayer(p.id);
-    }
+    if ($leadMember?.id === p.id) setLeadMember(null);
+    confirmDeleteId = null;
+    await removePlayer(p.id);
+    showToast(`${p.name} deleted. Past games keep their scores.`);
   }
 </script>
 
 <h1>Players</h1>
 
-<form class="row" onsubmit={(e) => { e.preventDefault(); add(); }} style="margin-bottom: 14px">
-  <input class="grow" type="text" placeholder="New player name…" aria-label="New player name" bind:value={newName} />
+<form class="row" onsubmit={(e) => { e.preventDefault(); add(); }} style="margin-bottom: 6px">
+  <input class="grow" type="text" placeholder="New player name…" aria-label="New player name" maxlength={MAX_NAME_LEN} bind:value={newName} />
   <button class="iconbtn" type="button" onclick={generatePlayer} aria-label="Generate a player" title="Surprise me with a name">🎲</button>
-  <button class="btn primary" type="submit">Add</button>
+  <button class="btn primary" type="submit" disabled={!newName.trim()}>Add</button>
 </form>
+{#if dupWarning}
+  <p class="dup-hint" role="status">↳ {dupWarning} Adding again is fine — give them different names to tell them apart.</p>
+{/if}
 
 {#if $activePlayers.length === 0 && archived.length === 0}
   <div class="empty firstrun">
@@ -75,7 +87,7 @@
           <span class="row grow" style="gap: 10px; min-width: 0">
             <Avatar name={p.name} color={p.color} size={34} />
             {#if editingId === p.id}
-              <input class="grow" type="text" bind:value={editName} aria-label="Player name" />
+              <input class="grow" type="text" bind:value={editName} aria-label="Player name" maxlength={MAX_NAME_LEN} />
             {:else}
               <span class="who">
                 <strong>{p.name}</strong>
@@ -145,10 +157,18 @@
               <Avatar name={p.name} color={p.color} size={28} />
               <span class="muted">{p.name}</span>
             </span>
-            <span class="row" style="gap: 6px">
-              <button class="btn small ghost" onclick={() => restorePlayer(p)}>Restore</button>
-              <button class="iconbtn" onclick={() => remove(p)} aria-label="Delete for good">🗑</button>
-            </span>
+            {#if confirmDeleteId === p.id}
+              <span class="row" style="gap: 6px">
+                <span class="confirm-q">Delete for good?</span>
+                <button class="btn small ghost" onclick={() => (confirmDeleteId = null)}>Cancel</button>
+                <button class="btn small danger" onclick={() => remove(p)}>Delete</button>
+              </span>
+            {:else}
+              <span class="row" style="gap: 6px">
+                <button class="btn small ghost" onclick={() => restorePlayer(p)}>Restore</button>
+                <button class="iconbtn" onclick={() => (confirmDeleteId = p.id)} aria-label={`Delete ${p.name} for good`}>🗑</button>
+              </span>
+            {/if}
           </div>
         </div>
       {/each}
@@ -270,5 +290,15 @@
     font-size: 2.2rem;
     line-height: 1;
     margin-bottom: 4px;
+  }
+  .dup-hint {
+    margin: 0 2px 14px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .confirm-q {
+    color: var(--muted);
+    font-size: 0.85rem;
+    align-self: center;
   }
 </style>

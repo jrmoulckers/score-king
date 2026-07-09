@@ -3,6 +3,7 @@
   import { pathStore, parseRoute, link, titleForRoute } from './lib/router';
   import { toast } from './lib/stores/toast';
   import { settings } from './lib/stores/settings';
+  import { storageError } from './lib/stores/storage';
   import { announce } from './lib/stores/announcer';
   import Home from './pages/Home.svelte';
   import Players from './pages/Players.svelte';
@@ -129,6 +130,14 @@
       </div>
     </header>
 
+    {#if $storageError}
+      <div class="storage-banner" role="alert">
+        <span class="sb-ico" aria-hidden="true">⚠️</span>
+        <span class="sb-msg">{$storageError}</span>
+        <button class="sb-action" type="button" onclick={() => location.reload()}>Reload</button>
+      </div>
+    {/if}
+
 <main class="app" id="main-content" tabindex="-1" bind:this={mainEl}>
   {#if route.name === 'home'}
     <Home />
@@ -218,6 +227,47 @@
 {/if}
 
 <style>
+  /* Storage fault banner: a persistent, co-signalled (⚠️ + text, not colour alone)
+     alert shown when the local database can't be read/written, so a device that
+     can't persist scores says so instead of booting to a mysterious empty state.
+     Surface-2 fill with a coral hairline — no glass (glass is chrome only). */
+  .storage-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 12px 0;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid color-mix(in srgb, var(--bad) 55%, var(--border));
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+  .sb-ico {
+    font-size: 1.1rem;
+    line-height: 1;
+    flex: none;
+  }
+  .sb-msg {
+    flex: 1;
+    min-width: 0;
+  }
+  .sb-action {
+    flex: none;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-3);
+    color: var(--text);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .sb-action:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
   /* Skip link: off-screen until focused, then anchored top-center over the app
      bar so keyboard users can jump past the persistent nav (WCAG 2.4.1). */
   .skip-link {

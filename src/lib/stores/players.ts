@@ -1,9 +1,10 @@
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import type { Player, ID } from '../types';
 import type { BackupSettings } from './settings';
 import * as db from '../storage/db';
-import { pickColor, generateHandle } from '../util';
+import { pickColor, generateHandle, cleanName, sameName } from '../util';
 import { pruneDeletedPlayers } from './presets';
+import { reportStorageError } from './storage';
 
 /** Every member, archived included — Stats and History need the full roster. */
 export const players = writable<Player[]>([]);
@@ -14,7 +15,24 @@ export const activePlayers = derived(players, ($players) =>
 );
 
 export async function refreshPlayers(): Promise<void> {
-  players.set(await db.getAllPlayers());
+  try {
+    players.set(await db.getAllPlayers());
+  } catch {
+    reportStorageError();
+  }
+}
+
+/**
+ * Whether an active member already goes by `name` (case-insensitively), optionally
+ * ignoring one id (so renaming a player to their own name isn't flagged). Lets the UI
+ * warn about a duplicate before two indistinguishable "Alex" rows land on the board.
+ */
+export function nameExists(name: string, exceptId?: ID): boolean {
+  const clean = cleanName(name);
+  if (!clean) return false;
+  return get(players).some(
+    (p) => !p.archived && p.id !== exceptId && sameName(p.name, clean),
+  );
 }
 
 /** Create a claimed member from a name the user typed. */
@@ -36,7 +54,7 @@ export async function generatePlayer(): Promise<Player> {
 
 /** Renaming the handle claims the identity. */
 export async function renamePlayer(player: Player, name: string): Promise<void> {
-  await db.updatePlayer({ ...player, name: name.trim(), claimed: true });
+  await db.updatePlayer({ ...player, name: cleanName(name), claimed: true });
   await refreshPlayers();
 }
 

@@ -1,6 +1,45 @@
+import type { ID, Player } from './types';
+
 export function uid(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
   return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+/**
+ * Longest player/handle we keep. A pasted essay of a name would blow out the
+ * scoreboard columns, avatars, and backup size — so names are trimmed and capped
+ * both at the input (a `maxlength`) and defensively here at the storage boundary.
+ */
+export const MAX_NAME_LEN = 40;
+
+/** Trim and cap a user-typed name to {@link MAX_NAME_LEN}. */
+export function cleanName(name: string): string {
+  return (name ?? '').trim().slice(0, MAX_NAME_LEN);
+}
+
+/** Case-/whitespace-insensitive name match, so "Alex" and " alex " read as the same person. */
+export function sameName(a: string, b: string): boolean {
+  return cleanName(a).toLowerCase() === cleanName(b).toLowerCase();
+}
+
+/**
+ * Resolve a game's ordered lineup, substituting a "Removed player" placeholder for any
+ * id that no longer resolves to a member — a player hard-deleted mid-game. Keeping the
+ * slot preserves their scorecard column and their contribution to the standings instead
+ * of silently collapsing the board (which would misattribute or hide recorded points).
+ */
+export function rosterFor(playerIds: ID[], roster: Player[]): Player[] {
+  return playerIds.map(
+    (pid) =>
+      roster.find((p) => p.id === pid) ?? {
+        id: pid,
+        name: 'Removed player',
+        color: '#5b5e7e',
+        createdAt: 0,
+        claimed: false,
+        archived: true,
+      },
+  );
 }
 
 export const PALETTE = [
