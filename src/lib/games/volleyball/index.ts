@@ -2,58 +2,60 @@ import type { GameModule, ID, Round, RoundContext } from '../../types';
 import Editor from './VolleyballEditor.svelte';
 import { volleyballStats } from './stats';
 import {
-  maxSets,
+  cloneTeams,
+  defaultTeams,
   readConfig,
-  setWinner,
-  targetForSet,
+  type Team,
   validateSetScore,
+  type VolleyballInput,
+  winningTeamId,
 } from './logic';
 
-/**
- * One set's final points, keyed by side (player) id. A volleyball match is
- * modelled as a sequence of sets: each round is a set, and the module banks a
- * "set won" (+1) to whoever took it, so a side's running total is its sets won —
- * exactly the number the big scoreboard should show. The match ends the moment a
- * side reaches the sets it needs (best-of-5 → 3, best-of-3 → 2).
- */
-export interface VolleyballInput {
-  points: Record<ID, number>;
+export type { VolleyballInput } from './logic';
+
+/** Recorded sets from prior rounds, in play order. */
+function recordedSets(ctx: RoundContext): VolleyballInput[] {
+  return [...ctx.rounds]
+    .sort((a, b) => a.index - b.index)
+    .map((r) => r.input as VolleyballInput)
+    .filter((i): i is VolleyballInput => !!i && Array.isArray(i.teams));
 }
 
-/** The two sides, in board order. Volleyball is always exactly two. */
-function sides(ctx: RoundContext): [ID, ID] {
-  return [ctx.players[0]?.id, ctx.players[1]?.id];
+/** The team lineup for the next set: carry the last set's teams forward, else seed fresh. */
+function carryTeams(ctx: RoundContext): Team[] {
+  const sets = recordedSets(ctx);
+  const last = sets[sets.length - 1];
+  if (last?.teams?.length) return cloneTeams(last.teams);
+  return defaultTeams(readConfig(ctx.config), ctx.players.map((p) => p.id));
 }
 
 export const volleyball: GameModule = {
   id: 'volleyball',
   name: 'Volleyball',
-  tagline: 'Rally scoring, win by two, best of five',
+  tagline: 'Build teams, rally to the set, climb the standings',
   emoji: '🏐',
-  keywords: ['volleyball', 'sets', 'rally', 'net', 'sport', 'beach', 'indoor', 'spike', 'match'],
+  keywords: ['volleyball', 'sets', 'rally', 'net', 'sport', 'beach', 'indoor', 'spike', 'teams', 'match'],
+  // A shared pool of players you split into teams — from a 2s beach duel up to several
+  // indoor sixes rotating through the court.
   minPlayers: 2,
-  maxPlayers: 2,
+  maxPlayers: 24,
   teams: true,
   configFields: [
     {
       key: 'format',
-      label: 'Match length',
+      label: 'Style of play',
       type: 'select',
-      default: 'bo5',
+      default: 'indoor',
       options: [
-        { value: 'bo5', label: 'Best of 5 (first to 3 sets)' },
-        { value: 'bo3', label: 'Best of 3 (first to 2 sets)' },
+        { value: 'beach', label: 'Beach — 2s' },
+        { value: 'fours', label: 'Fours — 4s' },
+        { value: 'indoor', label: 'Indoor — 6s' },
+        { value: 'custom', label: 'Custom — any size' },
       ],
+      help: 'Sets the suggested roster size per team. You can still put anyone anywhere.',
     },
-    { key: 'pointsPerSet', label: 'Points to win a set', type: 'number', default: 25, min: 1 },
-    {
-      key: 'decidingSetPoints',
-      label: 'Points to win the deciding set',
-      type: 'number',
-      default: 15,
-      min: 1,
-      help: 'The final set (2–2 in a best-of-5, 1–1 in a best-of-3) is played to this shorter target.',
-    },
+    { key: 'numberOfTeams', label: 'Teams to start with', type: 'number', default: 2, min: 2, max: 8, help: 'Seed this many teams from your player pool. Add, remove or rebrand them any time during play.' },
+    { key: 'pointsPerSet', label: 'Points to win a set', type: 'number', default: 25, min: 1, help: 'Rally scoring. Beach is usually 21, indoor 25.' },
     { key: 'winBy2', label: 'Win a set by two', type: 'boolean', default: true },
     {
       key: 'hardCap',
@@ -65,24 +67,28 @@ export const volleyball: GameModule = {
     },
   ],
 
-  createRoundInput: (ctx: RoundContext): VolleyballInput => ({
-    points: Object.fromEntries(ctx.players.map((p) => [p.id, 0])),
-  }),
+  createRoundInput: (ctx: RoundContext): VolleyballInput => {
+    const teams = carryTeams(ctx);
+    const ids = teams.map((t) => t.id);
+    const sets = recordedSets(ctx);
+    const last = sets[sets.length - 1];
+    const home = last?.home && ids.includes(last.home) ? last.home : ids[0] ?? '';
+    const away =
+      last?.away && ids.includes(last.away) && last.away !== home
+        ? last.away
+        : ids.find((id) => id !== home) ?? '';
+    return { teams, home, away, points: { home: 0, away: 0 } };
+  },
 
   validateRound: (input: VolleyballInput, ctx: RoundContext): string | null => {
-    if (ctx.players.length !== 2) return 'Volleyball is played by exactly two sides.';
+    if (!input?.teams?.length) return 'Set up your teams first.';
+    if (!input.home || !input.away) return 'Pick the two teams playing this set.';
+    if (input.home === input.away) return 'A team can’t play itself — pick two different teams.';
     const cfg = readConfig(ctx.config);
-    const [a, b] = sides(ctx);
-    const setsA = Number(ctx.totals[a]) || 0;
-    const setsB = Number(ctx.totals[b]) || 0;
-    if (setsA >= cfg.setsToWin || setsB >= cfg.setsToWin) {
-      return 'The match is already won — no more sets to play.';
-    }
-    const target = targetForSet(cfg, setsA, setsB);
     return validateSetScore(
-      Number(input.points[a]) || 0,
-      Number(input.points[b]) || 0,
-      target,
+      Number(input.points?.home) || 0,
+      Number(input.points?.away) || 0,
+      cfg.pointsPerSet,
       cfg.winBy2,
       cfg.hardCap,
     );
@@ -90,53 +96,50 @@ export const volleyball: GameModule = {
 
   scoreRound: (input: VolleyballInput, ctx: RoundContext): Record<ID, number> => {
     const cfg = readConfig(ctx.config);
-    const [a, b] = sides(ctx);
-    const setsA = Number(ctx.totals[a]) || 0;
-    const setsB = Number(ctx.totals[b]) || 0;
-    const target = targetForSet(cfg, setsA, setsB);
-    const winner = setWinner(
-      Number(input.points[a]) || 0,
-      Number(input.points[b]) || 0,
-      target,
-      cfg.winBy2,
-      cfg.hardCap,
-    );
-    return { [a]: winner === 'a' ? 1 : 0, [b]: winner === 'b' ? 1 : 0 };
+    const deltas: Record<ID, number> = {};
+    for (const p of ctx.players) deltas[p.id] = 0;
+    const winId = winningTeamId(input, cfg);
+    if (!winId) return deltas;
+    const team = input.teams.find((t) => t.id === winId);
+    for (const m of team?.memberIds ?? []) {
+      if (m in deltas) deltas[m] += 1;
+    }
+    return deltas;
   },
 
-  // A match can't run longer than best-of allows (5 sets in a best-of-5).
-  maxRounds: (config) => maxSets(readConfig(config)),
+  // Open-ended: play as many sets as you like, finish when you're done.
+  isFinished: () => false,
 
-  // Finished the instant a side has banked the sets it needs.
-  isFinished: (totals, { config }) => {
-    const cfg = readConfig(config);
-    return Object.values(totals).some((t) => (Number(t) || 0) >= cfg.setsToWin);
-  },
-
-  describeRound: (round: Round, players): string => {
+  describeRound: (round: Round): string => {
     const input = round.input as VolleyballInput;
-    const [pa, pb] = players;
-    if (!pa || !pb) return '';
-    const a = Number(input.points[pa.id]) || 0;
-    const b = Number(input.points[pb.id]) || 0;
-    const winner = a > b ? pa : b > a ? pb : null;
-    return `${a}–${b}${winner ? ` · ${winner.name}` : ''}`;
+    if (!input?.teams) return '🏐 —';
+    const home = input.teams.find((t) => t.id === input.home);
+    const away = input.teams.find((t) => t.id === input.away);
+    const a = Number(input.points?.home) || 0;
+    const b = Number(input.points?.away) || 0;
+    const hn = home ? `${home.emoji} ${home.name}` : 'Home';
+    const an = away ? `${away.emoji} ${away.name}` : 'Away';
+    if (a === b) return `🏐 ${hn} ${a}–${b} ${an}`;
+    const win = a > b ? home : away;
+    const wn = win ? `${win.emoji} ${win.name}` : 'Winner';
+    return `🏐 ${wn} won ${Math.max(a, b)}–${Math.min(a, b)}`;
   },
 
   help: [
-    'Rally scoring: every serve wins a point for one side.',
-    'A set is played to 25 and must be won by two, so a tight set runs on',
-    '(25–23, 26–24, 30–28…) until a side leads by two.',
+    'Volleyball is an open, team-based session — no fixed match length.',
     '',
-    'The match is best of 5 — first side to win 3 sets takes it (or best of 3,',
-    'first to 2). If it reaches a deciding set (2–2, or 1–1), that set is played',
-    'to 15, still win by two.',
+    'Build any number of teams from your player pool, give each a name, emoji and',
+    'colour, and drop players onto whichever team you like. You can reshuffle',
+    'rosters or rebrand teams freely — set to set, or game to game.',
     '',
-    'Optional hard cap: set a ceiling (e.g. 27) where win-by-two stops and the',
-    'first side to the cap wins the set.',
+    'Each round is one set between the two teams you pick. Rally scoring: a point',
+    'on every serve, first to 25 (21 for beach), win by two — so a tight set runs',
+    'on (25–23, 26–24, 30–28…) until a side leads by two. Optional hard cap ends',
+    'the two-point chase at a ceiling you set (e.g. 27).',
     '',
-    'Enter each set’s final score as it ends; the board tracks sets won and calls',
-    'the match at set point.',
+    'A team’s standing is the sets it has won. Each player banks a set win when the',
+    'team they’re on takes a set, so the board tracks who’s racking up sets. Finish',
+    'the game whenever you’ve played enough.',
   ].join('\n'),
 
   stats: volleyballStats,

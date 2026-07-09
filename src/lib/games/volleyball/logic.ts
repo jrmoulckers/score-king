@@ -1,38 +1,74 @@
 /**
- * Pure volleyball set/match logic — no Svelte, no app imports. Everything the
- * module needs to score a rally-scored match lives here so `*.test.ts` can
- * exercise the real rules (win-by-2, deuce, the deciding set, best-of formats,
- * an optional hard cap) without pulling in the editor.
+ * Pure volleyball logic — no Svelte. A volleyball game here is an *open, team-based
+ * session*: you build any number of branded teams from a shared pool of players,
+ * and each round is a single set between two chosen teams. Rosters and branding can
+ * be reshuffled freely, set to set. A team's standing is simply the sets it has won.
  *
- * A volleyball match is a race to win sets. Each set is rally-scored (a point on
- * every serve) to a target — 25 for a normal set, 15 for the deciding set — and
- * you must win by two, so a tight set climbs past the target (26–24, 30–28…)
- * until someone leads by two. The match is best-of-5 (first to 3 sets) or
- * best-of-3 (first to 2). We model each *set* as a round: the round records both
- * sides' final points, and the module banks one "set won" to the winner, so a
- * side's running total is simply the sets it has taken.
+ * Set scoring is classic rally scoring: a point on every serve, first to the target
+ * (25 by default, 21 for beach) and win by two — so a tight set climbs past the
+ * target (26–24, 30–28…) until a side leads by two, with an optional hard cap.
+ *
+ * Everything a set needs to be scored lives in the round `input` (the teams, which
+ * two contested the set, and the score), so `*.test.ts` can exercise the real rules
+ * without touching the editor, and the whole team model needs no app-level schema.
  */
 
+import { PALETTE, uid } from '../../util';
+
+/** The two contestants of a single set: `a` = home, `b` = away. */
 export type Side = 'a' | 'b';
 
+/** A branded team: an identity plus a roster of member (player) ids. */
+export interface Team {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  memberIds: string[];
+}
+
+/** One recorded (or drafted) set. */
+export interface VolleyballInput {
+  /** Snapshot of the teams as they stood for this set (branding + rosters). */
+  teams: Team[];
+  /** Team id playing as home this set. */
+  home: string;
+  /** Team id playing as away this set. */
+  away: string;
+  /** Final points for the two contesting sides. */
+  points: { home: number; away: number };
+}
+
+export type Format = 'beach' | 'fours' | 'indoor' | 'custom';
+
+/** Per-format guidance: the roster size and the set target players expect. */
+export const FORMAT_PRESETS: Record<Format, { label: string; teamSize: number; pointsPerSet: number }> = {
+  beach: { label: 'Beach (2s)', teamSize: 2, pointsPerSet: 21 },
+  fours: { label: 'Fours (4s)', teamSize: 4, pointsPerSet: 25 },
+  indoor: { label: 'Indoor (6s)', teamSize: 6, pointsPerSet: 25 },
+  custom: { label: 'Custom', teamSize: 0, pointsPerSet: 25 },
+};
+
 export interface VolleyConfig {
-  /** Points to win a normal set (rally scoring). */
+  format: Format;
+  /** Players per team (0 = no limit, for Custom). Informs roster building + warnings. */
+  teamSize: number;
+  /** How many teams to seed a fresh session with. */
+  numberOfTeams: number;
+  /** Points to win a set (rally scoring). */
   pointsPerSet: number;
-  /** Points to win the deciding set (the tiebreak set is shorter). */
-  decidingSetPoints: number;
   /** Must a set be won by a two-point margin? */
   winBy2: boolean;
-  /** Sets needed to win the match — 3 = best of 5, 2 = best of 3. */
-  setsToWin: number;
   /** Score at which win-by-two stops (first to the cap takes the set). 0 = no cap. */
   hardCap: number;
 }
 
 export const DEFAULTS: VolleyConfig = {
+  format: 'indoor',
+  teamSize: 6,
+  numberOfTeams: 2,
   pointsPerSet: 25,
-  decidingSetPoints: 15,
   winBy2: true,
-  setsToWin: 3,
   hardCap: 0,
 };
 
@@ -44,41 +80,23 @@ export function readConfig(config: Record<string, unknown> | undefined): VolleyC
     return Number.isFinite(n) && n > 0 ? n : fallback;
   };
 
-  // `format` is the friendly control; `setsToWin` is honoured as a direct escape hatch.
-  let setsToWin: number;
-  if (cfg.format === 'bo3') setsToWin = 2;
-  else if (cfg.format === 'bo5') setsToWin = 3;
-  else setsToWin = posInt(cfg.setsToWin, DEFAULTS.setsToWin);
+  const format: Format = (['beach', 'fours', 'indoor', 'custom'] as const).includes(cfg.format as Format)
+    ? (cfg.format as Format)
+    : DEFAULTS.format;
+  const preset = FORMAT_PRESETS[format];
+  const teamSize = format === 'custom' ? Math.max(0, Math.floor(Number(cfg.teamSize)) || 0) : preset.teamSize;
 
   const capRaw = Math.floor(Number(cfg.hardCap));
   const hardCap = Number.isFinite(capRaw) && capRaw > 0 ? capRaw : 0;
 
   return {
-    pointsPerSet: posInt(cfg.pointsPerSet, DEFAULTS.pointsPerSet),
-    decidingSetPoints: posInt(cfg.decidingSetPoints, DEFAULTS.decidingSetPoints),
+    format,
+    teamSize,
+    numberOfTeams: Math.min(8, Math.max(2, posInt(cfg.numberOfTeams, DEFAULTS.numberOfTeams))),
+    pointsPerSet: posInt(cfg.pointsPerSet, preset.pointsPerSet),
     winBy2: cfg.winBy2 !== false,
-    setsToWin,
     hardCap,
   };
-}
-
-/** Total sets that can possibly be played in the match (e.g. best-of-5 → 5). */
-export function maxSets(cfg: VolleyConfig): number {
-  return cfg.setsToWin * 2 - 1;
-}
-
-/**
- * Is the upcoming set the deciding set? That's the moment the match is level with
- * each side one win short — 2–2 in a best-of-5, 1–1 in a best-of-3 — so the final
- * set is played to the (shorter) deciding target.
- */
-export function isDecidingSet(setsA: number, setsB: number, setsToWin: number): boolean {
-  return setsA === setsToWin - 1 && setsB === setsToWin - 1;
-}
-
-/** Target points for the set about to be played, given the sets won so far. */
-export function targetForSet(cfg: VolleyConfig, setsA: number, setsB: number): number {
-  return isDecidingSet(setsA, setsB, cfg.setsToWin) ? cfg.decidingSetPoints : cfg.pointsPerSet;
 }
 
 /** A cap only bites when it sits above the target; otherwise there's nothing to cap. */
@@ -91,13 +109,7 @@ function effectiveCap(target: number, hardCap: number): number {
  * a final score). Encodes rally scoring: reach the target and lead by two — unless
  * a hard cap is set, where the first side to the cap takes it by a single point.
  */
-export function setWinner(
-  a: number,
-  b: number,
-  target: number,
-  winBy2: boolean,
-  hardCap = 0,
-): Side | null {
+export function setWinner(a: number, b: number, target: number, winBy2: boolean, hardCap = 0): Side | null {
   if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
   if (a < 0 || b < 0) return null;
   if (a === b) return null; // level: nobody has won
@@ -120,13 +132,7 @@ export function setWinner(
  * is a legal end-of-set: someone has won, and the set stopped at the earliest
  * winning point (you can't overshoot, since a set ends the instant it's decided).
  */
-export function validateSetScore(
-  a: number,
-  b: number,
-  target: number,
-  winBy2: boolean,
-  hardCap = 0,
-): string | null {
+export function validateSetScore(a: number, b: number, target: number, winBy2: boolean, hardCap = 0): string | null {
   if (!Number.isInteger(a) || !Number.isInteger(b)) {
     return 'Enter whole point totals for each side.';
   }
@@ -147,47 +153,94 @@ export function validateSetScore(
   return null;
 }
 
-export interface SetScore {
-  a: number;
-  b: number;
+const TEAM_NAMES = ['Sharks', 'Eagles', 'Dragons', 'Wolves', 'Lions', 'Tigers', 'Scorpions', 'Vipers'];
+const TEAM_EMOJIS = ['🦈', '🦅', '🐉', '🐺', '🦁', '🐯', '🦂', '🐍'];
+
+/** Build a fresh team with whimsical default branding for slot `i`. */
+export function makeTeam(i: number, memberIds: string[] = []): Team {
+  return {
+    id: uid(),
+    name: TEAM_NAMES[i % TEAM_NAMES.length] ?? `Team ${i + 1}`,
+    emoji: TEAM_EMOJIS[i % TEAM_EMOJIS.length] ?? '🏐',
+    color: PALETTE[i % PALETTE.length],
+    memberIds: [...memberIds],
+  };
 }
 
-export interface MatchState {
-  /** Sets won by each side (only completed, legal sets are counted). */
-  setsA: number;
-  setsB: number;
-  /** Has a side reached `setsToWin`? */
-  decided: boolean;
-  /** Match winner once decided. */
-  winner: Side | null;
-  /** Target points for the *next* set to be played. */
-  nextTarget: number;
-  /** Is that next set the deciding set? */
-  nextDeciding: boolean;
+/** A deep-ish clone so a carried-forward roster edit never mutates a past set. */
+export function cloneTeams(teams: Team[]): Team[] {
+  return teams.map((t) => ({ ...t, memberIds: [...t.memberIds] }));
 }
 
 /**
- * Fold a sequence of set scores into the match standing. Sets are counted in
- * order (so the deciding-set target is applied at the right moment) and counting
- * stops once the match is won — trailing sets can't happen in a real match.
+ * Seed a session's teams: split the pool across `numberOfTeams`, round-robin, up to
+ * the format's roster size (Custom = no limit). Any overflow stays unassigned.
  */
-export function matchState(sets: SetScore[], cfg: VolleyConfig): MatchState {
-  let setsA = 0;
-  let setsB = 0;
-  for (const set of sets) {
-    if (setsA >= cfg.setsToWin || setsB >= cfg.setsToWin) break;
-    const target = targetForSet(cfg, setsA, setsB);
-    const winner = setWinner(set.a, set.b, target, cfg.winBy2, cfg.hardCap);
-    if (winner === 'a') setsA += 1;
-    else if (winner === 'b') setsB += 1;
+export function defaultTeams(cfg: VolleyConfig, pool: string[]): Team[] {
+  const n = Math.max(2, cfg.numberOfTeams);
+  const teams = Array.from({ length: n }, (_, i) => makeTeam(i));
+  const cap = cfg.teamSize > 0 ? cfg.teamSize : Infinity;
+  let start = 0;
+  for (const id of pool) {
+    let placed = false;
+    for (let k = 0; k < n; k++) {
+      const t = teams[(start + k) % n];
+      if (t.memberIds.length < cap) {
+        t.memberIds.push(id);
+        start = (start + k + 1) % n;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) break; // every team full — the rest sit in the unassigned pool
   }
-  const decided = setsA >= cfg.setsToWin || setsB >= cfg.setsToWin;
-  return {
-    setsA,
-    setsB,
-    decided,
-    winner: decided ? (setsA > setsB ? 'a' : 'b') : null,
-    nextDeciding: isDecidingSet(setsA, setsB, cfg.setsToWin),
-    nextTarget: targetForSet(cfg, setsA, setsB),
-  };
+  return teams;
+}
+
+/** Pool member ids not currently on any team. */
+export function unassigned(teams: Team[], pool: string[]): string[] {
+  const taken = new Set(teams.flatMap((t) => t.memberIds));
+  return pool.filter((id) => !taken.has(id));
+}
+
+export interface TeamStanding {
+  team: Team;
+  setsWon: number;
+  setsPlayed: number;
+  pointsFor: number;
+}
+
+/**
+ * Fold recorded sets into per-team standings. Wins are aggregated by team *id* (so
+ * branding can be renamed mid-session without losing history), using the current
+ * `teams` list for identity/display. Sets whose team is no longer present are skipped.
+ */
+export function foldStandings(teams: Team[], sets: VolleyballInput[], cfg: VolleyConfig): TeamStanding[] {
+  const byId = new Map<string, TeamStanding>(
+    teams.map((t) => [t.id, { team: t, setsWon: 0, setsPlayed: 0, pointsFor: 0 }]),
+  );
+  for (const s of sets) {
+    const w = setWinner(s.points.home, s.points.away, cfg.pointsPerSet, cfg.winBy2, cfg.hardCap);
+    if (!w) continue;
+    const h = byId.get(s.home);
+    const a = byId.get(s.away);
+    if (h) {
+      h.setsPlayed += 1;
+      h.pointsFor += Number(s.points.home) || 0;
+      if (w === 'a') h.setsWon += 1;
+    }
+    if (a) {
+      a.setsPlayed += 1;
+      a.pointsFor += Number(s.points.away) || 0;
+      if (w === 'b') a.setsWon += 1;
+    }
+  }
+  return [...byId.values()].sort((x, y) => y.setsWon - x.setsWon || y.pointsFor - x.pointsFor);
+}
+
+/** The winning team's id for a set, or null while it's still live. */
+export function winningTeamId(input: VolleyballInput, cfg: VolleyConfig): string | null {
+  const w = setWinner(input.points.home, input.points.away, cfg.pointsPerSet, cfg.winBy2, cfg.hardCap);
+  if (!w) return null;
+  return w === 'a' ? input.home : input.away;
 }
