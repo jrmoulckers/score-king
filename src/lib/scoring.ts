@@ -17,6 +17,30 @@ export interface Standing {
   rank: number;
 }
 
+/**
+ * The player ID(s) strictly ahead of everyone else — the current leader(s).
+ *
+ * Returns an empty set until scores actually diverge: while every player shares
+ * the same total (including the opening 0-0, or any mid-game all-tie) there is
+ * no leader yet, so the 👑 and the gold `.lead` number stay hidden. A solo game
+ * has no rival to lead, so it also returns empty. This is the single source of
+ * truth for "who gets Crown Gold right now" so the scarcity rule can't drift
+ * between the scoreboard and the scorecard footer.
+ */
+export function leaders(
+  totals: Record<ID, number>,
+  playerIds: ID[],
+  lowerIsBetter = false,
+): Set<ID> {
+  const ids = new Set<ID>();
+  if (playerIds.length < 2) return ids;
+  const vals = playerIds.map((id) => totals[id] ?? 0);
+  const best = lowerIsBetter ? Math.min(...vals) : Math.max(...vals);
+  if (vals.every((v) => v === best)) return ids; // nobody has pulled ahead
+  for (const id of playerIds) if ((totals[id] ?? 0) === best) ids.add(id);
+  return ids;
+}
+
 export function standings(
   totals: Record<ID, number>,
   lowerIsBetter = false,
