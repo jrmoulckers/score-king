@@ -1,5 +1,5 @@
 import type { ID } from '../../types';
-import type { SKInput } from './index';
+import { effectiveBonus, type SKInput, type SKRow } from './logic';
 import type { GameSpecificStats, GameStatsInput, Metric } from '../../stats/types';
 import { fmtInt, fmtPct } from '../../stats/format';
 
@@ -9,6 +9,8 @@ interface SKAgg {
   zero: number;
   zeroMade: number;
   bonus: number;
+  bidSum: number;
+  bestHaul: number;
 }
 
 /**
@@ -22,7 +24,7 @@ export function skullkingStats({ games, rounds, canonical }: GameStatsInput): Ga
   const get = (id: ID): SKAgg => {
     let a = per.get(id);
     if (!a) {
-      a = { bids: 0, made: 0, zero: 0, zeroMade: 0, bonus: 0 };
+      a = { bids: 0, made: 0, zero: 0, zeroMade: 0, bonus: 0, bidSum: 0, bestHaul: 0 };
       per.set(id, a);
     }
     return a;
@@ -38,12 +40,15 @@ export function skullkingStats({ games, rounds, canonical }: GameStatsInput): Ga
       const actual = Number(row.actual) || 0;
       const made = actual === bid;
       a.bids += 1;
+      a.bidSum += bid;
       if (made) a.made += 1;
       if (bid === 0) {
         a.zero += 1;
         if (made) a.zeroMade += 1;
       }
-      a.bonus += Number(row.bonus) || 0;
+      const haul = effectiveBonus(row as SKRow);
+      a.bonus += haul;
+      if (haul > a.bestHaul) a.bestHaul = haul;
     }
   }
 
@@ -56,12 +61,16 @@ export function skullkingStats({ games, rounds, canonical }: GameStatsInput): Ga
     const metrics: Metric[] = [];
     if (a.bids) {
       metrics.push({ key: 'sk_acc', label: 'Bid accuracy', value: fmtPct(a.made / a.bids), emoji: '🎯' });
+      metrics.push({ key: 'sk_bold', label: 'Avg bid', value: (a.bidSum / a.bids).toFixed(1), emoji: '🦜' });
     }
     if (a.zero) {
       metrics.push({ key: 'sk_zero', label: 'Zero-bid success', value: `${a.zeroMade}/${a.zero}`, emoji: '🥚' });
     }
     if (a.bonus) {
-      metrics.push({ key: 'sk_bonus', label: 'Bonus hunted', value: fmtInt(a.bonus), emoji: '💰' });
+      metrics.push({ key: 'sk_bonus', label: 'Bounty hunted', value: fmtInt(a.bonus), emoji: '💰' });
+    }
+    if (a.bestHaul) {
+      metrics.push({ key: 'sk_haul', label: 'Biggest haul', value: fmtInt(a.bestHaul), emoji: '🪙' });
     }
     if (metrics.length) perPlayer[id] = metrics;
   }
