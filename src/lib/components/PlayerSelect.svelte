@@ -5,6 +5,7 @@
 
   let {
     selected = $bindable([]),
+    min = 0,
     max = 12,
   }: { selected: ID[]; min?: number; max?: number } = $props();
 
@@ -44,7 +45,7 @@
       </button>
     {/each}
     {#if $roster.length === 0}
-      <span class="muted">No players yet — add some below.</span>
+      <span class="muted">{min > 1 ? `No players yet — add at least ${min} below.` : 'No players yet — add some below.'}</span>
     {/if}
   </div>
 

@@ -5,6 +5,7 @@ import App from './App.svelte'
 import { applySettings } from './lib/stores/settings'
 import { initIdentity } from './lib/stores/identity'
 import { startAutoSync } from './lib/storage/autosync'
+import { initInstallPrompt } from './lib/stores/install'
 
 // A Microsoft sign-in uses a full-page redirect. When the browser returns from Microsoft the
 // URL carries the auth response (in the hash or query). Detect that, let MSAL consume it, then
@@ -26,6 +27,7 @@ async function boot() {
     }
   }
   applySettings()
+  initInstallPrompt()
   registerSW({ immediate: true })
   mount(App, { target: document.getElementById('app')! })
   // Apply the lead member's saved look to this device, then keep them in sync.

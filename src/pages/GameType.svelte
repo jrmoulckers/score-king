@@ -2,6 +2,7 @@
   import { getModule } from '../lib/games/registry';
   import { defaultConfig } from '../lib/types';
   import { activeGames, createGame, games } from '../lib/stores/games';
+  import { activePlayers } from '../lib/stores/players';
   import {
     customGameDefs,
     removeCustomGame,
@@ -141,6 +142,15 @@
     <button class="btn primary block" onclick={start} disabled={selected.length < module.minPlayers}>
       Start game
     </button>
+    {#if selected.length < module.minPlayers}
+      <p class="startneed muted sm" role="status">
+        {#if $activePlayers.length === 0}
+          Add {module.minPlayers} player{module.minPlayers === 1 ? '' : 's'} above to start your first game.
+        {:else}
+          Pick {module.minPlayers - selected.length} more player{module.minPlayers - selected.length === 1 ? '' : 's'} to start.
+        {/if}
+      </p>
+    {/if}
   </div>
 {/if}
 
@@ -163,5 +173,12 @@
     border-top: 1px solid var(--border);
     width: 100%;
     margin: 4px 0;
+  }
+  .startneed {
+    margin: 0;
+    text-align: center;
+  }
+  .sm {
+    font-size: 0.85rem;
   }
 </style>

@@ -6,6 +6,8 @@
   import { link, navigate } from '../lib/router';
   import { relativeTime, normalizeJoinCode } from '../lib/util';
   import { isLiveSupported, isNearbySupported } from '../lib/live/session';
+  import { welcomeDismissed } from '../lib/stores/onboarding';
+  import WelcomeHero from '../lib/components/WelcomeHero.svelte';
   import {
     startableTypes,
     sectionize,
@@ -29,6 +31,10 @@
   const recent = $derived(
     $games.filter((g) => g.status === 'finished' && !g.archived).slice(0, 4),
   );
+
+  // First-run welcome: shown only until the very first game exists (or it's dismissed), so
+  // returning players never see it. A brand-new device has no games at all.
+  const showWelcome = $derived($games.length === 0 && !$welcomeDismissed);
 
   // ── Catalog: search + mutually-exclusive sections over the startable game types ──
   let search = $state('');
@@ -63,6 +69,10 @@
     return (ids ?? []).map((id) => $players.find((p) => p.id === id)?.name ?? '?').join(' & ');
   }
 </script>
+
+{#if showWelcome}
+  <WelcomeHero />
+{/if}
 
 {#if active.length}
   <div class="section-title">Continue</div>
