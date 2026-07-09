@@ -1,19 +1,16 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import Editor from './HeartsEditor.svelte';
 import { heartsStats } from './stats';
+import {
+  isFinished as isFinishedLogic,
+  scoreRound as scoreRoundLogic,
+  shooter,
+  validateRound as validateRoundLogic,
+  type HeartsInput,
+} from './logic';
 
-export interface HeartsInput {
-  hearts: Record<ID, number>;
-  queen: ID | null;
-  jack: ID | null;
-}
-
-function shooter(input: HeartsInput): ID | null {
-  for (const [id, h] of Object.entries(input.hearts)) {
-    if (h === 13 && input.queen === id) return id;
-  }
-  return null;
-}
+export { shooter, readConfig } from './logic';
+export type { HeartsInput, HeartsConfig, MoonRule } from './logic';
 
 export const hearts: GameModule = {
   id: 'hearts',
@@ -50,52 +47,22 @@ export const hearts: GameModule = {
     jack: null,
   }),
 
-  validateRound: (input: HeartsInput, ctx: RoundContext): string | null => {
-    const total = Object.values(input.hearts).reduce((a, b) => a + (Number(b) || 0), 0);
-    if (total !== 13) return `Hearts must total 13 (currently ${total}).`;
-    if (!input.queen) return 'Assign the Queen of Spades (♠Q) to whoever took it.';
-    if (ctx.config.variantJack && !input.jack) {
-      return 'Assign the Jack of Diamonds (♦J) to whoever took it.';
-    }
-    return null;
-  },
+  validateRound: (input: HeartsInput, ctx: RoundContext): string | null =>
+    validateRoundLogic(input, ctx.players, ctx.config),
 
-  scoreRound: (input: HeartsInput, ctx: RoundContext): Record<ID, number> => {
-    const variantJack = !!ctx.config.variantJack;
-    const moonRule = ctx.config.moonRule ?? 'add26';
-    const base: Record<ID, number> = {};
-    for (const p of ctx.players) {
-      const id = p.id;
-      base[id] =
-        (Number(input.hearts[id]) || 0) +
-        (input.queen === id ? 13 : 0) -
-        (variantJack && input.jack === id ? 10 : 0);
-    }
-    const moon = shooter(input);
-    if (!moon) return base;
+  scoreRound: (input: HeartsInput, ctx: RoundContext): Record<ID, number> =>
+    scoreRoundLogic(input, ctx.players, ctx.config),
 
-    const out: Record<ID, number> = {};
-    for (const p of ctx.players) {
-      if (moonRule === 'subtract') {
-        out[p.id] = p.id === moon ? -26 : base[p.id];
-      } else {
-        out[p.id] = p.id === moon ? 0 : base[p.id] + 26;
-      }
-    }
-    return out;
-  },
-
-  isFinished: (totals, { config }) => {
-    const end = Number(config.endScore) || 100;
-    return Object.values(totals).some((t) => t >= end);
-  },
+  isFinished: (totals, { config }) => isFinishedLogic(totals, config),
 
   describeRound: (round: Round, players): string => {
     const input = round.input as HeartsInput;
     const name = (id: ID | null) => players.find((p) => p.id === id)?.name ?? '?';
     const moon = shooter(input);
     if (moon) return `🌙 ${name(moon)} shot the moon`;
-    return `♠Q: ${name(input.queen)}`;
+    const parts = [`♠Q: ${name(input.queen)}`];
+    if (input.jack) parts.push(`♦J: ${name(input.jack)}`);
+    return parts.join(' · ');
   },
 
   stats: heartsStats,

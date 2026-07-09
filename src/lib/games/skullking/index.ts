@@ -1,31 +1,14 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import Editor from './SkullKingEditor.svelte';
 import { skullkingStats } from './stats';
+import {
+  scoreRound as scoreRoundLogic,
+  validateRound as validateRoundLogic,
+  type SKInput,
+} from './logic';
 
-export interface SKRow {
-  bid: number;
-  actual: number;
-  bonus: number;
-}
-export interface SKInput {
-  rows: Record<ID, SKRow>;
-}
-
-/** Score a single player's row. Round n has n tricks. */
-export function scoreRow(row: SKRow, n: number, bonusesRequireBid: boolean): number {
-  const bid = Number(row.bid) || 0;
-  const actual = Number(row.actual) || 0;
-  const made = actual === bid;
-  let pts: number;
-  if (bid === 0) {
-    pts = made ? 10 * n : -10 * n;
-  } else {
-    pts = made ? 20 * bid : -10 * Math.abs(actual - bid);
-  }
-  const bonus = Number(row.bonus) || 0;
-  if (bonus && (!bonusesRequireBid || made)) pts += bonus;
-  return pts;
-}
+export { scoreRow, BONUS_STEP, totalBid, totalTricks } from './logic';
+export type { SKInput, SKRow } from './logic';
 
 export const skullking: GameModule = {
   id: 'skullking',
@@ -51,26 +34,11 @@ export const skullking: GameModule = {
     rows: Object.fromEntries(ctx.players.map((p) => [p.id, { bid: 0, actual: 0, bonus: 0 }])),
   }),
 
-  validateRound: (input: SKInput, ctx: RoundContext): string | null => {
-    const n = ctx.roundIndex + 1;
-    let won = 0;
-    for (const p of ctx.players) {
-      const row = input.rows[p.id];
-      if (row.bid < 0 || row.bid > n) return `${p.name}: bid must be between 0 and ${n}.`;
-      if (row.actual < 0 || row.actual > n) return `${p.name}: tricks won must be between 0 and ${n}.`;
-      won += Number(row.actual) || 0;
-    }
-    if (won > n) return `Total tricks won (${won}) can't exceed the ${n} available this round.`;
-    return null;
-  },
+  validateRound: (input: SKInput, ctx: RoundContext): string | null =>
+    validateRoundLogic(input, ctx.players, ctx.roundIndex + 1),
 
-  scoreRound: (input: SKInput, ctx: RoundContext): Record<ID, number> => {
-    const n = ctx.roundIndex + 1;
-    const requireBid = ctx.config.bonusesRequireBid !== false;
-    const out: Record<ID, number> = {};
-    for (const p of ctx.players) out[p.id] = scoreRow(input.rows[p.id], n, requireBid);
-    return out;
-  },
+  scoreRound: (input: SKInput, ctx: RoundContext): Record<ID, number> =>
+    scoreRoundLogic(input, ctx.players, ctx.roundIndex + 1, ctx.config.bonusesRequireBid !== false),
 
   describeRound: (round: Round, players): string => {
     const input = round.input as SKInput;

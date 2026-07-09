@@ -2,7 +2,8 @@
   import type { RoundContext } from '../../types';
   import Avatar from '../../components/Avatar.svelte';
   import Stepper from '../../components/Stepper.svelte';
-  import { scoreRow, skullking, type SKInput } from './index';
+  import { skullking } from './index';
+  import { scoreRow, totalBid, BONUS_STEP, type SKInput } from './logic';
 
   let { input = $bindable(), ctx }: { input: SKInput; ctx: RoundContext } = $props();
 
@@ -11,6 +12,8 @@
   const won = $derived(
     ctx.players.reduce((a, p) => a + (Number(input.rows[p.id]?.actual) || 0), 0),
   );
+  const bids = $derived(totalBid(input, ctx.players));
+  const unassigned = $derived(n - won);
   let showHelp = $state(false);
 
   function preview(id: string): number {
@@ -22,7 +25,22 @@
   <div class="row spread">
     <span class="pill">Round {n} · {n} {n === 1 ? 'trick' : 'tricks'}</span>
     <span class="row" style="gap: 8px">
-      <span class="pill" class:score-bad={won > n}>won {won}/{n}</span>
+      <span class="pill" title="Sum of bids vs tricks available">
+        bids {bids}/{n}
+      </span>
+      <span
+        class="pill"
+        class:score-bad={won > n}
+        class:score-warn={unassigned > 0}
+      >
+        {#if won > n}
+          {won}/{n} — too many
+        {:else if unassigned > 0}
+          {won}/{n} · {unassigned} unassigned
+        {:else}
+          won {won}/{n} ✓
+        {/if}
+      </span>
       <button type="button" class="btn small ghost" onclick={() => (showHelp = !showHelp)}>
         Bonuses
       </button>
@@ -52,7 +70,7 @@
       <div class="fields">
         <label class="f">Bid<Stepper bind:value={row.bid} min={0} max={n} /></label>
         <label class="f">Won<Stepper bind:value={row.actual} min={0} max={n} /></label>
-        <label class="f">Bonus<input type="number" step="10" bind:value={row.bonus} /></label>
+        <label class="f">Bonus<Stepper bind:value={row.bonus} min={0} step={BONUS_STEP} /></label>
       </div>
     </div>
   {/each}
@@ -77,8 +95,8 @@
     font-size: 0.78rem;
     color: var(--muted);
   }
-  .f input {
-    width: 84px;
+  .score-warn {
+    color: var(--warn);
   }
   .preview {
     font-weight: 800;
