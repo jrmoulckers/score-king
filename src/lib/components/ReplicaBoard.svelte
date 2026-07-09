@@ -242,7 +242,7 @@
     {@const RoundEditor = gmodule.RoundEditor}
     <div class="card stack" style="margin-top: 12px">
       <strong>Round {replica.rounds.length + 1}{maxR ? ` of ${maxR}` : ''}</strong>
-      <RoundEditor bind:input={draft} ctx={buildCtx()} />
+      <RoundEditor loader={gmodule.editorLoader} bind:input={draft} ctx={buildCtx()} />
       <button class="btn primary block" onclick={sendRound} disabled={sending}>
         {sending ? 'Sending…' : `Add round ${replica.rounds.length + 1}`}
       </button>

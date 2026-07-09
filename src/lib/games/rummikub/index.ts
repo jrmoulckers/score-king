@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './RummikubEditor.svelte';
+import { RoundEditor } from '../editor';
 import {
   DEFAULT_JOKER_VALUE,
   scoreRummikub,
@@ -106,5 +106,6 @@ export const rummikub: GameModule = {
 
   stats: rummikubStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./RummikubEditor.svelte'),
 };

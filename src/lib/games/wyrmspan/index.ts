@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './WyrmspanEditor.svelte';
+import { RoundEditor } from '../editor';
 import { wyrmspanStats } from './stats';
 import {
   activeCategories,
@@ -78,5 +78,6 @@ export const wyrmspan: GameModule = {
 
   stats: wyrmspanStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./WyrmspanEditor.svelte'),
 };

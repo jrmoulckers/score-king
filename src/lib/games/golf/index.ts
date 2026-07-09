@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './GolfEditor.svelte';
+import { RoundEditor } from '../editor';
 import { golfStats } from './stats';
 import { createGolfInput, readConfig, scoreGolf, validateGolf, type GolfInput } from './logic';
 
@@ -84,5 +84,6 @@ export const golf: GameModule = {
 
   stats: golfStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./GolfEditor.svelte'),
 };

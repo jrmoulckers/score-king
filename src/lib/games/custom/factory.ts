@@ -1,4 +1,3 @@
-import type { Component } from 'svelte';
 import type { GameModule, ID, RoundContext } from '../../types';
 import type { CustomGameDef, CustomInput } from './types';
 import { effectiveColumns } from './types';
@@ -8,7 +7,7 @@ import {
   customIsFinished,
   describeCustomRound,
 } from './scoring';
-import CustomRoundEditor from './CustomRoundEditor.svelte';
+import { RoundEditor } from '../editor';
 
 /**
  * Compile a declarative {@link CustomGameDef} into a real, first-class `GameModule`.
@@ -49,6 +48,7 @@ export function buildCustomModule(def: CustomGameDef): GameModule {
     describeRound: (round, players) => describeCustomRound(def, round, players),
 
     help: def.help || undefined,
-    RoundEditor: CustomRoundEditor as Component<any>,
+    RoundEditor,
+    editorLoader: () => import('./CustomRoundEditor.svelte'),
   };
 }

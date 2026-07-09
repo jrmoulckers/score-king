@@ -1,6 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './TallyEditor.svelte';
-
+import { RoundEditor } from '../editor';
 export interface TallyInput {
   deltas: Record<ID, number>;
 }
@@ -54,5 +53,6 @@ export const tally: GameModule = {
     return parts.length ? parts.join(' / ') : 'no change';
   },
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./TallyEditor.svelte'),
 };

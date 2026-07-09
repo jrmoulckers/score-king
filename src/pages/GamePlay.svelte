@@ -546,7 +546,7 @@
     {@const ectx = buildCtx(editing.index, totalsBefore(editing.index))}
     <div class="card stack" style="margin-top: 12px">
       <strong>Editing round {editing.index + 1}</strong>
-      <EditorC bind:input={editDraft} ctx={ectx} />
+      <EditorC loader={module.editorLoader} bind:input={editDraft} ctx={ectx} />
       {#if editError}
         <p class="entry-error" role="alert">⚠️ {editError}</p>
       {/if}
@@ -565,7 +565,7 @@
       <div class="card stack" style="margin-top: 12px">
         <strong>Round {rounds.length + 1}{maxR ? ` of ${maxR}` : ''}</strong>
         {#if draft}
-          <AddEditor bind:input={draft} ctx={actx} />
+          <AddEditor loader={module.editorLoader} bind:input={draft} ctx={actx} />
         {/if}
         {#if draftError}
           <p class="entry-error" role="alert">⚠️ {draftError}</p>

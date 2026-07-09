@@ -8,23 +8,11 @@
   import Home from './pages/Home.svelte';
   import Players from './pages/Players.svelte';
   import History from './pages/History.svelte';
-  import Stats from './pages/Stats.svelte';
-  import Court from './pages/Court.svelte';
-  import Wrapped from './pages/Wrapped.svelte';
-  import Settings from './pages/Settings.svelte';
-  import Accessibility from './pages/Accessibility.svelte';
-  import GameplaySettings from './pages/GameplaySettings.svelte';
-  import ManageGames from './pages/ManageGames.svelte';
-  import Browse from './pages/Browse.svelte';
-  import GameType from './pages/GameType.svelte';
-  import GamePlay from './pages/GamePlay.svelte';
-  import CustomGameEdit from './pages/CustomGameEdit.svelte';
-  import LiveJoin from './pages/LiveJoin.svelte';
-  import NearbyJoin from './pages/NearbyJoin.svelte';
-  import Recap from './pages/Recap.svelte';
   import NotFound from './pages/NotFound.svelte';
+  import Lazy from './lib/components/Lazy.svelte';
   import SyncBubble from './lib/components/SyncBubble.svelte';
   import Announcer from './lib/components/Announcer.svelte';
+  import UpdateBanner from './lib/components/UpdateBanner.svelte';
 
   let current = $state(window.location.pathname || '/');
   onMount(() => pathStore.subscribe((v) => (current = v)));
@@ -146,42 +134,42 @@
   {:else if route.name === 'history'}
     <History />
   {:else if route.name === 'stats'}
-    <Stats />
+    <Lazy loader={() => import('./pages/Stats.svelte')} />
   {:else if route.name === 'court'}
-    <Court />
+    <Lazy loader={() => import('./pages/Court.svelte')} />
   {:else if route.name === 'wrapped'}
-    <Wrapped />
+    <Lazy loader={() => import('./pages/Wrapped.svelte')} />
   {:else if route.name === 'tonight'}
-    <Wrapped initialPreset="tonight" />
+    <Lazy loader={() => import('./pages/Wrapped.svelte')} props={{ initialPreset: 'tonight' }} />
   {:else if route.name === 'settings'}
-    <Settings />
+    <Lazy loader={() => import('./pages/Settings.svelte')} />
   {:else if route.name === 'accessibility'}
-    <Accessibility />
+    <Lazy loader={() => import('./pages/Accessibility.svelte')} />
   {:else if route.name === 'gameplay'}
-    <GameplaySettings />
+    <Lazy loader={() => import('./pages/GameplaySettings.svelte')} />
   {:else if route.name === 'managegames'}
-    <ManageGames />
+    <Lazy loader={() => import('./pages/ManageGames.svelte')} />
   {:else if route.name === 'browse'}
-    <Browse />
+    <Lazy loader={() => import('./pages/Browse.svelte')} />
   {:else if route.name === 'gametype'}
-    <GameType type={route.params.type} />
+    <Lazy loader={() => import('./pages/GameType.svelte')} props={{ type: route.params.type }} />
   {:else if route.name === 'customedit'}
     {#key route.params.id ?? 'new'}
-      <CustomGameEdit id={route.params.id} />
+      <Lazy loader={() => import('./pages/CustomGameEdit.svelte')} props={{ id: route.params.id }} />
     {/key}
   {:else if route.name === 'play'}
     {#key route.params.id}
-      <GamePlay id={route.params.id} />
+      <Lazy loader={() => import('./pages/GamePlay.svelte')} props={{ id: route.params.id }} />
     {/key}
   {:else if route.name === 'join'}
     {#key route.params.code}
-      <LiveJoin code={route.params.code} />
+      <Lazy loader={() => import('./pages/LiveJoin.svelte')} props={{ code: route.params.code }} />
     {/key}
   {:else if route.name === 'nearby'}
-    <NearbyJoin />
+    <Lazy loader={() => import('./pages/NearbyJoin.svelte')} />
   {:else if route.name === 'recap'}
     {#key current}
-      <Recap />
+      <Lazy loader={() => import('./pages/Recap.svelte')} />
     {/key}
   {:else}
     <NotFound />
@@ -204,6 +192,8 @@
 {/if}
 
 <Announcer />
+
+<UpdateBanner />
 
 {#if canHideNow}
   <button class="hide-now" onclick={hideNow} title="Hide scores from view">

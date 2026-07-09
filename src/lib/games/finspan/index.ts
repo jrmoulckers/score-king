@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './FinspanEditor.svelte';
+import { RoundEditor } from '../editor';
 import { finspanStats } from './stats';
 import {
   FINSPAN_HELP,
@@ -42,5 +42,6 @@ export const finspan: GameModule = {
 
   stats: finspanStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./FinspanEditor.svelte'),
 };

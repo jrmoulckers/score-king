@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './SkullKingEditor.svelte';
+import { RoundEditor } from '../editor';
 import { skullkingStats } from './stats';
 
 export interface SKRow {
@@ -99,5 +99,6 @@ export const skullking: GameModule = {
 
   stats: skullkingStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./SkullKingEditor.svelte'),
 };

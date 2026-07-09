@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './SpadesEditor.svelte';
+import { RoundEditor } from '../editor';
 import { spadesStats } from './stats';
 import {
   emptyRow,
@@ -111,5 +111,6 @@ export const spades: GameModule = {
 
   stats: spadesStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./SpadesEditor.svelte'),
 };

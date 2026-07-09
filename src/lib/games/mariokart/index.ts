@@ -1,6 +1,6 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { ordinal } from '../../stats/format';
-import Editor from './MarioKartEditor.svelte';
+import { RoundEditor } from '../editor';
 import { mariokartStats } from './stats';
 import {
   TABLE_META,
@@ -112,5 +112,6 @@ export const mariokart: GameModule = {
 
   stats: mariokartStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./MarioKartEditor.svelte'),
 };

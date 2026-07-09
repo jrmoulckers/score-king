@@ -1,5 +1,5 @@
 import type { GameModule, Round, RoundContext } from '../../types';
-import Editor from './SaladBowlEditor.svelte';
+import { RoundEditor } from '../editor';
 import { saladbowlStats } from './stats';
 import {
   createInput,
@@ -114,5 +114,6 @@ export const saladbowl: GameModule = {
 
   stats: saladbowlStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./SaladBowlEditor.svelte'),
 };

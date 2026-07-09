@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './CodenamesEditor.svelte';
+import { RoundEditor } from '../editor';
 import { codenamesStats } from './stats';
 import {
   createInput,
@@ -89,5 +89,6 @@ export const codenames: GameModule = {
 
   stats: codenamesStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./CodenamesEditor.svelte'),
 };

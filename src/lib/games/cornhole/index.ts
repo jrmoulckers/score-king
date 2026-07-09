@@ -1,5 +1,5 @@
 import type { GameModule, ID, Player, Round, RoundContext } from '../../types';
-import Editor from './CornholeEditor.svelte';
+import { RoundEditor } from '../editor';
 import { cornholeStats } from './stats';
 import {
   BAGS_PER_SIDE,
@@ -99,5 +99,6 @@ export const cornhole: GameModule = {
 
   stats: cornholeStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./CornholeEditor.svelte'),
 };

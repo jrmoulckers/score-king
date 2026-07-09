@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './HeartsEditor.svelte';
+import { RoundEditor } from '../editor';
 import { heartsStats } from './stats';
 
 export interface HeartsInput {
@@ -100,5 +100,6 @@ export const hearts: GameModule = {
 
   stats: heartsStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./HeartsEditor.svelte'),
 };
