@@ -208,7 +208,7 @@
       try {
         await appendRound(game, snap, deltas);
       } catch {
-        showToast("Couldn't save that round — storage error.");
+        showToast('Couldn’t save that round — storage error.');
         return false;
       }
       await load();
@@ -257,7 +257,7 @@
       try {
         await updateRound(ed, snap, deltas);
       } catch {
-        showToast("Couldn't save that change — storage error.");
+        showToast('Couldn’t save that change — storage error.');
         return;
       }
       await load();
@@ -381,7 +381,7 @@
     if (intent.kind !== 'record-round') return 'That action isn’t supported.';
     if (!game || !module) return 'The game isn’t ready yet.';
     if (game.status !== 'active') return 'This game has finished.';
-    if (!canAddRound) return `All ${maxR} rounds have been played.`;
+    if (!canAddRound) return `All ${maxR} rounds played.`;
     const ctx = buildCtx(rounds.length, computeTotals(rounds, game.playerIds));
     const err = module.validateRound(intent.input, ctx);
     if (err) return err;
@@ -471,8 +471,10 @@
     <div class="sk" style="height: 150px"></div>
   </div>
 {:else if !game || !module}
-  <div class="empty">
-    <h2>Game not found</h2>
+  <div class="empty notfound">
+    <div class="nf-emoji" aria-hidden="true">🃏</div>
+    <h2>This game left the table</h2>
+    <p class="muted">We couldn’t find this game — it may have been deleted, or the link is out of date.</p>
     <a class="btn primary" href="/" use:link>Back to games</a>
   </div>
 {:else}
@@ -540,14 +542,14 @@
     </button>
     <a class="btn block" style="margin-top: 10px" href="/tonight" use:link>🎁 Tonight’s Recap</a>
     <div class="row" style="gap: 10px; margin-top: 10px">
-      <button class="btn" onclick={doReopen} title="Reopen to add more rounds">Reopen</button>
+      <button class="btn" onclick={doReopen} title="Reopen to add more rounds">Reopen game</button>
       <button class="btn primary grow" onclick={playAgain}>Play again</button>
     </div>
   {:else if game.status === 'abandoned'}
     <div class="card center banner">🪦 Game abandoned — no winner recorded.</div>
     <a class="btn block" style="margin-top: 12px" href="/tonight" use:link>🎁 Tonight’s Recap</a>
     <div class="row" style="gap: 10px; margin-top: 10px">
-      <button class="btn" onclick={doReopen} title="Reopen to keep playing">Reopen</button>
+      <button class="btn" onclick={doReopen} title="Reopen to keep playing">Reopen game</button>
       <button class="btn primary grow" onclick={playAgain}>Play again</button>
     </div>
   {:else if editing}
@@ -611,7 +613,7 @@
         class="btn small ghost"
         onclick={() => (showRunning = !showRunning)}
         aria-pressed={showRunning}
-        title="Toggle between each round's points and the running total"
+        title="Toggle between each round’s points and the running total"
       >{showRunning ? '∑ Running totals' : '± Per round'}</button>
     </div>
     <div class="scroll">
@@ -681,6 +683,20 @@
 {/if}
 
 <style>
+  .notfound {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .nf-emoji {
+    font-size: 2.6rem;
+    line-height: 1;
+  }
+  .notfound p {
+    margin: 0;
+    max-width: 44ch;
+  }
   .livebar {
     margin-top: 12px;
     width: 100%;

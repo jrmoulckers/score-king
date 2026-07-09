@@ -195,7 +195,7 @@
     <button class="btn block" onclick={shareLink} disabled={!url}>Share link…</button>
   {/if}
 
-  <p class="note">Read-only — this shares just this game's final scores, nothing else from your device.</p>
+  <p class="note">Read-only — this shares just this game’s final scores, nothing else from your device.</p>
 
   <button class="btn ghost block" onclick={onclose}>Done</button>
 </div>

@@ -196,7 +196,7 @@
   {#if choosing}
     <div class="card stack claim">
       <strong>Which one are you?</strong>
-      <span class="muted hint">Claim your seat so everyone sees who's who — or just watch.</span>
+      <span class="muted hint">Claim your seat so everyone sees who’s who — or just watch.</span>
       <div class="seats">
         {#each replica.players as p (p.id)}
           {@const taken = takenByOthers.has(p.id)}
@@ -219,10 +219,10 @@
       {#if me && me.playerId}
         <span class="row" style="gap: 8px">
           <Avatar name={me.name} color={me.color} size={22} />
-          <span>You're <strong>{me.name}</strong></span>
+          <span>You’re <strong>{me.name}</strong></span>
         </span>
       {:else}
-        <span class="muted">👀 You're watching</span>
+        <span class="muted">👀 You’re watching</span>
       {/if}
       <span class="change">Change</span>
     </button>

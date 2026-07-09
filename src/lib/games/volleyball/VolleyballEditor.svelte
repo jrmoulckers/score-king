@@ -332,7 +332,7 @@
               </button>
             {/if}
           {/each}
-          {#if benchIds.length === 0}<span class="muted xs emptyhint">Everyone's on a team</span>{/if}
+          {#if benchIds.length === 0}<span class="muted xs emptyhint">Everyone’s on a team</span>{/if}
         </div>
       </div>
     </div>

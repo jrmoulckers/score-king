@@ -65,7 +65,7 @@
     if (!def) return;
     const copy = duplicateDef(def);
     await saveCustomGame(copy);
-    showToast('Duplicated — tweak your copy.');
+    showToast('Duplicated — tweak your copy');
     navigate(editCustomHref(copy.id));
   }
 
@@ -89,7 +89,7 @@
   <div class="empty unknown">
     <div class="unknown-emoji" aria-hidden="true">🔍</div>
     <h2>No such game</h2>
-    <p class="muted">There's no scorer named “{type}”. It may have been renamed, removed, or mistyped.</p>
+    <p class="muted">There’s no scorer named “{type}”. It may have been renamed, removed, or mistyped.</p>
     <a class="btn primary" href="/" use:link>Back to games</a>
     <a class="btn small ghost browse-link" href="/browse" use:link>Browse all games</a>
   </div>

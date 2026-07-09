@@ -77,7 +77,7 @@
     <div class="firstrun-emoji" aria-hidden="true">👥</div>
     <p><strong>Add your regulars once.</strong></p>
     <p class="muted">Players are shared across every game and leaderboard — add them here and
-    they'll be ready to pick whenever you start a game. Tap 🎲 for a surprise name.</p>
+    they’ll be ready to pick whenever you start a game. Tap 🎲 for a surprise name.</p>
   </div>
 {:else if $activePlayers.length > 0}
   <div class="player-grid">

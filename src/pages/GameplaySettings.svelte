@@ -24,8 +24,7 @@
 
 <h1>Gameplay</h1>
 <p class="lede muted">
-  Tune how Score King behaves during and after a game. Changes apply instantly and, because
-  they're part of your backup, follow you to your other devices.
+  Tune how Score King behaves during and after a game. Changes apply instantly.
 </p>
 
 <div class="section-title">While playing</div>

@@ -166,7 +166,7 @@
     // Snapshot the saved state so the follow-up navigation isn't treated as discarding edits.
     snapshot = serialize(clean);
     await saveCustomGame(clean);
-    showToast(editing ? 'Game updated.' : 'Game created.');
+    showToast(editing ? 'Game updated' : 'Game created');
     navigate(`/${clean.id}`);
   }
 
