@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { pathStore, parseRoute, link } from './lib/router';
+  import { onMount, tick } from 'svelte';
+  import { pathStore, parseRoute, link, titleForRoute } from './lib/router';
   import { toast } from './lib/stores/toast';
   import { settings } from './lib/stores/settings';
+  import { announce } from './lib/stores/announcer';
   import Home from './pages/Home.svelte';
   import Players from './pages/Players.svelte';
   import History from './pages/History.svelte';
@@ -22,10 +23,33 @@
   import Recap from './pages/Recap.svelte';
   import NotFound from './pages/NotFound.svelte';
   import SyncBubble from './lib/components/SyncBubble.svelte';
+  import Announcer from './lib/components/Announcer.svelte';
 
   let current = $state(window.location.pathname || '/');
   onMount(() => pathStore.subscribe((v) => (current = v)));
   const route = $derived(parseRoute(current));
+
+  let mainEl: HTMLElement | undefined = $state();
+  // Skip the very first render: the initial page load already places focus and
+  // sets the title, so only *navigations* move focus and re-announce.
+  let mounted = false;
+
+  // Keep the document title, focus, and a polite announcement in lockstep with
+  // the route so screen-reader and keyboard users perceive each navigation the
+  // way a sighted user does at a glance.
+  $effect(() => {
+    const title = titleForRoute(route);
+    document.title = title;
+    if (!mounted) {
+      mounted = true;
+      return;
+    }
+    announce(title.split(' · ')[0]);
+    void (async () => {
+      await tick();
+      mainEl?.focus();
+    })();
+  });
 
   // Which primary nav item is active — shared by the mobile tab bar and the
   // desktop sidebar rail so both stay in lockstep.
@@ -51,9 +75,22 @@
     return () => document.removeEventListener('visibilitychange', onVis);
   });
 
+  // A manual "hide now" is offered on the play screen whenever the guard is on,
+  // so a player can veil the board on purpose before handing the phone over —
+  // not only when the tab is backgrounded.
+  const canHideNow = $derived($settings.privacyGuard && route.name === 'play' && !veiled);
+  function hideNow() {
+    veiled = true;
+  }
+
   function reveal() {
     veiled = false;
   }
+
+  let veilBtn: HTMLButtonElement | undefined = $state();
+  $effect(() => {
+    if (veiled) veilBtn?.focus();
+  });
 </script>
 
 {#snippet navLinks()}
@@ -63,7 +100,9 @@
   <a href="/stats" use:link class:active={navActive.stats}><span class="ico" aria-hidden="true">📊</span><span class="lbl">Stats</span></a>
 {/snippet}
 
-<div class="shell">
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="shell" inert={veiled}>
   <aside class="sidebar">
     <a class="brand sidebar-brand" href="/" use:link>
       <img src="/favicon.svg" alt="" />
@@ -90,7 +129,7 @@
       </div>
     </header>
 
-<main class="app">
+<main class="app" id="main-content" tabindex="-1" bind:this={mainEl}>
   {#if route.name === 'home'}
     <Home />
   {:else if route.name === 'players'}
@@ -155,8 +194,21 @@
   </div>
 {/if}
 
+<Announcer />
+
+{#if canHideNow}
+  <button class="hide-now" onclick={hideNow} title="Hide scores from view">
+    <span aria-hidden="true">🙈</span> Hide scores
+  </button>
+{/if}
+
 {#if veiled}
-  <button class="veil" onclick={reveal} aria-label="Reveal scores">
+  <button
+    class="veil"
+    onclick={reveal}
+    aria-label="Scores hidden. Reveal scores."
+    bind:this={veilBtn}
+  >
     <span class="veil-card">
       <span class="veil-emoji" aria-hidden="true">🙈</span>
       <strong>Scores hidden</strong>
@@ -166,6 +218,63 @@
 {/if}
 
 <style>
+  /* Skip link: off-screen until focused, then anchored top-center over the app
+     bar so keyboard users can jump past the persistent nav (WCAG 2.4.1). */
+  .skip-link {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -120%);
+    z-index: 100;
+    padding: 10px 18px;
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    box-shadow: var(--shadow);
+    transition: transform 0.15s ease;
+  }
+  .skip-link:focus-visible {
+    transform: translate(-50%, 0);
+    outline: 2px solid #fff;
+    outline-offset: -4px;
+    text-decoration: none;
+  }
+
+  /* Manual privacy hide: a thumb-zone pill above the bottom bar so a player can
+     veil the board on purpose before setting the phone down. */
+  .hide-now {
+    position: fixed;
+    left: 50%;
+    bottom: calc(86px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 60;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface-3) 92%, transparent);
+    backdrop-filter: blur(8px);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  .hide-now:hover {
+    background: var(--surface-3);
+  }
+  .hide-now:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
   .veil {
     position: fixed;
     inset: 0;

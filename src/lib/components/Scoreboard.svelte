@@ -19,6 +19,10 @@
 
   const byId = $derived(new Map(players.map((p) => [p.id, p])));
   const ranked = $derived(standings(totals, lowerIsBetter));
+  // A leader only exists once scores diverge — at 0-0 nobody is "leading yet",
+  // so the crown stays hidden until someone pulls ahead (mirrors the gold `.lead`
+  // number meaning without shouting a crown over every tied-at-zero player).
+  const hasLeader = $derived(ranked.length > 1 && ranked.some((r) => r.total !== ranked[0].total));
 </script>
 
 <table>
@@ -34,7 +38,11 @@
           <span class="row" style="gap: 8px">
             {#if p}<Avatar name={p.name} color={p.color} size={24} />{p.name}{/if}
             {#if youId && s.playerId === youId}<span class="you">You</span>{/if}
-            {#if winners.includes(s.playerId)}<span title="Winner">🏆</span>{/if}
+            {#if winners.includes(s.playerId)}
+              <span aria-hidden="true" title="Winner">🏆</span><span class="sr-only">Winner</span>
+            {:else if s.rank === 1 && hasLeader}
+              <span aria-hidden="true" title="Leading">👑</span><span class="sr-only">Leading</span>
+            {/if}
           </span>
         </td>
         <td class="num" class:lead={s.rank === 1}>{s.total}</td>

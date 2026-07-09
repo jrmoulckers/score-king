@@ -4,7 +4,15 @@
     min = -Infinity,
     max = Infinity,
     step = 1,
-  }: { value: number; min?: number; max?: number; step?: number } = $props();
+    label = '',
+  }: { value: number; min?: number; max?: number; step?: number; label?: string } = $props();
+
+  // A meaningful accessible name for the number field and its buttons. Callers
+  // pass the thing being counted (usually a player's name) so a screen reader
+  // announces "Decrease Ada" rather than a bare "decrease" with no context.
+  const fieldLabel = $derived(label || 'Value');
+  const decLabel = $derived(label ? `Decrease ${label}` : 'Decrease');
+  const incLabel = $derived(label ? `Increase ${label}` : 'Increase');
 
   function dec() {
     value = Math.max(min, (Number(value) || 0) - step);
@@ -15,11 +23,11 @@
 </script>
 
 <div class="stepper">
-  <button type="button" class="iconbtn" onclick={dec} disabled={value <= min} aria-label="decrease">
+  <button type="button" class="iconbtn" onclick={dec} disabled={value <= min} aria-label={decLabel}>
     −
   </button>
-  <input type="number" bind:value {min} {max} {step} inputmode="numeric" />
-  <button type="button" class="iconbtn" onclick={inc} disabled={value >= max} aria-label="increase">
+  <input type="number" bind:value {min} {max} {step} inputmode="numeric" aria-label={fieldLabel} />
+  <button type="button" class="iconbtn" onclick={inc} disabled={value >= max} aria-label={incLabel}>
     +
   </button>
 </div>

@@ -32,7 +32,7 @@
           <Avatar name={p.name} color={p.color} />
           <strong>{p.name}</strong>
         </span>
-        <Stepper bind:value={input.hearts[p.id]} min={0} max={13} />
+        <Stepper bind:value={input.hearts[p.id]} min={0} max={13} label={`${p.name} hearts`} />
       </div>
       <div class="row" style="gap: 8px">
         <button type="button" class="toggle" class:on={input.queen === p.id} onclick={() => setQueen(p.id)}>

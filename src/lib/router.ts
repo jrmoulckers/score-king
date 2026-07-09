@@ -113,6 +113,42 @@ const RESERVED: Record<string, RouteName> = {
   create: 'customedit',
 };
 
+/**
+ * Human-readable page title per route, used to keep `document.title` in sync as
+ * the SPA navigates (WCAG 2.4.2 Page Titled) and to announce the new page to
+ * assistive tech. Game-specific routes fall back to a sensible generic label;
+ * pages that know their own subject (a game, a custom def) can refine it later.
+ */
+const ROUTE_TITLES: Record<RouteName, string> = {
+  home: 'Games',
+  players: 'Players',
+  history: 'History',
+  stats: 'Stats',
+  court: 'The Court',
+  wrapped: 'Wrapped',
+  tonight: "Tonight's Recap",
+  settings: 'Settings',
+  accessibility: 'Accessibility & display',
+  managegames: 'Manage games',
+  browse: 'Browse games',
+  gameplay: 'Gameplay',
+  play: 'Now playing',
+  join: 'Join live game',
+  nearby: 'Play nearby',
+  recap: 'Recap',
+  gametype: 'Start a game',
+  customedit: 'Create a game',
+  notfound: 'Not found',
+};
+
+const APP_NAME = 'Score King';
+
+/** The `document.title` string for a route (e.g. "Players · Score King"). */
+export function titleForRoute(route: Route): string {
+  const label = ROUTE_TITLES[route.name];
+  return route.name === 'home' || !label ? APP_NAME : `${label} · ${APP_NAME}`;
+}
+
 export function parseRoute(path: string): Route {
   const clean = path.replace(/^\/+|\/+$/g, '');
   const segs = clean === '' ? [''] : clean.split('/');

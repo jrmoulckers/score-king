@@ -14,7 +14,7 @@
         <Avatar name={p.name} color={p.color} />
         <strong>{p.name}</strong>
       </span>
-      <Stepper bind:value={input.deltas[p.id]} step={1} />
+      <Stepper bind:value={input.deltas[p.id]} step={1} label={p.name} />
     </div>
   {/each}
 </div>

@@ -21,6 +21,7 @@
   import { computeTotals } from '../lib/scoring';
   import { navigate, link, absoluteUrl } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
+  import { announce } from '../lib/stores/announcer';
   import { relativeTime, generateJoinCode } from '../lib/util';
   import { settings } from '../lib/stores/settings';
   import { leadMember } from '../lib/stores/identity';
@@ -148,6 +149,19 @@
     return () => disableWakeLock();
   });
 
+  // A short, glanceable standing for screen readers — who's on top and by what
+  // number — so an assistive-tech user learns what a sighted player sees the
+  // moment a round lands, without having to re-read the whole board.
+  function leaderSummary(): string {
+    const leaders = orderedPlayers.filter((p) => leaderIds.has(p.id));
+    if (leaders.length === 0) return '';
+    const best = totals[leaders[0].id] ?? 0;
+    const names = leaders.map((p) => p.name).join(' and ');
+    return leaders.length === 1
+      ? `${names} leads with ${best}.`
+      : `${names} tie for the lead with ${best}.`;
+  }
+
   async function saveRound() {
     if (!game || !module || !draft) return;
     const snap = $state.snapshot(draft);
@@ -167,7 +181,10 @@
     });
     if (!saved) return;
     const newest = rounds[rounds.length - 1];
-    if (newest) pulseRow(newest.id);
+    if (newest) {
+      pulseRow(newest.id);
+      announce(`Round ${newest.index + 1} saved. ${leaderSummary()}`);
+    }
   }
 
   // Briefly pulse a scorecard row green to confirm it just landed. The host's own saves and
@@ -204,6 +221,7 @@
       await load();
       publish();
     });
+    announce(`Round ${ed.index + 1} updated. ${leaderSummary()}`);
   }
 
   async function del(r: Round) {
@@ -232,6 +250,12 @@
       game = await finishGame(game);
       publish();
     });
+    const names = (game?.winnerIds ?? [])
+      .map((wid) => plist.find((p) => p.id === wid)?.name ?? '?')
+      .join(' and ');
+    if (names) {
+      announce(`Game finished. ${names} ${(game?.winnerIds?.length ?? 0) > 1 ? 'tie for the win' : 'wins'}.`);
+    }
   }
   async function doReopen() {
     if (!game) return;
