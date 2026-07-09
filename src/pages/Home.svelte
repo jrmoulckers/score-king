@@ -8,14 +8,15 @@
   import { isLiveSupported, isNearbySupported } from '../lib/live/session';
   import { welcomeDismissed } from '../lib/stores/onboarding';
   import WelcomeHero from '../lib/components/WelcomeHero.svelte';
+  import GameTile from '../lib/components/GameTile.svelte';
+  import CreateTile from '../lib/components/CreateTile.svelte';
   import {
     startableTypes,
     sectionize,
     matchModule,
+    recentlyFinished,
     SEARCH_THRESHOLD,
     CUSTOM_GAMES_ENABLED,
-    CREATE_ROUTE,
-    type CatalogType,
   } from '../lib/stores/catalog';
 
   const liveSupported = isLiveSupported();
@@ -28,9 +29,9 @@
   }
 
   const active = $derived($games.filter((g) => g.status === 'active' && !g.archived));
-  const recent = $derived(
-    $games.filter((g) => g.status === 'finished' && !g.archived).slice(0, 4),
-  );
+  // Ordered by when each game actually finished (not the store's create order), so the four
+  // shown are truly the most-recently-wrapped-up games.
+  const recent = $derived(recentlyFinished($games));
 
   // First-run welcome: shown only until the very first game exists (or it's dismissed), so
   // returning players never see it. A brand-new device has no games at all.
@@ -39,6 +40,7 @@
   // ── Catalog: search + mutually-exclusive sections over the startable game types ──
   let search = $state('');
   const mods = $derived($startableTypes);
+  const favs = $derived($settings.catalogFavorites);
   const showSearch = $derived(mods.length >= SEARCH_THRESHOLD);
   const searching = $derived(search.trim().length > 0);
   const sections = $derived(
@@ -62,6 +64,13 @@
   const remainderPreview = $derived(sections.remainder.slice(0, REMAINDER_PREVIEW));
   const moreCount = $derived(sections.remainder.length - remainderPreview.length);
 
+  function isFav(id: string): boolean {
+    return favs.includes(id);
+  }
+  function clearSearch(e: KeyboardEvent) {
+    if (e.key === 'Escape') search = '';
+  }
+
   function names(ids: string[]): string {
     return ids.map((id) => $players.find((p) => p.id === id)?.name ?? '?').join(', ');
   }
@@ -80,11 +89,11 @@
     {#each active as g (g.id)}
       {@const m = getModule(g.type)}
       <a class="card row spread tile" href={`/play/${g.id}`} use:link>
-        <span class="row" style="gap: 12px">
+        <span class="row who" style="gap: 12px">
           <span class="big-emoji">{m?.emoji ?? '🎲'}</span>
-          <span>
+          <span class="who-col">
             <div><strong>{m?.name ?? g.type}</strong></div>
-            <div class="muted sm">{names(g.playerIds)}</div>
+            <div class="muted sm players">{names(g.playerIds)}</div>
           </span>
         </span>
         <span class="pill">Round {g.roundCount + 1}</span>
@@ -92,14 +101,6 @@
     {/each}
   </div>
 {/if}
-
-{#snippet tile(m: CatalogType)}
-  <a class="gametile" href={`/${m.id}`} use:link>
-    <span class="emoji">{m.emoji}</span>
-    <span class="name">{m.name}</span>
-    <span class="tag">{m.tagline}</span>
-  </a>
-{/snippet}
 
 {#snippet head(label: string, withManage: boolean)}
   <div class="section-title cathead">
@@ -112,24 +113,33 @@
 
 {#if showSearch}
   <div class="catalog-bar">
-    <input
-      class="catalog-search"
-      type="text"
-      placeholder="Search games…"
-      aria-label="Search games"
-      autocapitalize="off"
-      autocorrect="off"
-      spellcheck="false"
-      bind:value={search}
-    />
+    <span class="catalog-search-wrap">
+      <span class="search-ico" aria-hidden="true">🔍</span>
+      <input
+        class="catalog-search"
+        type="search"
+        placeholder="Search games…"
+        aria-label="Search games"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        bind:value={search}
+        onkeydown={clearSearch}
+      />
+    </span>
     <a class="manage-link inbar" href="/manage-games" use:link>Manage</a>
   </div>
 {/if}
 
+<div class="sr-only" aria-live="polite" role="status">
+  {#if searching}{searchResults.length}
+    {searchResults.length === 1 ? 'game' : 'games'} match “{search.trim()}”{/if}
+</div>
+
 {#if searching}
   {#if searchResults.length}
     <div class="grid">
-      {#each searchResults as m (m.id)}{@render tile(m)}{/each}
+      {#each searchResults as m (m.id)}<GameTile type={m} favorite={isFav(m.id)} />{/each}
     </div>
   {:else}
     <div class="empty">No games match “{search.trim()}”.</div>
@@ -138,32 +148,28 @@
   {#if sections.favorites.length}
     {@render head('Favorites', !showSearch && firstSection === 'fav')}
     <div class="grid">
-      {#each sections.favorites as m (m.id)}{@render tile(m)}{/each}
+      {#each sections.favorites as m (m.id)}<GameTile type={m} favorite={true} />{/each}
     </div>
   {/if}
   {#if sections.recent.length}
     {@render head('Recently played', !showSearch && firstSection === 'recent')}
     <div class="grid">
-      {#each sections.recent as m (m.id)}{@render tile(m)}{/each}
+      {#each sections.recent as m (m.id)}<GameTile type={m} favorite={isFav(m.id)} />{/each}
     </div>
   {/if}
   {#if showRemainder}
     <div class="section-title cathead">
       <span>{remainderTitle}</span>
       {#if moreCount > 0}
-        <a class="manage-link" href="/browse" use:link>See all →</a>
+        <a class="manage-link" href="/browse" use:link>See all {sections.remainder.length} →</a>
       {:else if !showSearch && firstSection === 'rem'}
         <a class="manage-link" href="/manage-games" use:link>Manage</a>
       {/if}
     </div>
     <div class="grid">
-      {#each remainderPreview as m (m.id)}{@render tile(m)}{/each}
+      {#each remainderPreview as m (m.id)}<GameTile type={m} favorite={isFav(m.id)} />{/each}
       {#if CUSTOM_GAMES_ENABLED}
-        <a class="gametile createtile" href={CREATE_ROUTE} use:link>
-          <span class="emoji" aria-hidden="true">＋</span>
-          <span class="name">Create a game</span>
-          <span class="tag">Build your own scorer</span>
-        </a>
+        <CreateTile />
       {/if}
     </div>
   {/if}
@@ -235,8 +241,23 @@
     gap: 10px;
     margin: 18px 4px 4px;
   }
+  .catalog-search-wrap {
+    position: relative;
+    flex: 1;
+    display: flex;
+  }
+  .catalog-search-wrap .search-ico {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    opacity: 0.7;
+    font-size: 0.95rem;
+  }
   .catalog-search {
     flex: 1;
+    padding-left: 40px;
   }
   .cathead {
     display: flex;
@@ -257,13 +278,15 @@
   .manage-link.inbar {
     padding: 8px;
   }
-  /* The single "add" accent on Home: a dashed tile with a violet ＋ — never a solid fill. */
-  .createtile {
-    border-style: dashed;
+  /* Keep a long player roster from shoving the "Round N" pill off the Continue card. */
+  .who,
+  .who-col {
+    min-width: 0;
   }
-  .createtile .emoji {
-    color: var(--primary);
-    font-weight: 700;
+  .players {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .sm {
     font-size: 0.85rem;

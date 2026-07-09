@@ -189,12 +189,45 @@ export function sectionize(
   return { favorites, recent, remainder };
 }
 
-/** Case-insensitive match over name + tagline + optional keyword aliases. */
+/**
+ * Fold a string for searching: lower-cased and diacritic-stripped (NFD → drop combining
+ * marks), so a plain typing of "Uno" still matches an accented "Úno" tagline and vice-versa.
+ */
+export function foldSearch(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Case- and diacritic-insensitive match over name + tagline + optional keyword aliases, plus
+ * the type's category label so a group can search by *kind* ("cards", "party", "sports") and
+ * surface every game in that family — not just ones whose name happens to contain the word.
+ */
 export function matchModule(t: CatalogType, query: string): boolean {
-  const q = query.trim().toLowerCase();
+  const q = foldSearch(query);
   if (!q) return true;
-  const hay = [t.name, t.tagline, ...(t.keywords ?? [])].join(' ').toLowerCase();
+  const cat = categoryOf(t.id);
+  const catLabel = CATEGORY_ORDER.find((c) => c.id === cat)?.label ?? '';
+  // Both the category id ("cards") and its label ("Card Games") go in the haystack so either
+  // the short kind word or the display name surfaces the whole family.
+  const hay = foldSearch([t.name, t.tagline, cat, catLabel, ...(t.keywords ?? [])].join(' '));
   return hay.includes(q);
+}
+
+/**
+ * The most-recently-*finished* games, newest first — the source for Home's "Recent results".
+ * Ordered by `finishedAt` (falling back to `createdAt`) rather than the store's create order,
+ * so a long-running game that only wrapped up today ranks above a quicker one that was started
+ * later but is still open. Archived games are excluded.
+ */
+export function recentlyFinished(games: Game[], limit = RECENT_LIMIT): Game[] {
+  return games
+    .filter((g) => g.status === 'finished' && !g.archived)
+    .sort((a, b) => (b.finishedAt ?? b.createdAt) - (a.finishedAt ?? a.createdAt))
+    .slice(0, limit);
 }
 
 // ── Categories: group the catalog by game "type" for the browse page ──────────────
