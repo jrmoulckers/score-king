@@ -331,7 +331,9 @@ export const oneDrive: SyncProvider = {
     return { snapshot, etag: item.eTag ?? null };
   },
   async peekEtag(opts?: PushOptions): Promise<string | null> {
-    const accessToken = await token(opts?.interactive ?? true);
+    // Default to a silent (non-interactive) token: peekEtag exists only for the background
+    // poll, which must never yank the user to a Microsoft redirect just to check a version.
+    const accessToken = await token(opts?.interactive ?? false);
     // Metadata-only read, narrowed to just the eTag: the cheapest way to tell whether the remote
     // moved. No download URL, no file body. cache:'no-store' so a poll always sees the latest.
     const meta = await graph(
