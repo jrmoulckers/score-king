@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './ChickenFootEditor.svelte';
+import { RoundEditor } from '../editor';
 import { chickenfootStats } from './stats';
 import * as logic from './logic';
 import type { ChickenFootInput } from './logic';
@@ -81,5 +81,6 @@ export const chickenfoot: GameModule = {
 
   stats: chickenfootStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./ChickenFootEditor.svelte'),
 };

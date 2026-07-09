@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './WingspanEditor.svelte';
+import { RoundEditor } from '../editor';
 import { wingspanStats } from './stats';
 import {
   describeWingspanRound,
@@ -76,5 +76,6 @@ export const wingspan: GameModule = {
 
   stats: wingspanStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./WingspanEditor.svelte'),
 };

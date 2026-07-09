@@ -1,5 +1,5 @@
 import type { GameModule, Round, RoundContext } from '../../types';
-import Editor from './FluffEditor.svelte';
+import { RoundEditor } from '../editor';
 import { fluffStats } from './stats';
 import {
   describeRound,
@@ -83,5 +83,6 @@ export const fluff: GameModule = {
 
   stats: fluffStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./FluffEditor.svelte'),
 };

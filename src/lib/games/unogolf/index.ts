@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './UnoGolfEditor.svelte';
+import { RoundEditor } from '../editor';
 import { unogolfStats } from './stats';
 import {
   DEFAULTS,
@@ -121,5 +121,6 @@ export const unogolf: GameModule = {
 
   stats: unogolfStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./UnoGolfEditor.svelte'),
 };

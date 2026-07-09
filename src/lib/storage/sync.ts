@@ -3,6 +3,7 @@ import type { Game, ID, Player, Round } from '../types';
 import type { CustomGameDef } from '../games/custom/types';
 import type { Settings } from '../stores/settings';
 import { getBackupSettings, applyBackupSettings } from '../stores/settings';
+import { refreshCustomGames } from '../stores/customGames';
 
 export interface Snapshot {
   players: Player[];
@@ -269,8 +270,9 @@ export async function restoreSnapshot(snapshot: Snapshot): Promise<void> {
   });
   applyBackupSettings(snapshot.settings);
   // Rebuild the in-memory custom registries so restored/merged-in custom types resolve
-  // immediately (dynamic import keeps the store out of the sync module's static graph).
-  const { refreshCustomGames } = await import('../stores/customGames');
+  // immediately. `customGames` is already in the app's static graph (catalog, the play and
+  // manage screens all import it), so a static import here is simplest and avoids Vite's
+  // INEFFECTIVE_DYNAMIC_IMPORT warning about a module that can't be split out anyway.
   await refreshCustomGames();
 }
 

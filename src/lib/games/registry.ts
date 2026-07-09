@@ -28,7 +28,8 @@ function isGameModule(value: unknown): value is GameModule {
     typeof m.scoreRound === 'function' &&
     typeof m.validateRound === 'function' &&
     typeof m.createRoundInput === 'function' &&
-    m.RoundEditor != null
+    m.RoundEditor != null &&
+    typeof m.editorLoader === 'function'
   );
 }
 

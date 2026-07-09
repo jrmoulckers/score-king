@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './EuchreEditor.svelte';
+import { RoundEditor } from '../editor';
 import { euchreStats } from './stats';
 import {
   type EuchreInput,
@@ -98,5 +98,6 @@ export const euchre: GameModule = {
 
   stats: euchreStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./EuchreEditor.svelte'),
 };

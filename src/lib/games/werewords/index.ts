@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './WerewordsEditor.svelte';
+import { RoundEditor } from '../editor';
 import { werewordsStats } from './stats';
 import {
   describeWerewords,
@@ -80,5 +80,6 @@ export const werewords: GameModule = {
 
   stats: werewordsStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./WerewordsEditor.svelte'),
 };

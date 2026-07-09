@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './BotcEditor.svelte';
+import { RoundEditor } from '../editor';
 import * as logic from './logic';
 import type { BotcInput } from './logic';
 import { botcStats } from './stats';
@@ -75,5 +75,6 @@ export const botc: GameModule = {
 
   stats: botcStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./BotcEditor.svelte'),
 };

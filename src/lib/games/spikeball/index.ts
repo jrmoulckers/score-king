@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './SpikeballEditor.svelte';
+import { RoundEditor } from '../editor';
 import { spikeballStats } from './stats';
 import {
   readConfig,
@@ -106,5 +106,6 @@ export const spikeball: GameModule = {
 
   stats: spikeballStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./SpikeballEditor.svelte'),
 };

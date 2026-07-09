@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './VolleyballEditor.svelte';
+import { RoundEditor } from '../editor';
 import { volleyballStats } from './stats';
 import {
   cloneTeams,
@@ -144,5 +144,6 @@ export const volleyball: GameModule = {
 
   stats: volleyballStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./VolleyballEditor.svelte'),
 };

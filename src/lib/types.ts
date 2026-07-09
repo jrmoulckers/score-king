@@ -187,8 +187,18 @@ export interface GameModule {
   /** Final winner(s) given totals. Defaults to highest (or lowest) total. */
   pickWinners?(totals: Record<ID, number>, config: Record<string, unknown>): ID[];
 
-  /** Svelte component used to edit a single round (props: RoundEditorProps). */
+  /**
+   * Svelte component used to edit a single round (props: RoundEditorProps). Points at the shared
+   * {@link ./games/editor LazyEditor} host; the real, per-game editor is fetched on demand via
+   * {@link editorLoader}. Kept as a component reference so the module contract is unchanged.
+   */
   RoundEditor: Component<any>;
+  /**
+   * Dynamic import of this game's round-editor component, so Vite emits it as its own chunk and
+   * the initial bundle carries only game logic. Resolved (and rendered) on the play screen the
+   * moment a round is entered. See `src/lib/games/editor.ts`.
+   */
+  editorLoader: () => Promise<{ default: Component<any> }>;
   /** Reference text shown in the in-game help popover. */
   help?: string;
   /** Short summary of a recorded round for the history table. */

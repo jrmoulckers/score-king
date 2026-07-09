@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './ExplodingKittensEditor.svelte';
+import { RoundEditor } from '../editor';
 import { explodingKittensStats } from './stats';
 import {
   emptyInput,
@@ -90,5 +90,6 @@ export const explodingkittens: GameModule = {
 
   stats: explodingKittensStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./ExplodingKittensEditor.svelte'),
 };

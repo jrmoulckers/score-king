@@ -1,5 +1,5 @@
 import type { GameModule, RoundContext } from '../../types';
-import Editor from './AvalonEditor.svelte';
+import { RoundEditor } from '../editor';
 import { avalonStats } from './stats';
 import {
   MAX_PLAYERS,
@@ -102,5 +102,6 @@ export const avalon: GameModule = {
 
   stats: avalonStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./AvalonEditor.svelte'),
 };

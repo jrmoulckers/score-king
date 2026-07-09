@@ -1,5 +1,5 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
-import Editor from './TwoRoomsEditor.svelte';
+import { RoundEditor } from '../editor';
 import { twoRoomsStats } from './stats';
 import {
   DEFAULT_ROUNDS,
@@ -109,5 +109,6 @@ export const tworooms: GameModule = {
 
   stats: twoRoomsStats,
 
-  RoundEditor: Editor,
+  RoundEditor,
+  editorLoader: () => import('./TwoRoomsEditor.svelte'),
 };
