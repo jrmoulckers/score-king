@@ -5,6 +5,7 @@ import * as db from '../storage/db';
 import { uid } from '../util';
 import { getModule } from '../games/registry';
 import { computeTotals, runnerUpTotal } from '../scoring';
+import { reportStorageError } from './storage';
 
 export const games = writable<Game[]>([]);
 
@@ -12,7 +13,11 @@ export const games = writable<Game[]>([]);
 export const activeGames = derived(games, ($games) => $games.filter((g) => !g.archived));
 
 export async function refreshGames(): Promise<void> {
-  games.set(await db.getAllGames());
+  try {
+    games.set(await db.getAllGames());
+  } catch {
+    reportStorageError();
+  }
 }
 
 export async function createGame(

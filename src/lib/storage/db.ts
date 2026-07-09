@@ -1,8 +1,9 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Game, ID, Player, Round } from '../types';
 import type { CustomGameDef } from '../games/custom/types';
-import { uid } from '../util';
+import { uid, cleanName } from '../util';
 import { markDataChanged } from './changes';
+import { reportStorageError } from '../stores/storage';
 
 interface ScoreKingDB extends DBSchema {
   players: { key: string; value: Player };
@@ -32,6 +33,24 @@ function db(): Promise<IDBPDatabase<ScoreKingDB>> {
           database.createObjectStore('gameDefs', { keyPath: 'id' });
         }
       },
+      // Another tab holds an older connection open and blocks our upgrade, or the
+      // connection was force-closed (storage cleared, corruption). Either way the
+      // durable layer isn't reliable — say so rather than fail silently.
+      blocked() {
+        reportStorageError(
+          'Score King is open in another tab that is out of date — close it and reload to keep saving.',
+        );
+      },
+      terminated() {
+        reportStorageError();
+      },
+    }).catch((err) => {
+      // openDB rejects when IndexedDB is unavailable (some private-browsing modes,
+      // disabled storage) or the database can't be opened. Surface it and allow a
+      // later call to retry a fresh open instead of caching the rejected promise.
+      reportStorageError();
+      dbp = null;
+      throw err;
     });
   }
   return dbp;
@@ -55,7 +74,7 @@ export async function addPlayer(name: string, color: string, claimed: boolean): 
   const now = Date.now();
   const player: Player = {
     id: uid(),
-    name: name.trim(),
+    name: cleanName(name),
     color,
     createdAt: now,
     updatedAt: now,

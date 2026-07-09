@@ -1,6 +1,7 @@
 <script lang="ts">
   import { activePlayers as roster, createPlayer, generatePlayer } from '../stores/players';
   import type { ID } from '../types';
+  import { MAX_NAME_LEN } from '../util';
   import Avatar from './Avatar.svelte';
 
   let {
@@ -51,9 +52,9 @@
   </div>
 
   <form class="row" onsubmit={(e) => { e.preventDefault(); add(); }}>
-    <input class="grow" type="text" placeholder="Add a player…" aria-label="Add a player by name" bind:value={newName} />
+    <input class="grow" type="text" placeholder="Add a player…" aria-label="Add a player by name" maxlength={MAX_NAME_LEN} bind:value={newName} />
     <button class="btn" type="button" onclick={addRandom} aria-label="Add a random player" title="Surprise me">🎲</button>
-    <button class="btn" type="submit">Add</button>
+    <button class="btn" type="submit" disabled={!newName.trim()}>Add</button>
   </form>
 </div>
 

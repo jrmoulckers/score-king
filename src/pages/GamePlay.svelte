@@ -22,7 +22,7 @@
   import { navigate, link, absoluteUrl } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
   import { announce } from '../lib/stores/announcer';
-  import { relativeTime, generateJoinCode } from '../lib/util';
+  import { relativeTime, generateJoinCode, rosterFor } from '../lib/util';
   import { settings } from '../lib/stores/settings';
   import { leadMember } from '../lib/stores/identity';
   import { enableWakeLock, disableWakeLock } from '../lib/wakelock';
@@ -70,13 +70,10 @@
     void $customGameDefs;
     return game ? getModule(game.type) : undefined;
   });
-  const orderedPlayers = $derived(
-    game
-      ? (game.playerIds
-          .map((pid) => plist.find((p) => p.id === pid))
-          .filter(Boolean) as Player[])
-      : [],
-  );
+  // Keep a slot for every id on the game — even one whose member was deleted mid-game —
+  // so a removed player never silently drops their scorecard column or their points from
+  // the standings. rosterFor() substitutes a "Removed player" placeholder for a missing id.
+  const orderedPlayers = $derived(game ? rosterFor(game.playerIds, plist) : []);
   const totals = $derived(game ? computeTotals(rounds, game.playerIds) : {});
   const lower = $derived(game && module ? resolveLower(module, game.config) : false);
   // Shared "who's actually ahead" rule: empty until scores diverge, so the gold
@@ -206,7 +203,12 @@
         return false;
       }
       const deltas = module.scoreRound(snap, ctx);
-      await appendRound(game, snap, deltas);
+      try {
+        await appendRound(game, snap, deltas);
+      } catch {
+        showToast("Couldn't save that round — storage error.");
+        return false;
+      }
       await load();
       publish();
       return true;
@@ -249,7 +251,12 @@
         return;
       }
       const deltas = module.scoreRound(snap, ctx);
-      await updateRound(ed, snap, deltas);
+      try {
+        await updateRound(ed, snap, deltas);
+      } catch {
+        showToast("Couldn't save that change — storage error.");
+        return;
+      }
       await load();
       publish();
     });

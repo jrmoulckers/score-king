@@ -86,10 +86,12 @@
 </script>
 
 {#if !module}
-  <div class="empty">
-    <h2>Unknown game</h2>
-    <p class="muted">There's no scorer named "{type}".</p>
+  <div class="empty unknown">
+    <div class="unknown-emoji" aria-hidden="true">🔍</div>
+    <h2>No such game</h2>
+    <p class="muted">There's no scorer named “{type}”. It may have been renamed, removed, or mistyped.</p>
     <a class="btn primary" href="/" use:link>Back to games</a>
+    <a class="btn small ghost browse-link" href="/browse" use:link>Browse all games</a>
   </div>
 {:else}
   <BackLink href="/" label="Games" />
@@ -180,5 +182,22 @@
   }
   .sm {
     font-size: 0.85rem;
+  }
+  .unknown {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .unknown-emoji {
+    font-size: 2.4rem;
+    line-height: 1;
+  }
+  .unknown p {
+    margin: 0;
+    max-width: 44ch;
+  }
+  .browse-link {
+    text-decoration: none;
   }
 </style>
