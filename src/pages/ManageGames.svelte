@@ -1,6 +1,7 @@
 <script lang="ts">
   import { settings } from '../lib/stores/settings';
-  import { link } from '../lib/router';
+  import { link, navigate } from '../lib/router';
+  import { showToast } from '../lib/stores/toast';
   import BackLink from '../lib/components/BackLink.svelte';
   import {
     startableTypes,
@@ -13,12 +14,23 @@
     CREATE_ROUTE,
     CUSTOM_GAMES_ENABLED,
   } from '../lib/stores/catalog';
+  import {
+    customGameDefs,
+    archivedCustomGames,
+    restoreCustomGame,
+    saveCustomGame,
+  } from '../lib/stores/customGames';
+  import { duplicateDef } from '../lib/games/custom/types';
 
   let query = $state('');
 
   const mods = $derived($startableTypes);
   const favs = $derived($settings.catalogFavorites);
   const hidden = $derived($settings.catalogHidden);
+
+  // Retired (archived) custom games — resolvable but out of the catalog. Surfaced here so a
+  // deleted-but-still-referenced custom type can always be restored, not only from the toast.
+  const retired = $derived($archivedCustomGames.filter((d) => matchModule(d, query)));
 
   // Stable registry order here (favoriting reorders the *catalog*, not this list) so rows
   // don't jump under your thumb while you curate.
@@ -30,7 +42,24 @@
   );
 
   const searching = $derived(query.trim().length > 0);
-  const nothing = $derived(visible.length === 0 && hiddenModules.length === 0);
+  const nothing = $derived(
+    visible.length === 0 && hiddenModules.length === 0 && retired.length === 0,
+  );
+
+  // Clone-and-tweak from the manage list: save a fresh copy, then open it in the builder.
+  async function duplicate(id: string) {
+    const def = $customGameDefs.find((d) => d.id === id);
+    if (!def) return;
+    const copy = duplicateDef(def);
+    await saveCustomGame(copy);
+    showToast('Duplicated — tweak your copy.');
+    navigate(editCustomHref(copy.id));
+  }
+
+  async function restore(id: string, name: string) {
+    await restoreCustomGame(id);
+    showToast(`${name} restored to your games.`);
+  }
 </script>
 
 <BackLink href="/" label="Games" />
@@ -73,6 +102,9 @@
           <span class="actions">
             {#if CUSTOM_GAMES_ENABLED && isCustomType(m.id)}
               <a class="btn small ghost" href={editCustomHref(m.id)} use:link>Edit</a>
+              <button class="btn small ghost" type="button" onclick={() => duplicate(m.id)}>
+                Duplicate
+              </button>
             {/if}
             <button
               class="starbtn"
@@ -110,6 +142,32 @@
           <span class="actions">
             <button class="btn small" type="button" onclick={() => setHidden(m.id, false)}>
               Show
+            </button>
+          </span>
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  {#if retired.length}
+    <div class="section-title">Retired games</div>
+    <p class="lede muted">
+      Deleted custom games you’ve played are kept here so their history and stats stay correct.
+      Restore one to bring it back to the catalog.
+    </p>
+    <div class="card list">
+      {#each retired as d (d.id)}
+        <div class="mrow">
+          <span class="info dim">
+            <span class="emoji" aria-hidden="true">{d.emoji}</span>
+            <span class="meta">
+              <span class="name">{d.name}</span>
+              <span class="muted sm">{d.tagline || 'Retired'}</span>
+            </span>
+          </span>
+          <span class="actions">
+            <button class="btn small" type="button" onclick={() => restore(d.id, d.name)}>
+              Restore
             </button>
           </span>
         </div>

@@ -30,6 +30,8 @@ export const COUNTER_COLUMN_KEY = 'v';
 export const MAX_NAME_LEN = 24;
 export const MAX_TAGLINE_LEN = 48;
 export const MAX_COLUMN_LABEL_LEN = 16;
+/** How-to-play rules text cap — keeps the in-game help popover glanceable, not a wall of text. */
+export const MAX_HELP_LEN = 500;
 
 /** A curated palette of game-night emojis offered as one-tap picks in the builder. */
 export const EMOJI_CHOICES = [
@@ -123,6 +125,21 @@ export function newColumn(label = ''): CustomColumn {
   return { key: 'c' + uid().replace(/-/g, '').slice(0, 8), label, negative: false };
 }
 
+/**
+ * Move the column at `from` by `delta` (−1 up, +1 down), returning a new array. Out-of-range
+ * moves are no-ops so callers can wire up/down buttons without bounds-checking themselves.
+ * Column *order* is author-facing (it's the left-to-right order of the round-entry steppers),
+ * so reordering is a real edit — pure and testable here.
+ */
+export function moveColumn(columns: CustomColumn[], from: number, delta: number): CustomColumn[] {
+  const to = from + delta;
+  if (from < 0 || from >= columns.length || to < 0 || to >= columns.length) return columns;
+  const next = columns.slice();
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
 /** A blank definition ready for the builder. */
 export function blankDef(): CustomGameDef {
   const now = Date.now();
@@ -148,10 +165,14 @@ export function blankDef(): CustomGameDef {
 /** A deep copy of `src` as a brand-new (unsaved) definition, e.g. for "Duplicate". */
 export function duplicateDef(src: CustomGameDef): CustomGameDef {
   const now = Date.now();
+  // The " copy" suffix can push a max-length name over MAX_NAME_LEN, which would make the
+  // clone fail validation the moment it's opened in the builder. Truncate so a duplicate is
+  // always immediately re-savable.
+  const copyName = `${src.name} copy`.trim().slice(0, MAX_NAME_LEN).trim();
   return {
     ...src,
     id: CUSTOM_ID_PREFIX + uid(),
-    name: `${src.name} copy`.trim(),
+    name: copyName,
     columns: src.columns.map((c) => ({ ...c })),
     createdAt: now,
     updatedAt: now,
@@ -168,6 +189,9 @@ export function validateDef(def: CustomGameDef): string | null {
   if (name.length > MAX_NAME_LEN) return `Keep the name under ${MAX_NAME_LEN} characters.`;
   if (def.tagline.trim().length > MAX_TAGLINE_LEN) {
     return `Keep the tagline under ${MAX_TAGLINE_LEN} characters.`;
+  }
+  if ((def.help ?? '').trim().length > MAX_HELP_LEN) {
+    return `Keep the how-to-play under ${MAX_HELP_LEN} characters.`;
   }
   if (!Number.isFinite(def.minPlayers) || def.minPlayers < 1) return 'Minimum players must be at least 1.';
   if (def.maxPlayers < def.minPlayers) return "Max players can't be less than min players.";

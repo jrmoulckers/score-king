@@ -6,6 +6,7 @@
   import {
     blankDef,
     newColumn,
+    moveColumn,
     validateDef,
     defWarnings,
     firstEmoji,
@@ -14,6 +15,7 @@
     MAX_NAME_LEN,
     MAX_TAGLINE_LEN,
     MAX_COLUMN_LABEL_LEN,
+    MAX_HELP_LEN,
     type CustomGameDef,
   } from '../lib/games/custom/types';
   import { customGameDefs, customGamesLoaded, saveCustomGame } from '../lib/stores/customGames';
@@ -146,6 +148,13 @@
   function removeColumn(i: number) {
     def.columns = def.columns.filter((_, j) => j !== i);
   }
+  function moveCol(i: number, delta: number) {
+    def.columns = moveColumn(def.columns, i, delta);
+  }
+
+  // Target is a coarse goal (e.g. "first to 100"), so it steps in larger jumps than a single
+  // round entry — never the 1-or-2-per-tap of `points per tap`, which would make 100 a slog.
+  const targetStep = $derived(Math.max(10, Math.round(def.step) || 1));
 
   async function save() {
     const clean = buildClean();
@@ -281,15 +290,35 @@
                 <input type="checkbox" bind:checked={col.negative} />
                 Subtracts
               </label>
-              <button
-                type="button"
-                class="btn ghost remove"
-                onclick={() => removeColumn(i)}
-                disabled={def.columns.length <= 1}
-                aria-label={`Remove column ${i + 1}`}
-              >
-                ✕
-              </button>
+              <div class="colbtns">
+                <button
+                  type="button"
+                  class="btn ghost move"
+                  onclick={() => moveCol(i, -1)}
+                  disabled={i === 0}
+                  aria-label={`Move column ${i + 1} up`}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  class="btn ghost move"
+                  onclick={() => moveCol(i, 1)}
+                  disabled={i === def.columns.length - 1}
+                  aria-label={`Move column ${i + 1} down`}
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  class="btn ghost move"
+                  onclick={() => removeColumn(i)}
+                  disabled={def.columns.length <= 1}
+                  aria-label={`Remove column ${i + 1}`}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           {/each}
         </div>
@@ -305,7 +334,7 @@
         <div class="fieldlabel">{targetLabel}</div>
         <div class="muted sm">0 = no target</div>
       </div>
-      <Stepper bind:value={def.target} min={0} step={def.step && def.step > 1 ? def.step : 10} />
+      <Stepper bind:value={def.target} min={0} step={targetStep} />
     </div>
     <div class="row spread optrow">
       <div>
@@ -338,6 +367,7 @@
       class="help-area"
       rows="3"
       bind:value={def.help}
+      maxlength={MAX_HELP_LEN}
       placeholder="A sentence or two of rules, shown in the in-game help."
       aria-label="How to play"
     ></textarea>
@@ -351,8 +381,12 @@
         {/each}
       </div>
     {/if}
-    {#if error && def.name.trim()}
-      <div class="formerror sm" role="alert">⚠ {error}</div>
+    {#if error}
+      {#if def.name.trim()}
+        <div class="formerror sm" role="alert">⚠ {error}</div>
+      {:else}
+        <div class="formhint sm" role="status">💡 {error}</div>
+      {/if}
     {/if}
     <button class="btn primary block" onclick={save} disabled={!!error}>
       {editing ? 'Save changes' : 'Create game'}
@@ -430,10 +464,17 @@
     color: var(--bad);
     margin-bottom: 4px;
   }
+  /* The pre-first-edit nudge (e.g. "name your game") is guidance, not a mistake — muted with a
+     💡, so a disabled Create button always says *why*, without shouting error-coral at a blank form. */
+  .formhint {
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
   /* Column rows are a form group on the next surface step up — not nested cards (no shadow). */
   .colrow {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
     padding: 8px;
     background: var(--surface-2);
@@ -441,27 +482,38 @@
     border-radius: var(--radius-sm);
   }
   .collabel {
-    flex: 1;
+    flex: 1 1 150px;
     min-width: 0;
   }
   .neg {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     margin: 0;
+    /* ≥46px tap target: the whole label (checkbox + word) is one comfortable one-handed hit. */
+    min-height: 46px;
+    padding: 0 4px;
     color: var(--text);
     font-size: 0.9rem;
     white-space: nowrap;
     cursor: pointer;
   }
   .neg input {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
-  .remove {
+  /* Reorder + remove cluster: keeps the row controls together and pushes them to the trailing
+     edge so labels line up as the group wraps below the field on a narrow phone. */
+  .colbtns {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+  }
+  .move {
     flex: none;
     width: 46px;
     padding: 0;
+    font-size: 1.05rem;
   }
   .addcol {
     margin-top: 4px;
