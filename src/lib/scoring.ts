@@ -11,6 +11,24 @@ export function computeTotals(rounds: Round[], playerIds: ID[]): Record<ID, numb
   return totals;
 }
 
+/**
+ * The best total among the players who did *not* win — the runner-up's score.
+ * Used to show a glanceable margin of victory ("won by N") in History without
+ * re-reading a game's rounds. Returns `undefined` when there is no non-winner to
+ * compare against (a solo game, or an all-tie where everyone is a winner).
+ */
+export function runnerUpTotal(
+  totals: Record<ID, number>,
+  winnerIds: ID[],
+  lowerIsBetter = false,
+): number | undefined {
+  const winners = new Set(winnerIds);
+  const others = Object.keys(totals).filter((id) => !winners.has(id));
+  if (others.length === 0) return undefined;
+  const vals = others.map((id) => totals[id] ?? 0);
+  return lowerIsBetter ? Math.min(...vals) : Math.max(...vals);
+}
+
 export interface Standing {
   playerId: ID;
   total: number;

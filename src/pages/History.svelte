@@ -19,7 +19,7 @@
   import type { Game, Player } from '../lib/types';
   import ShareResultsSheet from '../lib/components/ShareResultsSheet.svelte';
   import { buildRecapPayload, type RecapPayload } from '../lib/share/recap';
-  import { gameTime as ts, dateBucket, haystack, nameResolver } from './history';
+  import { gameTime as ts, dateBucket, haystack, nameResolver, groupLeader } from './history';
 
   /** Below this many games, the list is glanceable on its own — no controls shown. */
   const CONTROLS_MIN = 6;
@@ -29,6 +29,7 @@
     { value: 'active', label: 'Active' },
     { value: 'finished', label: 'Finished' },
   ];
+  const ABANDONED_OPTION = { value: 'abandoned', label: 'Abandoned' };
   const GROUP_LABEL: Record<string, string> = { date: 'Date', crew: 'Crew', game: 'Game' };
 
   const DATE_BUCKETS = [
@@ -63,6 +64,18 @@
   const playerMap = $derived(new Map($players.map((p) => [p.id, p] as const)));
   const archivedGames = $derived($games.filter((g) => g.archived));
   const showControls = $derived($activeGames.length >= CONTROLS_MIN);
+
+  // Only offer the Abandoned lens when there's actually something to lens — a
+  // called-off game only appears under "All" otherwise, with no way to isolate it.
+  const hasAbandoned = $derived($activeGames.some((g) => g.status === 'abandoned'));
+  const statusOptions = $derived(hasAbandoned ? [...STATUS_OPTIONS, ABANDONED_OPTION] : STATUS_OPTIONS);
+
+  /** Glanceable margin of victory for a finished game, when both totals are known. */
+  function margin(g: Game): number | null {
+    if (g.winnerScore == null || g.runnerUpScore == null) return null;
+    const m = Math.abs(g.winnerScore - g.runnerUpScore);
+    return m > 0 ? m : null;
+  }
 
   // When the controls are hidden (few active games) the search/status inputs are
   // unmounted, so honoring a stale value here would silently hide games with no visible
@@ -224,7 +237,7 @@
         <span class="muted sm oneline" title={formatDateTime(ts(g))}>
           {relativeTime(ts(g))}
           {#if g.roundCount} · {g.roundCount} {g.roundCount === 1 ? 'round' : 'rounds'}{/if}
-          {#if g.status === 'finished'} · 🏆 {winners(g.winnerIds) || '—'}{#if g.winnerScore != null} <strong class="lead score">{g.winnerScore}</strong>{/if}{/if}
+          {#if g.status === 'finished'} · 🏆 {winners(g.winnerIds) || '—'}{#if g.winnerScore != null} <strong class="lead score">{g.winnerScore}</strong>{/if}{#if margin(g)} · by {margin(g)}{/if}{/if}
           {#if g.status === 'abandoned'} · no winner{/if}
         </span>
       </span>
@@ -264,7 +277,7 @@
         {/if}
       </div>
 
-      <Segmented label="Filter by status" bind:value={status} options={STATUS_OPTIONS} />
+      <Segmented label="Filter by status" bind:value={status} options={statusOptions} />
 
       <button
         class="viewtoggle"
@@ -306,12 +319,14 @@
     </div>
   {:else}
     {#each groups as grp (grp.key)}
+      {@const lead = grp.kind === 'date' ? undefined : groupLeader(grp.games, nameOf)}
       {#if grp.kind === 'date'}
         <div class="section-title">{grp.title}</div>
       {:else if grp.kind === 'game'}
         <div class="grouphead">
           <span class="big-emoji" aria-hidden="true">{grp.emoji}</span>
           <span class="gh-title">{grp.title}</span>
+          {#if lead}<span class="gh-lead">👑 {lead.tie ? 'Tied' : lead.name}{#if !lead.tie} ×<span class="tnum">{lead.wins}</span>{/if}</span>{/if}
           <span class="pill count">{grp.count}</span>
         </div>
       {:else}
@@ -342,6 +357,7 @@
               <span class="gh-title">{grp.title}</span>
               {#if grp.nickname}<span class="muted sm oneline">{names(grp.memberIds!)}</span>{/if}
             </span>
+            {#if lead}<span class="gh-lead">👑 {lead.tie ? 'Tied' : lead.name}{#if !lead.tie} ×<span class="tnum">{lead.wins}</span>{/if}</span>{/if}
             <span class="pill count">{grp.count}</span>
             <button
               class="iconbtn small-icon"
@@ -516,6 +532,16 @@
     margin: 18px 4px 8px;
   }
   .gh-title {
+    font-weight: 700;
+  }
+  .gh-lead {
+    flex: none;
+    font-size: 0.82rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .gh-lead .tnum {
+    font-variant-numeric: tabular-nums;
     font-weight: 700;
   }
   .gh-crew {

@@ -5,10 +5,11 @@
   import { settings } from '../lib/stores/settings';
   import { getModule } from '../lib/games/registry';
   import BackLink from '../lib/components/BackLink.svelte';
+  import { link } from '../lib/router';
   import * as db from '../lib/storage/db';
   import Avatar from '../lib/components/Avatar.svelte';
   import type { Player, Round } from '../lib/types';
-  import { computeStats, buildCourt, fmtPct, fmtAvg, type LeaderRow } from '../lib/stats';
+  import { computeStats, buildCourt, fmtPct, fmtAvg, rangePresets, type LeaderRow } from '../lib/stats';
 
   let rounds = $state<Round[]>([]);
   let loaded = $state(false);
@@ -16,6 +17,10 @@
     rounds = await db.getAllRounds();
     loaded = true;
   });
+
+  const ranges = rangePresets();
+  let rangeKey = $state('all');
+  const activeRange = $derived(ranges.find((r) => r.key === rangeKey)?.range);
 
   type SortKey = 'wins' | 'winRate' | 'played' | 'streak' | 'avgFinish';
   let sortKey = $state<SortKey>('wins');
@@ -33,18 +38,24 @@
     [...new Set($games.filter((g) => g.status === 'finished').map((g) => g.type))].sort(),
   );
 
-  // One engine pass, optionally lensed to a single game — the whole Court follows it.
+  // One engine pass, optionally lensed to a single game and/or time window — the whole Court follows it.
   const result = $derived(
     loaded
       ? computeStats(
           { players: $players, games: $games, rounds },
-          filterType === 'all' ? {} : { gameType: filterType },
+          {
+            ...(filterType === 'all' ? {} : { gameType: filterType }),
+            ...(activeRange ? { range: activeRange } : {}),
+          },
           { gameStats: (type) => getModule(type)?.stats },
         )
       : undefined,
   );
   const court = $derived(result ? buildCourt(result) : undefined);
   const hasData = $derived((result?.totals.finishedGames ?? 0) > 0);
+  // Whether the group has *any* finished game at all (range-independent), so the
+  // time-lens chips stay on screen even when the current window is empty.
+  const hasAnyFinished = $derived($games.some((g) => g.status === 'finished'));
 
   const sorters: Record<SortKey, (a: LeaderRow, b: LeaderRow) => number> = {
     wins: (a, b) => b.wins - a.wins || b.winRate - a.winRate,
@@ -78,9 +89,16 @@
 
 {#if !loaded}
   <div class="empty">Gathering the court…</div>
-{:else if !hasData}
+{:else if !hasAnyFinished}
   <div class="empty">Finish a game and the court will assemble — Kings, rivalries and all.</div>
-{:else if result && court}
+{:else}
+  <!-- Time lens: the whole Court can focus on a window -->
+  <div class="row wrap seg" role="group" aria-label="Filter by time">
+    {#each ranges as r (r.key)}
+      <button class="chip" class:on={rangeKey === r.key} onclick={() => (rangeKey = r.key)}>{r.label}</button>
+    {/each}
+  </div>
+
   <!-- Lens chips: whole Court can focus on one game -->
   {#if gameTypes.length > 1}
     <div class="row wrap seg" role="group" aria-label="Filter by game">
@@ -93,6 +111,7 @@
     </div>
   {/if}
 
+  {#if result && court && hasData}
   <!-- 1 ─ The Throne -->
   <div class="section-title">The Throne</div>
   <section class="card throne" aria-label="Who reigns">
@@ -258,7 +277,7 @@
     <div class="section-title">Wall of fame</div>
     <div class="card stack">
       {#each result.records as rec (rec.key)}
-        <div class="row spread">
+        {#snippet recBody()}
           <span class="row" style="gap: 8px"><span aria-hidden="true">{rec.emoji}</span>{rec.label}</span>
           <span class="row" style="gap: 8px">
             <b class="tnum">{rec.value}</b>
@@ -267,8 +286,14 @@
               {#if h}<Avatar name={h.name} color={h.color} size={20} />{/if}
               {#if rec.holderId === meId}<span class="you">You</span>{/if}
             {/if}
+            {#if rec.gameId}<span class="recgo" aria-hidden="true">›</span>{/if}
           </span>
-        </div>
+        {/snippet}
+        {#if rec.gameId}
+          <a class="row spread reclink" href={`/play/${rec.gameId}`} use:link aria-label={`${rec.label} — view game`}>{@render recBody()}</a>
+        {:else}
+          <div class="row spread">{@render recBody()}</div>
+        {/if}
       {/each}
     </div>
   {/if}
@@ -311,6 +336,9 @@
         </div>
       {/if}
     </div>
+  {/if}
+  {:else}
+    <div class="empty">No finished games in this window — widen the time lens.</div>
   {/if}
 {/if}
 
@@ -360,6 +388,25 @@
 
   .tile {
     min-height: 46px;
+  }
+
+  /* Wall-of-fame rows link to the game that set the record — closing the
+     stat → game loop without changing the row's quiet look. */
+  .reclink {
+    color: inherit;
+    text-decoration: none;
+    min-height: 44px;
+    margin: 0 -8px;
+    padding: 0 8px;
+    border-radius: var(--radius-sm);
+  }
+  .reclink:hover {
+    background: var(--surface-2);
+  }
+  .recgo {
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1;
   }
 
   .rank {

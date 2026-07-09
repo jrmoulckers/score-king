@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Game, Player } from '../lib/types';
-import { gameTime, dateBucket, haystack, nameResolver } from './history';
+import { gameTime, dateBucket, haystack, nameResolver, groupLeader } from './history';
 
 function game(partial: Partial<Game>): Game {
   return {
@@ -74,5 +74,43 @@ describe('haystack', () => {
   it('resolves missing player ids to ? without throwing', () => {
     const g = game({ type: 'tally', playerIds: ['ghost'] });
     expect(haystack(g, (t) => t, nameFor)).toContain('?');
+  });
+});
+
+describe('groupLeader', () => {
+  const nameFor = (id: string) => ({ a: 'Alice', b: 'Bob', c: 'Cara' })[id] ?? '?';
+
+  it('returns the player with the most wins in the group', () => {
+    const games = [
+      game({ id: '1', status: 'finished', winnerIds: ['a'] }),
+      game({ id: '2', status: 'finished', winnerIds: ['a'] }),
+      game({ id: '3', status: 'finished', winnerIds: ['b'] }),
+    ];
+    expect(groupLeader(games, nameFor)).toEqual({ name: 'Alice', wins: 2, tie: false });
+  });
+
+  it('flags a tie when the top win count is shared', () => {
+    const games = [
+      game({ id: '1', status: 'finished', winnerIds: ['a'] }),
+      game({ id: '2', status: 'finished', winnerIds: ['b'] }),
+    ];
+    expect(groupLeader(games, nameFor)?.tie).toBe(true);
+  });
+
+  it('counts co-winners of a tied game each once', () => {
+    const games = [game({ id: '1', status: 'finished', winnerIds: ['a', 'b'] })];
+    expect(groupLeader(games, nameFor)?.wins).toBe(1);
+  });
+
+  it('ignores active and abandoned games', () => {
+    const games = [
+      game({ id: '1', status: 'active', winnerIds: undefined }),
+      game({ id: '2', status: 'abandoned', winnerIds: undefined }),
+    ];
+    expect(groupLeader(games, nameFor)).toBeUndefined();
+  });
+
+  it('is undefined for an empty group', () => {
+    expect(groupLeader([], nameFor)).toBeUndefined();
   });
 });

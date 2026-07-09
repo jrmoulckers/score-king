@@ -35,3 +35,4 @@ export {
   type WrappedStat,
 } from './wrapped';
 export * from './format';
+export { rangePresets, type RangePreset } from './ranges';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeTotals, standings, leaders } from './scoring';
+import { computeTotals, standings, leaders, runnerUpTotal } from './scoring';
 import type { Round } from './types';
 
 const round = (index: number, deltas: Record<string, number>): Round =>
@@ -53,5 +53,24 @@ describe('leaders', () => {
 
   it('treats missing totals as 0', () => {
     expect([...leaders({ a: 4 }, ['a', 'b'])]).toEqual(['a']);
+  });
+});
+
+describe('runnerUpTotal', () => {
+  it('returns the best non-winner total (higher is better)', () => {
+    expect(runnerUpTotal({ a: 30, b: 22, c: 10 }, ['a'])).toBe(22);
+  });
+
+  it('returns the lowest non-winner total when lower is better', () => {
+    expect(runnerUpTotal({ a: 5, b: 12, c: 30 }, ['a'], true)).toBe(12);
+  });
+
+  it('ignores every winner in a tie when finding the runner-up', () => {
+    expect(runnerUpTotal({ a: 30, b: 30, c: 18 }, ['a', 'b'])).toBe(18);
+  });
+
+  it('is undefined when there is no non-winner', () => {
+    expect(runnerUpTotal({ a: 10 }, ['a'])).toBeUndefined();
+    expect(runnerUpTotal({ a: 10, b: 10 }, ['a', 'b'])).toBeUndefined();
   });
 });
