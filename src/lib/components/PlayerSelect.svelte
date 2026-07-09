@@ -37,11 +37,12 @@
         type="button"
         class="chip"
         class:on={selected.includes(p.id)}
+        aria-pressed={selected.includes(p.id)}
         onclick={() => toggle(p.id)}
       >
-        <Avatar name={p.name} color={p.color} size={22} />
+        <Avatar name={p.name} color={p.color} size={22} decorative />
         {p.name}
-        {#if selected.includes(p.id)}<span class="ord">{selected.indexOf(p.id) + 1}</span>{/if}
+        {#if selected.includes(p.id)}<span class="ord" aria-hidden="true">{selected.indexOf(p.id) + 1}</span>{/if}
       </button>
     {/each}
     {#if $roster.length === 0}
@@ -50,7 +51,7 @@
   </div>
 
   <form class="row" onsubmit={(e) => { e.preventDefault(); add(); }}>
-    <input class="grow" type="text" placeholder="Add a player…" bind:value={newName} />
+    <input class="grow" type="text" placeholder="Add a player…" aria-label="Add a player by name" bind:value={newName} />
     <button class="btn" type="button" onclick={addRandom} aria-label="Add a random player" title="Surprise me">🎲</button>
     <button class="btn" type="submit">Add</button>
   </form>

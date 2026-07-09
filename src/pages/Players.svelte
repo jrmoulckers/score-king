@@ -55,7 +55,7 @@
 <h1>Players</h1>
 
 <form class="row" onsubmit={(e) => { e.preventDefault(); add(); }} style="margin-bottom: 14px">
-  <input class="grow" type="text" placeholder="New player name…" bind:value={newName} />
+  <input class="grow" type="text" placeholder="New player name…" aria-label="New player name" bind:value={newName} />
   <button class="iconbtn" type="button" onclick={generatePlayer} aria-label="Generate a player" title="Surprise me with a name">🎲</button>
   <button class="btn primary" type="submit">Add</button>
 </form>

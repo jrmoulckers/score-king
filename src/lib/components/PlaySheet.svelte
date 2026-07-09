@@ -12,6 +12,7 @@
   import Avatar from './Avatar.svelte';
   import SignalShare from './SignalShare.svelte';
   import QrScanner from './QrScanner.svelte';
+  import { focusTrap } from '../a11y/focusTrap';
 
   let {
     mode,
@@ -151,7 +152,7 @@
   onkeydown={(e) => e.key === 'Enter' && onclose()}
 ></div>
 
-<div class="sheet" role="dialog" aria-modal="true" aria-label="Play together" tabindex="-1" bind:this={sheet}>
+<div class="sheet" role="dialog" aria-modal="true" aria-label="Play together" tabindex="-1" bind:this={sheet} use:focusTrap>
   <div class="grabber" aria-hidden="true"></div>
 
   <div class="row spread">

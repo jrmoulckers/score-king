@@ -186,7 +186,7 @@
 </div>
 
 {#if $toast}
-  <div class="toast" role="status" aria-live="polite">
+  <div class="toast" role="status" aria-live="polite" aria-atomic="true">
     <span>{$toast.message}</span>
     {#if $toast.action}
       <button class="toast-action" onclick={$toast.action.run}>{$toast.action.label}</button>
