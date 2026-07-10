@@ -4,12 +4,15 @@ import { computeTotals } from '../../scoring';
 import { fluff } from './index';
 import {
   DEFAULT_START_DICE,
+  atBrink,
   describeRound,
   diceInPlay,
   diceLost,
   diceRemaining,
   isAlive,
   isFinished,
+  palificoEnabled,
+  palificoTriggeredBy,
   pickWinners,
   scoreRound,
   startDice,
@@ -268,6 +271,63 @@ describe('fluff / full game simulation', () => {
     expect(diceLost(totals, 'p1')).toBe(1); // was 2, minus the deleted loss
     expect(diceLost(totals, 'p2')).toBe(1);
     expect(diceRemaining(totals, 'p1', 5)).toBe(4);
+  });
+});
+
+describe('fluff / palifico + brink helpers', () => {
+  it('reads the palifico config flag (default on)', () => {
+    expect(palificoEnabled({})).toBe(true);
+    expect(palificoEnabled({ palifico: true })).toBe(true);
+    expect(palificoEnabled({ palifico: false })).toBe(false);
+  });
+
+  it('flags a player on the brink at exactly one die', () => {
+    const totals = { p1: 4, p2: 3, p3: 0 }; // start 5 → p1 has 1, p2 has 2, p3 out
+    expect(atBrink(totals, 'p1', 5)).toBe(true);
+    expect(atBrink(totals, 'p2', 5)).toBe(false);
+    expect(atBrink(totals, 'p3', 5)).toBe(false);
+  });
+
+  it('names the first player to drop to a single die', () => {
+    const players = mkPlayers(3);
+    // Whittle Bob (p2) from 5 down to 1 (four losses) — he triggers Palifico.
+    const { rounds } = play(players, [
+      input('p1', 'lose'),
+      input('p2', 'lose'),
+      input('p2', 'lose'),
+      input('p2', 'lose'),
+      input('p2', 'lose'),
+    ]);
+    expect(palificoTriggeredBy(rounds, ['p1', 'p2', 'p3'], 5)).toBe('p2');
+  });
+
+  it('returns null before anyone reaches one die', () => {
+    const players = mkPlayers(2);
+    const { rounds } = play(players, [input('p1', 'lose'), input('p2', 'lose')]);
+    expect(palificoTriggeredBy(rounds, ['p1', 'p2'], 5)).toBeNull();
+  });
+
+  it('recomputes the trigger from history after a round is deleted', () => {
+    const players = mkPlayers(2);
+    // p1: 5→4→3→2→1 (four losses) reaches one die first; p2 loses once in between.
+    const { rounds } = play(players, [
+      input('p1', 'lose'),
+      input('p1', 'lose'),
+      input('p2', 'lose'),
+      input('p1', 'lose'),
+      input('p1', 'lose'),
+    ]);
+    expect(palificoTriggeredBy(rounds, ['p1', 'p2'], 5)).toBe('p1');
+    // Drop p1's first loss: now p1 only reaches 2 dice, so no one hits one die.
+    const trimmed = rounds.filter((_, i) => i !== 0);
+    expect(palificoTriggeredBy(trimmed, ['p1', 'p2'], 5)).toBeNull();
+  });
+
+  it('honours a custom starting-dice count', () => {
+    const players = mkPlayers(2);
+    // start=3: two losses take p1 to a single die.
+    const { rounds } = play(players, [input('p1', 'lose'), input('p1', 'lose')], { startDice: 3 });
+    expect(palificoTriggeredBy(rounds, ['p1', 'p2'], 3)).toBe('p1');
   });
 });
 
