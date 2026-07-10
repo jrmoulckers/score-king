@@ -11,6 +11,9 @@ export {
   totalRounds,
   doubleLabel,
   blankValue,
+  pipLayout,
+  roundFlavor,
+  roundPipTotal,
 } from './logic';
 
 export const chickenfoot: GameModule = {
@@ -75,7 +78,7 @@ export const chickenfoot: GameModule = {
     '• Everyone else adds up the pips left in their hand (a blank side = 0).',
     '• The 0–0 “double-blank” stings — it scores the penalty in Options (default 50).',
     '',
-    'Each round: log everyone’s leftover pips, tap 🐔 for who went out, and flag ⬜ whoever’s',
+    'Each round: log everyone’s leftover pips, tap 🐔 for who went out, and flag 🥚 whoever’s',
     'stuck holding the double-blank.',
   ].join('\n'),
 

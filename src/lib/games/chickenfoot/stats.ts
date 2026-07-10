@@ -58,7 +58,7 @@ export function chickenfootStats({ games, rounds, canonical }: GameStatsInput): 
     const metrics: Metric[] = [];
     if (a.out) metrics.push({ key: 'cf_out', label: 'Went out', value: fmtInt(a.out), emoji: '🐔' });
     if (a.blanks) {
-      metrics.push({ key: 'cf_blank', label: 'Double-blank caught', value: fmtInt(a.blanks), emoji: '⬜' });
+      metrics.push({ key: 'cf_blank', label: 'Goose egg caught', value: fmtInt(a.blanks), emoji: '🥚' });
     }
     if (a.rounds) {
       metrics.push({ key: 'cf_pips', label: 'Avg pips left', value: fmtAvg(a.pips / a.rounds), emoji: '✋' });
