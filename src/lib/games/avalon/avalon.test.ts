@@ -1,16 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import type { ID, Round } from '../../types';
 import {
+  HAMMER,
   MAX_PLAYERS,
   MIN_PLAYERS,
   clampPlayers,
   clinch,
   decidedBefore,
   describeAvalon,
+  effectiveTeamSize,
   expectedWinnerCount,
+  isHammer,
   isResolved,
+  knowledgeHints,
   outcomeOf,
   pickAvalonWinners,
+  rejectsOf,
+  resolutionOf,
   roleList,
   roleSetup,
   scoreAvalon,
@@ -22,7 +28,16 @@ import {
 } from './logic';
 
 function inp(partial: Partial<AvalonInput> = {}): AvalonInput {
-  return { fails: 0, teamSize: 3, assassinFoundMerlin: null, winners: [], ...partial };
+  return {
+    fails: 0,
+    teamSize: 3,
+    assassinFoundMerlin: null,
+    winners: [],
+    rejects: 0,
+    leaderId: null,
+    team: [],
+    ...partial,
+  };
 }
 
 function mkRound(index: number, input: AvalonInput): Round {
@@ -338,5 +353,146 @@ describe('describeAvalon', () => {
   it('handles a round with no recorded input', () => {
     const r: Round = { id: 'x', gameId: 'g', index: 0, input: undefined, deltas: {}, createdAt: 0 };
     expect(describeAvalon(r, 5)).toBe('Quest 1');
+  });
+
+  it('narrates the vote track on a completed quest', () => {
+    expect(describeAvalon(mkRound(0, inp({ fails: 0, rejects: 2 })), 5)).toBe(
+      'Quest 1 ✓ succeeded · 2 rejected proposals',
+    );
+    expect(describeAvalon(mkRound(1, inp({ fails: 1, rejects: 1 })), 5)).toBe(
+      'Quest 2 ✗ failed · 1 fail · 1 rejected proposal',
+    );
+  });
+
+  it('narrates the Hammer falling', () => {
+    const r = mkRound(2, inp({ rejects: HAMMER, winners: ['p4', 'p5'] }));
+    const out = describeAvalon(r, 5);
+    expect(out).toContain('🔨 the Hammer');
+    expect(out).toContain('Evil seizes it');
+  });
+});
+
+describe('rejectsOf & isHammer', () => {
+  it('clamps the vote track to 0…HAMMER', () => {
+    expect(rejectsOf({ rejects: 3 })).toBe(3);
+    expect(rejectsOf({ rejects: -2 })).toBe(0);
+    expect(rejectsOf({ rejects: 99 })).toBe(HAMMER);
+    expect(rejectsOf({})).toBe(0);
+    expect(rejectsOf({ rejects: 2.6 })).toBe(3);
+  });
+  it('flags the Hammer only at HAMMER rejections', () => {
+    expect(isHammer({ rejects: HAMMER - 1 })).toBe(false);
+    expect(isHammer({ rejects: HAMMER })).toBe(true);
+    expect(isHammer({ rejects: HAMMER + 3 })).toBe(true);
+    expect(isHammer({})).toBe(false);
+  });
+});
+
+describe('resolutionOf', () => {
+  it('resolves success/fail from the fail cards', () => {
+    expect(resolutionOf({ fails: 0, rejects: 0 }, false)).toBe('success');
+    expect(resolutionOf({ fails: 1, rejects: 0 }, false)).toBe('fail');
+    expect(resolutionOf({ fails: 1, rejects: 0 }, true)).toBe('success');
+    expect(resolutionOf({ fails: 2, rejects: 0 }, true)).toBe('fail');
+  });
+  it('lets the Hammer override the mission entirely', () => {
+    expect(resolutionOf({ fails: 0, rejects: HAMMER }, false)).toBe('hammer');
+    expect(resolutionOf({ fails: 2, rejects: HAMMER }, false)).toBe('hammer');
+  });
+});
+
+describe('effectiveTeamSize', () => {
+  it('prefers a logged roster, else the stepper size', () => {
+    expect(effectiveTeamSize({ team: ['a', 'b'], teamSize: 4 })).toBe(2);
+    expect(effectiveTeamSize({ team: [], teamSize: 4 })).toBe(4);
+    expect(effectiveTeamSize({ teamSize: 3 })).toBe(3);
+  });
+});
+
+describe('the Hammer (vote track) end-to-end', () => {
+  it('clinches Evil immediately, regardless of the tally', () => {
+    expect(clinch({ successes: 0, fails: 0 }, 'hammer')).toBe('evil');
+    expect(clinch({ successes: 2, fails: 0 }, 'hammer')).toBe('evil');
+  });
+
+  it('counts a Hammer quest as a fail in the running tally', () => {
+    const setup = roleSetup(5);
+    const rounds = [mkRound(0, inp({ rejects: HAMMER }))];
+    expect(tallyBefore(rounds, 1, setup)).toEqual({ successes: 0, fails: 1 });
+  });
+
+  it('requires the Evil team recorded with no Assassin step', () => {
+    // A Hammer on the very first quest hands Evil the game — 2 Evil at 5 players.
+    const draft = inp({ rejects: HAMMER, winners: ['p4', 'p5'] });
+    expect(validateAvalon(draft, [], 0, seats(5))).toBeNull();
+    const wrong = inp({ rejects: HAMMER, winners: ['p4'] });
+    expect(validateAvalon(wrong, [], 0, seats(5))).toMatch(/2 Evil/);
+  });
+
+  it('does not ask for the Assassin guess on a Hammer', () => {
+    const draft = inp({ rejects: HAMMER, winners: [] });
+    // Should complain about the Evil team, never about the Assassin.
+    expect(validateAvalon(draft, [], 0, seats(5))).toMatch(/2 Evil/);
+    expect(validateAvalon(draft, [], 0, seats(5))).not.toMatch(/Assassin/);
+  });
+
+  it('scores the recorded Evil team on a Hammer', () => {
+    const draft = inp({ rejects: HAMMER, winners: ['p4', 'p5'] });
+    const deltas = scoreAvalon(draft, [], 0, seats(5));
+    expect(deltas).toEqual({ p1: 0, p2: 0, p3: 0, p4: 1, p5: 1 });
+  });
+});
+
+describe('validateAvalon — council (leader & team)', () => {
+  it('rejects a leader who is not seated', () => {
+    expect(validateAvalon(inp({ teamSize: 2, leaderId: 'zzz' }), [], 0, seats(5))).toMatch(
+      /leader is not in this game/,
+    );
+    expect(validateAvalon(inp({ teamSize: 2, leaderId: 'p1' }), [], 0, seats(5))).toBeNull();
+  });
+
+  it('rejects a logged team with outsiders, duplicates, or a bad size', () => {
+    expect(validateAvalon(inp({ team: ['p1', 'zzz'] }), [], 0, seats(5))).toMatch(
+      /not in this game/,
+    );
+    expect(validateAvalon(inp({ team: ['p1', 'p1'] }), [], 0, seats(5))).toMatch(/twice/);
+    expect(validateAvalon(inp({ team: ['p1'] }), [], 0, seats(5))).toMatch(/between 2 and 5/);
+  });
+
+  it('accepts a logged team and lets it drive the fail bound', () => {
+    // Two aboard → fails may not exceed 2 even though the stepper size says 5.
+    expect(validateAvalon(inp({ team: ['p1', 'p2'], teamSize: 5, fails: 3 }), [], 0, seats(5))).toMatch(
+      /fails must be between 0 and the team size \(2\)/,
+    );
+    expect(validateAvalon(inp({ team: ['p1', 'p2'], teamSize: 5, fails: 1 }), [], 0, seats(5))).toBeNull();
+  });
+});
+
+describe('knowledgeHints', () => {
+  const noRoles: RolesConfig = { percival: false, morgana: false, mordred: false, oberon: false };
+
+  it('always names Merlin and the Assassin', () => {
+    const hints = knowledgeHints(noRoles).join('\n');
+    expect(hints).toContain('Merlin');
+    expect(hints).toContain('Assassin');
+  });
+
+  it('hides a Mordred-in-play caveat only when Mordred is on', () => {
+    expect(knowledgeHints(noRoles).join('\n')).not.toContain('except Mordred');
+    expect(knowledgeHints({ ...noRoles, mordred: true }).join('\n')).toContain('except Mordred');
+  });
+
+  it('adds a Percival line that names Morgana when both are on', () => {
+    expect(knowledgeHints({ ...noRoles, percival: true }).some((h) => h.includes('Percival'))).toBe(
+      true,
+    );
+    expect(
+      knowledgeHints({ ...noRoles, percival: true, morgana: true }).join('\n'),
+    ).toContain('can’t tell');
+  });
+
+  it('adds a lone-Oberon line only when Oberon is on', () => {
+    expect(knowledgeHints(noRoles).some((h) => h.includes('Oberon'))).toBe(false);
+    expect(knowledgeHints({ ...noRoles, oberon: true }).some((h) => h.includes('Oberon'))).toBe(true);
   });
 });

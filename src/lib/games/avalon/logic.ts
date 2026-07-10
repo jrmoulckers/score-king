@@ -21,6 +21,8 @@ import type { ID, Round } from '../../types';
 
 export type Side = 'good' | 'evil';
 export type Outcome = 'success' | 'fail';
+/** A quest either succeeds, fails on the mission, or is never run because the vote track maxed out ("the Hammer"). */
+export type Resolution = Outcome | 'hammer';
 
 /** The draft recorded for one quest (round). Resolution fields matter only on the clinching quest. */
 export interface AvalonInput {
@@ -32,6 +34,16 @@ export interface AvalonInput {
   assassinFoundMerlin: boolean | null;
   /** Resolution: the members of the winning side (drives `pickWinners`). */
   winners: ID[];
+  /**
+   * Vote track — rejected team proposals *before* a team was approved this quest (0–5).
+   * `HAMMER` (5) rejections is "the Hammer": Evil wins the game outright, no quest is run.
+   * Optional + defensively defaulted so games saved before the vote track still load.
+   */
+  rejects?: number;
+  /** Who led the approved team (or held the hammer). Optional flavour/tracking; `null` when unset. */
+  leaderId?: ID | null;
+  /** The approved quest team. When non-empty it drives the team size; optional to log. */
+  team?: ID[];
 }
 
 /** Optional-role toggles (reference only — they never change the Good/Evil head counts). */
@@ -69,6 +81,8 @@ export const MAX_PLAYERS = 10;
 export const MAX_QUESTS = 5;
 /** Quests a side must win to end the quest phase. */
 export const QUESTS_TO_WIN = 3;
+/** Rejected team proposals in a single quest that hand the game to Evil ("the Hammer"). */
+export const HAMMER = 5;
 
 /** Evil (Minions of Mordred) head count by player count; the rest are Good. */
 const EVIL_BY_COUNT: Record<number, number> = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
@@ -130,7 +144,36 @@ export function outcomeOf(input: Pick<AvalonInput, 'fails'>, twoFail: boolean): 
   return fails >= (twoFail ? 2 : 1) ? 'fail' : 'success';
 }
 
-/** Successes/fails recorded across the quests *before* `roundIndex` (the ones that count so far). */
+/** Rejected proposals recorded on the vote track this quest, clamped to 0…`HAMMER`. */
+export function rejectsOf(input: Pick<AvalonInput, 'rejects'>): number {
+  const r = Math.round(Number(input.rejects) || 0);
+  return Math.max(0, Math.min(HAMMER, r));
+}
+
+/** True when the vote track maxed out — five proposals rejected — and the Hammer fell. */
+export function isHammer(input: Pick<AvalonInput, 'rejects'>): boolean {
+  return rejectsOf(input) >= HAMMER;
+}
+
+/**
+ * How a quest resolved: the Hammer (vote track maxed → no mission) takes precedence over the
+ * Success/Fail cards, since the team never actually goes.
+ */
+export function resolutionOf(input: Pick<AvalonInput, 'fails' | 'rejects'>, twoFail: boolean): Resolution {
+  return isHammer(input) ? 'hammer' : outcomeOf(input, twoFail);
+}
+
+/** The team that went on the quest: the tapped roster when logged, else the stepper's team size. */
+export function effectiveTeamSize(input: Pick<AvalonInput, 'team' | 'teamSize'>): number {
+  const team = input.team ?? [];
+  return team.length > 0 ? team.length : Number(input.teamSize) || 0;
+}
+
+/**
+ * Successes/fails recorded across the quests *before* `roundIndex` (the ones that count so far).
+ * A Hammer quest counts as a fail here so the tally still reflects Evil's decided advantage —
+ * though in practice the Hammer ends the game on its own quest, so no later quest is ever entered.
+ */
 export function tallyBefore(rounds: Round[], roundIndex: number, setup: RoleSetup): Tally {
   let successes = 0;
   let fails = 0;
@@ -139,16 +182,17 @@ export function tallyBefore(rounds: Round[], roundIndex: number, setup: RoleSetu
     const inp = r.input as AvalonInput | undefined;
     if (!inp) continue;
     const twoFail = setup.twoFailQuests[r.index] ?? false;
-    if (outcomeOf(inp, twoFail) === 'fail') fails++;
-    else successes++;
+    if (resolutionOf(inp, twoFail) === 'success') successes++;
+    else fails++;
   }
   return { successes, fails };
 }
 
-/** Which side (if any) reaches three quests once `outcome` is applied to `before`. */
-export function clinch(before: Tally, outcome: Outcome): Side | null {
-  if (outcome === 'success' && before.successes + 1 >= QUESTS_TO_WIN) return 'good';
-  if (outcome === 'fail' && before.fails + 1 >= QUESTS_TO_WIN) return 'evil';
+/** Which side (if any) reaches three quests — or seizes the Hammer — once `resolution` is applied. */
+export function clinch(before: Tally, resolution: Resolution): Side | null {
+  if (resolution === 'hammer') return 'evil';
+  if (resolution === 'success' && before.successes + 1 >= QUESTS_TO_WIN) return 'good';
+  if (resolution === 'fail' && before.fails + 1 >= QUESTS_TO_WIN) return 'evil';
   return null;
 }
 
@@ -187,17 +231,36 @@ export function validateAvalon(
   const questNo = roundIndex + 1;
   if (questNo > MAX_QUESTS) return `Avalon is at most ${MAX_QUESTS} quests.`;
 
-  const teamSize = Number(input.teamSize) || 0;
-  if (teamSize < 2 || teamSize > n) {
-    return `Quest ${questNo}: team size must be between 2 and ${n}.`;
+  const seats = new Set(playerIds);
+  const team = input.team ?? [];
+  if (team.length) {
+    for (const t of team) {
+      if (!seats.has(t)) return 'The quest team includes someone who is not in this game.';
+    }
+    if (new Set(team).size !== team.length) return 'A player is listed twice on the quest team.';
+    if (team.length < 2 || team.length > n) {
+      return `Quest ${questNo}: the quest team must have between 2 and ${n} players.`;
+    }
   }
-  const fails = Number(input.fails) || 0;
-  if (fails < 0 || fails > teamSize) {
-    return `Quest ${questNo}: fails must be between 0 and the team size (${teamSize}).`;
+  if (input.leaderId != null && !seats.has(input.leaderId)) {
+    return 'The quest leader is not in this game.';
   }
 
   const twoFail = setup.twoFailQuests[roundIndex] ?? false;
-  const clinchedBy = clinch(before, outcomeOf(input, twoFail));
+  const hammer = isHammer(input);
+
+  if (!hammer) {
+    const teamSize = effectiveTeamSize(input);
+    if (teamSize < 2 || teamSize > n) {
+      return `Quest ${questNo}: team size must be between 2 and ${n}.`;
+    }
+    const fails = Number(input.fails) || 0;
+    if (fails < 0 || fails > teamSize) {
+      return `Quest ${questNo}: fails must be between 0 and the team size (${teamSize}).`;
+    }
+  }
+
+  const clinchedBy = clinch(before, resolutionOf(input, twoFail));
   if (clinchedBy) {
     if (
       clinchedBy === 'good' &&
@@ -206,7 +269,6 @@ export function validateAvalon(
       return 'Good reached three quests — record the Assassin’s guess at Merlin.';
     }
     const side = winningSide(clinchedBy, input.assassinFoundMerlin);
-    const seats = new Set(playerIds);
     const winners = input.winners ?? [];
     for (const w of winners) {
       if (!seats.has(w)) return 'The winning team includes someone who is not in this game.';
@@ -236,7 +298,7 @@ export function scoreAvalon(
   const setup = roleSetup(playerIds.length);
   const before = tallyBefore(rounds, roundIndex, setup);
   const twoFail = setup.twoFailQuests[roundIndex] ?? false;
-  if (!clinch(before, outcomeOf(input, twoFail))) return out;
+  if (!clinch(before, resolutionOf(input, twoFail))) return out;
 
   const winners = new Set(input.winners ?? []);
   for (const id of playerIds) out[id] = winners.has(id) ? 1 : 0;
@@ -253,7 +315,7 @@ export function pickAvalonWinners(totals: Record<ID, number>): ID[] {
   return Object.keys(totals).filter((id) => (Number(totals[id]) || 0) > 0);
 }
 
-/** One-line history summary for a quest, narrating the finale on the clinching round. */
+/** One-line history summary for a quest, narrating the leader, vote track, and finale. */
 export function describeAvalon(round: Round, playerCount: number): string {
   const inp = round.input as AvalonInput | undefined;
   const qn = round.index + 1;
@@ -261,22 +323,63 @@ export function describeAvalon(round: Round, playerCount: number): string {
 
   const setup = roleSetup(playerCount);
   const twoFail = setup.twoFailQuests[round.index] ?? false;
-  const outcome = outcomeOf(inp, twoFail);
+  const resolution = resolutionOf(inp, twoFail);
+  const rejects = rejectsOf(inp);
   const fails = Number(inp.fails) || 0;
-  const base =
-    outcome === 'success'
-      ? `Quest ${qn} ✓ succeeded`
-      : `Quest ${qn} ✗ failed · ${fails} fail${fails === 1 ? '' : 's'}`;
+
+  let base: string;
+  if (resolution === 'hammer') {
+    base = `Quest ${qn} 🔨 the Hammer — ${HAMMER} proposals rejected`;
+  } else if (resolution === 'success') {
+    base = `Quest ${qn} ✓ succeeded`;
+  } else {
+    base = `Quest ${qn} ✗ failed · ${fails} fail${fails === 1 ? '' : 's'}`;
+  }
+  // The vote track is worth narrating even on a completed quest — a knife-edge win reads well.
+  if (resolution !== 'hammer' && rejects > 0) {
+    base += ` · ${rejects} rejected proposal${rejects === 1 ? '' : 's'}`;
+  }
 
   const winners = inp.winners ?? [];
   if (winners.length) {
-    const clinchedBy: Side = outcome === 'fail' ? 'evil' : 'good';
+    const clinchedBy: Side = resolution === 'success' ? 'good' : 'evil';
     const side = winningSide(clinchedBy, inp.assassinFoundMerlin);
     let finale: string;
     if (side === 'good') finale = '🛡️ Good prevails';
+    else if (resolution === 'hammer') finale = '🗡️ Evil seizes it — the Hammer falls';
     else if (clinchedBy === 'good') finale = '🗡️ Evil steals it — Assassin found Merlin';
     else finale = '🗡️ Evil triumphs';
     return `${base} · ${finale}`;
   }
   return base;
+}
+
+/**
+ * Whimsical "who sees whom" hints for the night briefing, derived purely from the active
+ * optional-role toggles. Pure + unit-testable; the editor just renders these lines.
+ */
+export function knowledgeHints(cfg: RolesConfig): string[] {
+  const lines: string[] = [];
+  lines.push(
+    cfg.mordred
+      ? '🧙 Merlin sees every Minion of Mordred — except Mordred himself.'
+      : '🧙 Merlin sees every Minion of Mordred.',
+  );
+  if (cfg.percival) {
+    lines.push(
+      cfg.morgana
+        ? '🔎 Percival sees Merlin & Morgana — but can’t tell which is the true seer.'
+        : '🔎 Percival sees Merlin’s glow and can shield the wise one.',
+    );
+  }
+  lines.push(
+    cfg.oberon
+      ? '😈 The Minions know each other in the dark — all but lone Oberon.'
+      : '😈 The Minions of Mordred know one another in the dark.',
+  );
+  if (cfg.oberon) {
+    lines.push('👁️ Oberon skulks alone — unknown to his fellow Evil, and blind to them.');
+  }
+  lines.push('🗡️ If Good completes three quests, the Assassin gets one shot to name Merlin.');
+  return lines;
 }
