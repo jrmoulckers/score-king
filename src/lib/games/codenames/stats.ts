@@ -1,13 +1,18 @@
 import type { ID } from '../../types';
 import type { CodenamesInput, Team } from './logic';
+import { TEAM_META } from './logic';
 import type { GameSpecificStats, GameStatsInput, Metric } from '../../stats/types';
-import { fmtInt } from '../../stats/format';
+import { fmtInt, fmtPct } from '../../stats/format';
 
 interface CodenamesAgg {
   /** Games lost because this player's team hit the assassin. */
   assassinLosses: number;
   /** Games won by finding all agents (no assassin drama). */
   cleanWins: number;
+  /** Games this player ran a spymaster desk (either side). */
+  spymasterGames: number;
+  /** Of those, how many their team won. */
+  spymasterWins: number;
 }
 
 function isTeam(value: unknown): value is Team {
@@ -29,7 +34,7 @@ export function codenamesStats({
   const get = (id: ID): CodenamesAgg => {
     let a = per.get(id);
     if (!a) {
-      a = { assassinLosses: 0, cleanWins: 0 };
+      a = { assassinLosses: 0, cleanWins: 0, spymasterGames: 0, spymasterWins: 0 };
       per.set(id, a);
     }
     return a;
@@ -38,8 +43,15 @@ export function codenamesStats({
   const teamWins: Record<Team, number> = { red: 0, blue: 0 };
   let assassinGames = 0;
 
-  for (const r of rounds) {
-    if (!gameIds.has(r.gameId)) continue;
+  // Longest run of consecutive wins per side, in the order games were recorded.
+  const ordered = [...rounds]
+    .filter((r) => gameIds.has(r.gameId))
+    .sort((a, b) => a.createdAt - b.createdAt || a.index - b.index);
+  const longestRun: Record<Team, number> = { red: 0, blue: 0 };
+  let runTeam: Team | null = null;
+  let runLen = 0;
+
+  for (const r of ordered) {
     const input = r.input as CodenamesInput | undefined;
     if (!input?.teams || !isTeam(input.winner)) continue;
 
@@ -48,6 +60,14 @@ export function codenamesStats({
     teamWins[winner] += 1;
     if (byAssassin) assassinGames += 1;
 
+    // Track the running streak per side.
+    if (runTeam === winner) runLen += 1;
+    else {
+      runTeam = winner;
+      runLen = 1;
+    }
+    if (runLen > longestRun[winner]) longestRun[winner] = runLen;
+
     for (const [pid, team] of Object.entries(input.teams)) {
       if (!isTeam(team)) continue;
       const a = get(canonical(pid));
@@ -55,6 +75,18 @@ export function codenamesStats({
         if (!byAssassin) a.cleanWins += 1;
       } else if (byAssassin) {
         a.assassinLosses += 1;
+      }
+    }
+
+    // Optional spymaster desks: credit whoever ran each side.
+    const spies = input.spymasters;
+    if (spies) {
+      for (const side of ['red', 'blue'] as Team[]) {
+        const pid = spies[side];
+        if (pid == null) continue;
+        const a = get(canonical(pid));
+        a.spymasterGames += 1;
+        if (side === winner) a.spymasterWins += 1;
       }
     }
   }
@@ -78,6 +110,15 @@ export function codenamesStats({
         emoji: '💀',
       });
     }
+    if (a.spymasterGames > 0) {
+      metrics.push({
+        key: 'cn_spymaster',
+        label: 'Spymaster win rate',
+        value: fmtPct(a.spymasterWins / a.spymasterGames),
+        sub: `${fmtInt(a.spymasterWins)}/${fmtInt(a.spymasterGames)} as spymaster`,
+        emoji: '🎙️',
+      });
+    }
     if (metrics.length) perPlayer[id] = metrics;
   }
 
@@ -97,6 +138,19 @@ export function codenamesStats({
       label: 'Assassin endings',
       value: fmtInt(assassinGames),
       emoji: '💀',
+    });
+  }
+  // Best win streak — surface the longer of the two sides' runs (min 2 to be a "streak").
+  const bestStreakTeam: Team = longestRun.red >= longestRun.blue ? 'red' : 'blue';
+  const bestStreak = longestRun[bestStreakTeam];
+  if (bestStreak >= 2) {
+    const meta = TEAM_META[bestStreakTeam];
+    global.push({
+      key: 'cn_streak',
+      label: 'Longest win streak',
+      value: `${meta.emoji} ${fmtInt(bestStreak)} in a row`,
+      sub: `${meta.label} team’s best run`,
+      emoji: '🔥',
     });
   }
 
