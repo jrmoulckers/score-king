@@ -45,6 +45,55 @@ export function spotOnEnabled(config: Record<string, unknown>): boolean {
   return config.spotOn === true;
 }
 
+/**
+ * Whether the Palifico house rule is on (default true). Flavor/house-rule only — like
+ * "ones wild" it colours the on-screen drama and copy, never the scoring. When on, the
+ * first player to drop to a single die triggers a special "Palifico" round (one fixed
+ * face, ones aren't wild), which we surface as a callout in the editor.
+ */
+export function palificoEnabled(config: Record<string, unknown>): boolean {
+  return config.palifico !== false;
+}
+
+/** A player is "on the brink" the moment they're down to their final die. */
+export function atBrink(totals: Record<ID, number>, id: ID, start: number): boolean {
+  return diceRemaining(totals, id, start) === 1;
+}
+
+/**
+ * Who triggered Palifico — the FIRST player in the game to drop to exactly one die —
+ * derived purely by replaying the recorded challenges in order. Returns `null` until it
+ * happens. Because it reads the round history (each round's position-free ±1 deltas), it
+ * stays correct after a round is deleted and the rest are re-indexed: the "first drop"
+ * is recomputed from whatever rounds remain, never cached.
+ */
+export function palificoTriggeredBy(
+  rounds: { deltas?: Record<ID, number> }[],
+  ids: ID[],
+  start: number,
+): ID | null {
+  const lost: Record<ID, number> = {};
+  for (const id of ids) lost[id] = 0;
+  for (const round of rounds) {
+    const deltas = round.deltas ?? {};
+    let touched: ID | null = null;
+    for (const id of ids) {
+      const d = Number(deltas[id]) || 0;
+      if (d !== 0) {
+        lost[id] = Math.max(0, lost[id] + d);
+        touched = id;
+      }
+    }
+    // Only one player changes per challenge; if that drop lands them on their last die,
+    // that's the moment Palifico is declared.
+    if (touched !== null) {
+      const remaining = Math.max(0, Math.min(start, start - lost[touched]));
+      if (remaining === 1) return touched;
+    }
+  }
+  return null;
+}
+
 /** Cumulative dice a player has lost so far (never negative). */
 export function diceLost(totals: Record<ID, number>, id: ID): number {
   return Math.max(0, Number(totals[id]) || 0);
