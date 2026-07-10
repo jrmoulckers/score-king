@@ -22,6 +22,13 @@ import type { ID, Player, Round } from '../../types';
 /** How a category value is entered on the sheet. */
 export type FinspanEntry = 'points' | 'count';
 
+/**
+ * Which part of the scoresheet a category belongs to. The three identical weekly
+ * achievements collapse into one "Weekly achievements" trio in the editor; everything
+ * else is a card in your ocean. Purely a presentation grouping — scoring is unchanged.
+ */
+export type FinspanGroup = 'weekly' | 'ocean';
+
 export interface FinspanCategory {
   /** Stable key stored on the round input. */
   key: string;
@@ -35,6 +42,8 @@ export interface FinspanCategory {
    * `count`  — the value is a token/card count the sheet multiplies by {@link per}.
    */
   entry: FinspanEntry;
+  /** Editor grouping: the weekly achievements trio vs the rest of your ocean. */
+  group: FinspanGroup;
   /** One-line scoring reference, shown in the editor and the help popover. */
   hint: string;
 }
@@ -47,6 +56,7 @@ export const FINSPAN_CATEGORIES: readonly FinspanCategory[] = [
     emoji: '🏅',
     per: 1,
     entry: 'points',
+    group: 'weekly',
     hint: 'Achievement points you banked at the end of week 1.',
   },
   {
@@ -55,6 +65,7 @@ export const FINSPAN_CATEGORIES: readonly FinspanCategory[] = [
     emoji: '🏅',
     per: 1,
     entry: 'points',
+    group: 'weekly',
     hint: 'Achievement points you banked at the end of week 2.',
   },
   {
@@ -63,6 +74,7 @@ export const FINSPAN_CATEGORIES: readonly FinspanCategory[] = [
     emoji: '🏅',
     per: 1,
     entry: 'points',
+    group: 'weekly',
     hint: 'Achievement points you banked at the end of week 3.',
   },
   {
@@ -71,6 +83,7 @@ export const FINSPAN_CATEGORIES: readonly FinspanCategory[] = [
     emoji: '🟡',
     per: 1,
     entry: 'points',
+    group: 'ocean',
     hint: 'Points from yellow "GAME END" fish abilities (visible fish only).',
   },
   {
@@ -79,6 +92,7 @@ export const FINSPAN_CATEGORIES: readonly FinspanCategory[] = [
     emoji: '🐟',
     per: 1,
     entry: 'points',
+    group: 'ocean',
     hint: 'Points printed on your visible (uncovered) fish.',
   },
   {
@@ -87,6 +101,7 @@ export const FINSPAN_CATEGORIES: readonly FinspanCategory[] = [
     emoji: '🍽️',
     per: 1,
     entry: 'count',
+    group: 'ocean',
     hint: '1 point for each consumed fish — cards and forage.',
   },
   {
@@ -95,6 +110,7 @@ export const FINSPAN_CATEGORIES: readonly FinspanCategory[] = [
     emoji: '🥚',
     per: 1,
     entry: 'count',
+    group: 'ocean',
     hint: '1 point for each egg and each young in your ocean.',
   },
   {
@@ -103,6 +119,7 @@ export const FINSPAN_CATEGORIES: readonly FinspanCategory[] = [
     emoji: '🐠',
     per: 6,
     entry: 'count',
+    group: 'ocean',
     hint: '6 points for each school — three young shoal into one school.',
   },
 ] as const;
@@ -143,6 +160,56 @@ export function scoreRow(row: FinspanRow | undefined): number {
   let sum = 0;
   for (const c of FINSPAN_CATEGORIES) sum += categoryPoints(c, row?.[c.key]);
   return sum;
+}
+
+/** Just the banked weekly-achievement points (weeks 1–3), for the grouped subtotal. */
+export function weeklyTotal(row: FinspanRow | undefined): number {
+  let sum = 0;
+  for (const c of FINSPAN_CATEGORIES) {
+    if (c.group === 'weekly') sum += categoryPoints(c, row?.[c.key]);
+  }
+  return sum;
+}
+
+/**
+ * The ocean's three depth zones, shallow → deep. A running total sinks through them as it
+ * grows, giving the tally a sense of place ("you've reached the Twilight zone") without ever
+ * relying on colour alone — every zone carries an emoji and a label. `min` is the inclusive
+ * floor; zones are listed deepest-last so {@link depthZone} can scan from the bottom up.
+ */
+export interface DepthZone {
+  key: 'sunlight' | 'twilight' | 'midnight';
+  label: string;
+  emoji: string;
+  /** Inclusive lower bound, in points. */
+  min: number;
+}
+
+export const DEPTH_ZONES: readonly DepthZone[] = [
+  { key: 'sunlight', label: 'Sunlight', emoji: '☀️', min: 0 },
+  { key: 'twilight', label: 'Twilight', emoji: '🌆', min: 40 },
+  { key: 'midnight', label: 'Midnight', emoji: '🌑', min: 80 },
+] as const;
+
+/** A full "deep ocean" tank — the point total at which the gauge reads brim-full. */
+export const FULL_TANK = 120;
+
+/** Which depth zone a running total currently sits in (negatives clamp to Sunlight). */
+export function depthZone(total: number): DepthZone {
+  const n = Number(total);
+  let zone = DEPTH_ZONES[0];
+  if (!Number.isFinite(n)) return zone;
+  for (const z of DEPTH_ZONES) {
+    if (n >= z.min) zone = z;
+  }
+  return zone;
+}
+
+/** How full the ocean tank reads, 0–1, for a running total (clamped to {@link FULL_TANK}). */
+export function tankFill(total: number): number {
+  const n = Number(total);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(1, n / FULL_TANK);
 }
 
 /** Per-player point totals for the whole scoresheet. */

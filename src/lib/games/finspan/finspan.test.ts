@@ -2,15 +2,20 @@ import { describe, expect, it } from 'vitest';
 import type { Game, Player, Round, RoundContext } from '../../types';
 import { defaultWinners } from '../../types';
 import {
+  DEPTH_ZONES,
   FINSPAN_CATEGORIES,
   FINSPAN_HELP,
+  FULL_TANK,
   categoryPoints,
+  depthZone,
   describeFinspan,
   emptyInput,
   emptyRow,
   scoreFinspan,
   scoreRow,
+  tankFill,
   validateFinspan,
+  weeklyTotal,
   type FinspanRow,
 } from './logic';
 import { finspan } from './index';
@@ -76,6 +81,63 @@ describe('Finspan categories', () => {
       expect(c.emoji.length).toBeGreaterThan(0);
       expect(c.hint.length).toBeGreaterThan(0);
     }
+  });
+
+  it('groups exactly the three weeks as weekly and the rest as ocean', () => {
+    const weekly = FINSPAN_CATEGORIES.filter((c) => c.group === 'weekly').map((c) => c.key);
+    const ocean = FINSPAN_CATEGORIES.filter((c) => c.group === 'ocean').map((c) => c.key);
+    expect(weekly).toEqual(['week1', 'week2', 'week3']);
+    expect(ocean).toEqual(['gameEnd', 'fish', 'consumed', 'eggsYoung', 'schools']);
+    for (const c of FINSPAN_CATEGORIES) expect(['weekly', 'ocean']).toContain(c.group);
+  });
+});
+
+describe('weeklyTotal', () => {
+  it('sums only the three banked weeks, ignoring the rest of the ocean', () => {
+    expect(weeklyTotal(row({ week1: 5, week2: 6, week3: 8, fish: 40, schools: 3 }))).toBe(19);
+  });
+
+  it('is 0 for an empty or missing row', () => {
+    expect(weeklyTotal(emptyRow())).toBe(0);
+    expect(weeklyTotal(undefined)).toBe(0);
+  });
+});
+
+describe('depthZone', () => {
+  it('lists Sunlight, Twilight and Midnight, shallowest first', () => {
+    expect(DEPTH_ZONES.map((z) => z.key)).toEqual(['sunlight', 'twilight', 'midnight']);
+    for (const z of DEPTH_ZONES) {
+      expect(z.label.length).toBeGreaterThan(0);
+      expect(z.emoji.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('sinks through the zones as the total grows', () => {
+    expect(depthZone(0).key).toBe('sunlight');
+    expect(depthZone(39).key).toBe('sunlight');
+    expect(depthZone(40).key).toBe('twilight');
+    expect(depthZone(79).key).toBe('twilight');
+    expect(depthZone(80).key).toBe('midnight');
+    expect(depthZone(999).key).toBe('midnight');
+  });
+
+  it('clamps a negative or non-finite total to Sunlight', () => {
+    expect(depthZone(-10).key).toBe('sunlight');
+    expect(depthZone(Number.NaN).key).toBe('sunlight');
+  });
+});
+
+describe('tankFill', () => {
+  it('rises from empty toward a brim-full deep ocean', () => {
+    expect(tankFill(0)).toBe(0);
+    expect(tankFill(FULL_TANK / 2)).toBeCloseTo(0.5);
+    expect(tankFill(FULL_TANK)).toBe(1);
+  });
+
+  it('never overflows past full or drops below empty', () => {
+    expect(tankFill(FULL_TANK * 3)).toBe(1);
+    expect(tankFill(-50)).toBe(0);
+    expect(tankFill(Number.NaN)).toBe(0);
   });
 });
 
