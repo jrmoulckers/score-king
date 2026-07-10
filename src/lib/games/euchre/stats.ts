@@ -12,6 +12,8 @@ interface EuAgg {
   marches: number;
   /** Hands this player's team euchred the makers. */
   euchresLanded: number;
+  /** Hands this player's team called it and got set (euchred). */
+  setAgainst: number;
   /** Hands this player personally played alone. */
   loneCalls: number;
   /** Lone hands that swept all five. */
@@ -30,7 +32,7 @@ export function euchreStats({ games, rounds, canonical }: GameStatsInput): GameS
   const get = (id: ID): EuAgg => {
     let a = per.get(id);
     if (!a) {
-      a = { called: 0, makes: 0, marches: 0, euchresLanded: 0, loneCalls: 0, loneSweeps: 0 };
+      a = { called: 0, makes: 0, marches: 0, euchresLanded: 0, setAgainst: 0, loneCalls: 0, loneSweeps: 0 };
       per.set(id, a);
     }
     return a;
@@ -60,6 +62,7 @@ export function euchreStats({ games, rounds, canonical }: GameStatsInput): GameS
       a.called += 1;
       if (made) a.makes += 1;
       if (input.result === 'march') a.marches += 1;
+      if (input.result === 'euchred') a.setAgainst += 1;
     }
     if (input.result === 'euchred') {
       for (const pid of defTeam) get(canonical(pid)).euchresLanded += 1;
@@ -84,17 +87,32 @@ export function euchreStats({ games, rounds, canonical }: GameStatsInput): GameS
       });
     }
     if (a.marches) {
-      metrics.push({ key: 'eu_march', label: 'Marches', value: fmtInt(a.marches), emoji: '🧹' });
+      metrics.push({
+        key: 'eu_march',
+        label: 'Marches',
+        value: fmtInt(a.marches),
+        sub: a.called ? fmtPct(a.marches / a.called) : undefined,
+        emoji: '🧹',
+      });
     }
     if (a.euchresLanded) {
       metrics.push({ key: 'eu_euchre', label: 'Euchres landed', value: fmtInt(a.euchresLanded), emoji: '🚫' });
     }
+    if (a.setAgainst) {
+      metrics.push({
+        key: 'eu_set',
+        label: 'Got set',
+        value: fmtInt(a.setAgainst),
+        sub: a.called ? fmtPct(a.setAgainst / a.called) : undefined,
+        emoji: '😬',
+      });
+    }
     if (a.loneCalls) {
       metrics.push({
         key: 'eu_lone',
-        label: 'Went alone',
-        value: fmtInt(a.loneCalls),
-        sub: a.loneSweeps ? `${a.loneSweeps} swept` : undefined,
+        label: a.loneSweeps ? 'Lone sweeps' : 'Went alone',
+        value: fmtInt(a.loneSweeps || a.loneCalls),
+        sub: a.loneSweeps ? `${a.loneSweeps}/${a.loneCalls} alone` : `${a.loneCalls} alone`,
         emoji: '🐺',
       });
     }
@@ -104,7 +122,14 @@ export function euchreStats({ games, rounds, canonical }: GameStatsInput): GameS
   const global: Metric[] = [];
   if (hands) {
     global.push({ key: 'eu_make_all', label: 'Make rate', value: fmtPct(makes / hands), emoji: '🎯' });
-    if (marches) global.push({ key: 'eu_march_all', label: 'Marches', value: fmtInt(marches), emoji: '🧹' });
+    if (marches)
+      global.push({
+        key: 'eu_march_all',
+        label: 'March rate',
+        value: fmtPct(marches / hands),
+        sub: `${marches} sweep${marches === 1 ? '' : 's'}`,
+        emoji: '🧹',
+      });
     if (euchres) global.push({ key: 'eu_euchre_all', label: 'Euchres', value: fmtInt(euchres), emoji: '🚫' });
   }
 

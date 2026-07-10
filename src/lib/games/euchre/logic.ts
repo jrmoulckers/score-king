@@ -147,6 +147,108 @@ export function describeHand(
   return `✋ ${makers} made it${lone} ${plus}`;
 }
 
+// --- celebration: the whimsical, earned "big moment" for a recorded hand ---
+
+/**
+ * The card-table drama of a hand, ready for the editor to stage. `big` marks the
+ * three moments worth a flourish (a march, a lone sweep, a euchre); an ordinary made
+ * hand stays deliberately quiet so the loud moments keep their scarcity. `points` is
+ * what the *scoring* side takes this hand (makers on made/march, defenders on a euchre),
+ * derived through {@link handPoints} so the copy always matches the recorded score —
+ * even under house-rule bonuses. Pure (no Svelte) so it's unit-testable.
+ */
+export interface Celebration {
+  tone: HandResult;
+  lone: boolean;
+  /** Deserves an animated flourish (march, lone sweep, or euchre). */
+  big: boolean;
+  emoji: string;
+  headline: string;
+  cheer: string;
+  /** Points to the side that scored this hand. */
+  points: number;
+}
+
+export function celebrationFor(
+  result: HandResult,
+  alone: boolean,
+  opts: EuchreOptions = DEFAULT_OPTIONS,
+): Celebration {
+  const p = handPoints(result, alone, opts);
+  if (result === 'euchred') {
+    const pts = p.defenders;
+    return {
+      tone: 'euchred',
+      lone: alone,
+      big: true,
+      emoji: '🚫',
+      headline: 'Euchred!',
+      cheer: alone
+        ? `Set a loner — defenders take +${pts}!`
+        : `Set them — defenders take +${pts}.`,
+      points: pts,
+    };
+  }
+  if (result === 'march') {
+    const pts = p.maker;
+    return alone
+      ? {
+          tone: 'march',
+          lone: true,
+          big: true,
+          emoji: '🐺',
+          headline: 'Loner sweep!',
+          cheer: `Alone. All five. Legendary — +${pts}.`,
+          points: pts,
+        }
+      : {
+          tone: 'march',
+          lone: false,
+          big: true,
+          emoji: '🧹',
+          headline: 'Clean sweep!',
+          cheer: `All five tricks — march for +${pts}.`,
+          points: pts,
+        };
+  }
+  // made (3–4 tricks): quiet by design.
+  return {
+    tone: 'made',
+    lone: alone,
+    big: false,
+    emoji: '✋',
+    headline: alone ? 'Made it — alone' : 'Made it',
+    cheer: `Three or four tricks — banked for +${p.maker}.`,
+    points: p.maker,
+  };
+}
+
+// --- race to the barn: team totals + who's leading, for the peg track ---
+
+/**
+ * Each team's running score. Both partners mirror the team total (see {@link scoreEuchre}),
+ * so the max across a team's members is the team score and is robust to a missing id.
+ */
+export function teamTotals(
+  teams: [ID[], ID[]],
+  totals: Record<ID, number>,
+): [number, number] {
+  const score = (team: ID[]): number =>
+    team.length ? Math.max(...team.map((id) => totals[id] ?? 0)) : 0;
+  return [score(teams[0] ?? []), score(teams[1] ?? [])];
+}
+
+/** The team in front, or null on a tie (including 0–0). */
+export function leadingTeam(scores: [number, number]): TeamIndex | null {
+  if (scores[0] === scores[1]) return null;
+  return scores[0] > scores[1] ? 0 : 1;
+}
+
+/** Tricks-to-the-barn: points a team still needs to hit the target (never negative). */
+export function toTarget(score: number, target: number): number {
+  return Math.max(0, target - score);
+}
+
 // --- config coercion (config values arrive as `unknown` from stored game config) ---
 
 export function pairingFromConfig(config: Record<string, unknown>): Pairing {

@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import type { ID, RoundContext, Round } from '../../types';
+import type { ID, RoundContext, Round, Game } from '../../types';
 import { euchre } from './index';
+import { euchreStats } from './stats';
 import {
   DEFAULT_OPTIONS,
+  celebrationFor,
   describeHand,
   handPoints,
+  leadingTeam,
   optionsFromConfig,
   pairingFromConfig,
   resolveTeams,
   scoreEuchre,
   targetFromConfig,
+  teamTotals,
+  toTarget,
   validateEuchre,
   type EuchreInput,
 } from './logic';
@@ -203,6 +208,79 @@ describe('describeHand', () => {
   });
 });
 
+describe('celebrationFor', () => {
+  it('keeps a plain made hand quiet (no flourish)', () => {
+    const c = celebrationFor('made', false);
+    expect(c.big).toBe(false);
+    expect(c.tone).toBe('made');
+    expect(c.emoji).toBe('✋');
+    expect(c.points).toBe(1);
+  });
+
+  it('celebrates a march as a clean sweep worth 2', () => {
+    const c = celebrationFor('march', false);
+    expect(c.big).toBe(true);
+    expect(c.lone).toBe(false);
+    expect(c.emoji).toBe('🧹');
+    expect(c.headline).toMatch(/sweep/i);
+    expect(c.points).toBe(2);
+    expect(c.cheer).toContain('+2');
+  });
+
+  it('lifts a lone sweep to the wolf and 4 points (default bonus)', () => {
+    const c = celebrationFor('march', true);
+    expect(c.big).toBe(true);
+    expect(c.lone).toBe(true);
+    expect(c.emoji).toBe('🐺');
+    expect(c.headline).toMatch(/loner/i);
+    expect(c.points).toBe(4);
+    expect(c.cheer).toContain('+4');
+  });
+
+  it('drops a lone sweep back to 2 when the alone bonus is off', () => {
+    const c = celebrationFor('march', true, { aloneBonus: false, loneEuchreBonus: false });
+    expect(c.points).toBe(2);
+    expect(c.cheer).toContain('+2');
+  });
+
+  it('stamps a euchre and pays the defenders', () => {
+    const c = celebrationFor('euchred', false);
+    expect(c.big).toBe(true);
+    expect(c.emoji).toBe('🚫');
+    expect(c.headline).toMatch(/euchred/i);
+    expect(c.points).toBe(2);
+  });
+
+  it('pays 4 for euchring a loner when that house rule is on', () => {
+    const c = celebrationFor('euchred', true, { aloneBonus: true, loneEuchreBonus: true });
+    expect(c.points).toBe(4);
+    expect(c.cheer).toContain('+4');
+  });
+});
+
+describe('race to the barn', () => {
+  it('reads each team total from the mirrored partner scores', () => {
+    expect(teamTotals(ADJACENT, { a: 7, b: 7, c: 4, d: 4 })).toEqual([7, 4]);
+  });
+
+  it('is robust to a partner missing from the totals map', () => {
+    expect(teamTotals(ADJACENT, { a: 6, c: 3 })).toEqual([6, 3]);
+  });
+
+  it('names the leading team, or null on a tie', () => {
+    expect(leadingTeam([7, 4])).toBe(0);
+    expect(leadingTeam([4, 7])).toBe(1);
+    expect(leadingTeam([5, 5])).toBeNull();
+    expect(leadingTeam([0, 0])).toBeNull();
+  });
+
+  it('counts points still needed, never below zero', () => {
+    expect(toTarget(6, 10)).toBe(4);
+    expect(toTarget(10, 10)).toBe(0);
+    expect(toTarget(12, 10)).toBe(0);
+  });
+});
+
 describe('config coercion', () => {
   it('pairing defaults to adjacent', () => {
     expect(pairingFromConfig({})).toBe('adjacent');
@@ -292,5 +370,51 @@ describe('euchre module', () => {
     );
     // every hand shifted only one team
     expect(sum(euchre.scoreRound(hands[0], ctx()))).toBe(4); // march = 2 to each of two partners
+  });
+});
+
+describe('euchreStats', () => {
+  const games: Game[] = [
+    { id: 'g', type: 'euchre', config: {}, playerIds: ['a', 'b', 'c', 'd'], status: 'finished', createdAt: 0, roundCount: 4 } as Game,
+  ];
+  const mkRound = (index: number, input: EuchreInput): Round =>
+    ({ id: `r${index}`, gameId: 'g', index, input, deltas: {}, createdAt: 0 }) as Round;
+  const rounds: Round[] = [
+    mkRound(0, mk({ maker: 0, result: 'march' })),
+    mkRound(1, mk({ maker: 0, result: 'made' })),
+    mkRound(2, mk({ maker: 0, result: 'euchred' })),
+    mkRound(3, mk({ maker: 0, result: 'march', alone: true, alonePlayer: 'a' })),
+  ];
+  const out = euchreStats({ games, rounds, players: [], canonical: (id: ID) => id });
+
+  const metric = (id: ID, key: string) => out.perPlayer?.[id]?.find((m) => m.key === key);
+  const g = (key: string) => out.global?.find((m) => m.key === key);
+
+  it('counts marches per caller', () => {
+    expect(metric('a', 'eu_march')?.value).toBe('2');
+    expect(metric('b', 'eu_march')?.value).toBe('2');
+  });
+
+  it('tracks how often a team got set', () => {
+    expect(metric('a', 'eu_set')?.value).toBe('1');
+  });
+
+  it('credits landed euchres to the defenders', () => {
+    expect(metric('c', 'eu_euchre')?.value).toBe('1');
+    expect(metric('d', 'eu_euchre')?.value).toBe('1');
+  });
+
+  it('headlines a lone sweep to the individual who braved it', () => {
+    const lone = metric('a', 'eu_lone');
+    expect(lone?.label).toBe('Lone sweeps');
+    expect(lone?.value).toBe('1');
+    // the partner who sat out gets no lone credit
+    expect(metric('b', 'eu_lone')).toBeUndefined();
+  });
+
+  it('reports global make and march rates over all hands', () => {
+    expect(g('eu_make_all')?.value).toBe('75%'); // 3 of 4 made
+    expect(g('eu_march_all')?.value).toBe('50%'); // 2 of 4 swept
+    expect(g('eu_euchre_all')?.value).toBe('1');
   });
 });
