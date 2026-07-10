@@ -1,7 +1,7 @@
 import type { ID, Round } from '../../types';
 import type { GameSpecificStats, GameStatsInput, Metric } from '../../stats/types';
 import { fmtPct } from '../../stats/format';
-import { outcomeOf, roleSetup, winningSide, type AvalonInput, type Side } from './logic';
+import { resolutionOf, roleSetup, winningSide, type AvalonInput, type Side } from './logic';
 
 interface Agg {
   goodGames: number;
@@ -57,13 +57,13 @@ export function avalonStats({ games, rounds, canonical }: GameStatsInput): GameS
       const inp = r.input as AvalonInput | undefined;
       if (!inp) continue;
       const twoFail = setup.twoFailQuests[r.index] ?? false;
-      const outcome = outcomeOf(inp, twoFail);
+      const res = resolutionOf(inp, twoFail);
       questsPlayed += 1;
-      if (outcome === 'fail') questFails += 1;
+      if (res !== 'success') questFails += 1;
 
       const winners = inp.winners ?? [];
       if (winners.length) {
-        const clinchedBy: Side = outcome === 'fail' ? 'evil' : 'good';
+        const clinchedBy: Side = res === 'success' ? 'good' : 'evil';
         const side = winningSide(clinchedBy, inp.assassinFoundMerlin);
         resolution = {
           winners: new Set(winners.map(canonical)),

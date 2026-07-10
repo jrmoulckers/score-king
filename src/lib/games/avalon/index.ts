@@ -71,7 +71,7 @@ export const avalon: GameModule = {
   createRoundInput: (ctx: RoundContext): AvalonInput => {
     const setup = roleSetup(ctx.players.length);
     const teamSize = setup.questTeams[ctx.roundIndex] ?? setup.questTeams[MAX_QUESTS - 1] ?? 3;
-    return { fails: 0, teamSize, assassinFoundMerlin: null, winners: [] };
+    return { fails: 0, teamSize, assassinFoundMerlin: null, winners: [], rejects: 0, leaderId: null, team: [] };
   },
 
   validateRound: (input: AvalonInput, ctx: RoundContext) =>
@@ -94,8 +94,11 @@ export const avalon: GameModule = {
     'Success/Fail cards — any single Fail sinks the quest (Quest 4 needs TWO Fails at 7+ players).',
     'Record how many Fails were revealed; the tracker marks the quest ✓ or ✗.',
     '',
+    'Before a team sails, the table votes on it. Log rejected proposals on the vote track —',
+    '🔨 five rejections in one quest is the Hammer, and Evil seizes the game outright.',
+    '',
     '🛡️ Good wins by succeeding 3 quests — then the Assassin may name Merlin: if correct,',
-    '🗡️ Evil steals the win. Evil wins outright by failing 3 quests.',
+    '🗡️ Evil steals the win. Evil wins outright by failing 3 quests (or dropping the Hammer).',
     '',
     'At the clinch, tap everyone on the winning side to record the result.',
   ].join('\n'),
