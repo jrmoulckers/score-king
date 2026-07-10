@@ -23,6 +23,15 @@ export interface PlayerState {
   alive: boolean;
   /** A dead player spends their single ghost vote once — tracked, never enforced. */
   ghostUsed: boolean;
+  /**
+   * The Demon, in the Storyteller's Grimoire. Optional and auto-set when a
+   * demon-type role is typed; drives the "Good wins when the Demon dies" nudge.
+   */
+  isDemon?: boolean;
+  /** Private Storyteller reminder token ("poisoned", "drunk", "red herring"). */
+  reminder?: string;
+  /** The Storyteller's read: who they think this seat is (or could be). */
+  suspect?: string;
 }
 
 /** A single day-phase nomination and its vote tally. */
@@ -77,9 +86,10 @@ export function initialRoster(playerIds: ID[]): Record<ID, PlayerState> {
 }
 
 /**
- * Carry a roster forward into the next phase — roles, teams, alive/dead and
- * ghost-vote status persist, so the Storyteller only edits what changed. New
- * seats (defensive) start fresh; a cloned object keeps rounds independent.
+ * Carry a roster forward into the next phase — roles, teams, alive/dead, the
+ * ghost-vote status and the Storyteller's Grimoire notes (demon, reminder,
+ * suspect) persist, so only what changed needs editing. New seats (defensive)
+ * start fresh; a cloned object keeps rounds independent.
  */
 export function carryRoster(
   prev: Record<ID, PlayerState> | undefined,
@@ -89,7 +99,15 @@ export function carryRoster(
   for (const id of playerIds) {
     const p = prev?.[id];
     out[id] = p
-      ? { role: p.role, team: p.team, alive: p.alive, ghostUsed: p.ghostUsed }
+      ? {
+          role: p.role,
+          team: p.team,
+          alive: p.alive,
+          ghostUsed: p.ghostUsed,
+          isDemon: p.isDemon,
+          reminder: p.reminder,
+          suspect: p.suspect,
+        }
       : freshState();
   }
   return out;
@@ -113,6 +131,56 @@ export function aliveTeamCount(states: Record<ID, PlayerState>, team: Team): num
  */
 export function voteThreshold(alive: number): number {
   return Math.ceil(Math.max(0, alive) / 2);
+}
+
+/** Ghost votes still in the town: dead players who haven't spent theirs. */
+export function ghostVotesLeft(states: Record<ID, PlayerState>): number {
+  return Object.values(states).filter((s) => !s.alive && !s.ghostUsed).length;
+}
+
+/** Whether the Demon is unmarked, still among the living, or has fallen. */
+export type DemonState = 'unmarked' | 'alive' | 'fallen';
+
+/**
+ * The Demon's fate at a glance, for the "Good wins the moment the Demon dies"
+ * nudge. `unmarked` when the Storyteller hasn't flagged a Demon yet; `alive`
+ * while any flagged Demon lives; `fallen` once every flagged Demon is dead.
+ */
+export function demonStatus(states: Record<ID, PlayerState>): DemonState {
+  const demons = Object.values(states).filter((s) => s.isDemon);
+  if (demons.length === 0) return 'unmarked';
+  return demons.some((s) => s.alive) ? 'alive' : 'fallen';
+}
+
+/**
+ * How many more deaths until only two players remain alive — the point Evil
+ * wins. Zero means the town is already at (or below) the floor.
+ */
+export function evilWinsIn(states: Record<ID, PlayerState>): number {
+  return Math.max(0, aliveCount(states) - 2);
+}
+
+/** What an evil player learns on the first night: their team and the Demon. */
+export interface EvilKnowledge {
+  /** Other evil seats (excludes the viewer). */
+  fellowEvil: ID[];
+  /** The flagged Demon's seat, if any (may be the viewer themselves). */
+  demonId: ID | null;
+}
+
+/**
+ * The fellow-evil + Demon info surfaced in a minion/demon's private reveal.
+ * Pure so it can be unit-tested; the editor only renders what it returns.
+ */
+export function evilKnowledge(
+  states: Record<ID, PlayerState>,
+  selfId: ID,
+): EvilKnowledge {
+  const ids = Object.keys(states);
+  return {
+    fellowEvil: ids.filter((id) => id !== selfId && states[id]?.team === 'evil'),
+    demonId: ids.find((id) => states[id]?.isDemon) ?? null,
+  };
 }
 
 // ── Scoring / winners ─────────────────────────────────────────────────────
@@ -274,8 +342,19 @@ export function rolesFor(script: string | undefined): RoleRef[] {
 
 /** Team a known role belongs to (case-insensitive), or null if off-script. */
 export function roleTeam(role: string, script: string | undefined): Team | null {
+  const type = roleType(role, script);
+  return type ? teamOfType(type) : null;
+}
+
+/** Type of a known role (case-insensitive), or null if it's off-script. */
+export function roleType(role: string, script: string | undefined): RoleType | null {
   const key = role.trim().toLowerCase();
   if (!key) return null;
   const hit = rolesFor(script).find((r) => r.name.toLowerCase() === key);
-  return hit ? teamOfType(hit.type) : null;
+  return hit ? hit.type : null;
+}
+
+/** True when a typed role is a known Demon on the script — auto-marks the Demon. */
+export function isDemonRole(role: string, script: string | undefined): boolean {
+  return roleType(role, script) === 'demon';
 }

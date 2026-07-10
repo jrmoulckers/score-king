@@ -4,8 +4,13 @@ import {
   aliveCount,
   aliveTeamCount,
   carryRoster,
+  demonStatus,
   describe as describePhase,
+  evilKnowledge,
+  evilWinsIn,
+  ghostVotesLeft,
   initialRoster,
+  isDemonRole,
   isResolved,
   phaseEmoji,
   phaseKind,
@@ -13,6 +18,7 @@ import {
   phaseNumber,
   pickWinners,
   roleTeam,
+  roleType,
   rolesFor,
   scoreRound,
   scriptRef,
@@ -107,6 +113,14 @@ describe('carryRoster — persists role/team/alive/ghost between phases', () => 
     expect(next.B).toEqual(state());
   });
 
+  it('carries the Grimoire notes (demon, reminder, suspect) forward', () => {
+    const prev = { A: state({ role: 'Imp', team: 'evil', isDemon: true, reminder: 'red herring', suspect: 'Fortune Teller' }) };
+    const next = carryRoster(prev, ['A']);
+    expect(next.A.isDemon).toBe(true);
+    expect(next.A.reminder).toBe('red herring');
+    expect(next.A.suspect).toBe('Fortune Teller');
+  });
+
   it('seats a brand-new player fresh (defensive)', () => {
     const next = carryRoster({ A: state({ team: 'evil' }) }, ['A', 'C']);
     expect(next.C).toEqual(state());
@@ -149,6 +163,66 @@ describe('counts & the vote threshold', () => {
     expect(voteThreshold(6)).toBe(3);
     expect(voteThreshold(1)).toBe(1);
     expect(voteThreshold(0)).toBe(0);
+  });
+});
+
+// ── Grimoire nudges (demon, ghost votes, evil-at-2, evil knowledge) ──────────
+
+describe('ghostVotesLeft — dead players who still hold a ghost vote', () => {
+  it('counts unspent ghost votes among the dead only', () => {
+    const states = {
+      A: state({ alive: true }),
+      B: state({ alive: false, ghostUsed: false }),
+      C: state({ alive: false, ghostUsed: true }),
+      D: state({ alive: false, ghostUsed: false }),
+    };
+    expect(ghostVotesLeft(states)).toBe(2);
+    expect(ghostVotesLeft({ A: state() })).toBe(0);
+  });
+});
+
+describe('demonStatus — the Demon’s fate for the Good-wins nudge', () => {
+  it('is unmarked until a Demon is flagged', () => {
+    expect(demonStatus({ A: state(), B: state({ team: 'evil' }) })).toBe('unmarked');
+  });
+
+  it('is alive while any flagged Demon lives', () => {
+    expect(demonStatus({ A: state({ team: 'evil', isDemon: true }), B: state() })).toBe('alive');
+  });
+
+  it('is fallen once every flagged Demon is dead', () => {
+    expect(demonStatus({ A: state({ team: 'evil', isDemon: true, alive: false }), B: state() })).toBe('fallen');
+  });
+});
+
+describe('evilWinsIn — deaths remaining until only two are left alive', () => {
+  it('counts the living above the two-player floor', () => {
+    expect(evilWinsIn({ A: state(), B: state(), C: state(), D: state() })).toBe(2);
+    expect(evilWinsIn({ A: state(), B: state() })).toBe(0);
+    expect(evilWinsIn({ A: state(), B: state({ alive: false }) })).toBe(0);
+  });
+});
+
+describe('evilKnowledge — the first-night reveal for an evil seat', () => {
+  const states = {
+    A: state({ team: 'evil', isDemon: true }),
+    B: state({ team: 'evil' }),
+    C: state({ team: 'good' }),
+  };
+
+  it('shows a Minion their fellow evil and the Demon (excluding themselves)', () => {
+    expect(evilKnowledge(states, 'B')).toEqual({ fellowEvil: ['A'], demonId: 'A' });
+  });
+
+  it('shows the Demon their Minions', () => {
+    expect(evilKnowledge(states, 'A')).toEqual({ fellowEvil: ['B'], demonId: 'A' });
+  });
+
+  it('returns no Demon when none is flagged', () => {
+    expect(evilKnowledge({ A: state({ team: 'evil' }), B: state({ team: 'evil' }) }, 'A')).toEqual({
+      fellowEvil: ['B'],
+      demonId: null,
+    });
   });
 });
 
@@ -266,6 +340,21 @@ describe('script & role reference (data only)', () => {
     expect(roleTeam('Poisoner', 'tb')).toBe('evil');
     expect(roleTeam('Not A Role', 'tb')).toBeNull();
     expect(roleTeam('', 'tb')).toBeNull();
+  });
+
+  it('exposes a known role’s type, else null', () => {
+    expect(roleType('Imp', 'tb')).toBe('demon');
+    expect(roleType('Poisoner', 'tb')).toBe('minion');
+    expect(roleType('Butler', 'tb')).toBe('outsider');
+    expect(roleType('Chef', 'tb')).toBe('townsfolk');
+    expect(roleType('Nope', 'tb')).toBeNull();
+  });
+
+  it('flags a demon role for the auto-marker (case-insensitive)', () => {
+    expect(isDemonRole('imp', 'tb')).toBe(true);
+    expect(isDemonRole('Vortox', 'snv')).toBe(true);
+    expect(isDemonRole('Poisoner', 'tb')).toBe(false);
+    expect(isDemonRole('', 'tb')).toBe(false);
   });
 
   it('falls back to Trouble Brewing for an unknown script', () => {
