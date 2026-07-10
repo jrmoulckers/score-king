@@ -3,6 +3,7 @@ import { RoundEditor } from '../editor';
 import { explodingKittensStats } from './stats';
 import {
   emptyInput,
+  defuseTotal,
   matchLimit,
   pickMatchLeaders,
   scoreMatch,
@@ -40,6 +41,13 @@ export const explodingkittens: GameModule = {
       help: 'On: tap each kitten as they explode and the survivor is crowned automatically — unlocks first-to-explode and finish stats. Off: just tap who survived.',
     },
     {
+      key: 'trackDefuses',
+      label: 'Track defuses (who cheated death 🛡)',
+      type: 'boolean',
+      default: false,
+      help: 'On: tap 🛡 whenever someone Defuses an Exploding Kitten — a per-match tally that unlocks the “deaths cheated / most defuses” stat. Off (default): keeps entry to pure single taps.',
+    },
+    {
       key: 'matches',
       label: 'Number of matches (0 = open-ended)',
       type: 'number',
@@ -69,10 +77,13 @@ export const explodingkittens: GameModule = {
     const name = (id: ID | null | undefined) => players.find((p) => p.id === id)?.name ?? '?';
     if (!input?.winner && (!input?.order || input.order.length === 0)) return 'no result';
     const head = input.winner ? `👑 ${name(input.winner)} survived` : 'no survivor';
+    const parts = [head];
     if (input.order && input.order.length) {
-      return `${head} · 💥 ${name(input.order[0])} out first`;
+      parts.push(`💥 ${name(input.order[0])} out first`);
     }
-    return head;
+    const defused = defuseTotal(input);
+    if (defused) parts.push(`🛡 ${defused} defused`);
+    return parts.join(' · ');
   },
 
   help: [
@@ -84,8 +95,9 @@ export const explodingkittens: GameModule = {
     '',
     'Each round here = one match. With “Track elimination order” on, tap each player',
     'as they explode and the survivor is crowned for you; turn it off to just tap the',
-    'winner. Imploding Kittens on? The ☠️ Imploding Kitten can’t be defused — flip it',
-    'and you’re out on the spot.',
+    'winner. Turn on “Track defuses” to tap 🛡 whenever someone cheats death — it feeds',
+    'the deaths-cheated stat. Imploding Kittens on? The ☠️ Imploding Kitten can’t be',
+    'defused — flip it and you’re out on the spot.',
   ].join('\n'),
 
   stats: explodingKittensStats,
