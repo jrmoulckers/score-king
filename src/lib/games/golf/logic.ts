@@ -30,6 +30,149 @@ export interface GolfConfig {
 /** One hole's raw entry: each player's called-out grid total. */
 export interface GolfInput {
   scores: Record<ID, number>;
+  /**
+   * Optional, additive: the actual cards each player tapped into the "grid helper",
+   * in row-major order (null = an empty cell). Persisted so re-opening a hole to edit
+   * restores the laid-out grid. `scores` stays the single source of truth for scoring,
+   * validation, and stats — a hand-typed hole never needs a grid.
+   */
+  grids?: Record<ID, (CardCode | null)[]>;
+}
+
+/**
+ * Every card a Golf grid can hold. `JK` (Joker) only appears when the ruleset
+ * enables it. Equality is by code, so two Kings — or two Jokers — in the same
+ * column cancel just like two 7s do.
+ */
+export type CardCode = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K' | 'JK';
+
+/** The base deck order shown in the card picker (Jokers appended per-ruleset). */
+export const BASE_CARD_CODES: CardCode[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+/** The card codes a player can pick for this ruleset (adds the Joker when enabled). */
+export function cardCodes(cfg: GolfConfig): CardCode[] {
+  return cfg.jokers ? [...BASE_CARD_CODES, 'JK'] : BASE_CARD_CODES;
+}
+
+/** Points a single card contributes before column cancels (null = empty = 0). */
+export function cardValue(code: CardCode | null, cfg: GolfConfig): number {
+  switch (code) {
+    case null:
+    case undefined:
+      return 0;
+    case 'A':
+      return 1;
+    case 'J':
+    case 'Q':
+      return 10;
+    case 'K':
+      return cfg.kingValue;
+    case 'JK':
+      return -2;
+    default: {
+      const n = Number(code);
+      return Number.isFinite(n) ? n : 0;
+    }
+  }
+}
+
+/** A short, friendly face for a card code (for the picker + laid-out cells). */
+export function cardLabel(code: CardCode | null): string {
+  if (!code) return '';
+  if (code === 'JK') return '🃏';
+  return code;
+}
+
+/** Column/row layout of the laid-out grid for a ruleset. */
+export interface GridShape {
+  cols: number;
+  rows: number;
+}
+
+/** Map a grid size to its physical layout: 6→3×2, 4→2×2, 9→3×3. */
+export function gridShape(grid: string): GridShape {
+  switch (grid) {
+    case '4':
+      return { cols: 2, rows: 2 };
+    case '9':
+      return { cols: 3, rows: 3 };
+    default:
+      return { cols: 3, rows: 2 };
+  }
+}
+
+/**
+ * Score a laid-out grid, applying the heart of Golf: within each column, any set
+ * of two-or-more matching cards cancels to 0 (a pair, or a full column of a kind).
+ * Cards outside a matched set keep their value. Returns the hole total *and* a
+ * per-cell `canceled` mask so the editor can strike the cards that zeroed out —
+ * a single source of truth for the math and its visual explanation.
+ */
+export function computeGrid(cells: (CardCode | null)[], cfg: GolfConfig): { total: number; canceled: boolean[] } {
+  const { cols, rows } = gridShape(cfg.grid);
+  const size = cols * rows;
+  const canceled = new Array(size).fill(false);
+  for (let c = 0; c < cols; c++) {
+    // Group this column's filled cells by card code; any code with 2+ members cancels.
+    const byCode = new Map<CardCode, number[]>();
+    for (let r = 0; r < rows; r++) {
+      const idx = r * cols + c;
+      const code = cells[idx];
+      if (!code) continue;
+      const list = byCode.get(code) ?? [];
+      list.push(idx);
+      byCode.set(code, list);
+    }
+    for (const idxs of byCode.values()) {
+      if (idxs.length >= 2) for (const i of idxs) canceled[i] = true;
+    }
+  }
+  let total = 0;
+  for (let i = 0; i < size; i++) {
+    if (canceled[i]) continue;
+    total += cardValue(cells[i] ?? null, cfg);
+  }
+  return { total, canceled };
+}
+
+/** Just the hole total for a laid-out grid (see {@link computeGrid}). */
+export function gridScore(cells: (CardCode | null)[], cfg: GolfConfig): number {
+  return computeGrid(cells, cfg).total;
+}
+
+/** True once at least one cell is filled — used to decide whether the grid drives the score. */
+export function gridHasCards(cells: (CardCode | null)[] | undefined): boolean {
+  return !!cells && cells.some((c) => c != null);
+}
+
+/** A caddie's read on a hole score. */
+export type HoleVerdictKind = 'eagle' | 'birdie' | 'clean' | 'ok' | 'rough';
+export interface HoleVerdict {
+  kind: HoleVerdictKind;
+  emoji: string;
+  label: string;
+}
+
+/**
+ * The caddie's read on a called hole, scaled to the ruleset. Par is a cleanly
+ * cancelled grid (0); dipping into the red is a birdie, and a deep red hole (only
+ * reachable with −2 kings / jokers) earns an eagle. A blown-up, near-max hole
+ * lands "in the rough". Every verdict pairs an emoji with words, so the meaning is
+ * never carried by colour alone.
+ */
+export function holeVerdict(score: number, cfg: GolfConfig): HoleVerdict {
+  if (score === 0) return { kind: 'clean', emoji: '⛳', label: 'clean sheet' };
+  if (score < 0) {
+    const floor = holeFloor(cfg);
+    const eagle = floor < 0 && score <= Math.round(floor / 2);
+    return eagle
+      ? { kind: 'eagle', emoji: '🦅', label: 'eagle' }
+      : { kind: 'birdie', emoji: '🐦', label: 'birdie' };
+  }
+  if (score >= Math.round(holeCeiling(cfg) * 0.6)) {
+    return { kind: 'rough', emoji: '🌳', label: 'in the rough' };
+  }
+  return { kind: 'ok', emoji: '', label: '' };
 }
 
 export const DEFAULT_HOLES = 9;

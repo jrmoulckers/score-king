@@ -1,5 +1,5 @@
 import type { ID } from '../../types';
-import type { GolfInput } from './logic';
+import { holeVerdict, readConfig, type GolfConfig, type GolfInput } from './logic';
 import type { GameSpecificStats, GameStatsInput, Metric } from '../../stats/types';
 import { fmtAvg, fmtInt } from '../../stats/format';
 
@@ -8,21 +8,24 @@ interface GolfAgg {
   sum: number;
   best: number;
   birdies: number;
+  eagles: number;
 }
 
 /**
- * Golf stats, derived purely from each recorded hole. A "birdie" here is a hole
- * scored below zero (all pairs cancelled with red cards to spare); "best hole" is
- * a player's single lowest hole. Pure — no Svelte — so it is unit-testable and
- * safe for the stats engine to import.
+ * Golf stats, derived purely from each recorded hole. A "birdie" is a hole scored
+ * under par (below zero); an "eagle" is a deep-red hole (only reachable with −2
+ * kings / jokers), judged by the same ruleset-scaled {@link holeVerdict} the editor
+ * shows. "Best hole" is a player's single lowest hole. Pure — no Svelte — so it is
+ * unit-testable and safe for the stats engine to import.
  */
 export function golfStats({ games, rounds, canonical }: GameStatsInput): GameSpecificStats {
   const gameIds = new Set(games.map((g) => g.id));
+  const cfgOf = new Map<ID, GolfConfig>(games.map((g) => [g.id, readConfig(g.config)]));
   const per = new Map<ID, GolfAgg>();
   const get = (id: ID): GolfAgg => {
     let a = per.get(id);
     if (!a) {
-      a = { holes: 0, sum: 0, best: Infinity, birdies: 0 };
+      a = { holes: 0, sum: 0, best: Infinity, birdies: 0, eagles: 0 };
       per.set(id, a);
     }
     return a;
@@ -32,6 +35,7 @@ export function golfStats({ games, rounds, canonical }: GameStatsInput): GameSpe
     if (!gameIds.has(r.gameId)) continue;
     const input = r.input as GolfInput | undefined;
     if (!input?.scores) continue;
+    const cfg = cfgOf.get(r.gameId);
     for (const [pid, raw] of Object.entries(input.scores)) {
       const v = Math.trunc(Number(raw) || 0);
       const a = get(canonical(pid));
@@ -39,6 +43,7 @@ export function golfStats({ games, rounds, canonical }: GameStatsInput): GameSpe
       a.sum += v;
       if (v < a.best) a.best = v;
       if (v < 0) a.birdies += 1;
+      if (cfg && holeVerdict(v, cfg).kind === 'eagle') a.eagles += 1;
     }
   }
 
@@ -56,8 +61,17 @@ export function golfStats({ games, rounds, canonical }: GameStatsInput): GameSpe
         key: 'golf_birdie',
         label: 'Birdies',
         value: fmtInt(a.birdies),
-        sub: 'holes under par (0)',
+        sub: 'holes under par',
         emoji: '🐦',
+      });
+    }
+    if (a.eagles) {
+      metrics.push({
+        key: 'golf_eagle',
+        label: 'Eagles',
+        value: fmtInt(a.eagles),
+        sub: 'deep-red holes',
+        emoji: '🦅',
       });
     }
     perPlayer[id] = metrics;
