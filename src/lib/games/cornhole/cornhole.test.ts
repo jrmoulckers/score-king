@@ -4,13 +4,21 @@ import { cornhole } from './index';
 import {
   applyBust,
   BAGS_PER_SIDE,
+  bagValue,
+  bustRisk,
   cancel,
+  type BagState,
   type CornholeConfig,
   type CornholeInput,
+  cycleBag,
+  isFourBagger,
   isWon,
   readConfig,
   scoreCornhole,
   sideRaw,
+  slotsFromThrow,
+  throwFromSlots,
+  tossFlavor,
 } from './logic';
 
 const DEFAULT: CornholeConfig = { target: 21, bust: false, winBy: 1, format: '1v1' };
@@ -200,5 +208,114 @@ describe('cornhole: module wiring', () => {
     expect(cornhole.describeRound!(round, players)).toBe('🌽 Aces +3 · 7–4');
     const washed = { input: input([1, 0], [1, 0]) } as unknown as Round;
     expect(cornhole.describeRound!(washed, players)).toMatch(/Wash/);
+  });
+});
+
+describe('cornhole: tactile bag-slot model', () => {
+  it('expands counts into a positional row — holes, then boards, then ground', () => {
+    expect(slotsFromThrow({ inHole: 2, onBoard: 1 })).toEqual(['hole', 'hole', 'board', 'ground']);
+    expect(slotsFromThrow({ inHole: 0, onBoard: 0 })).toEqual(['ground', 'ground', 'ground', 'ground']);
+    expect(slotsFromThrow({ inHole: 4, onBoard: 0 })).toEqual(['hole', 'hole', 'hole', 'hole']);
+  });
+
+  it('folds a row of slots back into in-hole / on-board counts', () => {
+    expect(throwFromSlots(['hole', 'ground', 'board', 'hole'])).toEqual({ inHole: 2, onBoard: 1 });
+    expect(throwFromSlots(['ground', 'ground', 'ground', 'ground'])).toEqual({ inHole: 0, onBoard: 0 });
+  });
+
+  it('round-trips counts through the slot model', () => {
+    for (const t of [{ inHole: 0, onBoard: 0 }, { inHole: 1, onBoard: 2 }, { inHole: 4, onBoard: 0 }, { inHole: 0, onBoard: 3 }]) {
+      expect(throwFromSlots(slotsFromThrow(t))).toEqual(t);
+    }
+  });
+
+  it('clamps junk counts and never emits more than the row length', () => {
+    expect(slotsFromThrow({ inHole: -3, onBoard: 1 })).toEqual(['board', 'ground', 'ground', 'ground']);
+    expect(slotsFromThrow(undefined)).toEqual(['ground', 'ground', 'ground', 'ground']);
+    expect(slotsFromThrow({ inHole: 9, onBoard: 9 })).toHaveLength(BAGS_PER_SIDE);
+  });
+
+  it('a tap climbs a bag in value and wraps: ground → board → hole → ground', () => {
+    expect(cycleBag('ground')).toBe('board');
+    expect(cycleBag('board')).toBe('hole');
+    expect(cycleBag('hole')).toBe('ground');
+    // Four taps on one bag returns it to where it started.
+    let s: BagState = 'ground';
+    for (let i = 0; i < 3; i++) s = cycleBag(s);
+    expect(s).toBe('ground');
+  });
+
+  it('scores each landing spot: hole 3, board 1, ground 0', () => {
+    expect(bagValue('hole')).toBe(3);
+    expect(bagValue('board')).toBe(1);
+    expect(bagValue('ground')).toBe(0);
+  });
+});
+
+describe('cornhole: four-bagger + bust risk', () => {
+  it('flags a four-bagger only when all four bags are in the hole', () => {
+    expect(isFourBagger({ inHole: 4, onBoard: 0 })).toBe(true);
+    expect(isFourBagger({ inHole: 3, onBoard: 1 })).toBe(false);
+    expect(isFourBagger({ inHole: 0, onBoard: 4 })).toBe(false);
+    expect(isFourBagger(undefined)).toBe(false);
+  });
+
+  it('bust risk lights up only within a big frame of overshooting', () => {
+    const cfg = { target: 21, bust: true };
+    expect(bustRisk(10, cfg)).toBe(true); // 10 + 12 = 22 > 21
+    expect(bustRisk(9, cfg)).toBe(false); // 9 + 12 = 21, not over
+    expect(bustRisk(21, cfg)).toBe(false); // already at the target
+    expect(bustRisk(0, cfg)).toBe(false); // miles away
+  });
+
+  it('bust risk is off without the bust rule or a target above 15', () => {
+    expect(bustRisk(18, { target: 21, bust: false })).toBe(false);
+    expect(bustRisk(14, { target: 15, bust: true })).toBe(false);
+  });
+});
+
+describe('cornhole: toss flavor (pure, deterministic)', () => {
+  const base = { net: 3, aRaw: 7, bRaw: 4, busted: false, fourBaggerName: null, bothFourBaggers: false, seed: 0 };
+
+  it('leads with the bust when a side overcooks it', () => {
+    const f = tossFlavor({ ...base, gainerName: 'Aces', busted: true });
+    expect(f.emoji).toBe('💥');
+    expect(f.tone).toBe('bad');
+    expect(f.text).toMatch(/bust/i);
+  });
+
+  it('celebrates a four-bagger', () => {
+    const f = tossFlavor({ ...base, gainerName: 'Aces', net: 12, fourBaggerName: 'Aces' });
+    expect(f.emoji).toBe('💣');
+    expect(f.tone).toBe('good');
+    expect(f.text).toMatch(/four-bagger/i);
+  });
+
+  it('washes when both sides four-bag', () => {
+    const f = tossFlavor({ ...base, gainerName: null, net: 0, fourBaggerName: null, bothFourBaggers: true });
+    expect(f.emoji).toBe('🧺');
+    expect(f.tone).toBe('muted');
+  });
+
+  it('narrates a plain wash and a total whiff', () => {
+    const wash = tossFlavor({ ...base, gainerName: null, net: 0 });
+    expect(wash.emoji).toBe('🧺');
+    expect(wash.tone).toBe('muted');
+    const whiff = tossFlavor({ ...base, gainerName: null, net: 0, aRaw: 0, bRaw: 0 });
+    expect(whiff.tone).toBe('muted');
+    expect(whiff.text).toMatch(/nothing|whiff/i);
+  });
+
+  it('narrates a normal scoring frame with the gainer and net', () => {
+    const f = tossFlavor({ ...base, gainerName: 'Bombers', net: 2 });
+    expect(f.tone).toBe('good');
+    expect(f.text).toContain('Bombers');
+    expect(f.text).toContain('+2');
+  });
+
+  it('is deterministic for the same inputs', () => {
+    const a = tossFlavor({ ...base, gainerName: 'Aces', net: 5, seed: 3 });
+    const b = tossFlavor({ ...base, gainerName: 'Aces', net: 5, seed: 3 });
+    expect(a).toEqual(b);
   });
 });
