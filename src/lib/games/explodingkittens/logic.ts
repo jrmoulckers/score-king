@@ -19,11 +19,26 @@ export interface EKInput {
    * is on; left empty when the group only records who survived.
    */
   order: ID[];
+  /**
+   * Optional per-player Defuse tally for this match — how many Exploding Kittens each
+   * player cheated death on before either surviving or finally blowing up. Present only
+   * when "Track defuses" is on; absent on every match recorded without it, so the field
+   * is fully backward-compatible and never affects scoring (the survivor still banks +1).
+   */
+  defuses?: Record<ID, number>;
 }
 
 /** A fresh, empty match: nobody eliminated, no survivor crowned yet. */
 export function emptyInput(): EKInput {
   return { winner: null, order: [] };
+}
+
+/** Total Exploding Kittens defused across the whole match (0 when untracked). */
+export function defuseTotal(input: EKInput): number {
+  if (!input.defuses) return 0;
+  let sum = 0;
+  for (const v of Object.values(input.defuses)) sum += Math.max(0, Math.floor(v || 0));
+  return sum;
 }
 
 /**
@@ -60,6 +75,13 @@ export function validateMatch(
   }
   if (input.winner && seen.has(input.winner)) {
     return 'The survivor can’t also be in the elimination pile.';
+  }
+
+  if (input.defuses) {
+    for (const [id, n] of Object.entries(input.defuses)) {
+      if (!known.has(id)) return 'A defuse is logged for a player who isn’t in this game.';
+      if (!Number.isFinite(n) || n < 0) return 'Defuse counts can’t be negative.';
+    }
   }
 
   if (trackOrder) {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Game, ID, Player, Round, RoundContext } from '../../types';
 import {
   emptyInput,
+  defuseTotal,
   finishingPositions,
   matchLimit,
   pickMatchLeaders,
@@ -234,5 +235,81 @@ describe('explodingKittensStats', () => {
     });
     expect(noOrder.perPlayer).toEqual({});
     expect(noOrder.global).toEqual([]);
+  });
+});
+
+describe('defuseTotal — sums the deaths cheated in a match', () => {
+  it('is zero when defuses are untracked', () => {
+    expect(defuseTotal({ winner: 'A', order: ['B'] })).toBe(0);
+  });
+
+  it('sums per-player defuses, flooring and clamping stray values', () => {
+    expect(defuseTotal({ winner: 'A', order: ['B'], defuses: { A: 2, B: 1 } })).toBe(3);
+    expect(defuseTotal({ winner: 'A', order: [], defuses: { A: 1.9, B: -3 } })).toBe(1);
+  });
+});
+
+describe('defuses never change scoring — the survivor still banks exactly +1', () => {
+  it('ignores defuses when scoring the match', () => {
+    expect(scoreMatch({ winner: 'A', order: ['C', 'B'], defuses: { B: 3, A: 1 } }, ['A', 'B', 'C'])).toEqual({
+      A: 1,
+      B: 0,
+      C: 0,
+    });
+  });
+});
+
+describe('validateMatch — defuse guards', () => {
+  it('accepts a match with valid per-player defuses', () => {
+    expect(validateMatch({ winner: 'A', order: ['C', 'B'], defuses: { B: 2, A: 1 } }, ['A', 'B', 'C'], true)).toBeNull();
+  });
+
+  it('rejects a defuse logged for an unknown player', () => {
+    expect(validateMatch({ winner: 'A', order: [], defuses: { Z: 1 } }, ['A', 'B'], false)).toMatch(/isn’t in this game/i);
+  });
+
+  it('rejects a negative defuse count', () => {
+    expect(validateMatch({ winner: 'A', order: [], defuses: { B: -1 } }, ['A', 'B'], false)).toMatch(/can’t be negative/i);
+  });
+});
+
+describe('explodingKittensStats — defuses & win streaks', () => {
+  const games: Game[] = [
+    { id: 'g', type: 'explodingkittens', config: {}, playerIds: ['A', 'B', 'C'], status: 'finished', createdAt: 0, roundCount: 3 } as Game,
+  ];
+
+  it('totals deaths cheated per player and globally', () => {
+    const rounds: Round[] = [
+      mkRound('g', 0, { winner: 'A', order: ['C', 'B'], defuses: { A: 2, B: 1 } }, ['A', 'B', 'C']),
+      mkRound('g', 1, { winner: 'B', order: ['A', 'C'], defuses: { A: 1 } }, ['A', 'B', 'C']),
+    ];
+    const out = explodingKittensStats({ games, rounds, players: [], canonical: (id: ID) => id });
+    expect(out.perPlayer?.['A']?.find((m) => m.key === 'ek_defuse')?.value).toBe('3');
+    expect(out.perPlayer?.['B']?.find((m) => m.key === 'ek_defuse')?.value).toBe('1');
+    expect(out.global?.find((m) => m.key === 'ek_defused')?.value).toBe('4');
+  });
+
+  it('reports the longest run of back-to-back match wins', () => {
+    const rounds: Round[] = [
+      mkRound('g', 0, { winner: 'A', order: ['C', 'B'] }, ['A', 'B', 'C']),
+      mkRound('g', 1, { winner: 'A', order: ['B', 'C'] }, ['A', 'B', 'C']),
+      mkRound('g', 2, { winner: 'B', order: ['C', 'A'] }, ['A', 'B', 'C']),
+    ];
+    const out = explodingKittensStats({ games, rounds, players: [], canonical: (id: ID) => id });
+    expect(out.perPlayer?.['A']?.find((m) => m.key === 'ek_streak')?.value).toBe('2');
+    // A single win isn't a streak, so B (one win) gets no streak metric.
+    expect(out.perPlayer?.['B']?.find((m) => m.key === 'ek_streak')).toBeUndefined();
+  });
+
+  it('resets a streak when another kitten wins, even in reversed round order', () => {
+    // Fed out of order to prove the stat sorts by round index, not array order.
+    const rounds: Round[] = [
+      mkRound('g', 2, { winner: 'A', order: ['B', 'C'] }, ['A', 'B', 'C']),
+      mkRound('g', 0, { winner: 'A', order: ['C', 'B'] }, ['A', 'B', 'C']),
+      mkRound('g', 1, { winner: 'B', order: ['A', 'C'] }, ['A', 'B', 'C']),
+    ];
+    const out = explodingKittensStats({ games, rounds, players: [], canonical: (id: ID) => id });
+    // A wins rounds 0 and 2 but B wins round 1 between them → best streak is 1, no metric.
+    expect(out.perPlayer?.['A']?.find((m) => m.key === 'ek_streak')).toBeUndefined();
   });
 });
