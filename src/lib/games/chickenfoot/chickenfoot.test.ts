@@ -8,7 +8,10 @@ import {
   describeRound,
   doubleLabel,
   leadingDouble,
+  pipLayout,
   playerRoundScore,
+  roundFlavor,
+  roundPipTotal,
   scoreRound,
   startDouble,
   totalRounds,
@@ -160,6 +163,56 @@ describe('chicken foot · round description', () => {
   it('uses the blank label for the 0–0 round', () => {
     const r = round(input({ double: 0, outId: 'a' }), { a: 0, b: 0, c: 0 });
     expect(describeRound(r, PLAYERS)).toContain('Double-blank');
+  });
+});
+
+describe('chicken foot · display helpers', () => {
+  it('pipLayout returns exactly n dots within a 3-column grid for 0–12', () => {
+    for (let n = 0; n <= 12; n++) {
+      const layout = pipLayout(n);
+      expect(layout.dots).toHaveLength(n);
+      expect(layout.cols).toBe(3);
+      for (const { c, r } of layout.dots) {
+        expect(c).toBeGreaterThanOrEqual(0);
+        expect(c).toBeLessThan(layout.cols);
+        expect(r).toBeGreaterThanOrEqual(0);
+        expect(r).toBeLessThan(layout.rows);
+      }
+    }
+  });
+
+  it('pipLayout uses a 3×3 grid up to 9 and grows to 3×4 for 10–12', () => {
+    expect(pipLayout(9).rows).toBe(3);
+    expect(pipLayout(10).rows).toBe(4);
+    expect(pipLayout(12).rows).toBe(4);
+    expect(pipLayout(0).dots).toEqual([]);
+  });
+
+  it('pipLayout clamps junk and out-of-range input into the supported range', () => {
+    expect(pipLayout(-4).dots).toHaveLength(0);
+    expect(pipLayout(99).dots).toHaveLength(12);
+    expect(pipLayout(3.6).dots).toHaveLength(4); // rounded
+    expect(pipLayout(NaN).dots).toHaveLength(0);
+  });
+
+  it('roundFlavor gives every double a barnyard nickname, blank = the Goose Egg', () => {
+    expect(roundFlavor(0)).toBe('The Goose Egg');
+    expect(roundFlavor(9)).toBe('The Big Coop');
+    expect(roundFlavor(12)).toBe('The Whole Barnyard');
+    for (let d = 0; d <= 12; d++) {
+      expect(roundFlavor(d).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('roundPipTotal sums the pips hitting the table this round', () => {
+    // a: 12 pips, b: went out (0), c: 5 pips → 17 on the table.
+    const total = roundPipTotal(input({ pips: { a: 12, b: 3, c: 5 }, outId: 'b' }), PLAYERS, 50);
+    expect(total).toBe(17);
+  });
+
+  it('roundPipTotal folds in the double-blank penalty', () => {
+    const total = roundPipTotal(input({ pips: { a: 4, b: 0, c: 0 }, blankId: 'a' }), PLAYERS, 50);
+    expect(total).toBe(54); // 4 pips + 50 penalty
   });
 });
 
