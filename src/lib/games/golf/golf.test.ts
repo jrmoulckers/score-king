@@ -5,16 +5,23 @@ import type { GameStatsInput, Metric } from '../../stats/types';
 import { golf } from './index';
 import { golfStats } from './stats';
 import {
+  cardCodes,
+  cardValue,
+  computeGrid,
   createGolfInput,
   gridCount,
+  gridScore,
+  gridShape,
   holeCeiling,
   holeFloor,
   holeTag,
+  holeVerdict,
   minCardValue,
   readConfig,
   rulesetLines,
   scoreGolf,
   validateGolf,
+  type CardCode,
   type GolfConfig,
   type GolfInput,
 } from './logic';
@@ -104,6 +111,97 @@ describe('golf ruleset helpers', () => {
     expect(spicy[0]).toContain('K -2');
     expect(spicy[0]).toContain('Joker −2');
     expect(spicy[2]).toContain('1 hole wins');
+  });
+});
+
+describe('golf grid helper', () => {
+  it('maps grid size to a physical column/row layout', () => {
+    expect(gridShape('6')).toEqual({ cols: 3, rows: 2 });
+    expect(gridShape('4')).toEqual({ cols: 2, rows: 2 });
+    expect(gridShape('9')).toEqual({ cols: 3, rows: 3 });
+    expect(gridShape('nonsense')).toEqual({ cols: 3, rows: 2 });
+  });
+
+  it('values each card by the common ruleset, honouring the king variant', () => {
+    const base = cfg();
+    expect(cardValue('A', base)).toBe(1);
+    expect(cardValue('7', base)).toBe(7);
+    expect(cardValue('10', base)).toBe(10);
+    expect(cardValue('J', base)).toBe(10);
+    expect(cardValue('Q', base)).toBe(10);
+    expect(cardValue('K', base)).toBe(0);
+    expect(cardValue('JK', base)).toBe(-2);
+    expect(cardValue(null, base)).toBe(0);
+    expect(cardValue('K', cfg({ kingValue: -2 }))).toBe(-2);
+  });
+
+  it('offers the joker in the picker only when the ruleset enables it', () => {
+    expect(cardCodes(cfg())).not.toContain('JK');
+    expect(cardCodes(cfg({ jokers: true }))).toContain('JK');
+  });
+
+  it('sums a grid with no column matches', () => {
+    // 3×2: cols are [0,3] [1,4] [2,5]
+    const cells: (CardCode | null)[] = ['A', '5', 'K', '3', 'Q', '2'];
+    expect(gridScore(cells, cfg())).toBe(1 + 5 + 0 + 3 + 10 + 2);
+  });
+
+  it('cancels a matched pair in one column to zero', () => {
+    const cells: (CardCode | null)[] = ['7', '5', 'K', '7', 'Q', '2'];
+    const { total, canceled } = computeGrid(cells, cfg());
+    expect(total).toBe(5 + 0 + 10 + 2);
+    expect(canceled[0]).toBe(true);
+    expect(canceled[3]).toBe(true);
+    expect(canceled[1]).toBe(false);
+  });
+
+  it('cancels matches in two columns independently', () => {
+    const cells: (CardCode | null)[] = ['7', '5', '3', '7', '5', '9'];
+    expect(gridScore(cells, cfg())).toBe(3 + 9);
+  });
+
+  it('lets negative cards drive a hole into the red', () => {
+    // Two aces cancel in a column, leaving a lone joker at −2.
+    const cells: (CardCode | null)[] = ['JK', 'A', 'A', 'K', 'A', 'A'];
+    expect(gridScore(cells, cfg({ jokers: true }))).toBe(-2);
+  });
+
+  it('cancels a full column of a kind (triple) to zero on a 3×3 grid', () => {
+    const cells: (CardCode | null)[] = ['4', 'A', null, '4', null, null, '4', null, null];
+    const { total, canceled } = computeGrid(cells, cfg({ grid: '9' }));
+    expect(total).toBe(1);
+    expect(canceled[0] && canceled[3] && canceled[6]).toBe(true);
+  });
+
+  it('scores a 2×2 grid with a cancelled column', () => {
+    // 2×2: cols are [0,2] [1,3]
+    const cells: (CardCode | null)[] = ['8', '8', '8', '5'];
+    expect(gridScore(cells, cfg({ grid: '4' }))).toBe(8 + 5);
+  });
+
+  it('treats an empty grid as zero with nothing cancelled', () => {
+    const { total, canceled } = computeGrid([null, null, null, null, null, null], cfg());
+    expect(total).toBe(0);
+    expect(canceled.some(Boolean)).toBe(false);
+  });
+});
+
+describe('golf caddie verdict', () => {
+  it('reads par, birdie and the rough on a plain ruleset', () => {
+    const base = cfg();
+    expect(holeVerdict(0, base).kind).toBe('clean');
+    expect(holeVerdict(-1, base).kind).toBe('birdie');
+    expect(holeVerdict(5, base).kind).toBe('ok');
+    expect(holeVerdict(5, base).label).toBe('');
+    expect(holeVerdict(50, base).kind).toBe('rough');
+  });
+
+  it('promotes a deep-red hole to an eagle only when negatives are in play', () => {
+    const spicy = cfg({ jokers: true }); // floor −12
+    expect(holeVerdict(-2, spicy).kind).toBe('birdie');
+    expect(holeVerdict(-8, spicy).kind).toBe('eagle');
+    // With no negative cards a hole can never dip far enough for an eagle.
+    expect(holeVerdict(-4, cfg()).kind).toBe('birdie');
   });
 });
 
@@ -233,5 +331,26 @@ describe('golf stats', () => {
     });
     expect(metric(merged.perPlayer!['A'], 'golf_best')?.value).toBe('-6');
     expect(merged.perPlayer!['A2']).toBeUndefined();
+  });
+
+  it('counts eagles for deep-red holes under a ruleset with negatives', () => {
+    const jokerGame: Game = { id: 'gj', type: 'golf', config: { jokers: true }, playerIds: [], status: 'finished', createdAt: 0, roundCount: 0 };
+    const res2 = golfStats({
+      games: [jokerGame],
+      rounds: [
+        mkRound('gj', 0, { A: -7 }), // ≤ −6 → eagle
+        mkRound('gj', 1, { A: -2 }), // under par but not deep → birdie only
+      ],
+      players: [player('A')],
+      canonical: identity,
+    });
+    const a = res2.perPlayer!['A'];
+    expect(metric(a, 'golf_birdie')?.value).toBe('2');
+    expect(metric(a, 'golf_eagle')?.value).toBe('1');
+  });
+
+  it('awards no eagles when the plain ruleset has no negative cards', () => {
+    // The base game (config {}) has a floor of 0, so an eagle is impossible.
+    expect(metric(res.perPlayer!['A'], 'golf_eagle')).toBeUndefined();
   });
 });
