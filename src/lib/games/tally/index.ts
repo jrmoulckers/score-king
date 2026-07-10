@@ -1,8 +1,14 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
-export interface TallyInput {
-  deltas: Record<ID, number>;
-}
+import {
+  createTallyInput,
+  isTallyFinished,
+  lowerIsBetter,
+  scoreTally,
+  type TallyInput,
+} from './logic';
+
+export type { TallyInput } from './logic';
 
 export const tally: GameModule = {
   id: 'tally',
@@ -23,27 +29,40 @@ export const tally: GameModule = {
         { value: 'low', label: 'Lowest score' },
       ],
     },
-    { key: 'target', label: 'Target score to win (0 = no limit)', type: 'number', default: 0, min: 0 },
+    {
+      key: 'step',
+      label: 'Point step',
+      type: 'number',
+      default: 1,
+      min: 1,
+      help: 'The natural increment for the − / + buttons and quick-add chips (1, 5, 10…).',
+    },
+    {
+      key: 'target',
+      label: 'Target score to win (0 = no limit)',
+      type: 'number',
+      default: 0,
+      min: 0,
+      help: 'When set, the game ends the moment anyone reaches it — highest wins, or lowest for a low-score game.',
+    },
   ],
-  resolveLowerIsBetter: (c) => c.direction === 'low',
+  resolveLowerIsBetter: (c) => lowerIsBetter(c),
 
-  createRoundInput: (ctx: RoundContext): TallyInput => ({
-    deltas: Object.fromEntries(ctx.players.map((p) => [p.id, 0])),
-  }),
+  createRoundInput: (ctx: RoundContext): TallyInput =>
+    createTallyInput(ctx.players.map((p) => p.id)),
 
   validateRound: () => null,
 
-  scoreRound: (input: TallyInput): Record<ID, number> => {
-    const out: Record<ID, number> = {};
-    for (const [id, v] of Object.entries(input.deltas)) out[id] = Number(v) || 0;
-    return out;
-  },
+  scoreRound: (input: TallyInput): Record<ID, number> => scoreTally(input),
 
-  isFinished: (totals, { config }) => {
-    const target = Number(config.target) || 0;
-    if (target <= 0 || config.direction === 'low') return false;
-    return Object.values(totals).some((t) => t >= target);
-  },
+  isFinished: (totals, { config }) => isTallyFinished(totals, config),
+
+  help:
+    'Tally is the all-purpose counter for any game. Pick whether the highest or lowest ' +
+    'score wins, set a point step to match how your game scores (1s, 5s, 10s…), and an ' +
+    'optional target to end the game automatically. Each round, tap the quick-add chips or ' +
+    'the − / + buttons to log every player’s points; the board shows where the round lands ' +
+    'them before you save. Points can go negative for games that subtract.',
 
   describeRound: (round: Round) => {
     const input = round.input as TallyInput;
