@@ -80,6 +80,26 @@ export function scoreRummikub(
   return out;
 }
 
+/**
+ * The round's **pot**: the sum of every non-winner's leftover hand — exactly what the
+ * player who goes out will scoop, and exactly what the rest of the table loses. Pure and
+ * winner-agnostic when no winner is marked yet (it simply totals every hand), so the editor
+ * can show the stakes building *before* anyone is tapped out. Shared by the Pot gauge and
+ * the editor so there's one tested source of truth for the zero-sum swing.
+ */
+export function potTotal(
+  input: RummikubInput,
+  playerIds: ID[],
+  jokerValue: number = DEFAULT_JOKER_VALUE,
+): number {
+  let pot = 0;
+  for (const id of playerIds) {
+    if (id === input.winner) continue;
+    pot += handPenalty(input.hands?.[id], jokerValue);
+  }
+  return pot;
+}
+
 /** Return `null` when the round is valid, otherwise a human-readable reason. */
 export function validateRummikub(input: RummikubInput, playerIds: ID[]): string | null {
   if (!input.winner) return 'Tap the player who went out (emptied their rack).';

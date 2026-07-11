@@ -2,6 +2,7 @@ import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
 import {
   DEFAULT_JOKER_VALUE,
+  potTotal,
   scoreRummikub,
   validateRummikub,
   type RummikubInput,
@@ -9,7 +10,7 @@ import {
 import { rummikubStats } from './stats';
 
 export type { RummikubHand, RummikubInput } from './logic';
-export { handPenalty } from './logic';
+export { handPenalty, potTotal } from './logic';
 
 const jokerValueOf = (config: Record<string, unknown>): number =>
   Math.max(0, Number(config.jokerValue) || DEFAULT_JOKER_VALUE);
