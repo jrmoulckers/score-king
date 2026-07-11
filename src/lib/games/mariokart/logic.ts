@@ -172,3 +172,119 @@ export function freshPositions(
     positions: Object.fromEntries(players.map((p, i) => [p.id, Math.min(i + 1, racers)])),
   };
 }
+
+// ── Grand Prix presentation helpers ─────────────────────────────────────────────
+// Pure, Svelte-free derivations that let the round editor dress up the cup — race
+// progress, the announcer's voice, the running cup standings and a "race in the
+// books" check — without duplicating any logic the tests can't reach.
+
+/** Where a cup stands right now: which race this is and how the field of pips reads. */
+export interface CupProgress {
+  /** 1-based number of the race being entered. */
+  race: number;
+  /** Total races in the cup, or 0 for an endless cup. */
+  total: number;
+  /** True when the cup has no fixed length. */
+  endless: boolean;
+  /** True when this is the last race of a fixed-length cup (the trophy is on the line). */
+  isFinal: boolean;
+  /**
+   * One pip per race in a fixed cup: 'done' (already raced), 'current' (this race),
+   * or 'todo' (still to come). Empty for an endless cup, which shows a count instead.
+   */
+  pips: ('done' | 'current' | 'todo')[];
+}
+
+/**
+ * Read the cup's shape from the 0-based round index being entered and the configured
+ * races-per-cup. Endless cups (0) carry no pips — the UI shows a plain race count.
+ */
+export function cupProgress(roundIndex: number, racesPerCup: unknown): CupProgress {
+  const total = normalizeRaces(racesPerCup);
+  const idx = Math.max(0, Math.floor(Number(roundIndex) || 0));
+  const race = idx + 1;
+  const endless = total === 0;
+  const isFinal = !endless && race >= total;
+  const pips: CupProgress['pips'] = [];
+  if (!endless) {
+    for (let i = 0; i < total; i++) {
+      pips.push(i < idx ? 'done' : i === idx ? 'current' : 'todo');
+    }
+  }
+  return { race, total, endless, isFinal, pips };
+}
+
+/**
+ * The race announcer's one-liner for the race being entered — start-line hype on race
+ * one, plain lap copy in the middle, and trophy stakes on the final race. Endless cups
+ * get their own open-road flavor. Copy only; kept here so it's snapshot-testable.
+ */
+export function announcerLine(roundIndex: number, racesPerCup: unknown): string {
+  const { race, endless, isFinal } = cupProgress(roundIndex, racesPerCup);
+  if (endless) return '♾️ Endless cup — keep the engines running!';
+  if (race === 1) return '🚦 Start your engines — the cup begins!';
+  if (isFinal) return '🏆 Final race — the cup is on the line!';
+  return '🏁 Back on the grid — every point counts.';
+}
+
+/** A racer's standing in the cup, blending the banked total with this race's preview. */
+export interface CupStanding {
+  id: ID;
+  /** Points banked in the cup BEFORE this race. */
+  total: number;
+  /** This race's points for the racer (0 until they're given a spot). */
+  delta: number;
+  /** total + delta — where they'd sit once this race is saved. */
+  projected: number;
+  /** True for the racer(s) leading on projected total (ties share the crown). */
+  isLeader: boolean;
+}
+
+/**
+ * Build the live cup standings for the editor: each racer's banked total, this race's
+ * projected points, and the resulting order. Sorted by projected total (desc), then by
+ * banked total, then name, so the board is stable as spots are assigned. The projected
+ * leader(s) are flagged for the 👑 — but only once someone is actually ahead, so a
+ * still-scoreless grid crowns no one.
+ */
+export function cupStandings(
+  players: Pick<Player, 'id' | 'name'>[],
+  totals: Record<ID, number>,
+  raceDeltas: Record<ID, number>,
+): CupStanding[] {
+  const rows = players.map((p) => {
+    const total = Math.round(Number(totals?.[p.id]) || 0);
+    const delta = Math.round(Number(raceDeltas?.[p.id]) || 0);
+    return { id: p.id, name: p.name, total, delta, projected: total + delta };
+  });
+  const best = rows.reduce((m, r) => Math.max(m, r.projected), 0);
+  rows.sort(
+    (a, b) => b.projected - a.projected || b.total - a.total || a.name.localeCompare(b.name),
+  );
+  return rows.map(({ name: _name, ...r }) => ({
+    ...r,
+    isLeader: best > 0 && r.projected === best,
+  }));
+}
+
+/**
+ * Is this race a wrap? True when every racer holds a distinct, in-field finishing spot
+ * — i.e. the entry is complete and valid, ready for the checkered flag. Mirrors
+ * {@link validateRace}'s success case as a boolean the UI can react to.
+ */
+export function raceComplete(
+  input: MarioKartInput,
+  players: Pick<Player, 'id'>[],
+  config: Partial<MarioKartConfig> | Record<string, unknown> = {},
+): boolean {
+  const racers = normalizeRacers((config as Record<string, unknown>).racers);
+  if (players.length === 0 || players.length > racers) return false;
+  const positions = input?.positions ?? {};
+  const seen = new Set<number>();
+  for (const p of players) {
+    const pos = Math.floor(Number(positions[p.id]) || 0);
+    if (pos < 1 || pos > racers || seen.has(pos)) return false;
+    seen.add(pos);
+  }
+  return true;
+}
