@@ -3,6 +3,7 @@ import type { Player, Round } from '../../types';
 import {
   DEFAULT_JOKER_VALUE,
   handPenalty,
+  potTotal,
   scoreRummikub,
   validateRummikub,
   type RummikubInput,
@@ -48,6 +49,29 @@ describe('handPenalty', () => {
   it('defaults the joker to the official 30', () => {
     expect(DEFAULT_JOKER_VALUE).toBe(30);
     expect(handPenalty(hand(0, 1))).toBe(30);
+  });
+});
+
+describe('potTotal', () => {
+  it('sums every non-winner leftover — the pot the winner scoops', () => {
+    expect(potTotal(input('a', { a: hand(0), b: hand(15), c: hand(8) }), ['a', 'b', 'c'])).toBe(23);
+  });
+
+  it('folds stranded jokers into the pot at the house joker value', () => {
+    expect(potTotal(input('b', { a: hand(12, 1), b: hand(0), c: hand(3) }), ['a', 'b', 'c'])).toBe(45);
+    expect(potTotal(input('a', { a: hand(0), b: hand(4, 1) }), ['a', 'b'], 15)).toBe(19);
+  });
+
+  it('totals every hand while no winner is marked yet (stakes building)', () => {
+    expect(potTotal(input(null, { a: hand(5), b: hand(9), c: hand(0) }), ['a', 'b', 'c'])).toBe(14);
+  });
+
+  it('equals the winner’s recorded delta for any winner', () => {
+    const hands = { a: hand(13, 2), b: hand(9), c: hand(40), d: hand(1, 1) };
+    for (const winner of P) {
+      const deltas = scoreRummikub(input(winner, hands), P, 30);
+      expect(potTotal(input(winner, hands), P, 30)).toBe(deltas[winner]);
+    }
   });
 });
 
