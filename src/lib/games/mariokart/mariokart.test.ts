@@ -5,11 +5,15 @@ import { mariokart } from './index';
 import { mariokartStats } from './stats';
 import {
   POINTS_TABLES,
+  announcerLine,
+  cupProgress,
+  cupStandings,
   freshPositions,
   normalizeRaces,
   normalizeRacers,
   normalizeTable,
   pointsForPosition,
+  raceComplete,
   scoreRace,
   validateRace,
   type MarioKartInput,
@@ -161,6 +165,93 @@ describe('freshPositions', () => {
     const input = freshPositions(P, { racers: 12 });
     expect(input.positions).toEqual({ a: 1, b: 2, c: 3, d: 4 });
     expect(validateRace(input, P, { racers: 12 })).toBeNull();
+  });
+});
+
+describe('cupProgress', () => {
+  it('reads a fixed 4-race cup with pips that walk across the grid', () => {
+    expect(cupProgress(0, 4)).toEqual({
+      race: 1,
+      total: 4,
+      endless: false,
+      isFinal: false,
+      pips: ['current', 'todo', 'todo', 'todo'],
+    });
+    expect(cupProgress(3, 4)).toEqual({
+      race: 4,
+      total: 4,
+      endless: false,
+      isFinal: true,
+      pips: ['done', 'done', 'done', 'current'],
+    });
+  });
+
+  it('marks an endless cup with no pips and a plain race count', () => {
+    const p = cupProgress(2, 0);
+    expect(p.endless).toBe(true);
+    expect(p.isFinal).toBe(false);
+    expect(p.race).toBe(3);
+    expect(p.pips).toEqual([]);
+  });
+
+  it('coerces junk round indices to the first race', () => {
+    expect(cupProgress(-5, 4).race).toBe(1);
+    expect(cupProgress(Number.NaN, 4).race).toBe(1);
+  });
+});
+
+describe('announcerLine', () => {
+  it('hypes the start, the middle, and the final race distinctly', () => {
+    expect(announcerLine(0, 4)).toMatch(/engines/i);
+    expect(announcerLine(1, 4)).toMatch(/grid|count/i);
+    expect(announcerLine(3, 4)).toMatch(/final/i);
+  });
+
+  it('gives an endless cup its own open-road voice', () => {
+    expect(announcerLine(5, 0)).toMatch(/endless/i);
+  });
+});
+
+describe('cupStandings', () => {
+  it('blends banked totals with this race projection and orders by projected', () => {
+    const totals = { a: 30, b: 30, c: 10 };
+    const deltas = { a: 10, b: 1, c: 15 };
+    const rows = cupStandings(P.slice(0, 3), totals, deltas);
+    // projected: a 40, b 31, c 25 → descending a, b, c
+    expect(rows.map((r) => r.id)).toEqual(['a', 'b', 'c']);
+    expect(rows.map((r) => r.projected)).toEqual([40, 31, 25]);
+  });
+
+  it('projects correctly and flags the leader (only once someone is ahead)', () => {
+    const rows = cupStandings(P.slice(0, 2), { a: 12, b: 0 }, { a: 0, b: 15 });
+    const a = rows.find((r) => r.id === 'a')!;
+    const b = rows.find((r) => r.id === 'b')!;
+    expect(a.projected).toBe(12);
+    expect(b.projected).toBe(15);
+    expect(b.isLeader).toBe(true);
+    expect(a.isLeader).toBe(false);
+  });
+
+  it('crowns no one on a still-scoreless grid', () => {
+    const rows = cupStandings(P.slice(0, 2), { a: 0, b: 0 }, { a: 0, b: 0 });
+    expect(rows.every((r) => !r.isLeader)).toBe(true);
+  });
+
+  it('shares the crown on a projected tie', () => {
+    const rows = cupStandings(P.slice(0, 2), { a: 10, b: 5 }, { a: 0, b: 5 });
+    expect(rows.every((r) => r.isLeader)).toBe(true);
+  });
+});
+
+describe('raceComplete', () => {
+  const cfg = { racers: 12 };
+  it('is true only when every racer holds a distinct in-field spot', () => {
+    expect(raceComplete({ positions: { a: 1, b: 2, c: 3, d: 4 } }, P, cfg)).toBe(true);
+  });
+  it('is false when a spot is missing, clashing, or out of the field', () => {
+    expect(raceComplete({ positions: { a: 1, b: 0, c: 3, d: 4 } }, P, cfg)).toBe(false);
+    expect(raceComplete({ positions: { a: 1, b: 1, c: 3, d: 4 } }, P, cfg)).toBe(false);
+    expect(raceComplete({ positions: { a: 1, b: 2, c: 3, d: 4 } }, P, { racers: 3 })).toBe(false);
   });
 });
 
