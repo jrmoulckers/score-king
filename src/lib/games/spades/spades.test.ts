@@ -3,11 +3,15 @@ import type { Player, Round, RoundContext } from '../../types';
 import { spades } from './index';
 import {
   bagCountsAfter,
+  bagDanger,
+  bagsToPenalty,
+  contractView,
   readConfig,
   resolveMode,
   scoreGame,
   scoreLatest,
   scoreUnitHand,
+  targetView,
   tricksAvailable,
   unitsFor,
   validateHand,
@@ -247,6 +251,66 @@ describe('validateHand', () => {
   it('blocks blind nil when blind is disabled', () => {
     const h = hand({ a: row(0, 0, 'blind'), b: row(3, 3), c: row(2, 2), d: row(5, 5) });
     expect(validateHand(h, P4, { blindNil: false })).toMatch(/Blind nil is turned off/);
+  });
+});
+
+// ── UI view helpers ─────────────────────────────────────────────────────────
+describe('bagsToPenalty', () => {
+  it('counts pips left to the next −100 hit', () => {
+    expect(bagsToPenalty(0, 10)).toBe(10);
+    expect(bagsToPenalty(7, 10)).toBe(3);
+    expect(bagsToPenalty(9, 10)).toBe(1);
+  });
+  it('is Infinity with no threshold', () => {
+    expect(bagsToPenalty(3, 0)).toBe(Infinity);
+  });
+});
+
+describe('bagDanger', () => {
+  it('is calm well below the threshold', () => {
+    expect(bagDanger(0, 10)).toBe('calm');
+    expect(bagDanger(6, 10)).toBe('calm');
+  });
+  it('turns heavy from ~70% of the way', () => {
+    expect(bagDanger(7, 10)).toBe('heavy');
+    expect(bagDanger(8, 10)).toBe('heavy');
+  });
+  it('is critical on the last pip or when a penalty just fired', () => {
+    expect(bagDanger(9, 10)).toBe('critical');
+    expect(bagDanger(2, 10, 1)).toBe('critical');
+  });
+});
+
+describe('contractView', () => {
+  it('reports made with overtricks', () => {
+    expect(contractView(7, 9)).toEqual({ status: 'made', short: 0, over: 2 });
+  });
+  it('reports set with the shortfall', () => {
+    expect(contractView(7, 5)).toEqual({ status: 'set', short: 2, over: 0 });
+  });
+  it('treats an exact make as made with no overtricks', () => {
+    expect(contractView(4, 4)).toEqual({ status: 'made', short: 0, over: 0 });
+  });
+  it('treats a zero contract as always made', () => {
+    expect(contractView(0, 0)).toEqual({ status: 'made', short: 0, over: 0 });
+  });
+});
+
+describe('targetView', () => {
+  it('projects the total and flags crossing the target', () => {
+    expect(targetView(430, 71, 500)).toEqual({
+      before: 430,
+      projected: 501,
+      target: 500,
+      reaches: true,
+      remaining: 0,
+    });
+  });
+  it('reports how far short a projected total falls', () => {
+    expect(targetView(300, 50, 500)).toMatchObject({ projected: 350, reaches: false, remaining: 150 });
+  });
+  it('never reaches a non-positive target', () => {
+    expect(targetView(999, 10, 0)).toMatchObject({ reaches: false, remaining: 0 });
   });
 });
 
