@@ -35,6 +35,8 @@ export interface Settings {
   keepAwake: boolean;
   /** Tasteful vibration feedback on save/undo/win where the device supports it. */
   haptics: boolean;
+  /** Badge the installed app icon with the number of games still in progress. */
+  appBadge: boolean;
   /** Blur scores with a tap-to-reveal veil after the phone is set down. */
   privacyGuard: boolean;
   /** Let the Daily Crown & Court surface playful roasts/rivalries, not just flexes. */
@@ -114,6 +116,7 @@ export const PORTABLE_SETTING_KEYS = [
   'privacyGuard',
   'roastMode',
   'haptics',
+  'appBadge',
   'catalogFavorites',
   'catalogHidden',
   'gamePresets',
@@ -171,6 +174,7 @@ const defaults: Settings = {
   privacyGuard: false,
   roastMode: true,
   haptics: true,
+  appBadge: true,
   catalogFavorites: [],
   catalogHidden: [],
   gamePresets: [],
@@ -330,6 +334,7 @@ export const GAMEPLAY_SETTING_KEYS = [
   'privacyGuard',
   'roastMode',
   'haptics',
+  'appBadge',
 ] as const satisfies readonly PortableSettingKey[];
 
 /** True when any key in `keys` currently differs from its factory default. */
