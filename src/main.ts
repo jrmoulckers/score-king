@@ -6,7 +6,6 @@ import { initIdentity } from './lib/stores/identity'
 import { startAutoSync } from './lib/storage/autosync'
 import { initInstallPrompt } from './lib/stores/install'
 import { initPWA } from './lib/stores/pwa'
-import { initBadge } from './lib/badge'
 
 // A Microsoft sign-in uses a full-page redirect. When the browser returns from Microsoft the
 // URL carries the auth response (in the hash or query). Detect that, let MSAL consume it, then
@@ -30,8 +29,6 @@ async function boot() {
   applySettings()
   initInstallPrompt()
   initPWA()
-  // Reflect in-progress games on the installed app icon (Badging API; no-op where unsupported).
-  initBadge()
   mount(App, { target: document.getElementById('app')! })
   // Apply the lead member's saved look to this device, then keep them in sync.
   await initIdentity()
