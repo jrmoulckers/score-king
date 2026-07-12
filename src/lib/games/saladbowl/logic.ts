@@ -93,6 +93,22 @@ export function turnSeconds(config: Record<string, unknown>): number {
   return clampInt(config?.turnSeconds, 5, 3600, 60);
 }
 
+/** Whether the playful buzzer sound fires when the turn timer ends (default on). */
+export function soundOn(config: Record<string, unknown>): boolean {
+  return config?.sound !== false;
+}
+
+/**
+ * Format a whole-second count as "M:SS" for the turn clock (e.g. 65 → "1:05").
+ * Negative values clamp to "0:00" so the buzzer state never shows a minus sign.
+ */
+export function formatClock(seconds: number): string {
+  const s = Math.max(0, Math.floor(Number(seconds) || 0));
+  const m = Math.floor(s / 60);
+  const rest = s % 60;
+  return `${m}:${String(rest).padStart(2, '0')}`;
+}
+
 /** The escalating constraint for a given 0-based round index. */
 export function themeFor(roundIndex: number): RoundTheme {
   const i = Math.min(Math.max(0, Math.floor(roundIndex) || 0), ROUND_THEMES.length - 1);

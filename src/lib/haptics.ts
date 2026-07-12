@@ -14,13 +14,14 @@ import { prefersReducedMotion } from './motion';
  *
  * Patterns are short and distinct so a saved round and a win don't feel the same.
  */
-export type HapticPattern = 'tick' | 'save' | 'win' | 'undo';
+export type HapticPattern = 'tick' | 'save' | 'win' | 'undo' | 'buzz';
 
 const PATTERNS: Record<HapticPattern, number | number[]> = {
   tick: 8, // a single light nudge for a stepper ±
   save: 18, // a firm "it landed" for a saved round
   win: [22, 40, 22, 40, 60], // a celebratory triple-tap for a win
   undo: [10, 30, 10], // a gentle double for a reversal
+  buzz: [90, 50, 90], // an insistent "time's up!" for the turn timer
 };
 
 function canVibrate(): boolean {
