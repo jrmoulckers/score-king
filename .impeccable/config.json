@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-radius",
+        "value": "58px",
+        "reason": "Intentional salad-bowl silhouette shape (elliptical bowl motif), not a UI container radius",
+        "createdAt": "2026-07-12T17:51:51.610Z"
+      }
+    ]
+  }
+}

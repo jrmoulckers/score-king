@@ -6,10 +6,12 @@ import {
   bowlTotal,
   createInput,
   describe as describeRound,
+  formatClock,
   makeTeams,
   pointsPerWord,
   roundCount,
   score,
+  soundOn,
   teamCount,
   themeFor,
   turnSeconds,
@@ -105,6 +107,30 @@ describe('config accessors', () => {
     expect(turnSeconds({})).toBe(60);
     expect(turnSeconds({ turnSeconds: 90 })).toBe(90);
     expect(turnSeconds({ turnSeconds: 'x' })).toBe(60);
+  });
+
+  it('soundOn defaults to true and only false turns it off', () => {
+    expect(soundOn({})).toBe(true);
+    expect(soundOn({ sound: true })).toBe(true);
+    expect(soundOn({ sound: false })).toBe(false);
+    // A boolean config stores real booleans; anything not === false stays on.
+    expect(soundOn({ sound: undefined })).toBe(true);
+  });
+});
+
+describe('formatClock', () => {
+  it('formats whole seconds as M:SS', () => {
+    expect(formatClock(0)).toBe('0:00');
+    expect(formatClock(5)).toBe('0:05');
+    expect(formatClock(60)).toBe('1:00');
+    expect(formatClock(65)).toBe('1:05');
+    expect(formatClock(125)).toBe('2:05');
+  });
+
+  it('clamps negatives and floors fractions', () => {
+    expect(formatClock(-4)).toBe('0:00');
+    expect(formatClock(59.9)).toBe('0:59');
+    expect(formatClock(Number.NaN)).toBe('0:00');
   });
 });
 

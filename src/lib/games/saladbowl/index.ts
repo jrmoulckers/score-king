@@ -82,6 +82,13 @@ export const saladbowl: GameModule = {
       max: 300,
       step: 15,
     },
+    {
+      key: 'sound',
+      label: 'Buzzer sound when the turn timer ends',
+      type: 'boolean',
+      default: true,
+      help: 'A short buzz when time’s up. Always paired with a haptic + visual cue.',
+    },
   ],
   // Highest total wins (shell default). Teammates share a total, so the whole team wins.
 
