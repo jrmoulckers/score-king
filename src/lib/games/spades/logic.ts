@@ -269,3 +269,81 @@ export function validateHand(
   }
   return null;
 }
+
+// ── UI-facing view helpers ───────────────────────────────────────────────────
+// Small, pure derivations the Spades editor renders from. They add no scoring
+// behaviour — they only shape numbers the components already have into the cues
+// (danger levels, made/set status, target proximity) the costume needs, so those
+// decisions stay unit-testable and out of the Svelte layer.
+
+/** How hot a unit's bag pile is running toward the next −100 sandbag hit. */
+export type BagDanger = 'calm' | 'heavy' | 'critical';
+
+/**
+ * Bags a unit must still collect before the next flat −100 penalty. `bagsAfter`
+ * is the post-hand remainder (always 0..threshold-1 while sandbagging is on), so
+ * this is simply the pips left in the current row. Returns Infinity when there is
+ * no threshold to cross.
+ */
+export function bagsToPenalty(bagsAfter: number, threshold: number): number {
+  if (threshold <= 0) return Infinity;
+  const filled = ((bagsAfter % threshold) + threshold) % threshold;
+  return threshold - filled;
+}
+
+/**
+ * A three-step danger cue for the bag meter, co-signalled in the UI by words and
+ * colour (never colour alone). `critical` the moment a penalty just fired or the
+ * pile sits one bag from the hit; `heavy` from ~70% of the way there; else `calm`.
+ */
+export function bagDanger(bagsAfter: number, threshold: number, penaltiesThisHand = 0): BagDanger {
+  if (penaltiesThisHand > 0) return 'critical';
+  if (threshold <= 0) return 'calm';
+  const filled = ((bagsAfter % threshold) + threshold) % threshold;
+  if (threshold - filled <= 1) return 'critical';
+  if (filled / threshold >= 0.7) return 'heavy';
+  return 'calm';
+}
+
+/** Whether a unit made its contract this hand, and by how much. */
+export interface ContractView {
+  status: 'made' | 'set';
+  /** Tricks still needed to make the contract (0 once made). */
+  short: number;
+  /** Overtricks beyond the contract this hand (0 when set). */
+  over: number;
+}
+
+/** Live made/set view for a unit from its combined contract and tricks taken. */
+export function contractView(contract: number, tricks: number): ContractView {
+  const made = tricks >= contract;
+  return {
+    status: made ? 'made' : 'set',
+    short: made ? 0 : contract - tricks,
+    over: made ? tricks - contract : 0,
+  };
+}
+
+/** A unit's standing relative to the winning target after this hand's projected delta. */
+export interface TargetView {
+  before: number;
+  projected: number;
+  target: number;
+  /** True when the projected total reaches a positive target (this hand could win). */
+  reaches: boolean;
+  /** Points still needed after this hand to reach the target (0 once reached). */
+  remaining: number;
+}
+
+/** Project a unit's total by `delta` and measure it against the winning `target`. */
+export function targetView(before: number, delta: number, target: number): TargetView {
+  const projected = before + delta;
+  const reaches = target > 0 && projected >= target;
+  return {
+    before,
+    projected,
+    target,
+    reaches,
+    remaining: target > 0 ? Math.max(0, target - projected) : 0,
+  };
+}
