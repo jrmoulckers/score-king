@@ -94,6 +94,37 @@ export function scoreHole(
   return out;
 }
 
+/**
+ * "Closest to the pin": among the players who did NOT sink the hole, the one who
+ * carried the fewest leftover strokes — a fun, golf-flavoured relative nod. Returns
+ * that player's id, or `null` when there's no clear winner: nobody is out yet, fewer
+ * than two players are counting strokes, or the lowest count is tied. Pure so the
+ * editor and tests share one definition of who parked it closest.
+ */
+export function closestToPin(
+  input: UnoGolfInput,
+  playerIds: ID[],
+  cfg: CardValues,
+): ID | null {
+  if (!input.out) return null;
+  const counters = playerIds.filter((id) => id !== input.out);
+  if (counters.length < 2) return null;
+  let bestId: ID | null = null;
+  let best = Infinity;
+  let tied = false;
+  for (const id of counters) {
+    const s = handStrokes(input.hands?.[id], cfg);
+    if (s < best) {
+      best = s;
+      bestId = id;
+      tied = false;
+    } else if (s === best) {
+      tied = true;
+    }
+  }
+  return tied ? null : bestId;
+}
+
 /** Validate a hole entry. Returns null when valid, else a friendly message. */
 export function validateHole(
   input: UnoGolfInput,

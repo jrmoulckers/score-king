@@ -3,6 +3,7 @@ import type { Game, Player, Round, RoundContext } from '../../types';
 import { defaultWinners } from '../../types';
 import {
   DEFAULTS,
+  closestToPin,
   emptyHand,
   handStrokes,
   resolveConfig,
@@ -128,6 +129,50 @@ describe('scoreHole', () => {
   it('emits a zero for a player with no recorded hand', () => {
     const out = scoreHole({ hands: {}, out: null }, ['a', 'b'], DEFAULTS);
     expect(out).toEqual({ a: 0, b: 0 });
+  });
+});
+
+describe('closestToPin', () => {
+  const vals = { actionValue: 20, wildValue: 50 };
+
+  it('picks the non-sinker holding the fewest strokes', () => {
+    const input: UnoGolfInput = {
+      hands: {
+        a: { numbers: 3, actions: 0, wilds: 0 },
+        b: emptyHand(),
+        c: { numbers: 9, actions: 0, wilds: 0 },
+      },
+      out: 'b',
+    };
+    expect(closestToPin(input, ['a', 'b', 'c'], vals)).toBe('a');
+  });
+
+  it('returns null when nobody has sunk the hole yet', () => {
+    const input: UnoGolfInput = {
+      hands: { a: { numbers: 3, actions: 0, wilds: 0 }, b: emptyHand(), c: emptyHand() },
+      out: null,
+    };
+    expect(closestToPin(input, ['a', 'b', 'c'], vals)).toBeNull();
+  });
+
+  it('returns null on a tie for the fewest strokes', () => {
+    const input: UnoGolfInput = {
+      hands: {
+        a: { numbers: 5, actions: 0, wilds: 0 },
+        b: emptyHand(),
+        c: { numbers: 5, actions: 0, wilds: 0 },
+      },
+      out: 'b',
+    };
+    expect(closestToPin(input, ['a', 'b', 'c'], vals)).toBeNull();
+  });
+
+  it('returns null when only one player is left counting', () => {
+    const input: UnoGolfInput = {
+      hands: { a: { numbers: 3, actions: 0, wilds: 0 }, b: emptyHand() },
+      out: 'b',
+    };
+    expect(closestToPin(input, ['a', 'b'], vals)).toBeNull();
   });
 });
 
@@ -279,7 +324,15 @@ describe('unogolfStats', () => {
     expect(perPlayer['c']?.find((m) => m.key === 'ug_wilds')?.value).toBe('2');
   });
 
-  it('aggregates total holes sunk globally', () => {
+  it('reports each player’s best (fewest-stroke) hole', () => {
+    // A: holes of 25 then 0 → best 0. B: 0 then 3 → best 0. C: 50 then 50 → best 50.
+    expect(perPlayer['a']?.find((m) => m.key === 'ug_best')?.value).toBe('0');
+    expect(perPlayer['b']?.find((m) => m.key === 'ug_best')?.value).toBe('0');
+    expect(perPlayer['c']?.find((m) => m.key === 'ug_best')?.value).toBe('50');
+  });
+
+  it('aggregates total holes sunk and the course record globally', () => {
     expect(global.find((m) => m.key === 'ug_sunk_all')?.value).toBe('2');
+    expect(global.find((m) => m.key === 'ug_record')?.value).toBe('0');
   });
 });
