@@ -12,9 +12,23 @@
   let { token = 0 }: { token?: number } = $props();
 
   const reduced = prefersReducedMotion();
+  // Every glyph animates for 1.1s; unmount just after so no `will-change`
+  // compositor layer lingers to pin the GPU.
+  const LIFE_MS = 1300;
+
+  let playing = $state(false);
+  let seen = 0;
+  $effect(() => {
+    const t = token;
+    if (reduced || t <= 0 || t === seen) return;
+    seen = t;
+    playing = true;
+    const id = setTimeout(() => (playing = false), LIFE_MS);
+    return () => clearTimeout(id);
+  });
 </script>
 
-{#if !reduced && token > 0}
+{#if playing}
   {#key token}
     <div class="toll" aria-hidden="true">
       <div class="wash"></div>
