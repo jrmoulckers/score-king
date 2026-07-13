@@ -57,6 +57,13 @@ export const tworooms: GameModule = {
       default: false,
       help: 'Adds colored roles beyond the President & Bomber. Deal those by hand — the tracker still records leaders, hostages, and the winning team.',
     },
+    {
+      key: 'sound',
+      label: 'Time’s-up buzzer',
+      type: 'boolean',
+      default: true,
+      help: 'Sound the alarm when the round Fuse burns out. The on-screen 💥 and a haptic buzz still fire either way.',
+    },
   ],
 
   maxRounds: (config) => roundCount(config),
