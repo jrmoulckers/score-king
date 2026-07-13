@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { mount, unmount, flushSync } from 'svelte';
 import type { Game, ID, Player, Round, RoundContext } from '../../types';
 import {
   aliveCount,
@@ -30,6 +31,7 @@ import {
   type PlayerState,
 } from './logic';
 import { botc } from './index';
+import BotcEditor from './BotcEditor.svelte';
 import { botcStats } from './stats';
 
 const player = (id: string, name = id): Player => ({ id, name, color: '#7c5cff', createdAt: 0 });
@@ -471,3 +473,35 @@ describe('botcStats', () => {
     expect(merged.perPlayer?.['B']?.find((m) => m.key === 'botc_exec')?.value).toBe('1');
   });
 });
+
+// ── Editor render — a live Grimoire must never spin ──────────────────────────
+
+describe('BotcEditor render smoke test', () => {
+  // Regression guard for the freeze from PR #83: the phase-sky `$effect` bumped
+  // its animation token unconditionally on every run, reading and writing the
+  // same reactive state and spinning into `effect_update_depth_exceeded`.
+  // Mounting the real editor and flushing effects would hang (throw) if it
+  // returned. It must settle for both a night and a day phase.
+  function mountPhase(roundIndex: number) {
+    const ids = ['a', 'b', 'c', 'd', 'e'];
+    const inp = input({ states: initialRoster(ids) });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    const comp = mount(BotcEditor, {
+      target,
+      props: { input: inp, ctx: ctxFor(ids, { roundIndex }) },
+    });
+    flushSync();
+    unmount(comp);
+    target.remove();
+  }
+
+  it('mounts a night phase without an infinite reactive loop', () => {
+    expect(() => mountPhase(0)).not.toThrow();
+  });
+
+  it('mounts a day phase without an infinite reactive loop', () => {
+    expect(() => mountPhase(1)).not.toThrow();
+  });
+});
+

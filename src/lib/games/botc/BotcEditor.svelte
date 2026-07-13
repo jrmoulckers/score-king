@@ -55,8 +55,14 @@
   let verdictTeam = $state<Team>('good');
 
   // Open each phase with its dusk↔dawn sky (once per editor mount / phase).
+  // Guard on the previous phase so the bump fires only when the phase actually
+  // changes — an unconditional `skyToken += 1` would read-and-write the same
+  // state every run and spin into an infinite effect loop (mirrors Hearts).
+  let prevPhase = -1;
   $effect(() => {
-    ctx.roundIndex;
+    const idx = ctx.roundIndex;
+    if (idx === prevPhase) return;
+    prevPhase = idx;
     skyToken += 1;
   });
 
