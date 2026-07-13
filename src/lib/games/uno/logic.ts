@@ -30,11 +30,33 @@ export interface UnoConfig {
   wildValue: number;
 }
 
+/**
+ * A leftover hand tallied by card kind, so the editor can add cards by *type* (the way
+ * you actually read a fanned-out hand) instead of pre-summing points in your head:
+ *  - `numbers`: the summed face value of the number cards (0–9) left in hand
+ *  - `actions`: how many Skip / Reverse / Draw Two cards are left
+ *  - `wilds`:   how many Wild / Wild Draw Four cards are left
+ * Purely an entry convenience — the authoritative points value is always {@link UnoInput.left},
+ * which the editor keeps in sync via {@link handValue}. Absent on rounds saved before the
+ * per-kind tally existed, which still score fine from `left` alone.
+ */
+export interface UnoHand {
+  numbers: number;
+  actions: number;
+  wilds: number;
+}
+
 export interface UnoInput {
   /** The player who emptied their hand to end the round. */
   out: ID | null;
   /** Each player's leftover card points at round end. The player who went out holds 0. */
   left: Record<ID, number>;
+  /**
+   * Optional per-kind breakdown behind each player's {@link left} total, so re-opening a
+   * round restores the exact card counts. `left` stays authoritative for scoring; this is
+   * a display/editing aid only and may be absent (older rounds, or a hand typed as a lump).
+   */
+  hands?: Record<ID, UnoHand>;
 }
 
 export const UNO_DEFAULTS: UnoConfig = {
@@ -65,7 +87,25 @@ export function createUnoInput(playerIds: ID[]): UnoInput {
   return {
     out: null,
     left: Object.fromEntries(playerIds.map((id) => [id, 0])),
+    hands: Object.fromEntries(playerIds.map((id) => [id, emptyHand()])),
   };
+}
+
+/** A fresh, empty per-kind hand (no cards counted yet). */
+export function emptyHand(): UnoHand {
+  return { numbers: 0, actions: 0, wilds: 0 };
+}
+
+/** Points a per-kind hand is worth given the card values in play. Clamps to ≥ 0. */
+export function handValue(
+  hand: UnoHand | undefined,
+  cfg: Pick<UnoConfig, 'actionValue' | 'wildValue'>,
+): number {
+  if (!hand) return 0;
+  const n = Math.max(0, Number(hand.numbers) || 0);
+  const a = Math.max(0, Number(hand.actions) || 0);
+  const w = Math.max(0, Number(hand.wilds) || 0);
+  return n + a * cfg.actionValue + w * cfg.wildValue;
 }
 
 /** A player's leftover points, clamped to a non-negative number. */
