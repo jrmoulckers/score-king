@@ -13,7 +13,10 @@ import {
 export type { WyrmspanConfig, WyrmspanInput, WyrmspanRow } from './logic';
 
 function cfg(config: Record<string, unknown>): Partial<WyrmspanConfig> {
-  return { scoreLeftover: config.scoreLeftover !== false };
+  return {
+    scoreLeftover: config.scoreLeftover !== false,
+    trackDragons: config.trackDragons !== false,
+  };
 }
 
 export const wyrmspan: GameModule = {
@@ -35,6 +38,13 @@ export const wyrmspan: GameModule = {
       type: 'boolean',
       default: true,
       help: 'The final "excess items" step. Coins always score 1 VP each; turn this off to skip counting the odds and ends.',
+    },
+    {
+      key: 'trackDragons',
+      label: 'Track visible dragons (tiebreaker)',
+      type: 'boolean',
+      default: true,
+      help: 'Wyrmspan breaks ties by the most visible dragons on your mat. Capture each player’s dragon count — it settles ties but never adds to the score.',
     },
   ],
 
@@ -68,12 +78,13 @@ export const wyrmspan: GameModule = {
 
   help: [
     'Wyrmspan — the dragon-hoard cousin of Wingspan. One final scoresheet: add up every',
-    'category, and the highest total reigns. 🐉',
+    'category, and the biggest hoard reigns. 🐉',
     '',
-    'Enter each player’s end-game totals:',
+    'Tally each player’s end-game hoard:',
     ...activeCategories({ scoreLeftover: true }).map((c) => `${c.emoji} ${c.label} — ${c.help}`),
     '',
-    'Tiebreaker: most visible dragons on your mat (not tucked). Still tied? Share the crown.',
+    'Tiebreaker: most visible dragons on your mat (not tucked). Tied totals show as co-leaders,',
+    'so settle a dead heat at the table with the dragon count. Still tied? Share the crown. 👑',
   ].join('\n'),
 
   stats: wyrmspanStats,

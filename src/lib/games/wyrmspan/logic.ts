@@ -14,6 +14,8 @@ import type { ID } from '../../types';
 export interface WyrmspanConfig {
   /** Include the "leftover items" category (1 VP per 4 spare resources/cards). */
   scoreLeftover: boolean;
+  /** Capture each player's visible dragons to settle ties (default on). Never scores VP. */
+  trackDragons: boolean;
 }
 
 /** One player's final tally — a raw entry per scoring category (never negative). */
@@ -36,6 +38,8 @@ export interface WyrmspanRow {
   coins: number;
   /** Other leftover items (resources + dragon/cave cards) — 1 VP per 4, rounded down. */
   leftover: number;
+  /** Visible dragons on your mat — the tiebreaker only, never added to the score. */
+  dragonCount: number;
 }
 
 export interface WyrmspanInput {
@@ -157,6 +161,27 @@ const BY_KEY: Record<WyrmspanField, WyrmspanCategory> = Object.fromEntries(
   WYRMSPAN_CATEGORIES.map((c) => [c.key, c]),
 ) as Record<WyrmspanField, WyrmspanCategory>;
 
+/**
+ * The visible-dragons tiebreaker — captured on the sheet, shown apart, and never scored.
+ * Wyrmspan breaks a tied total by who has the most *visible* dragons on their mat (tucked
+ * dragons don't count). Mirrors Wingspan's leftover-food tiebreaker so the two siblings share
+ * one interaction model.
+ */
+export const DRAGON_TIEBREAK: WyrmspanCategory = {
+  key: 'dragonCount',
+  label: 'Visible dragons',
+  short: 'Dragons on mat',
+  emoji: '🐉',
+  kind: 'count',
+  per: 1,
+  help: 'Visible dragons on your mat (not tucked) settle ties — the most dragons wins. Never added to the score.',
+};
+
+/** Tiebreaker tracking defaults ON — only an explicit `false` turns the visible-dragons column off. */
+export function tracksDragons(config?: Partial<WyrmspanConfig>): boolean {
+  return config?.trackDragons !== false;
+}
+
 /** A fresh, all-zero tally. */
 export function emptyRow(): WyrmspanRow {
   return {
@@ -169,6 +194,7 @@ export function emptyRow(): WyrmspanRow {
     tucked: 0,
     coins: 0,
     leftover: 0,
+    dragonCount: 0,
   };
 }
 
@@ -221,10 +247,55 @@ export function validateRow(row: WyrmspanRow | undefined, name = 'A player'): st
     const raw = Number(row[cat.key]);
     if (Number.isFinite(raw) && raw < 0) return `${name}: ${cat.label} can't be negative.`;
   }
+  const dragons = Number(row.dragonCount);
+  if (Number.isFinite(dragons) && dragons < 0) return `${name}: ${DRAGON_TIEBREAK.label} can't be negative.`;
   return null;
 }
 
 /** Look a category up by key (handy for the editor + stats). */
 export function category(key: WyrmspanField): WyrmspanCategory {
   return BY_KEY[key];
+}
+
+/**
+ * The dragon's lair, shallow → deep. A running hoard total climbs through these caves as it
+ * grows, giving the tally a sense of place ("you've reached the Treasure Vault") without ever
+ * relying on colour alone — every tier carries an emoji and a label. Wyrmspan's costume
+ * equivalent of Wingspan's habitats and Finspan's depth zones. `min` is the inclusive floor;
+ * tiers are listed richest-last so {@link hoardTier} can scan from the bottom up.
+ */
+export interface HoardTier {
+  key: 'nest' | 'cavern' | 'vault' | 'hoard';
+  label: string;
+  emoji: string;
+  /** Inclusive lower bound, in VP. */
+  min: number;
+}
+
+export const HOARD_TIERS: readonly HoardTier[] = [
+  { key: 'nest', label: 'Nest', emoji: '🥚', min: 0 },
+  { key: 'cavern', label: 'Cavern', emoji: '🪨', min: 40 },
+  { key: 'vault', label: 'Treasure Vault', emoji: '💎', min: 70 },
+  { key: 'hoard', label: "Dragon's Hoard", emoji: '🐲', min: 100 },
+] as const;
+
+/** A legendary hoard — the VP total at which the gauge reads brim-full. */
+export const FULL_HOARD = 130;
+
+/** Which lair tier a running hoard total currently sits in (negatives/NaN clamp to Nest). */
+export function hoardTier(total: number): HoardTier {
+  const n = Number(total);
+  let tier = HOARD_TIERS[0];
+  if (!Number.isFinite(n)) return tier;
+  for (const t of HOARD_TIERS) {
+    if (n >= t.min) tier = t;
+  }
+  return tier;
+}
+
+/** How full the hoard gauge reads, 0–1, for a running total (clamped to {@link FULL_HOARD}). */
+export function hoardFill(total: number): number {
+  const n = Number(total);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(1, n / FULL_HOARD);
 }
