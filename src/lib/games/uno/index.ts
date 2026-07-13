@@ -10,7 +10,7 @@ import {
   type UnoInput,
 } from './logic';
 
-export type { UnoInput, UnoConfig, UnoMode } from './logic';
+export type { UnoInput, UnoConfig, UnoMode, UnoHand } from './logic';
 
 export const uno: GameModule = {
   id: 'uno',
@@ -68,8 +68,11 @@ export const uno: GameModule = {
     const input = round.input as UnoInput;
     if (!input?.out) return 'no result';
     const winner = players.find((p) => p.id === input.out)?.name ?? '?';
-    const pot = opponentsTotal(input, players.map((p) => p.id));
-    return `🎉 ${winner} out · +${pot}`;
+    // Mode isn't available here, so stay mode-neutral: the count of leftover points on the
+    // table reads right whether the winner scooped it (standard) or each player banked their
+    // own (golf) — never the misleading "+pot" that only makes sense in standard.
+    const onTable = opponentsTotal(input, players.map((p) => p.id));
+    return onTable > 0 ? `🎉 ${winner} out · ${onTable} left in hands` : `🎉 ${winner} out · clean sweep`;
   },
 
   help: [

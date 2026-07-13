@@ -5,6 +5,8 @@ import { uno } from './index';
 import { unoStats } from './stats';
 import {
   createUnoInput,
+  emptyHand,
+  handValue,
   isUnoFinished,
   opponentsTotal,
   readConfig,
@@ -61,8 +63,44 @@ describe('readConfig', () => {
 // ---- round input -----------------------------------------------------------
 
 describe('createUnoInput', () => {
-  it('starts with nobody out and everyone on zero', () => {
-    expect(createUnoInput(ids)).toEqual({ out: null, left: { A: 0, B: 0, C: 0 } });
+  it('starts with nobody out, everyone on zero, and a fresh per-kind hand each', () => {
+    expect(createUnoInput(ids)).toEqual({
+      out: null,
+      left: { A: 0, B: 0, C: 0 },
+      hands: {
+        A: { numbers: 0, actions: 0, wilds: 0 },
+        B: { numbers: 0, actions: 0, wilds: 0 },
+        C: { numbers: 0, actions: 0, wilds: 0 },
+      },
+    });
+  });
+});
+
+// ---- per-kind hand tally ---------------------------------------------------
+
+describe('emptyHand', () => {
+  it('is a zeroed per-kind hand', () => {
+    expect(emptyHand()).toEqual({ numbers: 0, actions: 0, wilds: 0 });
+  });
+});
+
+describe('handValue', () => {
+  const cfg = { actionValue: 20, wildValue: 50 };
+
+  it('sums number face value plus action and wild counts × their values', () => {
+    expect(handValue({ numbers: 12, actions: 2, wilds: 1 }, cfg)).toBe(12 + 40 + 50);
+  });
+
+  it('treats a missing hand as zero', () => {
+    expect(handValue(undefined, cfg)).toBe(0);
+  });
+
+  it('clamps negative counts to zero', () => {
+    expect(handValue({ numbers: -5, actions: -1, wilds: 3 }, cfg)).toBe(150);
+  });
+
+  it('honours custom card values', () => {
+    expect(handValue({ numbers: 0, actions: 1, wilds: 1 }, { actionValue: 15, wildValue: 40 })).toBe(55);
   });
 });
 
@@ -170,12 +208,35 @@ describe('uno module', () => {
 
   it('builds a fresh input and validates/scores through the context', () => {
     const fresh = uno.createRoundInput(ctx({})) as UnoInput;
-    expect(fresh).toEqual({ out: null, left: { A: 0, B: 0, C: 0 } });
+    expect(fresh).toEqual({
+      out: null,
+      left: { A: 0, B: 0, C: 0 },
+      hands: {
+        A: { numbers: 0, actions: 0, wilds: 0 },
+        B: { numbers: 0, actions: 0, wilds: 0 },
+        C: { numbers: 0, actions: 0, wilds: 0 },
+      },
+    });
 
     const hand = input('A', { A: 0, B: 25, C: 40 });
     expect(uno.validateRound(hand, ctx({ mode: 'winner' }))).toBeNull();
     expect(uno.scoreRound(hand, ctx({ mode: 'winner' }))).toEqual({ A: 65, B: 0, C: 0 });
     expect(uno.scoreRound(hand, ctx({ mode: 'golf' }))).toEqual({ A: 0, B: 25, C: 40 });
+  });
+
+  it('scores from the authoritative left total even when a hands breakdown is present', () => {
+    // The editor keeps `left` in sync with `hands`; scoring only ever reads `left`, so a
+    // stale/absent breakdown can never change the points.
+    const hand: UnoInput = {
+      out: 'A',
+      left: { A: 0, B: 25, C: 40 },
+      hands: {
+        A: { numbers: 0, actions: 0, wilds: 0 },
+        B: { numbers: 5, actions: 1, wilds: 0 },
+        C: { numbers: 0, actions: 2, wilds: 0 },
+      },
+    };
+    expect(uno.scoreRound(hand, ctx({ mode: 'winner' }))).toEqual({ A: 65, B: 0, C: 0 });
   });
 
   it('ends the game via isFinished at the target', () => {
@@ -190,9 +251,14 @@ describe('uno module', () => {
     expect(defaultWinners(uno, totals, { mode: 'golf' })).toEqual(['C']);
   });
 
-  it('summarises a recorded round for the history table', () => {
+  it('summarises a recorded round for the history table (mode-neutral)', () => {
     const round = { input: input('A', { A: 0, B: 25, C: 40 }) } as Round;
-    expect(uno.describeRound?.(round, players)).toBe('🎉 Alice out · +65');
+    expect(uno.describeRound?.(round, players)).toBe('🎉 Alice out · 65 left in hands');
+  });
+
+  it('describes a hand where everyone else was empty as a clean sweep', () => {
+    const round = { input: input('B', { A: 0, B: 0, C: 0 }) } as Round;
+    expect(uno.describeRound?.(round, players)).toBe('🎉 Bob out · clean sweep');
   });
 });
 
