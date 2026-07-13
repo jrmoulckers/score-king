@@ -3,11 +3,15 @@ import type { Player, Round, RoundContext } from '../../types';
 import { defaultWinners } from '../../types';
 import {
   BASE_CATEGORIES,
+  FULL_FLOCK,
+  HABITAT_TIERS,
   LEFTOVER_CATEGORY,
   NECTAR_CATEGORY,
   describeWingspanRound,
   emptyRow,
   fieldLabel,
+  flockFill,
+  habitatTier,
   isNectarOn,
   scoreRow,
   scoreWingspanRound,
@@ -102,6 +106,64 @@ describe('category configuration', () => {
     expect(isNectarOn({ nectar: true })).toBe(true);
     expect(tracksFood(undefined)).toBe(true); // tracked unless explicitly disabled
     expect(tracksFood({ trackFood: false })).toBe(false);
+  });
+
+  it('splits entry between fast point fields and +1 token steppers', () => {
+    const byKey = Object.fromEntries(scoringCategories({ nectar: true }).map((c) => [c.key, c.entry]));
+    // Big totals get a typeable field...
+    expect(byKey.birds).toBe('points');
+    expect(byKey.bonus).toBe('points');
+    expect(byKey.goals).toBe('points');
+    expect(byKey.nectar).toBe('points');
+    // ...the 1-point tallies keep the stepper nudge.
+    expect(byKey.eggs).toBe('count');
+    expect(byKey.food).toBe('count');
+    expect(byKey.tucked).toBe('count');
+    // The tiebreaker is a token tally too.
+    expect(LEFTOVER_CATEGORY.entry).toBe('count');
+  });
+});
+
+describe('habitatTier', () => {
+  it('lists the four habitats forest → oceania', () => {
+    expect(HABITAT_TIERS.map((t) => t.key)).toEqual(['forest', 'grassland', 'wetland', 'oceania']);
+  });
+
+  it('climbs through the tiers as the flock grows', () => {
+    expect(habitatTier(0).key).toBe('forest');
+    expect(habitatTier(39).key).toBe('forest');
+    expect(habitatTier(40).key).toBe('grassland');
+    expect(habitatTier(69).key).toBe('grassland');
+    expect(habitatTier(70).key).toBe('wetland');
+    expect(habitatTier(99).key).toBe('wetland');
+    expect(habitatTier(100).key).toBe('oceania');
+    expect(habitatTier(999).key).toBe('oceania');
+  });
+
+  it('clamps negatives and NaN to the first habitat', () => {
+    expect(habitatTier(-10).key).toBe('forest');
+    expect(habitatTier(Number.NaN).key).toBe('forest');
+  });
+
+  it('always carries an emoji + label, never colour alone', () => {
+    for (const t of HABITAT_TIERS) {
+      expect(t.emoji.length).toBeGreaterThan(0);
+      expect(t.label.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('flockFill', () => {
+  it('fills 0 → 1 across a full flock', () => {
+    expect(flockFill(0)).toBe(0);
+    expect(flockFill(FULL_FLOCK / 2)).toBeCloseTo(0.5);
+    expect(flockFill(FULL_FLOCK)).toBe(1);
+  });
+
+  it('clamps a runaway flock and non-finite totals', () => {
+    expect(flockFill(FULL_FLOCK * 3)).toBe(1);
+    expect(flockFill(-50)).toBe(0);
+    expect(flockFill(Number.NaN)).toBe(0);
   });
 });
 
