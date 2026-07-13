@@ -77,7 +77,7 @@ export const volleyball: GameModule = {
       last?.away && ids.includes(last.away) && last.away !== home
         ? last.away
         : ids.find((id) => id !== home) ?? '';
-    return { teams, home, away, points: { home: 0, away: 0 } };
+    return { teams, home, away, points: { home: 0, away: 0 }, rallies: [] };
   },
 
   validateRound: (input: VolleyballInput, ctx: RoundContext): string | null => {

@@ -37,6 +37,15 @@ export interface VolleyballInput {
   away: string;
   /** Final points for the two contesting sides. */
   points: { home: number; away: number };
+  /**
+   * Ordered log of which side (`'a'` = home, `'b'` = away) won each rally, oldest first.
+   * Optional and purely additive: `points` stays the scoring/validation/stats source of
+   * truth, while this log powers the courtside live extras — a single satisfying
+   * "undo last point", the serve indicator, and the momentum/run read. New sets seed an
+   * empty log; sets recorded before it existed simply have no log and fall back to the
+   * ± controls on `points`.
+   */
+  rallies?: Side[];
 }
 
 export type Format = 'beach' | 'fours' | 'indoor' | 'custom';
@@ -243,4 +252,121 @@ export function winningTeamId(input: VolleyballInput, cfg: VolleyConfig): string
   const w = setWinner(input.points.home, input.points.away, cfg.pointsPerSet, cfg.winBy2, cfg.hardCap);
   if (!w) return null;
   return w === 'a' ? input.home : input.away;
+}
+
+// ── Live rally scoring ───────────────────────────────────────────────────────
+// A small, pure toolkit powering the courtside feel. The rally log is the ordered
+// list of who won each rally; `points` is always derivable from it, so the log is a
+// superset the editor can seed while `points` stays the durable scoring truth.
+
+/** Rally log → the two sides' point totals (home = 'a', away = 'b'). */
+export function scoreFromRallies(rallies: Side[]): { home: number; away: number } {
+  let home = 0;
+  let away = 0;
+  for (const s of rallies) s === 'a' ? (home += 1) : (away += 1);
+  return { home, away };
+}
+
+/** Append a rally winner, returning a new log (never mutates the input). */
+export function pushRally(rallies: Side[], side: Side): Side[] {
+  return [...rallies, side];
+}
+
+/** Drop the most recent rally, returning a new log. No-op on an empty log. */
+export function popRally(rallies: Side[]): Side[] {
+  return rallies.slice(0, -1);
+}
+
+/**
+ * Remove the most recent rally won by `side`, returning a new log (never mutates). Used by
+ * the per-side "take a point back" control so the log stays consistent with `points`. No-op
+ * when that side has no rally to drop.
+ */
+export function dropRally(rallies: Side[], side: Side): Side[] {
+  for (let i = rallies.length - 1; i >= 0; i--) {
+    if (rallies[i] === side) return [...rallies.slice(0, i), ...rallies.slice(i + 1)];
+  }
+  return rallies;
+}
+
+/**
+ * The current unbroken run — how many rallies in a row the same side just won. Returns
+ * the side on the streak and its length (0 with a null side when there are no rallies yet).
+ */
+export function currentRun(rallies: Side[]): { side: Side | null; length: number } {
+  if (rallies.length === 0) return { side: null, length: 0 };
+  const side = rallies[rallies.length - 1]!;
+  let length = 0;
+  for (let i = rallies.length - 1; i >= 0 && rallies[i] === side; i--) length += 1;
+  return { side, length };
+}
+
+/**
+ * Who serves the next rally: in rally scoring the side that won the last rally serves,
+ * so this is simply the most recent rally winner. Null before the first rally.
+ */
+export function serving(rallies: Side[]): Side | null {
+  return rallies.length ? rallies[rallies.length - 1]! : null;
+}
+
+/**
+ * Which side is at *set point* — one rally from taking the set — or null. A side is at set
+ * point when winning the next rally would end the set and it hasn't ended already. Honours
+ * win-by-two and the hard cap via {@link setWinner}.
+ */
+export function setPointSide(a: number, b: number, target: number, winBy2: boolean, hardCap = 0): Side | null {
+  if (setWinner(a, b, target, winBy2, hardCap) !== null) return null;
+  if (setWinner(a + 1, b, target, winBy2, hardCap) === 'a') return 'a';
+  if (setWinner(a, b + 1, target, winBy2, hardCap) === 'b') return 'b';
+  return null;
+}
+
+/**
+ * Deuce — the win-by-two tension where the score is *level at or past* one short of the
+ * target (24–24, 25–25 for indoor) and the set isn't decided, so no single rally can end
+ * it. Distinct from set point (an advantage lead one rally from winning). Always false
+ * without win-by-two. A hard cap dissolves the deuce the instant it's in reach, since then
+ * a single rally to the cap can win.
+ */
+export function isDeuceSet(a: number, b: number, target: number, winBy2: boolean, hardCap = 0): boolean {
+  if (!winBy2) return false;
+  if (setWinner(a, b, target, winBy2, hardCap) !== null) return false;
+  if (setPointSide(a, b, target, winBy2, hardCap) !== null) return false;
+  return a === b && a >= target - 1;
+}
+
+/**
+ * Whimsically redistribute the whole player pool across the current teams, keeping each
+ * team's branding but reshuffling its roster. Deals players round-robin into a random team
+ * order, honouring the format's roster cap (Custom = no limit); any overflow lands on the
+ * bench. Pure: takes an injectable `rng` (default `Math.random`) so tests are deterministic.
+ */
+export function shuffleTeams(teams: Team[], pool: string[], cfg: VolleyConfig, rng: () => number = Math.random): Team[] {
+  const next = teams.map((t) => ({ ...t, memberIds: [] as string[] }));
+  if (next.length === 0) return next;
+
+  // Fisher–Yates shuffle of the pool so the deal itself is random.
+  const order = [...pool];
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [order[i], order[j]] = [order[j]!, order[i]!];
+  }
+
+  const cap = cfg.teamSize > 0 ? cfg.teamSize : Infinity;
+  const n = next.length;
+  let start = Math.floor(rng() * n); // random starting team so team 0 isn't always favoured
+  for (const id of order) {
+    let placed = false;
+    for (let k = 0; k < n; k++) {
+      const t = next[(start + k) % n]!;
+      if (t.memberIds.length < cap) {
+        t.memberIds.push(id);
+        start = (start + k + 1) % n;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) break; // every team full — the rest sit on the bench
+  }
+  return next;
 }
