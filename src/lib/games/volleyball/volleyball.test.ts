@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import {
+  currentRun,
   DEFAULTS,
   defaultTeams,
+  dropRally,
   foldStandings,
+  isDeuceSet,
   makeTeam,
+  popRally,
+  pushRally,
   readConfig,
+  scoreFromRallies,
+  serving,
+  setPointSide,
   setWinner,
+  shuffleTeams,
+  type Side,
   type Team,
   unassigned,
   validateSetScore,
@@ -195,3 +205,126 @@ describe('foldStandings — sets won per team across a session', () => {
     expect(table[0].team.id).toBe(a.id);
   });
 });
+
+describe('rally log — score, push, pop & drop', () => {
+  it('sums a rally log into home/away points', () => {
+    expect(scoreFromRallies([])).toEqual({ home: 0, away: 0 });
+    expect(scoreFromRallies(['a', 'a', 'b', 'a'])).toEqual({ home: 3, away: 1 });
+  });
+
+  it('pushes and pops rallies without mutating the input', () => {
+    const log: Side[] = ['a', 'b'];
+    const pushed = pushRally(log, 'a');
+    expect(pushed).toEqual(['a', 'b', 'a']);
+    expect(log).toEqual(['a', 'b']); // unchanged
+    expect(popRally(pushed)).toEqual(['a', 'b']);
+    expect(popRally([])).toEqual([]);
+  });
+
+  it('drops a side’s most recent rally, leaving the rest in order', () => {
+    expect(dropRally(['a', 'b', 'a', 'b'], 'a')).toEqual(['a', 'b', 'b']);
+    expect(dropRally(['a', 'b', 'a', 'b'], 'b')).toEqual(['a', 'b', 'a']);
+    expect(dropRally(['a', 'a'], 'b')).toEqual(['a', 'a']); // no-op when side absent
+  });
+});
+
+describe('currentRun & serving — momentum from the log', () => {
+  it('reports the unbroken run of the last winner', () => {
+    expect(currentRun([])).toEqual({ side: null, length: 0 });
+    expect(currentRun(['a'])).toEqual({ side: 'a', length: 1 });
+    expect(currentRun(['b', 'a', 'a', 'a'])).toEqual({ side: 'a', length: 3 });
+    expect(currentRun(['a', 'a', 'b'])).toEqual({ side: 'b', length: 1 });
+  });
+
+  it('serves the side that won the last rally', () => {
+    expect(serving([])).toBeNull();
+    expect(serving(['a', 'b'])).toBe('b');
+    expect(serving(['b', 'a', 'a'])).toBe('a');
+  });
+});
+
+describe('setPointSide — one rally from the set', () => {
+  it('flags the side a single rally from winning', () => {
+    expect(setPointSide(24, 20, 25, true)).toBe('a');
+    expect(setPointSide(20, 24, 25, true)).toBe('b');
+  });
+
+  it('is null when neither side can win next rally', () => {
+    expect(setPointSide(24, 24, 25, true)).toBeNull(); // deuce, +1 only reaches 25-24
+    expect(setPointSide(0, 0, 25, true)).toBeNull();
+  });
+
+  it('is null once the set is already decided', () => {
+    expect(setPointSide(25, 20, 25, true)).toBeNull();
+  });
+
+  it('honours win-by-two off (target reached is set point)', () => {
+    expect(setPointSide(24, 10, 25, false)).toBe('a');
+  });
+
+  it('reads a hard cap as set point at the ceiling', () => {
+    // 26-26 with cap 27: both sides could win the next rally; home is checked first.
+    expect(setPointSide(26, 26, 25, true, 27)).toBe('a');
+    expect(setPointSide(26, 25, 25, true, 27)).toBe('a');
+  });
+});
+
+describe('isDeuceSet — shared win-by-two tension', () => {
+  it('is true level at or past one short of target', () => {
+    expect(isDeuceSet(24, 24, 25, true)).toBe(true);
+    expect(isDeuceSet(26, 26, 25, true)).toBe(true);
+  });
+
+  it('is false at set point (an advantage lead)', () => {
+    expect(isDeuceSet(25, 24, 25, true)).toBe(false);
+  });
+
+  it('is false without win-by-two and once decided', () => {
+    expect(isDeuceSet(24, 24, 25, false)).toBe(false);
+    expect(isDeuceSet(26, 24, 25, true)).toBe(false);
+  });
+
+  it('dissolves when a hard cap puts a rally-to-win in reach', () => {
+    // 26-26 cap 27: next rally to 27 wins by one, so it's not a stalemate deuce.
+    expect(isDeuceSet(26, 26, 25, true, 27)).toBe(false);
+  });
+});
+
+describe('shuffleTeams — random re-deal across teams', () => {
+  const teams = [makeTeam(0), makeTeam(1)];
+
+  it('places every pooled player and loses none', () => {
+    const out = shuffleTeams(teams, ['p1', 'p2', 'p3', 'p4'], { ...cfg, teamSize: 6 });
+    const placed = out.flatMap((t) => t.memberIds).sort();
+    expect(placed).toEqual(['p1', 'p2', 'p3', 'p4']);
+  });
+
+  it('keeps team branding, only reshuffling rosters', () => {
+    const out = shuffleTeams(teams, ['p1', 'p2'], { ...cfg, teamSize: 6 });
+    expect(out.map((t) => t.id)).toEqual(teams.map((t) => t.id));
+    expect(out.map((t) => t.name)).toEqual(teams.map((t) => t.name));
+  });
+
+  it('honours the roster cap, benching the overflow', () => {
+    // Deterministic RNG so the deal is reproducible; cap 1 means only 2 of 4 fit.
+    const rng = seq([0, 0, 0, 0, 0]);
+    const out = shuffleTeams(teams, ['p1', 'p2', 'p3', 'p4'], { ...cfg, teamSize: 1 }, rng);
+    const placed = out.flatMap((t) => t.memberIds);
+    expect(placed).toHaveLength(2);
+    expect(out.every((t) => t.memberIds.length <= 1)).toBe(true);
+    expect(unassigned(out, ['p1', 'p2', 'p3', 'p4'])).toHaveLength(2);
+  });
+
+  it('does not mutate the input teams', () => {
+    const seeded = [makeTeam(0, ['p1']), makeTeam(1, ['p2'])];
+    shuffleTeams(seeded, ['p1', 'p2'], { ...cfg, teamSize: 6 });
+    expect(seeded[0].memberIds).toEqual(['p1']);
+    expect(seeded[1].memberIds).toEqual(['p2']);
+  });
+});
+
+/** A deterministic RNG that walks a fixed list of values (looping) — for stable shuffles. */
+function seq(values: number[]): () => number {
+  let i = 0;
+  return () => values[i++ % values.length]!;
+}

@@ -2,13 +2,23 @@
   import type { RoundContext } from '../../types';
   import Avatar from '../../components/Avatar.svelte';
   import { PALETTE } from '../../util';
-  import type { VolleyballInput } from './logic';
+  import { haptic } from '../../haptics';
+  import type { Side, VolleyballInput } from './logic';
   import {
     cloneTeams,
+    currentRun,
+    dropRally,
     foldStandings,
+    isDeuceSet,
     makeTeam,
+    popRally,
+    pushRally,
     readConfig,
+    scoreFromRallies,
+    serving,
+    setPointSide,
     setWinner,
+    shuffleTeams,
     type Team,
     unassigned,
   } from './logic';
@@ -33,54 +43,92 @@
 
   const home = $derived(input.teams?.find((t) => t.id === input.home));
   const away = $derived(input.teams?.find((t) => t.id === input.away));
+
+  // The rally log powers a true single "undo", the serve indicator and the momentum read.
+  // It's optional and additive — `points` stays the scoring truth, and legacy sets with no
+  // log fall back to plain ± on the point totals.
+  const hasLog = $derived(Array.isArray(input.rallies));
+  const rallies = $derived(input.rallies ?? []);
   const ptsHome = $derived(Number(input.points?.home) || 0);
   const ptsAway = $derived(Number(input.points?.away) || 0);
   const target = $derived(cfg.pointsPerSet);
   const result = $derived(setWinner(ptsHome, ptsAway, target, cfg.winBy2, cfg.hardCap));
+  const done = $derived(result !== null);
+
+  const spSide = $derived(done ? null : setPointSide(ptsHome, ptsAway, target, cfg.winBy2, cfg.hardCap));
+  const spHome = $derived(spSide === 'a');
+  const spAway = $derived(spSide === 'b');
+  const deuce = $derived(isDeuceSet(ptsHome, ptsAway, target, cfg.winBy2, cfg.hardCap));
+  const serveSide = $derived(serving(rallies));
+  const run = $derived(currentRun(rallies));
+
+  const canUndo = $derived(hasLog && rallies.length > 0);
+  const lastSide = $derived<Side | null>(rallies.length ? rallies[rallies.length - 1]! : null);
+  const lastName = $derived(lastSide === null ? '' : lastSide === 'a' ? (home?.name ?? 'Home') : (away?.name ?? 'Away'));
 
   const benchIds = $derived(unassigned(input.teams ?? [], pool.map((p) => p.id)));
 
+  // Beach vs indoor costume — flavour through emoji + copy, never a restyled shell.
+  const formatEmoji = $derived(cfg.format === 'beach' ? '🏖️' : cfg.format === 'indoor' ? '🏟️' : '🏐');
+  const formatLabel = $derived(
+    cfg.format === 'beach' ? 'Beach' : cfg.format === 'indoor' ? 'Indoor' : cfg.format === 'fours' ? 'Fours' : 'Custom',
+  );
+
   // ── Score entry ──────────────────────────────────────────────────────────
-  function bump(slot: 'home' | 'away', delta: number) {
-    const next = Math.max(0, (Number(input.points?.[slot]) || 0) + delta);
-    input.points = { ...input.points, [slot]: next };
+  /** Sync `points` from a rally log so the log and the score stay the one truth. */
+  function setScore(next: Side[]) {
+    input.rallies = next;
+    const s = scoreFromRallies(next);
+    input.points = { home: s.home, away: s.away };
   }
-  function onType(slot: 'home' | 'away', value: string) {
-    const n = Math.floor(Number(value));
-    input.points = { ...input.points, [slot]: Number.isFinite(n) && n > 0 ? n : 0 };
+  /** Would giving `side` the next rally clinch the set right now? */
+  function clinches(side: Side): boolean {
+    const na = side === 'a' ? ptsHome + 1 : ptsHome;
+    const nb = side === 'b' ? ptsAway + 1 : ptsAway;
+    return setWinner(na, nb, target, cfg.winBy2, cfg.hardCap) === side;
+  }
+  function add(slot: 'home' | 'away') {
+    if (done) return;
+    const side: Side = slot === 'home' ? 'a' : 'b';
+    const win = clinches(side);
+    if (hasLog) setScore(pushRally(rallies, side));
+    else input.points = { ...input.points, [slot]: (Number(input.points?.[slot]) || 0) + 1 };
+    haptic(win ? 'win' : 'tick');
+  }
+  function sub(slot: 'home' | 'away') {
+    const side: Side = slot === 'home' ? 'a' : 'b';
+    if (hasLog) setScore(dropRally(rallies, side));
+    else input.points = { ...input.points, [slot]: Math.max(0, (Number(input.points?.[slot]) || 0) - 1) };
+  }
+  function undoLast() {
+    if (!canUndo) return;
+    setScore(popRally(rallies));
+    haptic('undo');
   }
   function swapSides() {
     const h = input.home;
     input.home = input.away;
     input.away = h;
-    input.points = { home: ptsAway, away: ptsHome };
+    if (hasLog) setScore(rallies.map((s) => (s === 'a' ? 'b' : 'a')));
+    else input.points = { home: ptsAway, away: ptsHome };
   }
 
-  /** Would one more point here win the set? */
-  function isSetPoint(slot: 'home' | 'away'): boolean {
-    if (result) return false;
-    const na = slot === 'home' ? ptsHome + 1 : ptsHome;
-    const nb = slot === 'away' ? ptsAway + 1 : ptsAway;
-    const side = slot === 'home' ? 'a' : 'b';
-    return setWinner(na, nb, target, cfg.winBy2, cfg.hardCap) === side;
-  }
-  const spHome = $derived(isSetPoint('home'));
-  const spAway = $derived(isSetPoint('away'));
-  const deuce = $derived(!result && cfg.winBy2 && ptsHome >= target - 1 && ptsAway >= target - 1);
-
-  const status = $derived.by(() => {
-    if (result) {
-      const w = result === 'a' ? home : away;
+  // One sportscaster line for the live status region — whimsy in the copy, never clutter.
+  const call = $derived.by(() => {
+    if (!home || !away) return { tone: 'muted', text: '🏐 Pick the two teams playing this set.' };
+    const hn = home.name;
+    const an = away.name;
+    if (done) {
+      const w = result === 'a' ? hn : an;
       const hi = Math.max(ptsHome, ptsAway);
       const lo = Math.min(ptsHome, ptsAway);
-      return { emoji: '✅', text: `${w?.name ?? 'Winner'} take the set ${hi}–${lo}`, tone: 'good' };
+      return { tone: 'good', text: `✅ ${w} take the set ${hi}–${lo} — tap “Save round” to bank it.` };
     }
-    if (spHome || spAway) {
-      const t = spHome ? home : away;
-      return { emoji: '🎯', text: `Set point — ${t?.name ?? ''}`, tone: 'warn' };
-    }
-    if (deuce) return { emoji: '🔁', text: 'Deuce — must win by two', tone: 'muted' };
-    return { emoji: '🏐', text: `Rally to ${target}${cfg.winBy2 ? ', win by two' : ''}`, tone: 'muted' };
+    if (spHome || spAway) return { tone: 'warn', text: `🎯 Set point — ${spHome ? hn : an} one rally away!` };
+    if (deuce) return { tone: 'warn', text: `🔁 Deuce at ${ptsHome}–${ptsAway} — win by two, nobody blinks.` };
+    if (run.side !== null && run.length >= 4) return { tone: 'muted', text: `🔥 ${run.side === 'a' ? hn : an} rolling — ${run.length} straight.` };
+    if (ptsHome === 0 && ptsAway === 0) return { tone: 'muted', text: `${formatEmoji} ${formatLabel} • first serve! Rally to ${target}${cfg.winBy2 ? ', win by two' : ''}.` };
+    return { tone: 'muted', text: `Tap ＋1 for the side that won each rally. Rally to ${target}${cfg.winBy2 ? ', win by two' : ''}.` };
   });
 
   // ── Team management ──────────────────────────────────────────────────────
@@ -104,6 +152,12 @@
     const teams = cloneTeams(input.teams ?? []);
     teams.push(makeTeam(teams.length));
     commit(teams);
+  }
+  /** Whimsical one-tap re-deal: reshuffle the whole pool across the current teams. */
+  function doShuffle() {
+    commit(shuffleTeams(input.teams ?? [], pool.map((p) => p.id), cfg));
+    selectedMember = null;
+    haptic('tick');
   }
   function removeTeam(id: string) {
     if ((input.teams?.length ?? 0) <= 2) return;
@@ -171,78 +225,110 @@
 
   <!-- ── This set ── -->
   <div class="row spread meta">
-    <span class="pill">🏐 Set {setNumber} · to {target}</span>
+    <span class="pill">{formatEmoji} Set {setNumber} · to {target}</span>
     <button type="button" class="linklike" onclick={() => (managing = !managing)} aria-expanded={managing}>
       {managing ? '✕ Done editing' : '⚙ Manage teams'}
     </button>
   </div>
 
-  <p class="status" class:good={status.tone === 'good'} class:warn={status.tone === 'warn'} aria-live="polite">
-    <span aria-hidden="true">{status.emoji}</span>
-    <span>{status.text}</span>
-  </p>
+  {#snippet sideCard(slot: 'home' | 'away', team: Team | undefined, pts: number, sp: boolean, side: Side)}
+    {@const won = side === 'a' ? result === 'a' : result === 'b'}
+    {@const serves = hasLog && !done && serveSide === side}
+    {@const rolling = !done && run.side === side && run.length >= 3}
+    <div
+      class="side"
+      class:won
+      class:atpoint={sp}
+      class:deuce={deuce && !done}
+      data-drop={team?.id ?? undefined}
+      style={`--tc:${team?.color ?? 'var(--primary)'}`}
+    >
+      <button
+        type="button"
+        class="sidehead"
+        onclick={() => (picking = picking === slot ? null : slot)}
+        aria-label={`Choose the ${slot} team (currently ${team?.name ?? 'none'})`}
+      >
+        <span class="temoji sm" style={`--tc:${team?.color ?? 'var(--primary)'}`}>{team?.emoji ?? '🏐'}</span>
+        <span class="pickname">{team?.name ?? 'Pick team'}</span>
+        {#if serves}<span class="serve" title="Serving next">🏐</span>{/if}
+        {#if (input.teams?.length ?? 0) > 2}<span class="caret" aria-hidden="true">▾</span>{/if}
+      </button>
+
+      {#if picking === slot && (input.teams?.length ?? 0) > 2}
+        <div class="picklist" role="listbox">
+          {#each input.teams as t (t.id)}
+            {@const taken = t.id === (slot === 'home' ? input.away : input.home)}
+            <button
+              type="button"
+              class="pickopt"
+              class:on={t.id === team?.id}
+              disabled={taken}
+              onclick={() => {
+                if (slot === 'home') input.home = t.id; else input.away = t.id;
+                picking = null;
+              }}
+            >
+              <span class="temoji xs" style={`--tc:${t.color}`}>{t.emoji}</span>
+              <span>{t.name}</span>
+              {#if taken}<span class="muted xs">playing</span>{/if}
+            </button>
+          {/each}
+        </div>
+      {/if}
+
+      <div class="scorebox">
+        <span class="sr-only">{team?.name ?? slot} points this set</span>
+        {#key pts}
+          <span class="bigscore tnum" class:goodnum={won}>{pts}</span>
+        {/key}
+      </div>
+
+      <div class="tagline" aria-hidden="true">
+        {#if won}
+          <span class="tag win">✅ Set!</span>
+        {:else if sp}
+          <span class="tag point">🎯 Set pt</span>
+        {:else if rolling}
+          <span class="tag run">🔥 {run.length} in a row</span>
+        {:else}
+          <span class="tag ghost">&nbsp;</span>
+        {/if}
+      </div>
+
+      <div class="ctrls">
+        <button type="button" class="minus" onclick={() => sub(slot)} disabled={pts <= 0} aria-label={`Take a point back from ${team?.name ?? slot}`}>−1</button>
+        <button type="button" class="plus" class:pt={sp} disabled={done} onclick={() => add(slot)} aria-label={`${sp ? 'Set point — ' : ''}Add a rally point for ${team?.name ?? slot}`}>
+          <span class="plussign">＋1</span>
+          <span class="pluslabel">{sp ? 'set point' : 'rally'}</span>
+        </button>
+      </div>
+    </div>
+  {/snippet}
 
   <div class="match">
-    {#each [{ slot: 'home' as const, team: home, pts: ptsHome, sp: spHome }, { slot: 'away' as const, team: away, pts: ptsAway, sp: spAway }] as s (s.slot)}
-      <div class="side" class:won={(s.slot === 'home' ? result === 'a' : result === 'b')} data-drop={s.team?.id ?? undefined} style={`--tc:${s.team?.color ?? 'var(--primary)'}`}>
-        <button
-          type="button"
-          class="sidehead"
-          onclick={() => (picking = picking === s.slot ? null : s.slot)}
-          aria-label={`Choose the ${s.slot} team (currently ${s.team?.name ?? 'none'})`}
-        >
-          <span class="temoji sm" style={`--tc:${s.team?.color ?? '#7c5cff'}`}>{s.team?.emoji ?? '🏐'}</span>
-          <span class="pickname">{s.team?.name ?? 'Pick team'}</span>
-          {#if (input.teams?.length ?? 0) > 2}<span class="caret" aria-hidden="true">▾</span>{/if}
-        </button>
-
-        {#if picking === s.slot && (input.teams?.length ?? 0) > 2}
-          <div class="picklist" role="listbox">
-            {#each input.teams as t (t.id)}
-              {@const taken = t.id === (s.slot === 'home' ? input.away : input.home)}
-              <button
-                type="button"
-                class="pickopt"
-                class:on={t.id === s.team?.id}
-                disabled={taken}
-                onclick={() => {
-                  if (s.slot === 'home') input.home = t.id; else input.away = t.id;
-                  picking = null;
-                }}
-              >
-                <span class="temoji xs" style={`--tc:${t.color}`}>{t.emoji}</span>
-                <span>{t.name}</span>
-                {#if taken}<span class="muted xs">playing</span>{/if}
-              </button>
-            {/each}
-          </div>
-        {/if}
-
-        <label class="scorewrap">
-          <span class="sr-only">{s.team?.name} points this set</span>
-          <input
-            class="score"
-            class:score-good={s.slot === 'home' ? result === 'a' : result === 'b'}
-            type="number"
-            inputmode="numeric"
-            min="0"
-            value={s.pts}
-            oninput={(e) => onType(s.slot, e.currentTarget.value)}
-          />
-        </label>
-
-        <div class="ctrls">
-          <button type="button" class="minus" onclick={() => bump(s.slot, -1)} disabled={s.pts <= 0} aria-label={`Take a point back from ${s.team?.name}`}>−1</button>
-          <button type="button" class="plus" class:pt={s.sp} onclick={() => bump(s.slot, 1)} aria-label={`Add a point for ${s.team?.name}`}>
-            <span class="big">+1</span>
-            {#if s.sp}<span class="ptlabel">set pt</span>{/if}
-          </button>
-        </div>
-      </div>
-    {/each}
+    {@render sideCard('home', home, ptsHome, spHome, 'a')}
+    <div class="net" aria-hidden="true"><span class="netbadge">🥅</span></div>
+    {@render sideCard('away', away, ptsAway, spAway, 'b')}
   </div>
 
-  <button type="button" class="swap" onclick={swapSides} aria-label="Swap which side is home and away">⇄ Swap sides</button>
+  <p class="status" class:good={call.tone === 'good'} class:warn={call.tone === 'warn'} role="status" aria-live="polite">
+    {call.text}
+  </p>
+
+  <div class="livebar">
+    <button
+      type="button"
+      class="undo"
+      onclick={undoLast}
+      disabled={!canUndo}
+      aria-label={canUndo ? `Undo the last point for ${lastName}` : 'Undo last point'}
+    >
+      <span class="undoicon" aria-hidden="true">↩</span>
+      <span>{canUndo ? `Undo · ${lastName}` : 'Undo last point'}</span>
+    </button>
+    <button type="button" class="swap" onclick={swapSides} aria-label="Swap which side is home and away">⇄ Swap sides</button>
+  </div>
 
   <!-- ── Manage teams ── -->
   {#if managing}
@@ -309,7 +395,10 @@
         </div>
       {/each}
 
-      <button type="button" class="addteam" onclick={addTeam} disabled={(input.teams?.length ?? 0) >= 8}>＋ Add team</button>
+      <div class="manage-actions">
+        <button type="button" class="addteam" onclick={addTeam} disabled={(input.teams?.length ?? 0) >= 8}>＋ Add team</button>
+        <button type="button" class="shuffle" onclick={doShuffle} disabled={pool.length === 0} title="Randomly redeal every player across the teams">🎲 Shuffle teams</button>
+      </div>
 
       <div class="bench-area" data-drop="bench">
         <div class="section-lbl">🪑 Bench</div>
@@ -477,11 +566,33 @@
     background: color-mix(in srgb, var(--warn) 12%, var(--surface-2));
   }
 
-  /* ── Match (two contesting sides) ── */
+  /* ── Match (two contesting sides, split by the net) ── */
   .match {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: stretch;
+  }
+  /* The net between the two courts — a dashed centre line with a 🥅 badge. Pure flavour,
+     aria-hidden, and never the only signal for anything. */
+  .net {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 26px;
+  }
+  .net::before,
+  .net::after {
+    content: '';
+    flex: 1;
+    width: 0;
+    border-left: 2px dashed color-mix(in srgb, var(--border) 80%, var(--muted));
+  }
+  .netbadge {
+    font-size: 1.1rem;
+    line-height: 1;
   }
   .side {
     display: flex;
@@ -492,9 +603,47 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     position: relative;
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      box-shadow 0.18s ease;
   }
+  /* A won set reads as success — green, distinct from the standings leader's Crown Gold. */
   .side.won {
     border-color: color-mix(in srgb, var(--good) 55%, var(--border));
+    background: color-mix(in srgb, var(--good) 12%, var(--surface-2));
+    animation: vb-setpop 0.4s var(--ease-out, cubic-bezier(0.22, 0.61, 0.36, 1)) both;
+  }
+  /* Set point: an amber ring backs the 🎯 tag + copy (never colour alone). */
+  .side.atpoint {
+    border-color: color-mix(in srgb, var(--warn) 65%, var(--border));
+    background: color-mix(in srgb, var(--warn) 7%, var(--surface-2));
+    animation: vb-breathe 1.5s ease-in-out infinite;
+  }
+  /* Deuce: both cards breathe together — the tension is shared. */
+  .side.deuce {
+    border-color: color-mix(in srgb, var(--warn) 45%, var(--border));
+    animation: vb-breathe 1.7s ease-in-out infinite;
+  }
+  @keyframes vb-breathe {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--warn) 30%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--warn) 16%, transparent);
+    }
+  }
+  @keyframes vb-setpop {
+    0% {
+      transform: scale(0.97);
+    }
+    55% {
+      transform: scale(1.02);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
   .sidehead {
     display: flex;
@@ -520,6 +669,23 @@
     white-space: nowrap;
     flex: 1;
     min-width: 0;
+  }
+  /* Serve indicator: the side that won the last rally serves next. A gentle bob draws the
+     eye; the 🏐 + title carry the meaning, so motion is never the only cue. */
+  .serve {
+    flex: none;
+    font-size: 0.95rem;
+    line-height: 1;
+    animation: vb-serve 1.4s ease-in-out infinite;
+  }
+  @keyframes vb-serve {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-2px);
+    }
   }
   .caret {
     color: var(--muted);
@@ -565,30 +731,69 @@
     cursor: not-allowed;
   }
 
-  .scorewrap {
-    display: block;
-    margin: 0;
+  /* The live courtside score is the hero of each card — big enough to read one-handed,
+     outdoors, at arm's length. Tabular so it never jitters as it climbs; pops on change. */
+  .scorebox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 84px;
   }
-  .score {
-    width: 100%;
-    height: 84px;
-    padding: 0 8px;
-    text-align: center;
-    font-size: 3rem;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
+  .bigscore {
+    font-size: clamp(3.2rem, 14vw, 4.6rem);
     line-height: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    appearance: textfield;
-    -moz-appearance: textfield;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    min-width: 2ch;
+    text-align: center;
+    animation: vb-pop 0.16s ease-out;
   }
-  .score::-webkit-outer-spin-button,
-  .score::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    appearance: none;
-    margin: 0;
+  .goodnum {
+    color: var(--good);
+  }
+  @keyframes vb-pop {
+    from {
+      transform: scale(1.14);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  /* Reserved tag row so the card never reflows as tags come and go. */
+  .tagline {
+    display: flex;
+    justify-content: center;
+    min-height: 1.6rem;
+  }
+  .tag {
+    flex: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .tag.ghost {
+    visibility: hidden;
+  }
+  .tag.win {
+    color: var(--good);
+    border-color: color-mix(in srgb, var(--good) 45%, var(--border));
+    background: color-mix(in srgb, var(--good) 12%, transparent);
+  }
+  .tag.point {
+    color: var(--warn);
+    border-color: color-mix(in srgb, var(--warn) 55%, var(--border));
+    background: color-mix(in srgb, var(--warn) 14%, transparent);
+  }
+  .tag.run {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--bad) 45%, var(--border));
+    background: color-mix(in srgb, var(--bad) 12%, transparent);
   }
 
   .ctrls {
@@ -612,7 +817,7 @@
   }
   .minus {
     flex: none;
-    width: 56px;
+    width: 52px;
     min-height: 56px;
     font-size: 1.2rem;
   }
@@ -623,6 +828,8 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
+  /* The rally tap: large and thumb-friendly, but a surface control — the one Royal Violet
+     primary on this screen stays the shell's "Save round" button below the editor. */
   .plus {
     flex: 1;
     min-height: 56px;
@@ -633,40 +840,90 @@
     gap: 1px;
     background: var(--surface-3);
   }
-  .plus:hover {
+  .plus:hover:not(:disabled) {
     border-color: var(--primary);
+    background: color-mix(in srgb, var(--text) 6%, var(--surface-3));
   }
-  .plus:active {
+  .plus:active:not(:disabled) {
     transform: translateY(1px);
   }
-  .plus .big {
+  .plus:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .plussign {
     font-size: 1.35rem;
+    font-variant-numeric: tabular-nums;
   }
-  .plus.pt {
-    border-color: color-mix(in srgb, var(--warn) 55%, var(--border));
-  }
-  .ptlabel {
+  .pluslabel {
     font-size: 0.62rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+    color: var(--muted);
+  }
+  .plus.pt {
+    border-color: color-mix(in srgb, var(--warn) 55%, var(--border));
+  }
+  .plus.pt .pluslabel {
     color: var(--warn);
   }
 
+  /* Undo + swap sit together under the courts, as low-emphasis surface controls. */
+  .livebar {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .undo {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    transition:
+      transform 0.05s ease,
+      background 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .undo:hover:not(:disabled) {
+    background: var(--surface-2);
+    border-color: var(--primary);
+  }
+  .undo:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .undo:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .undoicon {
+    font-size: 1.1rem;
+  }
   .swap {
-    align-self: center;
-    background: none;
-    border: none;
+    flex: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     color: var(--muted);
     font: inherit;
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
     padding: 8px 12px;
-    min-height: 40px;
+    min-height: 46px;
   }
   .swap:hover {
     color: var(--text);
+    border-color: var(--primary);
   }
 
   /* ── Manage teams ── */
@@ -911,10 +1168,26 @@
     :global(.vb-drag-ghost) {
       transition: none;
     }
+    .bigscore,
+    .serve,
+    .side.won {
+      animation: none;
+    }
+    /* Keep a static ring so set-point / deuce tension still reads without motion. */
+    .side.atpoint,
+    .side.deuce {
+      animation: none;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--warn) 22%, transparent);
+    }
   }
 
-  .addteam {
-    align-self: flex-start;
+  .manage-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .addteam,
+  .shuffle {
     min-height: 40px;
     padding: 8px 14px;
     border: 1px dashed var(--border);
@@ -925,10 +1198,12 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .addteam:hover:not(:disabled) {
+  .addteam:hover:not(:disabled),
+  .shuffle:hover:not(:disabled) {
     border-color: var(--primary);
   }
-  .addteam:disabled {
+  .addteam:disabled,
+  .shuffle:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -955,7 +1230,9 @@
 
   .minus:focus-visible,
   .plus:focus-visible,
-  .score:focus-visible,
+  .undo:focus-visible,
+  .swap:focus-visible,
+  .shuffle:focus-visible,
   .sidehead:focus-visible,
   .chip:focus-visible,
   .mvbtn:focus-visible,
@@ -967,8 +1244,8 @@
   }
 
   @media (max-width: 360px) {
-    .score {
-      font-size: 2.5rem;
+    .bigscore {
+      font-size: 2.6rem;
     }
   }
 </style>
