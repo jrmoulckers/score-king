@@ -9,6 +9,7 @@ interface WWAgg {
   wolfGames: number;
   wolfWins: number;
   mayor: number;
+  mayorCracked: number;
   seer: number;
 }
 
@@ -26,7 +27,7 @@ export function werewordsStats({ games, rounds, canonical }: GameStatsInput): Ga
   const get = (id: ID): WWAgg => {
     let a = per.get(id);
     if (!a) {
-      a = { played: 0, won: 0, wolfGames: 0, wolfWins: 0, mayor: 0, seer: 0 };
+      a = { played: 0, won: 0, wolfGames: 0, wolfWins: 0, mayor: 0, mayorCracked: 0, seer: 0 };
       per.set(id, a);
     }
     return a;
@@ -57,7 +58,11 @@ export function werewordsStats({ games, rounds, canonical }: GameStatsInput): Ga
         if (winner === 'werewolf') a.wolfWins += 1;
       }
     }
-    if (input.mayor) get(canonical(input.mayor)).mayor += 1;
+    if (input.mayor) {
+      const m = get(canonical(input.mayor));
+      m.mayor += 1;
+      if (input.guessed) m.mayorCracked += 1;
+    }
     if (input.seer) get(canonical(input.seer)).seer += 1;
   }
 
@@ -72,6 +77,15 @@ export function werewordsStats({ games, rounds, canonical }: GameStatsInput): Ga
     }
     if (a.mayor) {
       metrics.push({ key: 'ww_mayor', label: 'Mayor rounds', value: `${a.mayor}`, emoji: '👑' });
+      metrics.push({
+        key: 'ww_mayor_cracked',
+        label: 'Cracked as Mayor',
+        value: `${a.mayorCracked}/${a.mayor}`,
+        emoji: '🧩',
+      });
+    }
+    if (a.seer) {
+      metrics.push({ key: 'ww_seer', label: 'Seer rounds', value: `${a.seer}`, emoji: '🔮' });
     }
     if (metrics.length) perPlayer[id] = metrics;
   }
