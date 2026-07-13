@@ -14,10 +14,30 @@
 
   const reduced = prefersReducedMotion();
   const COUNT = 14;
+  // Longest glyph run: mote delay (≤0.4s) + duration (≤1.6s) plus a small margin.
+  const LIFE_MS = 2100;
+
+  // Play only for the animation's lifetime, then unmount. Leaving the overlay
+  // mounted keeps every mote/orb's `will-change` compositor layer alive forever,
+  // pinning the GPU and making the whole editor sluggish. Resetting to inert
+  // once the run finishes releases those layers. Reduced motion never plays.
+  let playing = $state(false);
+  let seen = 0;
+  $effect(() => {
+    const t = token;
+    if (reduced || t <= 0 || t === seen) return;
+    seen = t;
+    playing = true;
+    const id = setTimeout(() => (playing = false), LIFE_MS);
+    return () => clearTimeout(id);
+  });
 
   // Deterministic pseudo-random seeded by token (mirrors MoonRise / CoinBurst).
+  // Only derived while playing, so an unrelated editor change never rebuilds it.
   const motes = $derived(
-    Array.from({ length: COUNT }, (_, i) => {
+    !playing
+      ? []
+      : Array.from({ length: COUNT }, (_, i) => {
       const rand = (n: number) =>
         (((Math.sin((token + i) * 12.9898 + n * 78.233) * 43758.5453) % 1) + 1) % 1;
       const night = ['✦', '✧', '⋆', '·', '✦'];
@@ -36,7 +56,7 @@
   );
 </script>
 
-{#if !reduced && token > 0}
+{#if playing}
   {#key token}
     <div class="sky-wrap" class:day={kind === 'day'} aria-hidden="true">
       <div class="wash"></div>

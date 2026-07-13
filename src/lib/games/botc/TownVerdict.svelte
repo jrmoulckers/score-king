@@ -14,9 +14,27 @@
 
   const reduced = prefersReducedMotion();
   const COUNT = 12;
+  // Longest run: spark delay (≤0.48s) + duration (≤1.3s) and the 1.8s evil wash.
+  const LIFE_MS = 2000;
+
+  // Play for the animation's lifetime only, then unmount — otherwise every
+  // spark/orb keeps a `will-change` compositor layer alive forever, pinning the
+  // GPU. Reduced motion never plays.
+  let playing = $state(false);
+  let seen = 0;
+  $effect(() => {
+    const t = token;
+    if (reduced || t <= 0 || t === seen) return;
+    seen = t;
+    playing = true;
+    const id = setTimeout(() => (playing = false), LIFE_MS);
+    return () => clearTimeout(id);
+  });
 
   const sparks = $derived(
-    Array.from({ length: COUNT }, (_, i) => {
+    !playing
+      ? []
+      : Array.from({ length: COUNT }, (_, i) => {
       const rand = (n: number) =>
         (((Math.sin((token + i) * 12.9898 + n * 78.233) * 43758.5453) % 1) + 1) % 1;
       const good = ['✦', '✧', '⋆', '·'];
@@ -36,7 +54,7 @@
   );
 </script>
 
-{#if !reduced && token > 0}
+{#if playing}
   {#key token}
     <div class="verdict" class:evil={team === 'evil'} aria-hidden="true">
       <div class="wash"></div>
