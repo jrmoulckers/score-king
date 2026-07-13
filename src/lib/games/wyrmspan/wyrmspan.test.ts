@@ -6,10 +6,15 @@ import {
   categoryVP,
   category,
   cleanValue,
+  DRAGON_TIEBREAK,
   emptyRow,
+  FULL_HOARD,
+  hoardFill,
+  hoardTier,
   leftoverEnabled,
   scoreRow,
   scoreWyrmspan,
+  tracksDragons,
   validateRow,
   WYRMSPAN_CATEGORIES,
   type WyrmspanInput,
@@ -33,6 +38,7 @@ const FULL: WyrmspanRow = {
   tucked: 4,
   coins: 5,
   leftover: 11,
+  dragonCount: 6,
 };
 
 describe('wyrmspan categories', () => {
@@ -170,6 +176,64 @@ describe('validateRow', () => {
     expect(err).toContain('Vera');
     expect(err).toContain('Eggs');
   });
+  it('rejects a negative dragon-count tiebreaker', () => {
+    const err = validateRow(row({ dragonCount: -3 }), 'Milo');
+    expect(err).toContain('Milo');
+    expect(err).toContain('Visible dragons');
+  });
+});
+
+describe('visible-dragons tiebreaker', () => {
+  it('emptyRow seeds a zero dragon count', () => {
+    expect(emptyRow().dragonCount).toBe(0);
+  });
+  it('is never added to the score', () => {
+    // Two identical hoards; only the (non-scoring) dragon count differs.
+    expect(scoreRow(row({ dragons: 20, dragonCount: 8 }))).toBe(20);
+    expect(scoreRow(row({ dragons: 20, dragonCount: 0 }))).toBe(20);
+  });
+  it('is not one of the scoring categories', () => {
+    expect(WYRMSPAN_CATEGORIES.map((c) => c.key)).not.toContain('dragonCount');
+    expect(DRAGON_TIEBREAK.key).toBe('dragonCount');
+    expect(DRAGON_TIEBREAK.label.length).toBeGreaterThan(0);
+    expect(DRAGON_TIEBREAK.emoji.length).toBeGreaterThan(0);
+    expect(DRAGON_TIEBREAK.help.length).toBeGreaterThan(0);
+  });
+});
+
+describe('tracksDragons', () => {
+  it('defaults on (missing / empty / explicit true)', () => {
+    expect(tracksDragons(undefined)).toBe(true);
+    expect(tracksDragons({})).toBe(true);
+    expect(tracksDragons({ trackDragons: true })).toBe(true);
+  });
+  it('is off only when explicitly disabled', () => {
+    expect(tracksDragons({ trackDragons: false })).toBe(false);
+  });
+});
+
+describe('hoard lair tiers', () => {
+  it('climbs Nest → Cavern → Treasure Vault → Dragon\u2019s Hoard at the tier floors', () => {
+    expect(hoardTier(0).key).toBe('nest');
+    expect(hoardTier(39).key).toBe('nest');
+    expect(hoardTier(40).key).toBe('cavern');
+    expect(hoardTier(69).key).toBe('cavern');
+    expect(hoardTier(70).key).toBe('vault');
+    expect(hoardTier(99).key).toBe('vault');
+    expect(hoardTier(100).key).toBe('hoard');
+    expect(hoardTier(500).key).toBe('hoard');
+  });
+  it('clamps negatives and junk to the Nest', () => {
+    expect(hoardTier(-10).key).toBe('nest');
+    expect(hoardTier(NaN).key).toBe('nest');
+  });
+  it('fills 0→1, empty at zero and brim-full past a legendary hoard', () => {
+    expect(hoardFill(0)).toBe(0);
+    expect(hoardFill(-5)).toBe(0);
+    expect(hoardFill(FULL_HOARD / 2)).toBeCloseTo(0.5);
+    expect(hoardFill(FULL_HOARD)).toBe(1);
+    expect(hoardFill(FULL_HOARD + 50)).toBe(1);
+  });
 });
 
 // --- The assembled GameModule (index.ts) ---------------------------------------
@@ -216,6 +280,12 @@ describe('wyrmspan module', () => {
 
   it('exposes the leftover variant toggle, defaulting on', () => {
     const toggle = wyrmspan.configFields?.find((f) => f.key === 'scoreLeftover');
+    expect(toggle?.type).toBe('boolean');
+    expect(toggle?.default).toBe(true);
+  });
+
+  it('exposes the track-dragons tiebreaker toggle, defaulting on', () => {
+    const toggle = wyrmspan.configFields?.find((f) => f.key === 'trackDragons');
     expect(toggle?.type).toBe('boolean');
     expect(toggle?.default).toBe(true);
   });
