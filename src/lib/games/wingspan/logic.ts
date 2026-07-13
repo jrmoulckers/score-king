@@ -43,23 +43,35 @@ export interface WingspanInput {
   rows: Record<ID, WingspanRow>;
 }
 
+/**
+ * How a category value is entered on the sheet — mirrors Finspan so the two siblings share one
+ * interaction model:
+ *   `points` — a big, typeable total (birds, bonus, goals, nectar majorities). Tapping a stepper
+ *              to 87 birds is miserable, so these get a fast numeric field.
+ *   `count`  — a small 1-point tally (eggs, cached food, tucked cards, the food tiebreaker) that
+ *              earns the satisfying +1 Stepper nudge.
+ */
+export type WingspanEntry = 'points' | 'count';
+
 export interface CategoryDef {
   key: keyof WingspanRow;
   label: string;
   /** Compact label for the entry grid. */
   short: string;
   emoji: string;
+  /** Numeric field for big totals vs the +1 Stepper for token tallies. */
+  entry: WingspanEntry;
   help: string;
 }
 
 /** The base six categories — always present, in the order they sit on the real score pad. */
 export const BASE_CATEGORIES: CategoryDef[] = [
-  { key: 'birds', label: 'Birds', short: 'Birds', emoji: '🐦', help: 'Points printed on the birds in your habitats.' },
-  { key: 'bonus', label: 'Bonus cards', short: 'Bonus', emoji: '🎯', help: "Points from your bonus cards' conditions." },
-  { key: 'goals', label: 'End-of-round goals', short: 'Goals', emoji: '🎖️', help: 'Points from the four end-of-round goal tiles.' },
-  { key: 'eggs', label: 'Eggs', short: 'Eggs', emoji: '🥚', help: '1 point per egg on your bird cards.' },
-  { key: 'food', label: 'Cached food', short: 'Cached', emoji: '🌰', help: '1 point per food token cached on your bird cards.' },
-  { key: 'tucked', label: 'Tucked cards', short: 'Tucked', emoji: '🃏', help: '1 point per card tucked under your birds.' },
+  { key: 'birds', label: 'Birds', short: 'Birds', emoji: '🐦', entry: 'points', help: 'Points printed on the birds in your habitats.' },
+  { key: 'bonus', label: 'Bonus cards', short: 'Bonus', emoji: '🎯', entry: 'points', help: "Points from your bonus cards' conditions." },
+  { key: 'goals', label: 'End-of-round goals', short: 'Goals', emoji: '🎖️', entry: 'points', help: 'Points from the four end-of-round goal tiles.' },
+  { key: 'eggs', label: 'Eggs', short: 'Eggs', emoji: '🥚', entry: 'count', help: '1 point per egg on your bird cards.' },
+  { key: 'food', label: 'Cached food', short: 'Cached', emoji: '🌰', entry: 'count', help: '1 point per food token cached on your bird cards.' },
+  { key: 'tucked', label: 'Tucked cards', short: 'Tucked', emoji: '🃏', entry: 'count', help: '1 point per card tucked under your birds.' },
 ];
 
 /** Oceania's Nectar category, shown only when the expansion is toggled on. */
@@ -68,6 +80,7 @@ export const NECTAR_CATEGORY: CategoryDef = {
   label: 'Nectar',
   short: 'Nectar',
   emoji: '🌸',
+  entry: 'points',
   help: 'Nectar majorities scored per habitat (Oceania expansion).',
 };
 
@@ -77,6 +90,7 @@ export const LEFTOVER_CATEGORY: CategoryDef = {
   label: 'Unused food',
   short: 'Food left',
   emoji: '🍽️',
+  entry: 'count',
   help: 'Leftover food tokens settle ties — the most unused food wins. Never added to the score.',
 };
 
@@ -184,4 +198,48 @@ export function describeWingspanRound(
     parts.push(`${p.name} ${scoreRow(row)}`);
   }
   return parts.length ? parts.join(' · ') : 'no scores';
+}
+
+/**
+ * The four Wingspan habitats, in the order a growing flock settles them (Forest → Grassland →
+ * Wetland → Oceania). A player's running total climbs through them as it grows, giving the tally
+ * a sense of place ("your flock has reached the Wetland") without ever relying on colour alone —
+ * every tier carries an emoji and a label. This is Wingspan's costume equivalent of Finspan's
+ * depth zones. `min` is the inclusive floor; tiers are listed richest-last so {@link habitatTier}
+ * can scan from the bottom up.
+ */
+export interface HabitatTier {
+  key: 'forest' | 'grassland' | 'wetland' | 'oceania';
+  label: string;
+  emoji: string;
+  /** Inclusive lower bound, in points. */
+  min: number;
+}
+
+export const HABITAT_TIERS: readonly HabitatTier[] = [
+  { key: 'forest', label: 'Forest', emoji: '🌲', min: 0 },
+  { key: 'grassland', label: 'Grassland', emoji: '🌾', min: 40 },
+  { key: 'wetland', label: 'Wetland', emoji: '💧', min: 70 },
+  { key: 'oceania', label: 'Oceania', emoji: '🌊', min: 100 },
+] as const;
+
+/** A thriving flock — the point total at which the gauge reads brim-full. */
+export const FULL_FLOCK = 120;
+
+/** Which habitat tier a running total currently sits in (negatives/NaN clamp to Forest). */
+export function habitatTier(total: number): HabitatTier {
+  const n = Number(total);
+  let tier = HABITAT_TIERS[0];
+  if (!Number.isFinite(n)) return tier;
+  for (const t of HABITAT_TIERS) {
+    if (n >= t.min) tier = t;
+  }
+  return tier;
+}
+
+/** How full the flock gauge reads, 0–1, for a running total (clamped to {@link FULL_FLOCK}). */
+export function flockFill(total: number): number {
+  const n = Number(total);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(1, n / FULL_FLOCK);
 }
