@@ -68,6 +68,30 @@ export function suggestedMinutes(roundIndex: number, config: Record<string, unkn
 }
 
 /**
+ * The Fuse length for this round in whole seconds — the shrinking-round rule
+ * ({@link suggestedMinutes}) turned into a real countdown the editor can tick.
+ */
+export function roundSeconds(roundIndex: number, config: Record<string, unknown> | undefined): number {
+  return suggestedMinutes(roundIndex, config) * 60;
+}
+
+/**
+ * Format a whole-second count as "M:SS" for the Fuse clock (e.g. 65 → "1:05").
+ * Negative values clamp to "0:00" so the boom state never shows a minus sign.
+ */
+export function formatClock(seconds: number): string {
+  const s = Math.max(0, Math.floor(Number(seconds) || 0));
+  const m = Math.floor(s / 60);
+  const rest = s % 60;
+  return `${m}:${String(rest).padStart(2, '0')}`;
+}
+
+/** Whether the time's-up buzzer fires when the Fuse burns out (default on). */
+export function soundOn(config: Record<string, unknown> | undefined): boolean {
+  return config?.sound !== false;
+}
+
+/**
  * Suggested hostages a room sends this round, following the official chart:
  *   6–10 players → 1 / 1 / 1,  11–21 → 2 / 1 / 1,  22+ → 3 / 2 / 1.
  * The final round always trades a single hostage; the opening round scales with

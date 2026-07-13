@@ -5,11 +5,14 @@ import {
   MIN_ROUNDS,
   createInput,
   describe as describeRound,
+  formatClock,
   isFinalRound,
   pickWinners,
   roleBreakdown,
   roundCount,
+  roundSeconds,
   score,
+  soundOn,
   suggestedHostages,
   suggestedMinutes,
   teamLabel,
@@ -67,6 +70,39 @@ describe('suggestedMinutes', () => {
 
   it('never drops below one minute', () => {
     expect(suggestedMinutes(7, cfg(3))).toBe(1);
+  });
+});
+
+describe('roundSeconds', () => {
+  it('turns the shrinking minutes into a real countdown in seconds', () => {
+    expect([0, 1, 2].map((i) => roundSeconds(i, cfg(3)))).toEqual([180, 120, 60]);
+    expect([0, 1, 2, 3, 4].map((i) => roundSeconds(i, cfg(5)))).toEqual([300, 240, 180, 120, 60]);
+  });
+
+  it('never drops below one minute of fuse', () => {
+    expect(roundSeconds(9, cfg(3))).toBe(60);
+  });
+});
+
+describe('formatClock', () => {
+  it('formats seconds as M:SS with a padded remainder', () => {
+    expect(formatClock(180)).toBe('3:00');
+    expect(formatClock(65)).toBe('1:05');
+    expect(formatClock(9)).toBe('0:09');
+  });
+
+  it('clamps negatives and junk to 0:00 so the boom never shows a minus', () => {
+    expect(formatClock(-5)).toBe('0:00');
+    expect(formatClock(Number.NaN)).toBe('0:00');
+  });
+});
+
+describe('soundOn', () => {
+  it('defaults the buzzer on and only silences an explicit false', () => {
+    expect(soundOn(undefined)).toBe(true);
+    expect(soundOn({})).toBe(true);
+    expect(soundOn({ sound: true })).toBe(true);
+    expect(soundOn({ sound: false })).toBe(false);
   });
 });
 
