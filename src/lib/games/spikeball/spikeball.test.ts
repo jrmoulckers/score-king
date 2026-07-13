@@ -10,6 +10,12 @@ import {
   gameWinner,
   gamePointTeam,
   isMatchPoint,
+  isDeuce,
+  clinchesMatch,
+  currentRun,
+  pushRally,
+  popRally,
+  scoreFromRallies,
   matchOver,
   scoreDeltas,
   validate,
@@ -143,6 +149,94 @@ describe('match completion', () => {
   });
 });
 
+describe('isDeuce', () => {
+  it('flags a tie at or past one short of the target (20–20, 21–21)', () => {
+    expect(isDeuce(20, 20, 21, true)).toBe(true);
+    expect(isDeuce(22, 22, 21, true)).toBe(true);
+  });
+
+  it('is false before the deuce zone', () => {
+    expect(isDeuce(19, 19, 21, true)).toBe(false);
+    expect(isDeuce(20, 18, 21, true)).toBe(false);
+  });
+
+  it('is false at an advantage lead (that is game point, not deuce)', () => {
+    expect(isDeuce(21, 20, 21, true)).toBe(false);
+  });
+
+  it('is false once the game is decided', () => {
+    expect(isDeuce(23, 21, 21, true)).toBe(false);
+  });
+
+  it('is always false without win-by-2', () => {
+    expect(isDeuce(20, 20, 21, false)).toBe(false);
+  });
+});
+
+describe('clinchesMatch', () => {
+  it('is true when banking the game reaches the majority (best of 3)', () => {
+    expect(clinchesMatch(0, 1, 0, 3)).toBe(true);
+    expect(clinchesMatch(1, 0, 1, 3)).toBe(true);
+  });
+
+  it('is false when the winner still needs more games', () => {
+    expect(clinchesMatch(0, 0, 0, 3)).toBe(false);
+    expect(clinchesMatch(1, 1, 1, 5)).toBe(false);
+  });
+
+  it('is false when there is no winner yet', () => {
+    expect(clinchesMatch(null, 1, 1, 3)).toBe(false);
+  });
+
+  it('clinches a single-game match in one game', () => {
+    expect(clinchesMatch(0, 0, 0, 1)).toBe(true);
+  });
+});
+
+describe('rally log', () => {
+  it('sums a log into the two teams’ scores', () => {
+    expect(scoreFromRallies([])).toEqual({ a: 0, b: 0 });
+    expect(scoreFromRallies([0, 1, 0, 0, 1])).toEqual({ a: 3, b: 2 });
+  });
+
+  it('pushRally and popRally are immutable', () => {
+    const log: (0 | 1)[] = [0, 1];
+    const pushed = pushRally(log, 0);
+    expect(pushed).toEqual([0, 1, 0]);
+    expect(log).toEqual([0, 1]); // original untouched
+    const popped = popRally(pushed);
+    expect(popped).toEqual([0, 1]);
+    expect(pushed).toEqual([0, 1, 0]);
+  });
+
+  it('popRally on an empty log is a no-op', () => {
+    expect(popRally([])).toEqual([]);
+  });
+
+  it('a round-trip of push/score stays consistent', () => {
+    let log: (0 | 1)[] = [];
+    for (const t of [0, 0, 1, 0, 1, 1] as const) log = pushRally(log, t);
+    expect(scoreFromRallies(log)).toEqual({ a: 3, b: 3 });
+    log = popRally(log);
+    expect(scoreFromRallies(log)).toEqual({ a: 3, b: 2 });
+  });
+});
+
+describe('currentRun', () => {
+  it('reports no run for an empty log', () => {
+    expect(currentRun([])).toEqual({ team: null, length: 0 });
+  });
+
+  it('counts the trailing unbroken streak', () => {
+    expect(currentRun([1, 0, 0, 0])).toEqual({ team: 0, length: 3 });
+    expect(currentRun([0, 0, 1])).toEqual({ team: 1, length: 1 });
+  });
+
+  it('resets to length 1 the moment the other team scores', () => {
+    expect(currentRun([0, 0, 0, 1])).toEqual({ team: 1, length: 1 });
+  });
+});
+
 describe('scoreDeltas', () => {
   it('gives every winner +1 game and everyone else 0 (2v2)', () => {
     const input: SpikeballInput = { teams: [['a', 'b'], ['c', 'd']], a: 21, b: 15 };
@@ -222,7 +316,7 @@ describe('spikeball GameModule', () => {
 
   it('seeds a round with teams split from the roster and 0–0', () => {
     const input = spikeball.createRoundInput(ctx(['a', 'b', 'c', 'd'], { format: '2v2' })) as SpikeballInput;
-    expect(input).toEqual({ teams: [['a', 'b'], ['c', 'd']], a: 0, b: 0 });
+    expect(input).toEqual({ teams: [['a', 'b'], ['c', 'd']], a: 0, b: 0, rallies: [] });
   });
 
   it('scores a finished game into per-player game wins', () => {

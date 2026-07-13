@@ -77,7 +77,7 @@ export const spikeball: GameModule = {
 
   createRoundInput: (ctx: RoundContext): SpikeballInput => {
     const cfg = readConfig(ctx.config);
-    return { teams: splitTeams(playerIds(ctx), cfg.format), a: 0, b: 0 };
+    return { teams: splitTeams(playerIds(ctx), cfg.format), a: 0, b: 0, rallies: [] };
   },
 
   validateRound: (input: SpikeballInput, ctx: RoundContext): string | null =>

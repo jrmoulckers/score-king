@@ -34,6 +34,7 @@ export function spikeballStats({ games, rounds, canonical }: GameStatsInput): Ga
   let totalPoints = 0;
   let biggestMargin = -1;
   let biggestLabel = '';
+  let longestRun = 0;
 
   for (const r of rounds) {
     if (!gameIds.has(r.gameId)) continue;
@@ -47,6 +48,17 @@ export function spikeballStats({ games, rounds, canonical }: GameStatsInput): Ga
     const winner = a === b ? null : a > b ? 0 : 1;
     const target = targetByGame.get(r.gameId) ?? 21;
     const deuce = Math.max(a, b) > target;
+
+    // Longest unbroken run of rallies in this game, when the rally log is present.
+    if (Array.isArray(input.rallies)) {
+      let cur = 0;
+      let prev: 0 | 1 | null = null;
+      for (const t of input.rallies) {
+        cur = t === prev ? cur + 1 : 1;
+        prev = t;
+        if (cur > longestRun) longestRun = cur;
+      }
+    }
 
     totalGames += 1;
     totalPoints += a + b;
@@ -102,6 +114,15 @@ export function spikeballStats({ games, rounds, canonical }: GameStatsInput): Ga
         value: biggestLabel,
         sub: `+${biggestMargin}`,
         emoji: '💥',
+      });
+    }
+    if (longestRun >= 3) {
+      global.push({
+        key: 'sb_run',
+        label: 'Longest rally run',
+        value: `${longestRun}`,
+        sub: 'in a row',
+        emoji: '🔥',
       });
     }
   }

@@ -25,6 +25,14 @@ export interface SpikeballInput {
   teams: [ID[], ID[]];
   a: number;
   b: number;
+  /**
+   * Ordered log of which team (0 | 1) won each rally, oldest first. Optional and purely
+   * additive: `a`/`b` remain the scoring source of truth (so validation, scoring, summary
+   * and stats are unchanged), while this log powers live extras — a satisfying single
+   * "undo last rally" and the momentum/run read. New games seed an empty log; rounds
+   * recorded before this existed simply have no log and fall back to the ± steppers.
+   */
+  rallies?: (0 | 1)[];
 }
 
 export const TARGET_OPTIONS = [21, 15, 11] as const;
@@ -66,6 +74,62 @@ export function splitTeams(playerIds: ID[], format: Format): [ID[], ID[]] {
 /** Games one team must win to take a best-of-N match. */
 export function gamesToWin(bestOf: number): number {
   return Math.floor(bestOf / 2) + 1;
+}
+
+/** Rally-log → the two teams' point totals. The log is the ordered list of rally winners. */
+export function scoreFromRallies(rallies: (0 | 1)[]): { a: number; b: number } {
+  let a = 0;
+  let b = 0;
+  for (const t of rallies) t === 0 ? (a += 1) : (b += 1);
+  return { a, b };
+}
+
+/** Append a rally winner, returning a new log (never mutates the input). */
+export function pushRally(rallies: (0 | 1)[], team: 0 | 1): (0 | 1)[] {
+  return [...rallies, team];
+}
+
+/** Drop the most recent rally, returning a new log. No-op on an empty log. */
+export function popRally(rallies: (0 | 1)[]): (0 | 1)[] {
+  return rallies.slice(0, -1);
+}
+
+/**
+ * The current unbroken run — how many rallies in a row the same team just won. Returns the
+ * team on the streak and its length (0 with a null team when there are no rallies yet).
+ */
+export function currentRun(rallies: (0 | 1)[]): { team: 0 | 1 | null; length: number } {
+  if (rallies.length === 0) return { team: null, length: 0 };
+  const team = rallies[rallies.length - 1]!;
+  let length = 0;
+  for (let i = rallies.length - 1; i >= 0 && rallies[i] === team; i--) length += 1;
+  return { team, length };
+}
+
+/**
+ * Deuce — the win-by-2 tension where the score is *tied at or past* one short of the target
+ * (20–20, 21–21, …) and the game isn't decided, so no single rally can end it. Distinct from
+ * game point (an advantage lead one rally from winning). Always false without win-by-2.
+ */
+export function isDeuce(a: number, b: number, target: number, winByTwo: boolean): boolean {
+  if (!winByTwo) return false;
+  if (gameWinner(a, b, target, winByTwo) !== null) return false;
+  return a === b && a >= target - 1;
+}
+
+/**
+ * Would banking this finished game clinch the whole match? True when `winner` is set and that
+ * team, credited this game, reaches the majority needed for the best-of-N.
+ */
+export function clinchesMatch(
+  winner: 0 | 1 | null,
+  gamesA: number,
+  gamesB: number,
+  bestOf: number,
+): boolean {
+  if (winner === null) return false;
+  const held = winner === 0 ? gamesA : gamesB;
+  return held + 1 >= gamesToWin(bestOf);
 }
 
 /**
