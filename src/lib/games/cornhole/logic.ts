@@ -1,10 +1,14 @@
 import type { ID } from '../../types';
+import { PALETTE, uid } from '../../util';
 
 /**
  * Pure Cornhole scoring — no Svelte, no I/O, fully unit-testable. `index.ts` and the
  * editor import from here so the exact math the game plays is the exact math the tests
- * exercise. Cornhole is a two-SIDE game (1v1 or 2v2); in this app each side is one
- * "player" seat, so the board always shows two scores racing to the target.
+ * exercise. Cornhole is a two-SIDE game: Side A vs Side B, cancellation to a target.
+ * Each side is a *team* of one or two players (1v1 or 2v2) built with the team builder,
+ * so the board always shows two scores racing to the target. The two teammates on a
+ * side share the side's running total, so the generic per-player scoreboard reads the
+ * race correctly (a side's members tie at that side's score).
  */
 
 /** Bag in the hole ("drano" / "cornhole"). */
@@ -26,32 +30,55 @@ export interface SideThrow {
   onBoard: number;
 }
 
-/** A round's input: each side's bags, keyed by that side's player id. */
-export interface CornholeInput {
-  sides: Record<ID, SideThrow>;
+/**
+ * A branded side: an identity (name / emoji / color) plus a roster of member (player)
+ * ids. Cornhole has exactly two — Side A and Side B — each holding one or two players.
+ * Mirrors the Volleyball team model so the two games feel like siblings.
+ */
+export interface CornholeTeam {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  memberIds: string[];
 }
 
-export type CornholeFormat = '1v1' | '2v2';
+/**
+ * A round's input. New (team-builder) shape carries the two sides as branded teams and
+ * their bags keyed by TEAM id. The legacy `sides` field (bags keyed by PLAYER id, from
+ * before the team builder) is kept read-only so old saved games still describe & stat
+ * correctly and stay editable.
+ */
+export interface CornholeInput {
+  /** The two sides for this round (Side A, Side B) as branded teams. */
+  teams?: CornholeTeam[];
+  /** Each side's bags this round, keyed by TEAM id. */
+  throws?: Record<ID, SideThrow>;
+  /** Legacy: each side's bags keyed by PLAYER id (pre-team-builder). Read-only compat. */
+  sides?: Record<ID, SideThrow>;
+}
 
 /** Normalized, validated config the scorer actually runs on. */
 export interface CornholeConfig {
   target: number;
   bust: boolean;
   winBy: number;
-  format: CornholeFormat;
 }
 
 /** Full result of resolving one round — deltas plus the pieces the UI narrates. */
 export interface RoundOutcome {
-  /** Per-side point deltas to apply this round (the loser/wash side is 0). */
+  /**
+   * Per-PLAYER point deltas to apply this round. The scoring side's net is mirrored to
+   * every member of that side (so teammates share the side total); everyone else is 0.
+   */
   deltas: Record<ID, number>;
-  /** Raw round points for side A (first seat) before cancellation. */
+  /** Raw round points for side A (first team) before cancellation. */
   aRaw: number;
-  /** Raw round points for side B (second seat) before cancellation. */
+  /** Raw round points for side B (second team) before cancellation. */
   bRaw: number;
-  /** The side that scored this round, or null on a wash (tie). */
-  gainerId: ID | null;
-  /** Net points the leader won this round (after cancellation, before bust). */
+  /** The team id that scored this round, or null on a wash (tie). */
+  gainerTeamId: ID | null;
+  /** Net points the leading side won this round (after cancellation, before bust). */
   net: number;
   /** True when the bust rule pulled the scoring side back to {@link BUST_TO}. */
   busted: boolean;
@@ -65,13 +92,95 @@ export function readConfig(config: Record<string, unknown> = {}): CornholeConfig
     target,
     bust: config.bust === true,
     winBy,
-    format: config.format === '2v2' ? '2v2' : '1v1',
   };
 }
 
 /** A fresh, empty throw for one side. */
 export function emptyThrow(): SideThrow {
   return { inHole: 0, onBoard: 0 };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Team model — two branded sides you build from the player pool, mirroring the
+// Volleyball team builder. Cornhole always has exactly two sides; each holds one
+// or two players (1v1 or 2v2). Pure and Svelte-free so the editor and tests agree.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The most players allowed on one side (doubles). */
+export const MAX_PER_SIDE = 2;
+
+/** Whimsical default branding for the two sides, backyard bag-toss flavored. */
+const SIDE_NAMES = ['Bag Slingers', 'Corn Stars'];
+const SIDE_EMOJIS = ['🎒', '🌽'];
+
+/** Build a fresh side with default branding for slot `i` (0 = Side A, 1 = Side B). */
+export function makeTeam(i: number, memberIds: string[] = []): CornholeTeam {
+  return {
+    id: uid(),
+    name: SIDE_NAMES[i % SIDE_NAMES.length] ?? `Side ${String.fromCharCode(65 + i)}`,
+    emoji: SIDE_EMOJIS[i % SIDE_EMOJIS.length] ?? '🌽',
+    color: PALETTE[i % PALETTE.length] ?? '#7c5cff',
+    memberIds: [...memberIds],
+  };
+}
+
+/** A deep-ish clone so a carried-forward roster edit never mutates a past round. */
+export function cloneTeams(teams: CornholeTeam[]): CornholeTeam[] {
+  return teams.map((t) => ({ ...t, memberIds: [...t.memberIds] }));
+}
+
+/**
+ * Seed the two sides from a player pool: split it into two even-ish contiguous
+ * halves (Side A gets the first half). 2 players → 1v1, 4 → 2v2, 3 → 2v1.
+ */
+export function defaultTeams(pool: string[]): CornholeTeam[] {
+  const half = Math.ceil(pool.length / 2);
+  return [makeTeam(0, pool.slice(0, half)), makeTeam(1, pool.slice(half))];
+}
+
+/** A clean throw with clamped, non-negative integer bag counts. */
+function normThrow(t: SideThrow | undefined): SideThrow {
+  return { inHole: bags(t?.inHole), onBoard: bags(t?.onBoard) };
+}
+
+/**
+ * Resolve any round input (new team shape or legacy player-keyed `sides`) into the
+ * canonical `{ teams, throws }` the scorer and editor run on. Legacy rounds become two
+ * single-member sides seeded from the lineup, with their old bags carried across — so
+ * pre-team-builder games stay describable, statable, and editable.
+ */
+export function normalizeInput(
+  input: CornholeInput | undefined,
+  players: { id: string; name?: string }[],
+): { teams: CornholeTeam[]; throws: Record<ID, SideThrow> } {
+  const src = input ?? {};
+
+  if (src.teams && src.teams.length >= 1) {
+    const teams = cloneTeams(src.teams);
+    const throws: Record<ID, SideThrow> = {};
+    for (const t of teams) throws[t.id] = normThrow(src.throws?.[t.id]);
+    return { teams, throws };
+  }
+
+  // Legacy shape: `sides` keyed by player id, each player its own single-member side.
+  // Name each synthesized side after its player so old games still read faithfully.
+  const legacy = src.sides ?? {};
+  const teams = players.map((p, i) => {
+    const t = makeTeam(i, [p.id]);
+    if (p.name) t.name = p.name;
+    return t;
+  });
+  const throws: Record<ID, SideThrow> = {};
+  teams.forEach((t) => {
+    throws[t.id] = normThrow(legacy[t.memberIds[0] ?? '']);
+  });
+  return { teams, throws };
+}
+
+/** A side's current race total — mirrored across its members, so any member reads it. */
+export function sideTotal(team: CornholeTeam | undefined, totals: Record<ID, number>): number {
+  const m = team?.memberIds?.[0];
+  return m ? Number(totals[m]) || 0 : 0;
 }
 
 /** Clamp a bag count to a sane non-negative integer. */
@@ -110,44 +219,55 @@ export function applyBust(
 }
 
 /**
- * Resolve a round for the two sides (in seat order). `totals` are the cumulative
- * scores BEFORE this round, needed so the bust rule can reset the scoring side.
+ * Resolve a round for the two sides (in team order). `totals` are the cumulative
+ * scores BEFORE this round, needed so the bust rule can reset the scoring side. The
+ * scoring side's net is mirrored to every one of its members, so teammates share the
+ * side total and the per-player scoreboard reads the two-side race correctly.
  */
 export function scoreCornhole(
-  ids: [ID, ID],
-  input: CornholeInput,
+  teams: CornholeTeam[],
+  throws: Record<ID, SideThrow>,
   totals: Record<ID, number>,
   cfg: CornholeConfig,
 ): RoundOutcome {
-  const [aId, bId] = ids;
-  const aRaw = sideRaw(input.sides?.[aId]);
-  const bRaw = sideRaw(input.sides?.[bId]);
+  const a = teams[0];
+  const b = teams[1];
+  const aRaw = sideRaw(throws[a?.id ?? '']);
+  const bRaw = sideRaw(throws[b?.id ?? '']);
   const { gainer, net } = cancel(aRaw, bRaw);
 
-  const deltas: Record<ID, number> = { [aId]: 0, [bId]: 0 };
-  let gainerId: ID | null = null;
+  const deltas: Record<ID, number> = {};
+  for (const t of teams) for (const m of t.memberIds) deltas[m] = 0;
+
+  let gainerTeamId: ID | null = null;
   let busted = false;
 
   if (gainer) {
-    gainerId = gainer === 'a' ? aId : bId;
-    const { delta, busted: b } = applyBust(Number(totals[gainerId]) || 0, net, cfg);
-    deltas[gainerId] = delta;
-    busted = b;
+    const win = gainer === 'a' ? a : b;
+    gainerTeamId = win?.id ?? null;
+    const { delta, busted: bt } = applyBust(sideTotal(win, totals), net, cfg);
+    for (const m of win?.memberIds ?? []) deltas[m] = delta;
+    busted = bt;
   }
 
-  return { deltas, aRaw, bRaw, gainerId, net, busted };
+  return { deltas, aRaw, bRaw, gainerTeamId, net, busted };
 }
 
 /**
  * True once a side has won: it has reached the target AND leads by at least `winBy`.
- * With the default `winBy` of 1 this is simply "first side to the target".
+ * With the default `winBy` of 1 this is simply "first side to the target". Operates on
+ * the *distinct* side totals — teammates share a side's total, so 4 mirrored player
+ * totals still resolve to a two-side race, and a level game (one distinct total) is
+ * never a win.
  */
 export function isWon(totals: Record<ID, number>, cfg: CornholeConfig): boolean {
-  const vals = Object.values(totals);
+  const vals = Object.values(totals).map((v) => Number(v) || 0);
   if (vals.length === 0) return false;
-  const sorted = [...vals].sort((x, y) => y - x);
-  const top = sorted[0] ?? 0;
-  const second = sorted.length > 1 ? (sorted[1] ?? 0) : -Infinity;
+  const distinct = [...new Set(vals)].sort((x, y) => y - x);
+  const top = distinct[0] ?? 0;
+  // With a single distinct value the sides are level (lead 0) when more than one side
+  // is present; a lone total (one side only) has no rival, so it stands unopposed.
+  const second = distinct.length > 1 ? distinct[1]! : vals.length > 1 ? top : -Infinity;
   return top >= cfg.target && top - second >= cfg.winBy;
 }
 
