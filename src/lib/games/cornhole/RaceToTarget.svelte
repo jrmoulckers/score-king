@@ -16,6 +16,8 @@
     id: string;
     name: string;
     color: string;
+    /** Optional side emoji — shown instead of an initials avatar for a team side. */
+    emoji?: string;
     total: number;
     /** Projected point change from the frame being entered (may be negative on a bust). */
     gain: number;
@@ -42,7 +44,11 @@
     <div class="lane" class:leader={l.isLeader} class:danger={l.danger}>
       <div class="lhead">
         <span class="who">
-          <Avatar name={l.name} color={l.color} size={22} />
+          {#if l.emoji}
+            <span class="temoji" style={`--tc:${l.color}`} aria-hidden="true">{l.emoji}</span>
+          {:else}
+            <Avatar name={l.name} color={l.color} size={22} />
+          {/if}
           <span class="nm">{l.name}</span>
         </span>
         <span class="score" class:lead={l.isLeader}>
@@ -134,6 +140,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  /* Side badge — the team's emoji on a tint of its own colour. Identity reads through
+     the emoji + name, never colour alone. */
+  .temoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex: none;
+    border-radius: 999px;
+    font-size: 1rem;
+    background: color-mix(in srgb, var(--tc, var(--primary)) 20%, var(--surface-3));
+    border: 1px solid color-mix(in srgb, var(--tc, var(--primary)) 45%, var(--border));
   }
   .score {
     display: inline-flex;
