@@ -632,7 +632,14 @@
             <tr class:flash={r.id === justSavedId}>
               <td>{r.index + 1}</td>
               {#each orderedPlayers as p (p.id)}
-                <td class="num">{showRunning ? (runningTotals[r.id]?.[p.id] ?? 0) : fmt(r.deltas[p.id])}</td>
+                {@const cell = !showRunning && module ? (module.roundCellTone?.(r, p.id) ?? null) : null}
+                <td
+                  class="num"
+                  class:tone-bad={cell?.tone === 'bad'}
+                  class:tone-good={cell?.tone === 'good'}
+                  class:tone-warn={cell?.tone === 'warn'}
+                  title={cell?.label}
+                >{showRunning ? (runningTotals[r.id]?.[p.id] ?? 0) : fmt(r.deltas[p.id])}</td>
               {/each}
               <td class="acts">
                 {#if game.status === 'active'}
@@ -818,6 +825,18 @@
   }
   .matrix .num {
     font-variant-numeric: tabular-nums;
+  }
+  /* Per-round emphasis a game module can request (Hearts flags the Queen-taker).
+     The value itself is the primary signal; the hue reinforces it, and a title
+     on the cell carries the reason for pointer + assistive tech. */
+  .matrix .num.tone-bad {
+    color: var(--bad);
+  }
+  .matrix .num.tone-good {
+    color: var(--good);
+  }
+  .matrix .num.tone-warn {
+    color: var(--warn);
   }
   .matrix tfoot td,
   .matrix tfoot th {

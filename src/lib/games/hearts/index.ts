@@ -2,6 +2,7 @@ import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
 import { heartsStats } from './stats';
 import {
+  describeRound as describeHeartsRound,
   emptyInput,
   isFinished as heartsFinished,
   scoreRound as scoreHearts,
@@ -10,7 +11,7 @@ import {
   type HeartsInput,
 } from './logic';
 
-export type { HeartsInput, HeartsConfig, MoonRule } from './logic';
+export type { HeartsInput, HeartsConfig, MoonRule, PassDirection, PassInfo } from './logic';
 
 export const hearts: GameModule = {
   id: 'hearts',
@@ -39,7 +40,14 @@ export const hearts: GameModule = {
         { value: 'add26', label: 'Everyone else +26' },
         { value: 'subtract', label: 'Shooter −26' },
       ],
-      help: 'Take all 13 hearts and the ♠Q to shoot the moon and flip the round on its head.',
+      help: 'Take all 13 hearts and the ♠Q to shoot the moon and flip the round on its head. Sets the default; the shooter can flip it for that round as they enter it.',
+    },
+    {
+      key: 'passing',
+      label: 'Show the passing direction each hand',
+      type: 'boolean',
+      default: true,
+      help: 'Hearts passes 3 cards before each deal — left, right, across, then a hold — rotating every hand. A reminder shows whose way the cards go. Turn off if your group doesn’t pass.',
     },
   ],
 
@@ -54,14 +62,17 @@ export const hearts: GameModule = {
 
   isFinished: (totals, { config }) => heartsFinished(totals, config),
 
-  describeRound: (round: Round, players): string => {
-    const input = round.input as HeartsInput;
-    const name = (id: ID | null) => players.find((p) => p.id === id)?.name ?? '?';
-    const moon = shooter(input);
-    if (moon) return `🌙 ${name(moon)} shot the moon`;
-    const parts: string[] = [`♠Q ${name(input.queen)}`];
-    if (input.jack) parts.push(`♦J ${name(input.jack)}`);
-    return parts.join(' · ');
+  describeRound: (round: Round, players): string =>
+    describeHeartsRound(round.input as HeartsInput, players),
+
+  // Per-round scorecard emphasis: mark whoever ate the Queen in coral (a heavy
+  // hand), but not when they shot the moon — a moon flips the round, so the Queen
+  // is a triumph there, not a penalty. Co-signalled by a title/AT label, and only
+  // the per-round view (deltas) asks for it, never the running totals.
+  roundCellTone: (round: Round, playerId: ID) => {
+    const input = round.input as HeartsInput | undefined;
+    if (!input || shooter(input)) return null;
+    return input.queen === playerId ? { tone: 'bad', label: 'Took the ♠Q (+13)' } : null;
   },
 
   help: [

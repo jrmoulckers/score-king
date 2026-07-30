@@ -338,5 +338,24 @@ describe('heartsStats', () => {
     expect(out.perPlayer?.['A'].find((m) => m.key === 'h_moon')?.value).toBe('1');
     expect(out.perPlayer?.['A'].find((m) => m.key === 'h_queen')?.value).toBe('1');
     expect(out.global?.[0]).toMatchObject({ key: 'h_moon_all', value: '1' });
+    // A moon flips the round, so it's excluded from the points averages.
+    expect(out.perPlayer?.['A'].find((m) => m.key === 'h_worst')).toBeUndefined();
+    expect(out.perPlayer?.['A'].find((m) => m.key === 'h_avg')).toBeUndefined();
+  });
+
+  it('reports worst hand and average points per hand (moons excluded)', () => {
+    const games = [mkGame({ id: 'h2', type: 'hearts', playerIds: ['A', 'B', 'C'], roundCount: 3 })];
+    const rounds = [
+      mkRound('h2', 0, {}, { hearts: { A: 10, B: 3, C: 0 }, queen: 'A', jack: null }), // A: 23
+      mkRound('h2', 1, {}, { hearts: { A: 0, B: 5, C: 8 }, queen: 'C', jack: null }), // A: 0
+      mkRound('h2', 2, {}, { hearts: { B: 13, A: 0, C: 0 }, queen: 'B', jack: null }), // moon (B), skipped
+    ];
+    const out = heartsStats({ games, rounds, players: [], canonical: (id) => id });
+    const a = out.perPlayer?.['A'] ?? [];
+    expect(a.find((m) => m.key === 'h_worst')?.value).toBe('23');
+    expect(a.find((m) => m.key === 'h_avg')?.value).toBe('11.5');
+    // B shot the moon in round 2 — that hand is left out of B's average.
+    expect(out.perPlayer?.['B'].find((m) => m.key === 'h_avg')?.value).toBe('4');
+    expect(out.perPlayer?.['B'].find((m) => m.key === 'h_moon')?.value).toBe('1');
   });
 });

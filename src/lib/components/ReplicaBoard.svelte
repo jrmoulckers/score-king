@@ -277,7 +277,14 @@
             <tr class:flash={r.id === justLandedId}>
               <td>{r.index + 1}</td>
               {#each replica.players as p (p.id)}
-                <td class="num">{fmt(r.deltas[p.id])}</td>
+                {@const cell = gmodule.roundCellTone?.(r, p.id) ?? null}
+                <td
+                  class="num"
+                  class:tone-bad={cell?.tone === 'bad'}
+                  class:tone-good={cell?.tone === 'good'}
+                  class:tone-warn={cell?.tone === 'warn'}
+                  title={cell?.label}
+                >{fmt(r.deltas[p.id])}</td>
               {/each}
             </tr>
           {/each}
@@ -433,6 +440,18 @@
     flex: none;
     font-size: 0.8rem;
     color: var(--muted);
+  }
+  /* Per-round emphasis a game module can request (Hearts flags the Queen-taker),
+     mirroring the host scorecard. The value is the primary signal; hue reinforces
+     it and the cell's title carries the reason for pointer + assistive tech. */
+  .matrix .num.tone-bad {
+    color: var(--bad);
+  }
+  .matrix .num.tone-good {
+    color: var(--good);
+  }
+  .matrix .num.tone-warn {
+    color: var(--warn);
   }
   /* Round-saved pulse on the newest scorecard row — the host shows the same Win-Green
      confirmation (GamePlay), so relay/nearby guests get identical feedback. The row is

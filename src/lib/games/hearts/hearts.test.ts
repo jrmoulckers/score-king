@@ -5,10 +5,13 @@ import {
   HEARTS_TOTAL,
   baseDelta,
   emptyInput,
+  endgameInfo,
   heartsRemaining,
   heartsTotal,
   isFinished,
   outcomeFor,
+  passCycle,
+  passingFor,
   previewDelta,
   readConfig,
   scoreRound,
@@ -35,15 +38,52 @@ function input(
 // ── config ───────────────────────────────────────────────────────────────
 describe('readConfig', () => {
   it('applies defaults', () => {
-    expect(readConfig({})).toEqual({ endScore: 100, variantJack: false, moonRule: 'add26' });
+    expect(readConfig({})).toEqual({
+      endScore: 100,
+      variantJack: false,
+      moonRule: 'add26',
+      passing: true,
+    });
   });
   it('reads overrides and clamps moonRule to a known value', () => {
     expect(readConfig({ endScore: 50, variantJack: true, moonRule: 'subtract' })).toEqual({
       endScore: 50,
       variantJack: true,
       moonRule: 'subtract',
+      passing: true,
     });
     expect(readConfig({ moonRule: 'nonsense' }).moonRule).toBe('add26');
+  });
+  it('treats passing as on unless explicitly disabled', () => {
+    expect(readConfig({}).passing).toBe(true);
+    expect(readConfig({ passing: true }).passing).toBe(true);
+    expect(readConfig({ passing: false }).passing).toBe(false);
+  });
+});
+
+// ── passing ritual ─────────────────────────────────────────────────────────
+describe('passing', () => {
+  it('rotates left → right → across → hold for a four-handed table', () => {
+    expect(passCycle(4)).toEqual(['left', 'right', 'across', 'hold']);
+    expect(passingFor(0, 4).direction).toBe('left');
+    expect(passingFor(1, 4).direction).toBe('right');
+    expect(passingFor(2, 4).direction).toBe('across');
+    expect(passingFor(3, 4).direction).toBe('hold');
+    expect(passingFor(4, 4).direction).toBe('left'); // wraps every 4 hands
+  });
+  it('drops "across" when the table is not four-handed', () => {
+    expect(passCycle(3)).toEqual(['left', 'right', 'hold']);
+    expect(passCycle(5)).toEqual(['left', 'right', 'hold']);
+    expect(passingFor(2, 3).direction).toBe('hold');
+    expect(passingFor(3, 3).direction).toBe('left'); // wraps every 3 hands
+    expect(passingFor(0, 6).direction).toBe('left');
+  });
+  it('carries a glyph, label and a 3-card hint that co-signal the direction', () => {
+    const left = passingFor(0, 4);
+    expect(left.glyph).toBeTruthy();
+    expect(left.label).toMatch(/left/i);
+    expect(left.hint).toMatch(/3 cards/i);
+    expect(passingFor(3, 4).label).toMatch(/hold/i);
   });
 });
 
@@ -75,6 +115,10 @@ describe('validateRound', () => {
   it('flags too many hearts', () => {
     const msg = validateRound(input({ a: 10, b: 5, c: 0, d: 0 }, 'a'), P4, {});
     expect(msg).toMatch(/2 too many/);
+  });
+  it('frames the shortfall against the 26-point hand', () => {
+    const msg = validateRound(input({ a: 5, b: 3, c: 0, d: 0 }, 'a'), P4, {});
+    expect(msg).toMatch(/Must total 26/);
   });
   it('requires the Queen to be assigned', () => {
     const msg = validateRound(input({ a: 13, b: 0, c: 0, d: 0 }, null), P4, {});
@@ -132,6 +176,24 @@ describe('scoreRound', () => {
       d: 26,
     });
   });
+
+  it("a per-round moon pick overrides the game's default rule", () => {
+    const base = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
+    // Round says "shooter −26" even though the game default is add26.
+    expect(scoreRound({ ...base, moonRule: 'subtract' }, IDS, { moonRule: 'add26' })).toEqual({
+      a: -26,
+      b: 0,
+      c: 0,
+      d: 0,
+    });
+    // …and the reverse: round says add26 over a subtract default.
+    expect(scoreRound({ ...base, moonRule: 'add26' }, IDS, { moonRule: 'subtract' })).toEqual({
+      a: 0,
+      b: 26,
+      c: 26,
+      d: 26,
+    });
+  });
 });
 
 // ── previews & outcomes ────────────────────────────────────────────────────
@@ -160,6 +222,36 @@ describe('isFinished', () => {
     expect(isFinished({ a: 100, b: 40 }, {})).toBe(true);
     expect(isFinished({ a: 99, b: 40 }, {})).toBe(false);
     expect(isFinished({ a: 55, b: 40 }, { endScore: 50 })).toBe(true);
+  });
+});
+
+// ── endgame tension ──────────────────────────────────────────────────────────
+describe('endgameInfo', () => {
+  it('is quiet at the start (nobody near the finish)', () => {
+    const e = endgameInfo({ a: 0, b: 0, c: 0, d: 0 }, IDS, {});
+    expect(e).toMatchObject({ end: 100, atRiskTotal: 0, toEnd: 100, imminent: false, reached: false });
+  });
+  it('flags the highest total as the seat racing to end it', () => {
+    const e = endgameInfo({ a: 40, b: 62, c: 10, d: 0 }, IDS, {});
+    expect(e.atRiskId).toBe('b');
+    expect(e.atRiskTotal).toBe(62);
+    expect(e.toEnd).toBe(38);
+    expect(e.imminent).toBe(false); // 38 is more than one hand away
+  });
+  it('turns imminent once a single hand (≤26) could finish it', () => {
+    expect(endgameInfo({ a: 80, b: 20 }, ['a', 'b'], {}).imminent).toBe(true);
+    expect(endgameInfo({ a: 74, b: 20 }, ['a', 'b'], {}).imminent).toBe(true); // exactly 26 to go
+    expect(endgameInfo({ a: 73, b: 20 }, ['a', 'b'], {}).imminent).toBe(false); // 27 to go
+  });
+  it('reports reached (not imminent) when a seat is already at the end', () => {
+    const e = endgameInfo({ a: 100, b: 20 }, ['a', 'b'], {});
+    expect(e).toMatchObject({ toEnd: 0, reached: true, imminent: false });
+  });
+  it('honors a custom end score and ignores negative totals for the risk seat', () => {
+    expect(endgameInfo({ a: 45, b: 10 }, ['a', 'b'], { endScore: 50 }).toEnd).toBe(5);
+    const e = endgameInfo({ a: -26, b: 5 }, ['a', 'b'], {});
+    expect(e.atRiskId).toBe('b');
+    expect(e.atRiskTotal).toBe(5);
   });
 });
 
@@ -193,10 +285,22 @@ describe('hearts module', () => {
     expect(HEARTS_TOTAL).toBe(13);
   });
 
-  it('describeRound summarizes a moon and an ordinary round', () => {
+  it('describeRound summarizes a moon, a crashed moon, and an ordinary round', () => {
     const moon = { input: input({ a: 13, b: 0, c: 0, d: 0 }, 'a') } as never;
     expect(hearts.describeRound!(moon, P4)).toMatch(/shot the moon/);
+    // Took the Queen and 12 of 13 hearts = 25 points: a moon missed by one card.
+    const crashed = { input: input({ a: 12, b: 1, c: 0, d: 0 }, 'a') } as never;
+    expect(hearts.describeRound!(crashed, P4)).toMatch(/☄️ A crashed a moon — 25/);
     const ordinary = { input: input({ a: 4, b: 4, c: 4, d: 1 }, 'd', 'a') } as never;
-    expect(hearts.describeRound!(ordinary, P4)).toMatch(/♠Q D · ♦J A/);
+    expect(hearts.describeRound!(ordinary, P4)).toMatch(/💔 D \+14 · ♦J A/);
+  });
+
+  it('roundCellTone marks the Queen-taker, but not a moon shooter', () => {
+    const ordinary = { input: input({ a: 4, b: 4, c: 4, d: 1 }, 'a') } as never;
+    expect(hearts.roundCellTone!(ordinary, 'a')).toMatchObject({ tone: 'bad' });
+    expect(hearts.roundCellTone!(ordinary, 'b')).toBeNull();
+    // A moon flips scoring, so the Queen-taker (the shooter) isn't flagged.
+    const moon = { input: input({ a: 13, b: 0, c: 0, d: 0 }, 'a') } as never;
+    expect(hearts.roundCellTone!(moon, 'a')).toBeNull();
   });
 });

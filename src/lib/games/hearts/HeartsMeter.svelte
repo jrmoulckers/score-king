@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { HEARTS_TOTAL } from './logic';
+  import { HEARTS_TOTAL, QUEEN_POINTS } from './logic';
 
   /**
    * Hearts' per-game "costume": a slim ribbon at the top of the round editor that
-   * reads the 13 hearts as a waxing moon. As hearts get handed out the moon fills
+   * reads the hand's 26 penalty points as a waxing moon — the 13 hearts (1 pt each)
+   * plus the Queen of Spades (13 pts). As points get handed out the moon fills
    * (🌑 → 🌕); the count and the "left to place" copy carry the real meaning, so
    * the glyph is reinforcement, never the only signal. When one player is holding
    * every heart *and* the Queen, the ribbon flips to its charged "Set for a moon
@@ -11,31 +12,33 @@
    * touches the shared chrome. No animation, so nothing to gate for reduced motion.
    */
   let {
-    placed = 0,
+    points = 0,
     moonReady = false,
-  }: { placed?: number; moonReady?: boolean } = $props();
+  }: { points?: number; moonReady?: boolean } = $props();
 
-  const left = $derived(Math.max(0, HEARTS_TOTAL - placed));
-  const over = $derived(placed > HEARTS_TOTAL);
+  // 26 penalty points ride on every hand: 13 hearts + the 13-point Queen.
+  const TOTAL = HEARTS_TOTAL + QUEEN_POINTS;
+  const left = $derived(Math.max(0, TOTAL - points));
+  const over = $derived(points > TOTAL);
 
-  // Map hearts placed (0..13) onto the eight lunar glyphs, waxing to full.
+  // Map penalty points (0..26) onto the eight lunar glyphs, waxing to full.
   const PHASES = ['🌑', '🌒', '🌒', '🌓', '🌓', '🌔', '🌔', '🌕'];
   const phase = $derived(
-    moonReady || placed >= HEARTS_TOTAL
+    moonReady || points >= TOTAL
       ? '🌕'
-      : PHASES[Math.min(PHASES.length - 1, Math.round((placed / HEARTS_TOTAL) * (PHASES.length - 1)))],
+      : PHASES[Math.min(PHASES.length - 1, Math.round((points / TOTAL) * (PHASES.length - 1)))],
   );
 
-  const pct = $derived(Math.min(100, (placed / HEARTS_TOTAL) * 100));
+  const pct = $derived(Math.min(100, (points / TOTAL) * 100));
 
   const caption = $derived(
     moonReady
       ? 'Set for a moon shot'
       : over
-        ? `${placed - HEARTS_TOTAL} too many hearts`
+        ? `${points - TOTAL} too many points`
         : left === 0
-          ? 'All 13 hearts placed'
-          : `${left} heart${left === 1 ? '' : 's'} left to place`,
+          ? 'All 26 points placed'
+          : `${left} point${left === 1 ? '' : 's'} left to place`,
   );
 </script>
 
@@ -44,7 +47,7 @@
   <div class="body">
     <div class="cap">
       <span class="label">{caption}</span>
-      <span class="count">{placed}/{HEARTS_TOTAL} ♥</span>
+      <span class="count">{points}/{TOTAL} pts</span>
     </div>
     <div class="track" aria-hidden="true">
       <div class="fill" style="transform: scaleX({pct / 100})"></div>
