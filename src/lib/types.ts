@@ -204,6 +204,16 @@ export interface GameModule {
   /** Short summary of a recorded round for the history table. */
   describeRound?(round: Round, players: Player[]): string;
   /**
+   * Optional per-cell emphasis for the round-by-round scorecard (per-round view
+   * only). Lets a game flag one player's result in a round — e.g. Hearts marks
+   * whoever ate the Queen. Pure; returns a semantic tone (plus an optional label
+   * used as a title / assistive-tech cue) or null for the default neutral cell.
+   */
+  roundCellTone?(
+    round: Round,
+    playerId: ID,
+  ): { tone: 'good' | 'bad' | 'warn'; label?: string } | null;
+  /**
    * Optional game-specific stats over this game's finished games. Pure, no I/O —
    * mirrors {@link describeRound}: a new game contributes stats the same way it
    * contributes scoring. The stats engine injects this via the registry so it
