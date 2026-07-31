@@ -7,6 +7,17 @@
   --bad: #f87171;
   --warn: #fbbf24;
 
+  /* Per-game accent — Texas Hold'em "poker felt".
+     The one sanctioned per-game costume surface: a deep, desaturated casino-green
+     baize used ONLY inside the Hold'em game's own content (the pot table, the bank
+     band), never on the shell and never to signal state. Deliberately distinct from
+     the semantic win-green (--good) and identical across dark/light, because a card
+     table is a card table. See DESIGN.md §2 "Per-game accent". */
+  --felt: #15633f;
+  --felt-edge: #0c3d27;
+  --felt-ink: #eafff4;
+  --felt-line: rgba(255, 255, 255, 0.1);
+
   --radius: 14px;
   --radius-sm: 9px;
   --radius-chip: 10px;

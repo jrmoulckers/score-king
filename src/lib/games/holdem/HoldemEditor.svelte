@@ -253,7 +253,7 @@
         </ul>
         <div class="pot-line">
           <span class="section-title">Pot</span>
-          <span class="pot-val">{potLevel2.toLocaleString()}</span>
+          <span class="pot-chip">{potLevel2.toLocaleString()}</span>
         </div>
       {:else}
         <BettingBoard {ctx} {cfg} onSettle={onHandSettled} />
@@ -363,19 +363,25 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .pot-line,
-  .pot-val {
+  .pot-line {
     font-variant-numeric: tabular-nums;
   }
   .pot-line {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     padding-top: 4px;
   }
-  .pot-val {
+  /* A single felt chip that echoes the betting table — the pot reads as chips on baize. */
+  .pot-chip {
     font-weight: 800;
     font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--felt-ink);
+    padding: 4px 14px;
+    border-radius: var(--radius-pill, 999px);
+    background: radial-gradient(120% 160% at 30% 20%, var(--felt) 0%, var(--felt-edge) 100%);
+    box-shadow: inset 0 0 0 1px var(--felt-line);
   }
   .note {
     font-size: 0.85rem;

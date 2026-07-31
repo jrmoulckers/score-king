@@ -57,7 +57,7 @@
 
 <section class="bank" aria-label="Table bank">
   <header class="bank-head">
-    <span class="section-title">On the table</span>
+    <span class="head-title">On the table <span class="suits" aria-hidden="true">♠♥♦♣</span></span>
     <span class="on-table">{fmtMoney(onTable)}</span>
   </header>
   <ul class="rows">
@@ -83,16 +83,31 @@
 
 <style>
   .bank {
-    background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 10px 12px;
+    overflow: hidden;
   }
+  /* Felt header band — the poker-table identity, present in every depth mode. Player
+     rows below stay on the neutral surface ramp so the up/down numbers read cleanly. */
   .bank-head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
-    margin-bottom: 6px;
+    gap: 10px;
+    padding: 9px 12px;
+    background: radial-gradient(140% 200% at 18% 0%, var(--felt) 0%, var(--felt-edge) 100%);
+    color: var(--felt-ink);
+  }
+  .head-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .suits {
+    margin-left: 6px;
+    letter-spacing: 0.12em;
+    color: color-mix(in srgb, var(--felt-ink) 78%, transparent);
   }
   .on-table {
     font-weight: 800;
@@ -101,7 +116,7 @@
   .rows {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 8px 10px 10px;
     display: flex;
     flex-direction: column;
     gap: 2px;

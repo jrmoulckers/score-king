@@ -122,8 +122,20 @@ export interface RoundContext {
   rounds: Round[]; // rounds already recorded
 }
 
+/**
+ * Presentation hints shared by every config field. Purely cosmetic — they change
+ * where/whether a field renders in the setup form, never its stored value. So preset
+ * matching and `defaultConfig` still see every field regardless of these.
+ */
+interface ConfigFieldDisplay {
+  /** Tuck this field inside the collapsed "Advanced" group instead of the main list. */
+  advanced?: boolean;
+  /** Only show this field when the predicate holds for the current draft config. */
+  showIf?: (config: Record<string, unknown>) => boolean;
+}
+
 export type ConfigField =
-  | {
+  | ({
       key: string;
       label: string;
       type: 'number';
@@ -132,16 +144,16 @@ export type ConfigField =
       max?: number;
       step?: number;
       help?: string;
-    }
-  | { key: string; label: string; type: 'boolean'; default: boolean; help?: string }
-  | {
+    } & ConfigFieldDisplay)
+  | ({ key: string; label: string; type: 'boolean'; default: boolean; help?: string } & ConfigFieldDisplay)
+  | ({
       key: string;
       label: string;
       type: 'select';
       default: string;
       options: { value: string; label: string }[];
       help?: string;
-    };
+    } & ConfigFieldDisplay);
 
 /** Props every game's RoundEditor component receives. */
 export interface RoundEditorProps {
