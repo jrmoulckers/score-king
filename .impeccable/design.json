@@ -48,6 +48,13 @@
         "canonical": "#fbbf24",
         "tonalRamp": ["oklch(0.29 0.05 80)", "oklch(0.41 0.08 80)", "oklch(0.53 0.11 80)", "oklch(0.64 0.13 80)", "oklch(0.75 0.15 80)", "oklch(0.83 0.16 80)", "oklch(0.90 0.11 80)", "oklch(0.96 0.05 80)"]
       },
+      "felt": {
+        "role": "tertiary",
+        "displayName": "Poker Felt",
+        "canonical": "#15633f",
+        "description": "Per-game accent for Texas Hold'em only (the 'costume' over the fixed chrome). A deep desaturated casino baize, deliberately distinct from the semantic win-green (--good #34d399). Theme-agnostic: identical in dark and light because a card table is a card table. Companion tokens: --felt-edge #0c3d27 (radial rim), --felt-ink #eafff4 (~6.5:1 text on felt), --felt-line rgba(255,255,255,0.1) (rail hairline + suit watermark). Used only inside Hold'em content surfaces (pot table, table-bank header band), never on chrome and never to signal state. Depth on felt is derived from --felt-edge via color-mix, so no literal shadow colors appear in components.",
+        "tonalRamp": ["oklch(0.22 0.05 158)", "oklch(0.31 0.07 158)", "oklch(0.40 0.09 158)", "oklch(0.48 0.10 158)", "oklch(0.56 0.11 158)", "oklch(0.66 0.10 158)", "oklch(0.78 0.07 158)", "oklch(0.90 0.03 158)"]
+      },
       "dark-bg": {
         "role": "neutral",
         "displayName": "Midnight Court",

@@ -348,15 +348,18 @@
 </script>
 
 <div class="board">
-  <div class="topline">
-    <span class="pill">{STREET_LABEL[street]}</span>
-    <span class="pill">🔘 {dealerName}</span>
-    <span class="pill">SB {cfg.smallBlind} / BB {cfg.bigBlind}{cfg.ante ? ` · ante ${cfg.ante}` : ''}</span>
-  </div>
+  <div class="felt-table">
+    <span class="suit-mark" aria-hidden="true">♠</span>
+    <div class="topline">
+      <span class="pill">{STREET_LABEL[street]}</span>
+      <span class="pill">🔘 {dealerName}</span>
+      <span class="pill">SB {cfg.smallBlind} / BB {cfg.bigBlind}{cfg.ante ? ` · ante ${cfg.ante}` : ''}</span>
+    </div>
 
-  <div class="pot">
-    <span class="pot-label section-title">Pot</span>
-    <span class="pot-num">{pot.toLocaleString()}</span>
+    <div class="pot">
+      <span class="pot-label">Pot</span>
+      <span class="pot-num">{pot.toLocaleString()}</span>
+    </div>
   </div>
 
   <ul class="seats">
@@ -455,18 +458,61 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    position: relative;
+    z-index: 1;
+  }
+  /* The card table: the pot sits on deep baize, dealer/blind chips resting on the rail.
+     The one per-game costume surface — felt tokens live in app.css, documented in
+     DESIGN.md as the Hold'em accent. Static (no motion) and the same in both themes. */
+  .felt-table {
+    position: relative;
+    overflow: hidden;
+    padding: 12px 14px 16px;
+    border-radius: var(--radius);
+    background: radial-gradient(120% 90% at 50% 22%, var(--felt) 0%, var(--felt-edge) 100%);
+    box-shadow:
+      inset 0 0 0 2px var(--felt-line),
+      inset 0 0 44px color-mix(in srgb, var(--felt-edge) 70%, transparent);
+  }
+  .suit-mark {
+    position: absolute;
+    right: 8px;
+    bottom: -14px;
+    font-size: 5.5rem;
+    line-height: 1;
+    color: var(--felt-line);
+    pointer-events: none;
+    user-select: none;
+  }
+  /* Chips on the rail: translucent so the baize reads through, light ink for contrast. */
+  .felt-table .pill {
+    background: color-mix(in srgb, var(--felt-edge) 62%, transparent);
+    border-color: var(--felt-line);
+    color: var(--felt-ink);
+    font-variant-numeric: tabular-nums;
   }
   .pot {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    padding: 8px 0;
+    padding-top: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .pot-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--felt-ink) 72%, transparent);
   }
   .pot-num {
-    font-size: 2rem;
+    font-size: 2.1rem;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
+    color: var(--felt-ink);
+    text-shadow: 0 1px 0 color-mix(in srgb, var(--felt-edge) 75%, transparent);
   }
   .seats {
     list-style: none;

@@ -40,6 +40,8 @@ export const holdem: GameModule = {
   maxPlayers: 12,
 
   configFields: [
+    // The three knobs that actually shape a table. Everything else is conditional or
+    // tucked into Advanced, so a plain buy-in night sees just these.
     {
       key: 'unit',
       label: 'Track in',
@@ -53,18 +55,6 @@ export const holdem: GameModule = {
       help: 'How buy-ins and pots are entered — and how the final settle-up reads.',
     },
     {
-      key: 'chipsPerUnit',
-      label: 'Chips per $1',
-      type: 'number',
-      default: 100,
-      min: 1,
-      max: 100000,
-      step: 1,
-      help: 'Only used when tracking chips with a cash value.',
-    },
-    { key: 'defaultBuyin', label: 'Default buy-in', type: 'number', default: 20, min: 1, step: 1 },
-    { key: 'rebuys', label: 'Allow rebuys', type: 'boolean', default: true },
-    {
       key: 'depth',
       label: 'Track hands',
       type: 'select',
@@ -76,37 +66,64 @@ export const holdem: GameModule = {
       ],
       help: 'The default flow for a new hand. You can still change it hand to hand.',
     },
+    { key: 'defaultBuyin', label: 'Default buy-in', type: 'number', default: 20, min: 1, step: 1 },
+
+    // Only meaningful when tracking chips at a cash value.
+    {
+      key: 'chipsPerUnit',
+      label: 'Chips per $1',
+      type: 'number',
+      default: 100,
+      min: 1,
+      max: 100000,
+      step: 1,
+      showIf: (c) => c.unit === 'chipsWithValue',
+      help: 'Sets the cash value of the pot and the final settle-up.',
+    },
+
+    // Blinds surface exactly when a hand is actually dealt out (full betting or a
+    // tournament), right where they matter — not buried, not always present.
+    {
+      key: 'smallBlind',
+      label: 'Small blind',
+      type: 'number',
+      default: 5,
+      min: 0,
+      step: 1,
+      showIf: (c) => c.depth === 'betting' || c.mode === 'tournament',
+    },
+    {
+      key: 'bigBlind',
+      label: 'Big blind',
+      type: 'number',
+      default: 10,
+      min: 0,
+      step: 1,
+      showIf: (c) => c.depth === 'betting' || c.mode === 'tournament',
+    },
+
+    // ── Advanced: the long tail most tables never touch. ──────────────────────────
+    { key: 'rebuys', label: 'Allow rebuys', type: 'boolean', default: true, advanced: true },
     {
       key: 'mode',
       label: 'Format',
       type: 'select',
       default: 'cash',
+      advanced: true,
       options: [
         { value: 'cash', label: 'Cash game' },
         { value: 'tournament', label: 'Tournament' },
       ],
     },
     {
-      key: 'startingStack',
-      label: 'Starting stack (chips)',
+      key: 'ante',
+      label: 'Ante',
       type: 'number',
-      default: 1000,
-      min: 1,
-      step: 50,
-      help: 'Chips a player brings into a full-betting hand.',
-    },
-    { key: 'smallBlind', label: 'Small blind', type: 'number', default: 5, min: 0, step: 1 },
-    { key: 'bigBlind', label: 'Big blind', type: 'number', default: 10, min: 0, step: 1 },
-    { key: 'ante', label: 'Ante', type: 'number', default: 0, min: 0, step: 1 },
-    {
-      key: 'blindMinutes',
-      label: 'Minutes per blind level',
-      type: 'number',
-      default: 15,
-      min: 1,
-      max: 120,
+      default: 0,
+      min: 0,
       step: 1,
-      help: 'Tournament level timer length.',
+      advanced: true,
+      showIf: (c) => c.depth === 'betting' || c.mode === 'tournament',
     },
   ],
 
@@ -164,8 +181,7 @@ export const holdem: GameModule = {
     'move when a hand is settled. At the end, "Cash out" counts everyone up and shows',
     'the shortest list of "who pays whom".',
     '',
-    'Blinds, antes and a tournament level timer appear when you turn on full betting',
-    'or tournament mode.',
+    'Blinds and antes appear as soon as you switch on full betting or tournament mode.',
   ].join('\n'),
 
   stats: holdemStats,

@@ -173,6 +173,19 @@ because the app boots `data-theme="dark"`.
 - **Loss Coral** (`#f87171`): Negative deltas, destructive actions (text only), errors.
 - **Caution Amber** (`#fbbf24`): Warnings and pending/attention states.
 
+### Per-game Accent (costume)
+The chrome is fixed; a game may bring exactly **one** themed accent for its own content
+surfaces — never for chrome, buttons, or state. This is the "costume over the shell" from
+§1, expressed as color rather than just emoji/copy.
+- **Poker Felt** (`--felt` `#15633f`, with `--felt-edge` `#0c3d27`, `--felt-ink` `#eafff4`,
+  `--felt-line` `rgba(255,255,255,0.1)`): Texas Hold'em only. A deep desaturated casino
+  baize for the pot table and the table-bank header band, giving the ledger a card-table
+  identity. Deliberately distinct from semantic **Win Green** (`#34d399`) so felt never
+  reads as "up." Theme-agnostic (identical dark/light — a card table is a card table);
+  `--felt-ink` clears ~6.5:1 on felt. Depth on felt is derived from `--felt-edge` via
+  `color-mix`, so components carry no literal shadow colors. **Never** used on chrome,
+  buttons, or to signal state, and it never displaces Crown Gold on the leader/winner.
+
 ### Neutral — Dark (default)
 - **Midnight Court** (`#0f1020`): App background, behind a faint violet radial glow
   (`radial-gradient(1200px 600px at 50% -10%, #1c1d3a, #0f1020)`).
