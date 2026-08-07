@@ -1,42 +1,92 @@
 {
   "version": 1,
   "backbone": "jrmoulckers/.github",
-  "generatedAt": "2026-08-07T15:34:55.223Z",
+  "generatedAt": "2026-08-07T23:31:41.527Z",
   "entries": {
     ".github/agents/accessibility-reviewer.agent.md": {
       "sourceSha256": "f83d90b50ea87be04935ba849c0a93eda729452a2d7eee81e0cb02b4bf04dae5",
       "targetSha256": "f616ea0dbb9d4fc8414ea502196b4b6dd1da7a3e67e0c71b65c0352fabb1d38a",
       "syncedAt": "2026-08-07T15:34:55.221Z"
     },
+    ".github/agents/ai-ops-engineer.agent.md": {
+      "sourceSha256": "59c690617ad935f2c2baff0d7434f2707ca1f76786e21800a8b8b519764078da",
+      "targetSha256": "16b39a65dfdad88092773d43361b89daeedb1b36023448685d69b84fe134fe00",
+      "syncedAt": "2026-08-07T23:31:41.393Z"
+    },
     ".github/agents/architect.agent.md": {
-      "sourceSha256": "6008a496fcc161d609d1f9ed04472794baf02ecaa5f5c473f1cfb18b2d4abfc6",
-      "targetSha256": "c6083da6ea7e8264466f74e7fda314f8ecdd9a61363ab31bb28ff4b1a1f06676",
-      "syncedAt": "2026-08-07T15:34:55.220Z"
+      "sourceSha256": "0fb572c640c53a1a95bd70ca05ac4852897bc6b03c5803a0fd4840010966668c",
+      "targetSha256": "36e67754a46bbcdb6c44dd4b5c48e8ee299849bd9d236a2d24ca30e58cc97d65",
+      "syncedAt": "2026-08-07T23:31:41.395Z"
+    },
+    ".github/agents/backend-engineer.agent.md": {
+      "sourceSha256": "0100848a4e6cd5ff47724cead90312cc49bbf997244a3cbb06d415b1e54ac8ba",
+      "targetSha256": "0e6dd485338295e1320cd2881ecfcacbc6d8d518b0731e0a15b38c67aba1d4a9",
+      "syncedAt": "2026-08-07T23:31:41.397Z"
+    },
+    ".github/agents/business-analyst.agent.md": {
+      "sourceSha256": "f871578e519bff5a65a63755f5de4ee4673828c0db29c24439ebec4f2cfa7150",
+      "targetSha256": "09a206273e823d4f09ba2e23ff17b74ed63e6f10a97ef5fb19b03c716a60a92b",
+      "syncedAt": "2026-08-07T23:31:41.400Z"
+    },
+    ".github/agents/compliance-specialist.agent.md": {
+      "sourceSha256": "ccfa4067cf62e18380feeb648c06c889cd6b768befc0582800e73ea9e33b9f4c",
+      "targetSha256": "aa4a8fd37b984f014221d6754012a9cfa254df98b507fdea7e819660c63c5ae3",
+      "syncedAt": "2026-08-07T23:31:41.401Z"
+    },
+    ".github/agents/data-engineer.agent.md": {
+      "sourceSha256": "833995ce18a152af3e25e7e854e3565e2155c07614f2453b493c4403de94bb07",
+      "targetSha256": "6b39cb90356efceca13259931374042465b7cc527d7ca303bcd3fbdafd747f36",
+      "syncedAt": "2026-08-07T23:31:41.403Z"
+    },
+    ".github/agents/database-engineer.agent.md": {
+      "sourceSha256": "57e7ec70c0701838def18ecd7e65bfb8e8e1f04502deac208caf82fdfff25b0b",
+      "targetSha256": "2a3daac19b78cd7080a30a87d0fbc23b29f9c4cac64d9e4a916079445e428ebf",
+      "syncedAt": "2026-08-07T23:31:41.404Z"
     },
     ".github/agents/devops-engineer.agent.md": {
-      "sourceSha256": "62fe77391cdfcccca4b432dc087e45f04f62d4ab818c2f9611fc455d66e8f319",
-      "targetSha256": "4af444b05d57057dd594e6d071df509448b68687f344229bdf934f30252d140b",
-      "syncedAt": "2026-08-07T15:34:55.220Z"
+      "sourceSha256": "9ff45de526720ebe88f22f03db790737ae38dce96e56af678d0b262c0e3d0a19",
+      "targetSha256": "9911bde9c5fcf651c1aef2b28017b8811d66889bd5ce85a38544c8f63fcb651e",
+      "syncedAt": "2026-08-07T23:31:41.406Z"
     },
     ".github/agents/docs-writer.agent.md": {
       "sourceSha256": "1606526634fd18b6009b376dd19019aa5c24776032595e2506e7d7575be38425",
       "targetSha256": "9f3408183cb806612c8e90079bb6cb57943fefc7ec3a6f8b4c73c8bf5354fb01",
       "syncedAt": "2026-08-07T15:34:55.221Z"
     },
+    ".github/agents/experimentation-engineer.agent.md": {
+      "sourceSha256": "186a4db2dd7d5856fd05511b61b17439b6972003409f1226d3e3173508f3075d",
+      "targetSha256": "133862291b4b34c6b098a60873d833701922d9802723016609bd14d4ec298ca0",
+      "syncedAt": "2026-08-07T23:31:41.410Z"
+    },
+    ".github/agents/localization-engineer.agent.md": {
+      "sourceSha256": "4789fdf640a6348f416c26f240d52c3fdd5e0cc2f366c171821705e1b7dccc1f",
+      "targetSha256": "330285e55a469f9656693e56a38ba05764ee83f8601c2981ee3105959d24e568",
+      "syncedAt": "2026-08-07T23:31:41.412Z"
+    },
+    ".github/agents/marketing-strategist.agent.md": {
+      "sourceSha256": "cd2e72879476a8f8f00d4c1c33a67a24b79ae446489f82213fdbe7a9696965f1",
+      "targetSha256": "d62f2ab6d28104673c642627c8168b584f7d0ca4192687e5118baeb8fb7cdbc0",
+      "syncedAt": "2026-08-07T23:31:41.414Z"
+    },
+    ".github/agents/native-app-engineer.agent.md": {
+      "sourceSha256": "eac23b8a38f7231b425e10b399122faedf415b6dc08385f90f870f8213d0f3c5",
+      "targetSha256": "ebb06a2e405215509591b6f26916e6e8893eb4f51d7b315d3f7eaf68765cde76",
+      "syncedAt": "2026-08-07T23:31:41.416Z"
+    },
     ".github/agents/performance-engineer.agent.md": {
-      "sourceSha256": "713c030fcb3d8f2e0500e79ba6e690d4172527f0d1200bff6d7a66d63f62fa44",
-      "targetSha256": "b706857097942e17c25c5da3767d3e205bc7f279636ebf003a78f53948200424",
-      "syncedAt": "2026-08-07T15:34:55.221Z"
+      "sourceSha256": "3212b40f2ea7300011864c9f0edade3a042ca20698e2a8480aad7ac8156499e1",
+      "targetSha256": "433e04b5be04b09f269e6d1b8903fd60395591c4e3c25457f3e85ea24b98041a",
+      "syncedAt": "2026-08-07T23:31:41.419Z"
     },
     ".github/agents/product-manager.agent.md": {
-      "sourceSha256": "f22a71a15852790497aaadcc744c596e5838ce021e10e5f0ec4e89f6596bc4f3",
-      "targetSha256": "c064bc552a6d6ef7c26b7ac50012b939bafd8049f15d2e4bc10af55e1228eca9",
-      "syncedAt": "2026-08-07T15:34:55.221Z"
+      "sourceSha256": "139b3eb2632a116ceeacf7e5c4b2b02d7e09752fcdc33af677965e3933fe1082",
+      "targetSha256": "632b6b3fcbffc4753fc1b7a0b719884025873dc2f4fd9d839e0b5e279a415f95",
+      "syncedAt": "2026-08-07T23:31:41.422Z"
     },
     ".github/agents/qa-tester.agent.md": {
-      "sourceSha256": "a61b01e266dafaa5fadab47933d007852c753f3526c68dd151b58ce8cc47067e",
-      "targetSha256": "f42f8ee48776fcf2d1bffd1fe71dde65dd87cbae4b109f449328aaa1e53b61be",
-      "syncedAt": "2026-08-07T15:34:55.220Z"
+      "sourceSha256": "65d2494c68981285d15fddc331c578c034e5f3f0527dc3d14dc150804b2e5807",
+      "targetSha256": "4e1974907eb6d1538741c858cf0edfed3ebacbf426ad31abaea3f7e9322d7405",
+      "syncedAt": "2026-08-07T23:31:41.425Z"
     },
     ".github/agents/release-manager.agent.md": {
       "sourceSha256": "b136335b85a04b5cf2b6971103bd9008bc8d68bd39eea60645b2e2ebb3f091ae",
@@ -44,9 +94,14 @@
       "syncedAt": "2026-08-07T15:34:55.221Z"
     },
     ".github/agents/security-reviewer.agent.md": {
-      "sourceSha256": "21d35aee151bc4176836c35e712f9a3bf8c552ed6756479d2445a6fa40ffca4e",
-      "targetSha256": "c3a70d50898057ab384f587a305b01e7a1d76ddb76cd8eeb01bbd7f4803689f1",
-      "syncedAt": "2026-08-07T15:34:55.220Z"
+      "sourceSha256": "1c29926f3f8c222b8fc0b17c5f5eae602b92e3e6649686204e4bd859dc0352ce",
+      "targetSha256": "68b8b4e09f722938364562877fc6a0c51a102265af6dd256eb124b9a1f6963e9",
+      "syncedAt": "2026-08-07T23:31:41.432Z"
+    },
+    ".github/agents/sre-engineer.agent.md": {
+      "sourceSha256": "30ebf2fca97fd78600d9f7e9650b21eff59b6593acf030ded708071d58d801e0",
+      "targetSha256": "03d8f1446ce4add4c25150c18f80f931ce957ff6fa060b019a0ec224ebac067a",
+      "syncedAt": "2026-08-07T23:31:41.438Z"
     },
     ".github/agents/web-engineer.agent.md": {
       "sourceSha256": "725dc62b11c3012bcf2676973772f03134367509f2267e1d64539bc7add5540d",
@@ -54,9 +109,9 @@
       "syncedAt": "2026-08-07T15:34:55.220Z"
     },
     ".github/instructions/agents.instructions.md": {
-      "sourceSha256": "919a7e2887a9d9171aba0431ada46b7d5ca9c82194c2974bb25e023f4e7ca6f6",
-      "targetSha256": "ade177d02f985313763ca57d6d9bb093ca7b005ac68612e3e640900267b5861e",
-      "syncedAt": "2026-08-07T15:34:55.223Z"
+      "sourceSha256": "0e737985167bf67c48c296a649f2192670cf23072bfec916bd667ac9858e9cff",
+      "targetSha256": "5125da3954a45a46060e861e13075e6445cd1acc9422d16e53c8713ec3e80ec7",
+      "syncedAt": "2026-08-07T23:31:41.517Z"
     },
     ".github/instructions/docs.instructions.md": {
       "sourceSha256": "e3abf5e92b341f3cac288a921ef5f2676290e9e8de7e6ed2fe3f8b596665c970",
@@ -74,9 +129,9 @@
       "syncedAt": "2026-08-07T15:34:55.223Z"
     },
     ".github/instructions/workflow.instructions.md": {
-      "sourceSha256": "efd04bc03b5f05b666a0dd941f9612ddfc816e5171225c4f5b3bbf25beda71fd",
-      "targetSha256": "577e706e94018d9159ef74596e14ae341ef1628c6ed4170376c360d415657f60",
-      "syncedAt": "2026-08-07T15:34:55.223Z"
+      "sourceSha256": "99e4ddf304e4f82320e689bc5d1e7e7c865366285dcd89aa9e96fcc94ea1574b",
+      "targetSha256": "cbda770e489599db2ef182c4c4c2c6645031c51e6e8a058d8dbc56f43fafe15a",
+      "syncedAt": "2026-08-07T23:31:41.513Z"
     },
     ".github/prompts/backlog.prompt.md": {
       "sourceSha256": "3d89a722994d69217b8489eb44fa6dd265ebc6f3c781f81e5c5ca5122a79d70e",
@@ -99,9 +154,14 @@
       "syncedAt": "2026-08-07T15:34:55.222Z"
     },
     ".github/prompts/sprint.prompt.md": {
-      "sourceSha256": "25a2a7cf1731499df068b088e8efb3587692e0158b30aedec70102beb2f5a83e",
-      "targetSha256": "defe35ccbda76c7227ba47f84c1f57e38ff0f164d3cc7f4e72e656c0d92e9b6e",
-      "syncedAt": "2026-08-07T15:34:55.223Z"
+      "sourceSha256": "0a67bd9f21f11074ace583b73da2296e08e7f4cdfadec8598836b5524f24153f",
+      "targetSha256": "ba84857d26fce86cac57e2b245a4c2d683e822fa2307d5a6a74902f07c0cfa18",
+      "syncedAt": "2026-08-07T23:31:41.504Z"
+    },
+    ".github/prompts/team.prompt.md": {
+      "sourceSha256": "8b9a74df4667c4452707f180e27ae87f9e6553428fbdf1a9989ca0e16592e6dd",
+      "targetSha256": "cf41e4213d1e931c85439b3d7e9abc74366d5eb1e12186f59e2ccd3bf6c8d021",
+      "syncedAt": "2026-08-07T23:31:41.511Z"
     },
     ".github/skills/accessibility-testing/CHECKLIST.md": {
       "sourceSha256": "3beba6418cb63661b908ed82bb156ecd1fd4b588996f5f0dbdad7443655670ad",
@@ -118,10 +178,40 @@
       "targetSha256": "4982420b4e82db74724361b51da87a899ea25636c507e12f91b5d47310e58ca9",
       "syncedAt": "2026-08-07T15:34:55.221Z"
     },
+    ".github/skills/dev-onboarding/SKILL.md": {
+      "sourceSha256": "186152a23ac83b712e07c589cc1dc37ea9d8e7f17589dc4b535e731817b29a8a",
+      "targetSha256": "74df8f5d411a4b609a7d3960dcb11e7cb8431926fe6164b7261c3fcdc4d0f29a",
+      "syncedAt": "2026-08-07T23:31:41.452Z"
+    },
+    ".github/skills/go-to-market/SKILL.md": {
+      "sourceSha256": "e0bddf960967f049fd3c395868bd462ad55d5e6df99a696b4377f686509019ab",
+      "targetSha256": "ffaa27ac605d2c9a96fd29efe53cd881bac42ebfbd217187c5a45301bf082f58",
+      "syncedAt": "2026-08-07T23:31:41.453Z"
+    },
+    ".github/skills/i18n-localization/CHECKLIST.md": {
+      "sourceSha256": "b45613757b35d89c34c96178b931890b3c6ef71ad484b1c818ab2348dec6577c",
+      "targetSha256": "663878f49bff8799456fb0595733ffe994d5b819533523a8f4a9df18f7c48690",
+      "syncedAt": "2026-08-07T23:31:41.455Z"
+    },
+    ".github/skills/i18n-localization/SKILL.md": {
+      "sourceSha256": "ae6b42c7df37b8a1600233af018d317ec9b1a73670e2a8397ff5b85503aaf8d2",
+      "targetSha256": "49b183b640b751d61c7ac8b45b055f941fd02f1578b1ef0014a925fdfb99ca6e",
+      "syncedAt": "2026-08-07T23:31:41.457Z"
+    },
     ".github/skills/issue-management/SKILL.md": {
       "sourceSha256": "ba26fb4b87cb8daed4b1788441bc71f39b4018485b5960ebc46e8014a9eabcb7",
       "targetSha256": "67783070cc63e2b84e6e1653b98f941cc7a2f44710a9015edcc7e451a587e884",
       "syncedAt": "2026-08-07T15:34:55.222Z"
+    },
+    ".github/skills/mcp-agent-tooling/SKILL.md": {
+      "sourceSha256": "0150b57d70dd9223030587b2e3fa23dbd29da8a2e1dee68c06c514886e2d7f75",
+      "targetSha256": "37e741f1e1c3fc634f94d10976011f93c6368b50b82f85ee380f279f939291d8",
+      "syncedAt": "2026-08-07T23:31:41.464Z"
+    },
+    ".github/skills/monetization/SKILL.md": {
+      "sourceSha256": "43e373b5d6bcc958396d905c89c50712b5d2f8932969fbbf75ee0e4e2b4b9c66",
+      "targetSha256": "3339a5683c9799a72d76fe48a1b5e6f5149484fac32639fdd92f08815c7af37e",
+      "syncedAt": "2026-08-07T23:31:41.465Z"
     },
     ".github/skills/performance-budgets/SKILL.md": {
       "sourceSha256": "a7654a146ae02721db36938cbe4607e334fe454318e7f7d3c82cd69d4947dfc2",
@@ -133,6 +223,11 @@
       "targetSha256": "f84e6972708eb65c104189ae43904cd27cca2b8b2545bba4c4550c685441cda3",
       "syncedAt": "2026-08-07T15:34:55.222Z"
     },
+    ".github/skills/privacy-compliance/SKILL.md": {
+      "sourceSha256": "bb8dc7d1b63565134dc1670c710690e7391a3814fc0687beb05b5b3acfaf31d5",
+      "targetSha256": "cef300ed2f5a65d01c722b05b48ef77b156c908949800e8d43dbd63a7818af81",
+      "syncedAt": "2026-08-07T23:31:41.470Z"
+    },
     ".github/skills/project-management/SKILL.md": {
       "sourceSha256": "18b6345243fb3836cac17ab94090b386abbbe4d973a3671b2996d5ebe680b3f8",
       "targetSha256": "4f5abdc1ad77919db83d42f7b9cd6f52507bb21083c0bf3ca2f8b972f94faf14",
@@ -143,10 +238,20 @@
       "targetSha256": "c7ff8fc1ee7963126814878e44ab16c5fff76ded471939936b203a92cca3c1cf",
       "syncedAt": "2026-08-07T15:34:55.222Z"
     },
+    ".github/skills/security-review-methodology/CHECKLIST.md": {
+      "sourceSha256": "7984e6aa10f1acfc5840dfb481789b0b8b438e0ceb94b106fca34d33f72136de",
+      "targetSha256": "d64588ab915f0620d726f57156bffe433897608be4a46179a8b1dcd67159e315",
+      "syncedAt": "2026-08-07T23:31:41.477Z"
+    },
+    ".github/skills/security-review-methodology/SKILL.md": {
+      "sourceSha256": "656e96701e37fb5fc4d61c662feb5ea9ccbf2a10fc983b1367a8e18d61f99cc1",
+      "targetSha256": "91d1028ddd14cb44a2b708e36159c915ba5c5f38b7b25114dbdc0c43b5ca43aa",
+      "syncedAt": "2026-08-07T23:31:41.479Z"
+    },
     ".github/skills/sprint-planning/SKILL.md": {
-      "sourceSha256": "9492b6bd016dac1035d1b7aad701d30caad4275620e7fe789f6b8824bcabb91c",
-      "targetSha256": "801cd0d13bb022c8c4626072d6deeb4063a5c7bc5f86d37a94ad324ac63a77a9",
-      "syncedAt": "2026-08-07T15:34:55.222Z"
+      "sourceSha256": "0c4b13e875102d93db47e92fe37a81524b4b1d4801431b1afa7bdfd9f210b45c",
+      "targetSha256": "0ba84e9a9d1b6f1e803684e42cbfe1fbad6c6c1be1c03aa85f830ab09837fd54",
+      "syncedAt": "2026-08-07T23:31:41.480Z"
     },
     ".github/skills/ux-testing/SKILL.md": {
       "sourceSha256": "4d95bab786514ec948002de0906986a01577159e90907f8065516f73943dfdb8",
@@ -154,9 +259,9 @@
       "syncedAt": "2026-08-07T15:34:55.222Z"
     },
     "AGENTS.md": {
-      "sourceSha256": "8f7d2cf3091d62277cf98ce3e8f35f77a8bb192fb20486f74ed8e6b9b8be33d8",
-      "targetSha256": "e28382afae36f0057b936558fd5f25dc2e39ffd55c4ddb36a9cdd848a07872ec",
-      "syncedAt": "2026-08-07T15:34:55.220Z"
+      "sourceSha256": "d6d722c2435fa74ec0ed07230c40243df4eeddc6295fe57d6053947bbc558f64",
+      "targetSha256": "d8ca2874bceec3f3f1a5068df06f2d12c53aaa227c5e93caef1c84d76612fe4a",
+      "syncedAt": "2026-08-07T23:31:41.388Z"
     },
     "agency.toml": {
       "sourceSha256": "281f6b5cf11d21b51acd26d139cb10d6ca9526f4844e4bac8ce8b759d9a5049e",
