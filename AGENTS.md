@@ -135,7 +135,43 @@ then leave a clear `## Needs Human Action` note.
 Scope-specific rules live alongside the code — read the relevant one before working in that area:
 
 - Each product repo's root `AGENTS.md` — stack, paths, and product-specific rules.
-- `agents/*.agent.md` — role definitions and boundaries.
+- `agents/*.agent.md` in this backbone, materialized as `.github/agents/*.agent.md` in consumers —
+  role definitions and boundaries. Consumer copies are generated; product-specific stack/path/risk
+  overlays belong in the product's root `AGENTS.md` or scoped instructions.
 - `skills/<name>/SKILL.md` — reusable task playbooks; read the relevant one before acting.
 - `instructions/*.instructions.md` — path-scoped coding standards.
 <!-- studio:base:end -->
+
+# Score King product overlay
+
+This overlay specializes the canonical roles for Score King's Svelte PWA and stateless relay. It
+cannot relax the studio safety or human-gated operation rules above.
+
+## Ownership and handoffs
+
+| Surface | Lead | Product-specific boundary |
+| --- | --- | --- |
+| `src/**` | `@web-engineer` | Owns Svelte/PWA implementation. Coordinate visual decisions and token changes with the local `@design-engineer`. |
+| `relay/**` | `@backend-engineer` | Owns the stateless WebSocket service and validates every message at the client/service trust boundary; never persist or expose game data. |
+| `ARCHITECTURE.md` | `@architect` | Owns the cross-client target architecture, contracts, and trust-boundary decisions. |
+| `.github/workflows/deploy.yml` | `@devops-engineer` | Owns GitHub Pages delivery, permissions, action pinning, and deployment gates. |
+| `PRODUCT.md`, `DESIGN.md`, `.impeccable/design.json`, `.github/copilot-instructions.md` | local `@design-engineer` | Owns product design direction, tokens, and component specifications. Web implementation remains with `@web-engineer`. |
+
+The local `@design-engineer` also co-owns design-token declarations in `src/app.css`; coordinate
+edits there with `@web-engineer` because that file is consumed by the web client.
+
+## Product design constraints
+
+- Follow the **Game-Night LARPer** direction: fixed, familiar chrome with per-game personality
+  expressed through emoji, copy, and restrained accent moments.
+- Use **Royal Violet** (`#7c5cff`) for exactly one primary action per screen. Reserve **Crown Gold**
+  (`#ffd166`) for the current leader and winner, never ordinary buttons or decoration.
+- Keep interactive targets at least 46px, render changing scores with tabular numerals, and pair
+  every color cue with text, shape, iconography, or position.
+- Honor `prefers-reduced-motion` with a calm alternative for every animation.
+- Keep navigation, buttons, steppers, and the cross-game shell consistent across every game.
+
+## Verification
+
+Run `npm run check`, `npm test`, and `npm run build` for the web client. Run
+`npm --prefix relay run typecheck` for relay changes.
