@@ -3,38 +3,30 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths:
+      - .github/workflows/deploy.yml
+      - index.html
+      - package-lock.json
+      - package.json
+      - public/**
+      - src/**
+      - svelte.config.js
+      - tsconfig*.json
+      - vite.config.ts
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+permissions: {}
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+  pages:
+    name: Build and deploy Pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: jrmoulckers/.github/.github/workflows/reusable-deploy-pages.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
+    with:
+      node-version: '22'
+      package-manager: npm
+      build-command: npm run build
+      output-dir: dist
