@@ -309,6 +309,22 @@ GitHub Pages serves a single custom domain, so per‑game subdomains like
 
 ---
 
+## 🏛️ Product authority
+
+Product obligations and outcomes are defined in
+[jrmoulckers/product](https://github.com/jrmoulckers/product) and consumed here **by reference,
+not by copy**. Cite obligations by stable ID (for example `PROD-REL-001`), and pin to a commit SHA
+when the exact wording matters. Roadmaps, metrics, experiments, and compliance evidence stay in
+this repository and cite the obligation they satisfy — see [`PRODUCT.md`](PRODUCT.md) for Score
+King's own product definition.
+
+Engineering mechanisms are defined in
+[jrmoulckers/engineering](https://github.com/jrmoulckers/engineering), design and interface in
+[jrmoulckers/studio](https://github.com/jrmoulckers/studio), and automation and shared agent
+assets in [jrmoulckers/.github](https://github.com/jrmoulckers/.github).
+
+---
+
 ## 📄 License
 
 Personal project — all rights reserved for now.

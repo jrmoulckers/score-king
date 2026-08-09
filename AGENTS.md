@@ -161,7 +161,7 @@ cannot relax the studio safety or human-gated operation rules above.
 | `relay/**` | `@backend-engineer` | Owns the stateless WebSocket service and validates every message at the client/service trust boundary; never persist or expose game data. |
 | `ARCHITECTURE.md` | `@architect` | Owns the cross-client target architecture, contracts, and trust-boundary decisions. |
 | `.github/workflows/deploy.yml` | `@devops-engineer` | Owns GitHub Pages delivery, permissions, action pinning, and deployment gates. |
-| `PRODUCT.md`, `DESIGN.md`, `.impeccable/design.json`, `.github/copilot-instructions.md` | local `@design-engineer` | Owns product design direction, tokens, and component specifications. Web implementation remains with `@web-engineer`. |
+| `PRODUCT.md`, `DESIGN.md`, `.impeccable/design.json`, `.github/copilot-instructions.md` | local `@design-engineer` | Owns Score King's *expression* of the system, not the authority for it. Product direction — users, purpose, promise, and the value and trust posture — is Product's (`PROD-STRAT-001`); token, theme, and component contracts are Studio's (`STUDIO-FND-001`, `STUDIO-TOK-001`, `STUDIO-TOK-002`, `STUDIO-CMP-001`). This role composes those contracts into Score King's per-game costume and keeps `PRODUCT.md` citing the obligations it satisfies; it does not restyle, fork, or redefine them. Escalate to Product for direction changes and to Studio for design-system changes. Web implementation remains with `@web-engineer`. |
 
 The local `@design-engineer` also co-owns design-token declarations in `src/app.css`; coordinate
 edits there with `@web-engineer` because that file is consumed by the web client.
