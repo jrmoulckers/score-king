@@ -57,7 +57,8 @@ ad-ridden, or inconsistent. Specifically NOT:
 ## Design Principles
 
 > Score King's local expression of `PROD-STRAT-001` and of Studio's design contract
-> (`STUDIO-FND-001`). Rules already carried centrally are cited, not restated.
+> (`STUDIO-FND-001`). Citations name the central obligation a rule answers to; the local
+> wording is kept because it is the score-king-specific detail that obligation does not carry.
 
 - **The tool disappears into the table.** The fastest path from "round happened" to
   "score entered" wins. Minimal taps, big targets, glanceable standings. If a screen
@@ -74,10 +75,11 @@ ad-ridden, or inconsistent. Specifically NOT:
   forking them. Locally that means a new game module inherits the same buttons, the same
   round-entry rhythm, and the same scoreboard — consistency is the feature that lets the app
   grow without growing confusing.
-- **Respect everyone at the table.** Accessibility conformance is central (`STUDIO-A11Y-001`,
-  `STUDIO-A11Y-002`); what is score-king-specific is the social moment — privacy when the phone
-  is set down, shared visibility when the table wants it, and legibility while the device is
-  propped, passed, or held one-handed in a dim room.
+- **Respect everyone at the table.** Per `STUDIO-A11Y-001` and `STUDIO-A11Y-002`: inclusive and
+  readable by default (color-blind-safe, reduced-motion, one-handed, legible in dim light), and
+  respectful of the social moment — privacy when the phone is set down, shared visibility when
+  the table wants it. One-handed reach and dim-room legibility are local obligations; the central
+  principles cover contrast and accessibility modes, not the table ergonomics.
 
 ## Accessibility & Inclusion
 
@@ -87,12 +89,12 @@ ad-ridden, or inconsistent. Specifically NOT:
 
 Practical WCAG AA as the floor, with deliberate accommodations surfaced in Settings:
 
-- **Color-blind support.** Color-blind-safe player colors and palette options, so standing,
-  win/loss, and state stay distinguishable to every player at the table.
+- **Color-blind support.** Color-blind-safe player colors and palette options; never rely
+  on color alone to convey standing, win/loss, or state (`STUDIO-A11Y-001`).
 - **Accessibility settings hub.** A dedicated place in Settings for ability accommodations
   (contrast, text size, motion, color) rather than burying them.
-- **Reduced motion.** Every animation needs a calm, instant alternative; the in-app override is
-  Score King's instance of `STUDIO-A11Y-002`.
+- **Reduced motion.** Honor `prefers-reduced-motion` and offer an explicit in-app toggle
+  (`STUDIO-A11Y-002`); every animation needs a calm, instant alternative.
 - **OLED-friendly dark mode.** A true-black option so the app is comfortable and
   battery-kind on OLED screens in dim rooms.
 - **One-handed first.** Primary actions sit in the thumb zone; the app is usable held in
