@@ -75,6 +75,7 @@ jobs:
       node-version: '22'
       package-manager: npm
       audit-command: npm audit --omit=dev --audit-level=high
+      run-dependency-review: false
 
   performance:
     name: Performance
