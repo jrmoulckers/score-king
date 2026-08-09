@@ -18,10 +18,10 @@ and no fear of losing data. Players and history are shared across games, so regu
 
 ## Product Purpose
 
-> Satisfies `PROD-STRAT-001`, `PROD-STRAT-003`. The local-first data posture and the optional,
-> opt-in OneDrive backup also satisfy `PROD-COMP-002` (game data stays on the device unless the
-> player chooses otherwise) and `PROD-COMP-008` (backup is off by default, granular, and
-> disconnectable no less easily than it is connected).
+> Satisfies `PROD-STRAT-001`. The local-first data posture and the optional, opt-in OneDrive
+> backup also satisfy `PROD-COMP-002` (game data stays on the device unless the player chooses
+> otherwise) and `PROD-COMP-008` (backup is off by default, granular, and disconnectable no less
+> easily than it is connected).
 
 Score King is a local-first, installable PWA that keeps score for card & party games so
 the math and bookkeeping disappear into the night. Each game is a self-contained,
