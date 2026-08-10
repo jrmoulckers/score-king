@@ -93,10 +93,12 @@ Requires Node 20.19+ or 22.12+ (Vite 8).
 
 The lint, format, and TypeScript configurations come from
 [jrmoulckers/engineering](https://github.com/jrmoulckers/engineering) via GitHub Packages, so
-reading them needs a token with `read:packages`:
+reading them needs a token with `read:packages`. The committed `.npmrc` routes the
+`@jrmoulckers` scope and nothing else; keep the credential in your **user-level** npm config,
+never in the repository:
 
 ```bash
-export NODE_AUTH_TOKEN=ghp_...   # classic PAT, read:packages scope
+npm config set //npm.pkg.github.com/:_authToken ghp_...   # classic PAT, read:packages scope
 ```
 
 See [`docs/adopting.md`](https://github.com/jrmoulckers/engineering/blob/main/docs/adopting.md)
