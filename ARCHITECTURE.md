@@ -10,10 +10,15 @@
 
 ## Guiding principle
 
-**An account, and the World it lives in, are local-first documents you _own_ — not a service
-you log into.** Backup, sharing, and live multiplayer are capabilities *layered onto* an owned
-document; none of them is ever a precondition for play. That single rule is what lets identity
-and networked play exist without taxing the local-first trust contract.
+Local durable ownership, an optional sync seam, and zero-config safe degradation are ratified
+engineering rules — `ENG-LOCAL-001`, `ENG-LOCAL-002`, and `ENG-LOCAL-004`. They are cited, not
+restated; resolve them in
+[jrmoulckers/engineering](https://github.com/jrmoulckers/engineering/blob/main/principles/README.md).
+
+**Score King's expression of them: an account, and the World it lives in, are local-first
+documents you _own_ — not a service you log into.** Backup, sharing, and live multiplayer are
+capabilities *layered onto* an owned document. That framing is what lets identity and networked
+play exist without taxing the local-first trust contract.
 
 ```mermaid
 flowchart TB
@@ -61,7 +66,13 @@ reusing a handle can never impersonate or collide.
 
 ## Change & merge model
 
-**Per-entity last-writer-wins (LWW) with tombstones — deliberately _not_ event-sourcing.**
+The conflict model required by
+[`ENG-LOCAL-003`](https://github.com/jrmoulckers/engineering/blob/main/principles/README.md)
+(declared conflict model), declared here and exercised by the merge tests. See
+[local-first sync](https://github.com/jrmoulckers/engineering/blob/main/practices/local-first-sync.md).
+
+**Score King's declaration: per-entity last-writer-wins (LWW) with tombstones — deliberately
+_not_ event-sourcing.**
 
 - Every record (member, game *including its settings*, round) carries `updatedAt` and a
   soft-delete tombstone.
@@ -97,7 +108,8 @@ is ephemeral propagation, not a second source of truth.
 
 ### Transport — a seam, not a fork
 
-A single `SessionTransport` interface (sibling to the storage `SyncProvider`):
+One narrow provider contract, per `ENG-LOCAL-002`. A single `SessionTransport` interface
+(sibling to the storage `SyncProvider`):
 
 - **Relay first, peer-to-peer too** — the host-authoritative logic above it is unchanged as
   the transport swaps.
@@ -144,9 +156,10 @@ neither touches the core bundle.
 
 ## Guardrails — explicit non-goals
 
-- **Accounts are local & optional** — never a login, never a precondition to play.
+- **Accounts are local & optional** — never a login, never a precondition to play
+  (`ENG-LOCAL-002`, `ENG-LOCAL-004`).
 - **No global event log as the source of truth** — per-entity LWW is the right weight.
-- **The relay never holds game data** — storage stays self-owned.
+- **The relay never holds game data** — storage stays self-owned (`ENG-INT-005`).
 - **Never key identity off the mutable handle** — always the stable `id`.
 - **No CRDTs for live concurrency** — host-authority removes the need.
 - **Build P2P last, not first** — it dropped in behind the transport seam with no engine changes.

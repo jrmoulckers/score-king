@@ -80,7 +80,10 @@ export function gamesToWin(bestOf: number): number {
 export function scoreFromRallies(rallies: (0 | 1)[]): { a: number; b: number } {
   let a = 0;
   let b = 0;
-  for (const t of rallies) t === 0 ? (a += 1) : (b += 1);
+  for (const t of rallies) {
+    if (t === 0) a += 1;
+    else b += 1;
+  }
   return { a, b };
 }
 

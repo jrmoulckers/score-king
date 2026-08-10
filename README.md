@@ -76,13 +76,32 @@ OneDrive sync, so the core app stays ~34 KB gzipped.
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # production build into dist/
-npm run preview    # serve the production build
-npm run check      # type-check (svelte-check + tsc)
+npm run dev          # http://localhost:5173
+npm run build        # production build into dist/
+npm run preview      # serve the production build
+npm run check        # type-check (svelte-check + tsc)
+npm run lint         # ESLint (shared @jrmoulckers preset)
+npm run format:check # Prettier (shared @jrmoulckers preset)
+npm test             # unit tests
 ```
 
 Requires Node 20.19+ or 22.12+ (Vite 8).
+
+The lint, format, and TypeScript configurations come from
+[jrmoulckers/engineering](https://github.com/jrmoulckers/engineering) via GitHub Packages, so
+reading them needs a token with `read:packages`:
+
+```bash
+export NODE_AUTH_TOKEN=ghp_...   # classic PAT, read:packages scope
+```
+
+See [`docs/adopting.md`](https://github.com/jrmoulckers/engineering/blob/main/docs/adopting.md)
+in that repository for the full consumption guide.
+
+> `package.json` carries one `overrides` entry pinning `@jrmoulckers/tsconfig`'s `typescript`
+> peer to this repo's own version. The published preset declares `typescript@^5.5.0` while Score
+> King is on TypeScript 6; the override is a temporary bridge until the shared preset widens that
+> range, and should be deleted then.
 
 ---
 
@@ -309,7 +328,7 @@ GitHub Pages serves a single custom domain, so per‑game subdomains like
 
 ---
 
-## 🏛️ Product authority
+## 🏛️ Product & engineering authority
 
 Product obligations and outcomes are defined in
 [jrmoulckers/product](https://github.com/jrmoulckers/product) and consumed here **by reference,
@@ -319,7 +338,12 @@ this repository and cite the obligation they satisfy — see [`PRODUCT.md`](PROD
 King's own product definition.
 
 Engineering mechanisms are defined in
-[jrmoulckers/engineering](https://github.com/jrmoulckers/engineering), design and interface in
+[jrmoulckers/engineering](https://github.com/jrmoulckers/engineering) and consumed the same way:
+cite ratified principles by stable ID (for example `ENG-LOCAL-003`), resolved through that
+repository's `principles/index.json`. Its shared ESLint, Prettier, and TypeScript presets are
+installed here from GitHub Packages rather than reimplemented — see
+[`eslint.config.js`](eslint.config.js), [`prettier.config.js`](prettier.config.js), and
+[`tsconfig.app.json`](tsconfig.app.json). Design and interface live in
 [jrmoulckers/studio](https://github.com/jrmoulckers/studio), and automation and shared agent
 assets in [jrmoulckers/.github](https://github.com/jrmoulckers/.github).
 

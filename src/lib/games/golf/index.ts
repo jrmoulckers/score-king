@@ -1,4 +1,4 @@
-import type { GameModule, ID, Round, RoundContext } from '../../types';
+import type { GameModule, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
 import { golfStats } from './stats';
 import { createGolfInput, readConfig, scoreGolf, validateGolf, type GolfInput } from './logic';

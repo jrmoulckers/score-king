@@ -156,7 +156,7 @@ export type BackupSettings = Pick<Settings, PortableSettingKey>;
  */
 type AssertNever<T extends never> = T;
 type UncategorizedSettingKey = Exclude<keyof Settings, PortableSettingKey | LocalSettingKey>;
-type _AllSettingsCategorized = AssertNever<UncategorizedSettingKey>;
+export type AllSettingsCategorized = AssertNever<UncategorizedSettingKey>;
 
 const KEY = 'sk_settings';
 

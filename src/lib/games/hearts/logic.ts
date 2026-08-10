@@ -205,7 +205,7 @@ export function previewDelta(
 /** Validate a round. Null when good, else a friendly, specific message. */
 export function validateRound(
   input: HeartsInput,
-  players: readonly { id: ID; name: string }[],
+  _players: readonly { id: ID; name: string }[],
   config: Record<string, unknown>,
 ): string | null {
   const cfg = readConfig(config);

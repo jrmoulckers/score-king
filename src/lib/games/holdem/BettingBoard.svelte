@@ -51,9 +51,8 @@
   function currentStack(id: ID): number {
     let invested = 0;
     for (const r of ctx.rounds) {
-      const e = r.input as HandEvent | { kind: string; playerId?: ID; amount?: number } | undefined;
-      if (e && (e as any).kind === 'buyin' && (e as any).playerId === id)
-        invested += Number((e as any).amount) || 0;
+      const e = r.input as { kind?: string; playerId?: ID; amount?: number } | undefined;
+      if (e?.kind === 'buyin' && e.playerId === id) invested += Number(e.amount) || 0;
     }
     return Math.max(0, Math.round(invested + (ctx.totals[id] ?? 0)));
   }

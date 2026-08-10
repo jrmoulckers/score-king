@@ -18,19 +18,23 @@ jobs:
     name: Lint policy
     permissions:
       contents: read
+      packages: read
       pull-requests: read
-    uses: jrmoulckers/.github/.github/workflows/reusable-ci-lint.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
+    uses: jrmoulckers/.github/.github/workflows/reusable-ci-lint.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
     with:
       node-version: '22'
       package-manager: npm
-      lint-command: ''
-      format-check-command: ''
+      lint-command: npm run lint
+      format-check-command: npm run format:check
+      registry-url: https://npm.pkg.github.com
+      registry-scope: '@jrmoulckers'
 
   web:
     name: Web
     permissions:
       contents: read
-    uses: jrmoulckers/.github/.github/workflows/reusable-ci-web.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
+      packages: read
+    uses: jrmoulckers/.github/.github/workflows/reusable-ci-web.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
     with:
       node-version: '22'
       package-manager: npm
@@ -40,6 +44,8 @@ jobs:
       artifact-name: score-king-web
       artifact-path: dist
       artifact-retention-days: 1
+      registry-url: https://npm.pkg.github.com
+      registry-scope: '@jrmoulckers'
 
   relay-typecheck:
     name: Relay typecheck
@@ -70,7 +76,7 @@ jobs:
     name: Security
     permissions:
       contents: read
-    uses: jrmoulckers/.github/.github/workflows/reusable-security-ci.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
+    uses: jrmoulckers/.github/.github/workflows/reusable-security-ci.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
     with:
       node-version: '22'
       package-manager: npm
@@ -82,8 +88,11 @@ jobs:
     needs: web
     permissions:
       contents: read
-    uses: jrmoulckers/.github/.github/workflows/reusable-perf-budget.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
+      packages: read
+    uses: jrmoulckers/.github/.github/workflows/reusable-perf-budget.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
     with:
       artifact-name: score-king-web
       output-dir: dist
       bundle-budget-kb: 2048
+      registry-url: https://npm.pkg.github.com
+      registry-scope: '@jrmoulckers'

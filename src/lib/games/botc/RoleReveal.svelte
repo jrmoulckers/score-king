@@ -33,7 +33,7 @@
 
   // A fresh reveal always starts hidden behind the "pass the phone" cover.
   $effect(() => {
-    reveal;
+    void reveal;
     shown = false;
   });
 

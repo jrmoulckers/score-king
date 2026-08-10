@@ -2,7 +2,6 @@ import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
 import {
   DEFAULT_JOKER_VALUE,
-  potTotal,
   scoreRummikub,
   validateRummikub,
   type RummikubInput,

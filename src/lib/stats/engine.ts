@@ -350,7 +350,11 @@ function globalMetrics(facts: GameFacts[], playerCount: number, nights: number):
   for (const f of facts) byType.set(f.game.type, (byType.get(f.game.type) ?? 0) + 1);
   let topType: string | undefined;
   let topCount = 0;
-  for (const [type, c] of byType) if (c > topCount) ((topType = type), (topCount = c));
+  for (const [type, c] of byType)
+    if (c > topCount) {
+      topType = type;
+      topCount = c;
+    }
 
   const out: Metric[] = [
     { key: 'g_games', label: 'Finished games', value: `${facts.length}`, emoji: '🎲' },

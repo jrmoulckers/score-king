@@ -5,9 +5,7 @@ import {
   investedByPlayer,
   readConfig,
   scoreEvent,
-  toMoney,
   validateEvent,
-  type HoldemConfig,
   type HoldemEvent,
 } from './logic';
 
@@ -21,14 +19,6 @@ export {
   type HoldemConfig,
   type HoldemEvent,
 } from './logic';
-
-/** Money-ish formatter for round summaries — a "$" prefix only in dollar modes. */
-function fmtAmount(amount: number, cfg: HoldemConfig): string {
-  const money = toMoney(amount, cfg);
-  const rounded = Math.round(money * 100) / 100;
-  const body = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
-  return cfg.unit === 'chips' ? body : `$${body}`;
-}
 
 export const holdem: GameModule = {
   id: 'holdem',

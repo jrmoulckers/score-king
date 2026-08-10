@@ -108,7 +108,6 @@
 <div class="scanner">
   {#if scanning}
     <div class="viewport">
-      <!-- svelte-ignore a11y_media_has_caption -->
       <video bind:this={video} playsinline muted></video>
       <div class="frame" aria-hidden="true"></div>
     </div>

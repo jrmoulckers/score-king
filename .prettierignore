@@ -1,0 +1,17 @@
+# Build output and dependencies
+dist
+dev-dist
+node_modules
+package-lock.json
+relay/package-lock.json
+
+# Generated or upstream-owned content — formatting these would create drift
+# against the repository that owns them.
+.github/agents
+.github/instructions
+.github/skills
+.impeccable
+.studio-sync.lock.json
+
+# The relay is a separate package with its own toolchain.
+relay

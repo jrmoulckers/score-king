@@ -53,7 +53,7 @@
     if (projected.length === 0) return new Set<number>();
     const max = Math.max(...projected);
     if (projected.every((p) => p === projected[0])) return new Set<number>();
-    return new Set(teams.filter((t, i) => projected[i] === max).map((t) => t.index));
+    return new Set(teams.filter((_t, i) => projected[i] === max).map((t) => t.index));
   });
 
   // ── Turn console state (transient; the saved round is still per-team totals) ──

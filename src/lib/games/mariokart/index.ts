@@ -6,7 +6,6 @@ import {
   TABLE_META,
   freshPositions,
   normalizeRaces,
-  normalizeTable,
   scoreRace,
   validateRace,
   type MarioKartInput,
