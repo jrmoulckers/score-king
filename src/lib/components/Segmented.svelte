@@ -84,7 +84,10 @@
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-    transition: background var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), transform var(--dur-press) var(--ease-standard);
+    transition:
+      background var(--dur-base) var(--ease-standard),
+      color var(--dur-base) var(--ease-standard),
+      transform var(--dur-press) var(--ease-standard);
   }
   .seg:hover {
     color: var(--text);

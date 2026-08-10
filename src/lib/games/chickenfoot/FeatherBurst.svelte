@@ -49,7 +49,8 @@
             --rise: {f.rise}px;
             --drift: {f.drift}px;
             --spin: {f.spin}deg;
-          ">{f.glyph}</span>
+          ">{f.glyph}</span
+        >
       {/each}
     </div>
   {/key}

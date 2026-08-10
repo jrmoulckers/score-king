@@ -55,7 +55,9 @@
   const result = $derived(setWinner(ptsHome, ptsAway, target, cfg.winBy2, cfg.hardCap));
   const done = $derived(result !== null);
 
-  const spSide = $derived(done ? null : setPointSide(ptsHome, ptsAway, target, cfg.winBy2, cfg.hardCap));
+  const spSide = $derived(
+    done ? null : setPointSide(ptsHome, ptsAway, target, cfg.winBy2, cfg.hardCap),
+  );
   const spHome = $derived(spSide === 'a');
   const spAway = $derived(spSide === 'b');
   const deuce = $derived(isDeuceSet(ptsHome, ptsAway, target, cfg.winBy2, cfg.hardCap));
@@ -64,14 +66,29 @@
 
   const canUndo = $derived(hasLog && rallies.length > 0);
   const lastSide = $derived<Side | null>(rallies.length ? rallies[rallies.length - 1]! : null);
-  const lastName = $derived(lastSide === null ? '' : lastSide === 'a' ? (home?.name ?? 'Home') : (away?.name ?? 'Away'));
+  const lastName = $derived(
+    lastSide === null ? '' : lastSide === 'a' ? (home?.name ?? 'Home') : (away?.name ?? 'Away'),
+  );
 
-  const benchIds = $derived(unassigned(input.teams ?? [], pool.map((p) => p.id)));
+  const benchIds = $derived(
+    unassigned(
+      input.teams ?? [],
+      pool.map((p) => p.id),
+    ),
+  );
 
   // Beach vs indoor costume — flavour through emoji + copy, never a restyled shell.
-  const formatEmoji = $derived(cfg.format === 'beach' ? '🏖️' : cfg.format === 'indoor' ? '🏟️' : '🏐');
+  const formatEmoji = $derived(
+    cfg.format === 'beach' ? '🏖️' : cfg.format === 'indoor' ? '🏟️' : '🏐',
+  );
   const formatLabel = $derived(
-    cfg.format === 'beach' ? 'Beach' : cfg.format === 'indoor' ? 'Indoor' : cfg.format === 'fours' ? 'Fours' : 'Custom',
+    cfg.format === 'beach'
+      ? 'Beach'
+      : cfg.format === 'indoor'
+        ? 'Indoor'
+        : cfg.format === 'fours'
+          ? 'Fours'
+          : 'Custom',
   );
 
   // ── Score entry ──────────────────────────────────────────────────────────
@@ -98,7 +115,11 @@
   function sub(slot: 'home' | 'away') {
     const side: Side = slot === 'home' ? 'a' : 'b';
     if (hasLog) setScore(dropRally(rallies, side));
-    else input.points = { ...input.points, [slot]: Math.max(0, (Number(input.points?.[slot]) || 0) - 1) };
+    else
+      input.points = {
+        ...input.points,
+        [slot]: Math.max(0, (Number(input.points?.[slot]) || 0) - 1),
+      };
   }
   function undoLast() {
     if (!canUndo) return;
@@ -122,13 +143,32 @@
       const w = result === 'a' ? hn : an;
       const hi = Math.max(ptsHome, ptsAway);
       const lo = Math.min(ptsHome, ptsAway);
-      return { tone: 'good', text: `✅ ${w} take the set ${hi}–${lo} — tap “Save round” to bank it.` };
+      return {
+        tone: 'good',
+        text: `✅ ${w} take the set ${hi}–${lo} — tap “Save round” to bank it.`,
+      };
     }
-    if (spHome || spAway) return { tone: 'warn', text: `🎯 Set point — ${spHome ? hn : an} one rally away!` };
-    if (deuce) return { tone: 'warn', text: `🔁 Deuce at ${ptsHome}–${ptsAway} — win by two, nobody blinks.` };
-    if (run.side !== null && run.length >= 4) return { tone: 'muted', text: `🔥 ${run.side === 'a' ? hn : an} rolling — ${run.length} straight.` };
-    if (ptsHome === 0 && ptsAway === 0) return { tone: 'muted', text: `${formatEmoji} ${formatLabel} • first serve! Rally to ${target}${cfg.winBy2 ? ', win by two' : ''}.` };
-    return { tone: 'muted', text: `Tap ＋1 for the side that won each rally. Rally to ${target}${cfg.winBy2 ? ', win by two' : ''}.` };
+    if (spHome || spAway)
+      return { tone: 'warn', text: `🎯 Set point — ${spHome ? hn : an} one rally away!` };
+    if (deuce)
+      return {
+        tone: 'warn',
+        text: `🔁 Deuce at ${ptsHome}–${ptsAway} — win by two, nobody blinks.`,
+      };
+    if (run.side !== null && run.length >= 4)
+      return {
+        tone: 'muted',
+        text: `🔥 ${run.side === 'a' ? hn : an} rolling — ${run.length} straight.`,
+      };
+    if (ptsHome === 0 && ptsAway === 0)
+      return {
+        tone: 'muted',
+        text: `${formatEmoji} ${formatLabel} • first serve! Rally to ${target}${cfg.winBy2 ? ', win by two' : ''}.`,
+      };
+    return {
+      tone: 'muted',
+      text: `Tap ＋1 for the side that won each rally. Rally to ${target}${cfg.winBy2 ? ', win by two' : ''}.`,
+    };
   });
 
   // ── Team management ──────────────────────────────────────────────────────
@@ -136,13 +176,34 @@
   let picking = $state<'home' | 'away' | null>(null);
   let selectedMember = $state<string | null>(null);
 
-  const EMOJIS = ['🦈', '🦅', '🐉', '🐺', '🦁', '🐯', '🦂', '🐍', '🔥', '⚡', '🌊', '🏐', '🚀', '👑', '💥', '🌟'];
+  const EMOJIS = [
+    '🦈',
+    '🦅',
+    '🐉',
+    '🐺',
+    '🦁',
+    '🐯',
+    '🦂',
+    '🐍',
+    '🔥',
+    '⚡',
+    '🌊',
+    '🏐',
+    '🚀',
+    '👑',
+    '💥',
+    '🌟',
+  ];
 
   function commit(teams: Team[]) {
     input.teams = teams;
   }
   function updateTeam(id: string, patch: Partial<Team>) {
-    commit((input.teams ?? []).map((t) => (t.id === id ? { ...t, ...patch, memberIds: patch.memberIds ?? t.memberIds } : t)));
+    commit(
+      (input.teams ?? []).map((t) =>
+        t.id === id ? { ...t, ...patch, memberIds: patch.memberIds ?? t.memberIds } : t,
+      ),
+    );
   }
   function cycleEmoji(t: Team) {
     const i = EMOJIS.indexOf(t.emoji);
@@ -155,15 +216,23 @@
   }
   /** Whimsical one-tap re-deal: reshuffle the whole pool across the current teams. */
   function doShuffle() {
-    commit(shuffleTeams(input.teams ?? [], pool.map((p) => p.id), cfg));
+    commit(
+      shuffleTeams(
+        input.teams ?? [],
+        pool.map((p) => p.id),
+        cfg,
+      ),
+    );
     selectedMember = null;
     haptic('tick');
   }
   function removeTeam(id: string) {
     if ((input.teams?.length ?? 0) <= 2) return;
     commit((input.teams ?? []).filter((t) => t.id !== id));
-    if (input.home === id) input.home = (input.teams?.find((t) => t.id !== id && t.id !== input.away)?.id) ?? '';
-    if (input.away === id) input.away = (input.teams?.find((t) => t.id !== id && t.id !== input.home)?.id) ?? '';
+    if (input.home === id)
+      input.home = input.teams?.find((t) => t.id !== id && t.id !== input.away)?.id ?? '';
+    if (input.away === id)
+      input.away = input.teams?.find((t) => t.id !== id && t.id !== input.home)?.id ?? '';
   }
   /** Move a member to a team, or to the bench (toTeamId = null). Clears the selection. */
   function moveMember(memberId: string | null, toTeamId: string | null) {
@@ -192,7 +261,7 @@
     return cfg.teamSize > 0 && t.memberIds.length > cfg.teamSize;
   }
 
-  const selectedName = $derived(selectedMember ? playerById.get(selectedMember)?.name ?? '' : '');
+  const selectedName = $derived(selectedMember ? (playerById.get(selectedMember)?.name ?? '') : '');
 </script>
 
 <div class="stack" use:rosterDnd={{ onMove: onDrop }}>
@@ -226,12 +295,23 @@
   <!-- ── This set ── -->
   <div class="row spread meta">
     <span class="pill">{formatEmoji} Set {setNumber} · to {target}</span>
-    <button type="button" class="linklike" onclick={() => (managing = !managing)} aria-expanded={managing}>
+    <button
+      type="button"
+      class="linklike"
+      onclick={() => (managing = !managing)}
+      aria-expanded={managing}
+    >
       {managing ? '✕ Done editing' : '⚙ Manage teams'}
     </button>
   </div>
 
-  {#snippet sideCard(slot: 'home' | 'away', team: Team | undefined, pts: number, sp: boolean, side: Side)}
+  {#snippet sideCard(
+    slot: 'home' | 'away',
+    team: Team | undefined,
+    pts: number,
+    sp: boolean,
+    side: Side,
+  )}
     {@const won = side === 'a' ? result === 'a' : result === 'b'}
     {@const serves = hasLog && !done && serveSide === side}
     {@const rolling = !done && run.side === side && run.length >= 3}
@@ -249,7 +329,9 @@
         onclick={() => (picking = picking === slot ? null : slot)}
         aria-label={`Choose the ${slot} team (currently ${team?.name ?? 'none'})`}
       >
-        <span class="temoji sm" style={`--tc:${team?.color ?? 'var(--primary)'}`}>{team?.emoji ?? '🏐'}</span>
+        <span class="temoji sm" style={`--tc:${team?.color ?? 'var(--primary)'}`}
+          >{team?.emoji ?? '🏐'}</span
+        >
         <span class="pickname">{team?.name ?? 'Pick team'}</span>
         {#if serves}<span class="serve" title="Serving next">🏐</span>{/if}
         {#if (input.teams?.length ?? 0) > 2}<span class="caret" aria-hidden="true">▾</span>{/if}
@@ -265,7 +347,8 @@
               class:on={t.id === team?.id}
               disabled={taken}
               onclick={() => {
-                if (slot === 'home') input.home = t.id; else input.away = t.id;
+                if (slot === 'home') input.home = t.id;
+                else input.away = t.id;
                 picking = null;
               }}
             >
@@ -297,8 +380,21 @@
       </div>
 
       <div class="ctrls">
-        <button type="button" class="minus" onclick={() => sub(slot)} disabled={pts <= 0} aria-label={`Take a point back from ${team?.name ?? slot}`}>−1</button>
-        <button type="button" class="plus" class:pt={sp} disabled={done} onclick={() => add(slot)} aria-label={`${sp ? 'Set point — ' : ''}Add a rally point for ${team?.name ?? slot}`}>
+        <button
+          type="button"
+          class="minus"
+          onclick={() => sub(slot)}
+          disabled={pts <= 0}
+          aria-label={`Take a point back from ${team?.name ?? slot}`}>−1</button
+        >
+        <button
+          type="button"
+          class="plus"
+          class:pt={sp}
+          disabled={done}
+          onclick={() => add(slot)}
+          aria-label={`${sp ? 'Set point — ' : ''}Add a rally point for ${team?.name ?? slot}`}
+        >
           <span class="plussign">＋1</span>
           <span class="pluslabel">{sp ? 'set point' : 'rally'}</span>
         </button>
@@ -312,7 +408,13 @@
     {@render sideCard('away', away, ptsAway, spAway, 'b')}
   </div>
 
-  <p class="status" class:good={call.tone === 'good'} class:warn={call.tone === 'warn'} role="status" aria-live="polite">
+  <p
+    class="status"
+    class:good={call.tone === 'good'}
+    class:warn={call.tone === 'warn'}
+    role="status"
+    aria-live="polite"
+  >
     {call.text}
   </p>
 
@@ -327,7 +429,12 @@
       <span class="undoicon" aria-hidden="true">↩</span>
       <span>{canUndo ? `Undo · ${lastName}` : 'Undo last point'}</span>
     </button>
-    <button type="button" class="swap" onclick={swapSides} aria-label="Swap which side is home and away">⇄ Swap sides</button>
+    <button
+      type="button"
+      class="swap"
+      onclick={swapSides}
+      aria-label="Swap which side is home and away">⇄ Swap sides</button
+    >
   </div>
 
   <!-- ── Manage teams ── -->
@@ -339,33 +446,67 @@
           <div class="mvtargets">
             {#each input.teams as t (t.id)}
               <button type="button" class="mvbtn" onclick={() => moveMember(selectedMember, t.id)}>
-                <span aria-hidden="true">{t.emoji}</span> {t.name}
+                <span aria-hidden="true">{t.emoji}</span>
+                {t.name}
               </button>
             {/each}
-            <button type="button" class="mvbtn bench" onclick={() => moveMember(selectedMember, null)}>🪑 Bench</button>
-            <button type="button" class="mvbtn ghost" onclick={() => (selectedMember = null)}>Cancel</button>
+            <button
+              type="button"
+              class="mvbtn bench"
+              onclick={() => moveMember(selectedMember, null)}>🪑 Bench</button
+            >
+            <button type="button" class="mvbtn ghost" onclick={() => (selectedMember = null)}
+              >Cancel</button
+            >
           </div>
         </div>
       {:else}
-        <p class="draghint"><span aria-hidden="true">✋</span> Drag players between teams and the bench — or tap one to pick a spot.</p>
+        <p class="draghint">
+          <span aria-hidden="true">✋</span> Drag players between teams and the bench — or tap one to
+          pick a spot.
+        </p>
       {/if}
 
       {#each input.teams as t (t.id)}
         <div class="tcard" data-drop={t.id} style={`--tc:${t.color}`}>
           <div class="tcard-head">
-            <button type="button" class="temoji btn-emoji" style={`--tc:${t.color}`} onclick={() => cycleEmoji(t)} aria-label="Change team emoji" title="Tap to change emoji">{t.emoji}</button>
-            <input class="tnameinput" value={t.name} oninput={(e) => updateTeam(t.id, { name: e.currentTarget.value })} aria-label="Team name" />
+            <button
+              type="button"
+              class="temoji btn-emoji"
+              style={`--tc:${t.color}`}
+              onclick={() => cycleEmoji(t)}
+              aria-label="Change team emoji"
+              title="Tap to change emoji">{t.emoji}</button
+            >
+            <input
+              class="tnameinput"
+              value={t.name}
+              oninput={(e) => updateTeam(t.id, { name: e.currentTarget.value })}
+              aria-label="Team name"
+            />
             <span class="tcount" class:over={overCap(t)}>
               {t.memberIds.length}{cfg.teamSize > 0 ? `/${cfg.teamSize}` : ''}
             </span>
             {#if (input.teams?.length ?? 0) > 2}
-              <button type="button" class="iconx" onclick={() => removeTeam(t.id)} aria-label={`Remove ${t.name}`}>🗑</button>
+              <button
+                type="button"
+                class="iconx"
+                onclick={() => removeTeam(t.id)}
+                aria-label={`Remove ${t.name}`}>🗑</button
+              >
             {/if}
           </div>
 
           <div class="palette" role="group" aria-label="Team colour">
             {#each PALETTE as c (c)}
-              <button type="button" class="dot" class:sel={t.color === c} style={`background:${c}`} onclick={() => updateTeam(t.id, { color: c })} aria-label="Set team colour"></button>
+              <button
+                type="button"
+                class="dot"
+                class:sel={t.color === c}
+                style={`background:${c}`}
+                onclick={() => updateTeam(t.id, { color: c })}
+                aria-label="Set team colour"
+              ></button>
             {/each}
           </div>
 
@@ -396,8 +537,19 @@
       {/each}
 
       <div class="manage-actions">
-        <button type="button" class="addteam" onclick={addTeam} disabled={(input.teams?.length ?? 0) >= 8}>＋ Add team</button>
-        <button type="button" class="shuffle" onclick={doShuffle} disabled={pool.length === 0} title="Randomly redeal every player across the teams">🎲 Shuffle teams</button>
+        <button
+          type="button"
+          class="addteam"
+          onclick={addTeam}
+          disabled={(input.teams?.length ?? 0) >= 8}>＋ Add team</button
+        >
+        <button
+          type="button"
+          class="shuffle"
+          onclick={doShuffle}
+          disabled={pool.length === 0}
+          title="Randomly redeal every player across the teams">🎲 Shuffle teams</button
+        >
       </div>
 
       <div class="bench-area" data-drop="bench">
@@ -421,7 +573,8 @@
               </button>
             {/if}
           {/each}
-          {#if benchIds.length === 0}<span class="muted xs emptyhint">Everyone’s on a team</span>{/if}
+          {#if benchIds.length === 0}<span class="muted xs emptyhint">Everyone’s on a team</span
+            >{/if}
         </div>
       </div>
     </div>

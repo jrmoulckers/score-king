@@ -34,7 +34,15 @@ function mkCtx(
   extra: Partial<RoundContext> = {},
 ): RoundContext {
   return {
-    game: { id: 'g', type: 'golf', config, playerIds: players.map((p) => p.id), status: 'active', createdAt: 0, roundCount: 0 },
+    game: {
+      id: 'g',
+      type: 'golf',
+      config,
+      playerIds: players.map((p) => p.id),
+      status: 'active',
+      createdAt: 0,
+      roundCount: 0,
+    },
     players,
     config,
     roundIndex: 0,
@@ -232,12 +240,18 @@ describe('golf round entry', () => {
 
   it('allows negative holes once jokers or a −2 king are in play', () => {
     expect(validateGolf({ scores: { a: -4 } }, mkCtx([player('a')], { jokers: true }))).toBeNull();
-    expect(validateGolf({ scores: { a: -3 } }, mkCtx([player('a')], { kingValue: '-2' }))).toBeNull();
+    expect(
+      validateGolf({ scores: { a: -3 } }, mkCtx([player('a')], { kingValue: '-2' })),
+    ).toBeNull();
   });
 
   it('scores the called-out totals, truncating and filling gaps with 0', () => {
     const ctx = mkCtx([player('a'), player('b'), player('c')]);
-    expect(scoreGolf({ scores: { a: 7, b: 3.9 } as Record<ID, number>, }, ctx)).toEqual({ a: 7, b: 3, c: 0 });
+    expect(scoreGolf({ scores: { a: 7, b: 3.9 } as Record<ID, number> }, ctx)).toEqual({
+      a: 7,
+      b: 3,
+      c: 0,
+    });
   });
 });
 
@@ -257,7 +271,9 @@ describe('golf module contract', () => {
   });
 
   it('builds a fresh input through the module entrypoint', () => {
-    expect(golf.createRoundInput(mkCtx([player('a'), player('b')]))).toEqual({ scores: { a: 0, b: 0 } });
+    expect(golf.createRoundInput(mkCtx([player('a'), player('b')]))).toEqual({
+      scores: { a: 0, b: 0 },
+    });
   });
 
   it('awards the win to the lowest total', () => {
@@ -281,10 +297,25 @@ describe('golf module contract', () => {
 const identity = (id: ID): ID => id;
 
 function mkGame(id: string): Game {
-  return { id, type: 'golf', config: {}, playerIds: [], status: 'finished', createdAt: 0, roundCount: 0 };
+  return {
+    id,
+    type: 'golf',
+    config: {},
+    playerIds: [],
+    status: 'finished',
+    createdAt: 0,
+    roundCount: 0,
+  };
 }
 function mkRound(gameId: string, index: number, scores: Record<ID, number>): Round {
-  return { id: `${gameId}-r${index}`, gameId, index, input: { scores }, deltas: scores, createdAt: 0 };
+  return {
+    id: `${gameId}-r${index}`,
+    gameId,
+    index,
+    input: { scores },
+    deltas: scores,
+    createdAt: 0,
+  };
 }
 const metric = (list: Metric[] | undefined, key: string): Metric | undefined =>
   list?.find((m) => m.key === key);
@@ -334,7 +365,15 @@ describe('golf stats', () => {
   });
 
   it('counts eagles for deep-red holes under a ruleset with negatives', () => {
-    const jokerGame: Game = { id: 'gj', type: 'golf', config: { jokers: true }, playerIds: [], status: 'finished', createdAt: 0, roundCount: 0 };
+    const jokerGame: Game = {
+      id: 'gj',
+      type: 'golf',
+      config: { jokers: true },
+      playerIds: [],
+      status: 'finished',
+      createdAt: 0,
+      roundCount: 0,
+    };
     const res2 = golfStats({
       games: [jokerGame],
       rounds: [

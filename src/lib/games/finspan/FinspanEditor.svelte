@@ -37,7 +37,12 @@
   // Live totals + the app's shared "who's pulled ahead" rule, so the biggest catch wears the
   // crown (and only the crown's Gold) — and nobody is crowned at an all-tied-at-zero table.
   const totals = $derived(Object.fromEntries(ctx.players.map((p) => [p.id, total(p.id)])));
-  const leaderSet = $derived(leaders(totals, ctx.players.map((p) => p.id)));
+  const leaderSet = $derived(
+    leaders(
+      totals,
+      ctx.players.map((p) => p.id),
+    ),
+  );
 
   /**
    * A one-shot "＋6 🐠 school forms!" bubble that floats up when a schools count ticks up — the
@@ -58,7 +63,10 @@
           node.appendChild(b);
           animateMotion(
             b,
-            { opacity: [0, 1, 0], transform: ['translateY(2px)', 'translateY(-14px)', 'translateY(-28px)'] },
+            {
+              opacity: [0, 1, 0],
+              transform: ['translateY(2px)', 'translateY(-14px)', 'translateY(-28px)'],
+            },
             { duration: 0.7, ease: 'easeOut' },
           ).finished.finally(() => b.remove());
         }
@@ -100,8 +108,8 @@
             {/if}
           </span>
           <span class="total" class:lead={isLeader}>
-            <span class="totnum" use:bumpOnChange={total(p.id)}>{total(p.id)}</span><span class="unit"
-              >pts</span
+            <span class="totnum" use:bumpOnChange={total(p.id)}>{total(p.id)}</span><span
+              class="unit">pts</span
             >
           </span>
         </div>

@@ -70,7 +70,8 @@
 
   <div class="row spread">
     <span class="tally" title="Total pips being dumped on the table this round">
-      🦴 <strong class="num">{pipTotal}</strong> {pipTotal === 1 ? 'pip' : 'pips'} on the table
+      🦴 <strong class="num">{pipTotal}</strong>
+      {pipTotal === 1 ? 'pip' : 'pips'} on the table
     </span>
     <button type="button" class="btn small ghost" onclick={() => (showHelp = !showHelp)}>
       Rules
@@ -81,7 +82,8 @@
     <pre class="help">{chickenfoot.help}</pre>
   {:else if blocked}
     <p class="hint muted">
-      🚫 No one’s out yet — tap 🐔 when someone empties their hand, or leave it unset for a blocked round.
+      🚫 No one’s out yet — tap 🐔 when someone empties their hand, or leave it unset for a blocked
+      round.
     </p>
   {:else}
     <p class="hint muted">🐔 {outName} went out — everyone else totals up their leftover bones.</p>
@@ -222,7 +224,9 @@
     cursor: pointer;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    transition: transform var(--dur-press) var(--ease-standard), background var(--dur-base) var(--ease-standard);
+    transition:
+      transform var(--dur-press) var(--ease-standard),
+      background var(--dur-base) var(--ease-standard);
   }
   .qchip:active {
     transform: scale(0.94);
@@ -266,7 +270,9 @@
     color: var(--text);
     cursor: pointer;
     font-weight: 700;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   .toggle:disabled {
     opacity: 0.5;

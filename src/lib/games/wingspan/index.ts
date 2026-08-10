@@ -23,7 +23,16 @@ export const wingspan: GameModule = {
   name: 'Wingspan',
   tagline: 'Total the flock — highest score reigns 🪶',
   emoji: '🪶',
-  keywords: ['birds', 'engine building', 'stonemaier', 'nectar', 'eggs', 'habitat', 'board game', 'oceania'],
+  keywords: [
+    'birds',
+    'engine building',
+    'stonemaier',
+    'nectar',
+    'eggs',
+    'habitat',
+    'board game',
+    'oceania',
+  ],
   minPlayers: 1,
   maxPlayers: 5,
   configFields: [

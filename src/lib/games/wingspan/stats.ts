@@ -64,7 +64,12 @@ export function wingspanStats({ games, rounds, canonical }: GameStatsInput): Gam
 
   const global: Metric[] = [];
   if (grandGames) {
-    global.push({ key: 'ws_avg_all', label: 'Avg final score', value: fmtAvg(grandTotal / grandGames), emoji: '🪶' });
+    global.push({
+      key: 'ws_avg_all',
+      label: 'Avg final score',
+      value: fmtAvg(grandTotal / grandGames),
+      emoji: '🪶',
+    });
     global.push({ key: 'ws_high', label: 'High score', value: fmtInt(highScore), emoji: '⭐' });
   }
   return { perPlayer, global };

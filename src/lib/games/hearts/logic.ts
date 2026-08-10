@@ -97,15 +97,13 @@ const PASS_META: Record<PassDirection, Omit<PassInfo, 'direction'>> = {
  * clean seat, so we honestly drop it to left → right → hold.
  */
 export function passCycle(playerCount: number): PassDirection[] {
-  return playerCount === 4
-    ? ['left', 'right', 'across', 'hold']
-    : ['left', 'right', 'hold'];
+  return playerCount === 4 ? ['left', 'right', 'across', 'hold'] : ['left', 'right', 'hold'];
 }
 
 /** Which way cards pass on a given (0-based) hand, for a given table size. */
 export function passingFor(handIndex: number, playerCount: number): PassInfo {
   const cycle = passCycle(playerCount);
-  const i = (((handIndex % cycle.length) + cycle.length) % cycle.length) || 0;
+  const i = ((handIndex % cycle.length) + cycle.length) % cycle.length || 0;
   const direction = cycle[i];
   return { direction, ...PASS_META[direction] };
 }
@@ -145,11 +143,7 @@ export function shooter(input: HeartsInput): ID | null {
  * their hearts, plus 13 if they hold the Queen, minus 10 if they hold the Jack
  * (Omnibus only). This is the number to preview per row while entering.
  */
-export function baseDelta(
-  input: HeartsInput,
-  id: ID,
-  cfg: HeartsConfig,
-): number {
+export function baseDelta(input: HeartsInput, id: ID, cfg: HeartsConfig): number {
   return (
     (numOr(input.hearts[id], 0) || 0) +
     (input.queen === id ? QUEEN_POINTS : 0) -
@@ -302,10 +296,7 @@ export function describeRound(
 }
 
 /** True when any player has reached the end score and the game can wrap. */
-export function isFinished(
-  totals: Record<ID, number>,
-  config: Record<string, unknown>,
-): boolean {
+export function isFinished(totals: Record<ID, number>, config: Record<string, unknown>): boolean {
   const end = readConfig(config).endScore;
   return Object.values(totals).some((t) => t >= end);
 }

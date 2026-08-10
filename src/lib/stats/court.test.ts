@@ -8,7 +8,9 @@ const BASE = 1_700_000_000_000;
 
 const player = (id: string): Player => ({ id, name: id, color: '#7c5cff', createdAt: 0 });
 
-function mkGame(p: Partial<Game> & { id: string; type: string; playerIds: ID[]; winnerIds: ID[] }): Game {
+function mkGame(
+  p: Partial<Game> & { id: string; type: string; playerIds: ID[]; winnerIds: ID[] },
+): Game {
   return {
     config: {},
     status: 'finished',
@@ -31,11 +33,41 @@ function mkRound(gameId: string, deltas: Record<ID, number>): Round {
 function courtFixture() {
   const players = [player('A'), player('B'), player('C')];
   const games = [
-    mkGame({ id: 'g1', type: 'skullking', playerIds: ['A', 'B', 'C'], winnerIds: ['A'], finishedAt: BASE }),
-    mkGame({ id: 'g2', type: 'skullking', playerIds: ['A', 'B', 'C'], winnerIds: ['A'], finishedAt: BASE + DAY }),
-    mkGame({ id: 'g3', type: 'skullking', playerIds: ['A', 'B', 'C'], winnerIds: ['B'], finishedAt: BASE + 2 * DAY }),
-    mkGame({ id: 'g4', type: 'hearts', playerIds: ['A', 'B', 'C'], winnerIds: ['B'], finishedAt: BASE + 3 * DAY }),
-    mkGame({ id: 'g5', type: 'hearts', playerIds: ['A', 'B', 'C'], winnerIds: ['B'], finishedAt: BASE + 4 * DAY }),
+    mkGame({
+      id: 'g1',
+      type: 'skullking',
+      playerIds: ['A', 'B', 'C'],
+      winnerIds: ['A'],
+      finishedAt: BASE,
+    }),
+    mkGame({
+      id: 'g2',
+      type: 'skullking',
+      playerIds: ['A', 'B', 'C'],
+      winnerIds: ['A'],
+      finishedAt: BASE + DAY,
+    }),
+    mkGame({
+      id: 'g3',
+      type: 'skullking',
+      playerIds: ['A', 'B', 'C'],
+      winnerIds: ['B'],
+      finishedAt: BASE + 2 * DAY,
+    }),
+    mkGame({
+      id: 'g4',
+      type: 'hearts',
+      playerIds: ['A', 'B', 'C'],
+      winnerIds: ['B'],
+      finishedAt: BASE + 3 * DAY,
+    }),
+    mkGame({
+      id: 'g5',
+      type: 'hearts',
+      playerIds: ['A', 'B', 'C'],
+      winnerIds: ['B'],
+      finishedAt: BASE + 4 * DAY,
+    }),
   ];
   const rounds = [
     mkRound('g1', { A: 30, B: 20, C: 10 }),

@@ -51,7 +51,9 @@ describe('assignPersona', () => {
   });
 
   it('reads high close-game win rate as The Closer', () => {
-    const p = assignPersona(mkStats({ played: 10, wins: 5, closeGames: 4, closeWins: 4, finishStdev: 0, podiums: 0 }));
+    const p = assignPersona(
+      mkStats({ played: 10, wins: 5, closeGames: 4, closeWins: 4, finishStdev: 0, podiums: 0 }),
+    );
     expect(p.key).toBe('closer');
   });
 
@@ -61,22 +63,45 @@ describe('assignPersona', () => {
   });
 
   it('reads wins-from-behind as the Comeback Kid', () => {
-    const p = assignPersona(mkStats({ played: 10, wins: 4, comebackWins: 4, finishStdev: 0, podiums: 0 }));
+    const p = assignPersona(
+      mkStats({ played: 10, wins: 4, comebackWins: 4, finishStdev: 0, podiums: 0 }),
+    );
     expect(p.key).toBe('comeback');
   });
 
   it('reads wire-to-wire wins as the Front-Runner', () => {
-    const p = assignPersona(mkStats({ played: 10, wins: 4, wireToWireWins: 4, comebackWins: 0, finishStdev: 0, podiums: 0 }));
+    const p = assignPersona(
+      mkStats({
+        played: 10,
+        wins: 4,
+        wireToWireWins: 4,
+        comebackWins: 0,
+        finishStdev: 0,
+        podiums: 0,
+      }),
+    );
     expect(p.key).toBe('frontrunner');
   });
 
   it('reads high podium + low volatility as Consistent', () => {
-    const p = assignPersona(mkStats({ played: 10, wins: 2, podiums: 8, finishStdev: 0, wireToWireWins: 0 }));
+    const p = assignPersona(
+      mkStats({ played: 10, wins: 2, podiums: 8, finishStdev: 0, wireToWireWins: 0 }),
+    );
     expect(p.key).toBe('consistent');
   });
 
   it('falls back to All-Rounder when nothing stands out', () => {
-    const p = assignPersona(mkStats({ played: 10, wins: 1, podiums: 0, finishStdev: 0, closeGames: 0, comebackWins: 0, wireToWireWins: 0 }));
+    const p = assignPersona(
+      mkStats({
+        played: 10,
+        wins: 1,
+        podiums: 0,
+        finishStdev: 0,
+        closeGames: 0,
+        comebackWins: 0,
+        wireToWireWins: 0,
+      }),
+    );
     expect(p.key).toBe('allrounder');
   });
 });

@@ -48,7 +48,10 @@
 <label class="card sw-row row spread">
   <span class="meta">
     <span class="name">Privacy peek-guard</span>
-    <span class="muted sm">Blurs the board when you set the phone down, so a passer-by can’t read the scores. Tap to reveal.</span>
+    <span class="muted sm"
+      >Blurs the board when you set the phone down, so a passer-by can’t read the scores. Tap to
+      reveal.</span
+    >
   </span>
   <Switch checked={$settings.privacyGuard} onchange={(v) => setBool('privacyGuard', v)} />
 </label>
@@ -85,9 +88,15 @@
 <div class="card reset row spread">
   <span class="meta">
     <span class="name">Reset gameplay</span>
-    <span class="muted sm">Put these behaviours back to Score King’s defaults. Nothing else changes.</span>
+    <span class="muted sm"
+      >Put these behaviours back to Score King’s defaults. Nothing else changes.</span
+    >
   </span>
-  <button class="btn ghost danger" onclick={() => resetPreferences(GAMEPLAY_SETTING_KEYS)} disabled={!canReset}>
+  <button
+    class="btn ghost danger"
+    onclick={() => resetPreferences(GAMEPLAY_SETTING_KEYS)}
+    disabled={!canReset}
+  >
     {canReset ? 'Reset to defaults' : 'All default'}
   </button>
 </div>

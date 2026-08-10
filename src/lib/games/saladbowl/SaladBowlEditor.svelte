@@ -22,7 +22,12 @@
 
   let { input = $bindable(), ctx }: { input: SaladBowlInput; ctx: RoundContext } = $props();
 
-  const teams = $derived(makeTeams(ctx.players.map((p) => p.id), teamCount(ctx.config)));
+  const teams = $derived(
+    makeTeams(
+      ctx.players.map((p) => p.id),
+      teamCount(ctx.config),
+    ),
+  );
   const playerById = $derived(new Map(ctx.players.map((p) => [p.id, p])));
   const perWord = $derived(pointsPerWord(ctx.config));
   const rounds = $derived(roundCount(ctx.config));
@@ -127,7 +132,8 @@
     if (!sound) return;
     try {
       const AC =
-        window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AC) return;
       if (!audioCtx) audioCtx = new AC();
       if (audioCtx.state === 'suspended') void audioCtx.resume();
@@ -161,7 +167,11 @@
     haptic('buzz');
     playBuzzer();
     if (clockEl) {
-      animateMotion(clockEl, { scale: [1, 1.06, 1, 1.06, 1] }, { duration: 0.6, ease: 'easeInOut' });
+      animateMotion(
+        clockEl,
+        { scale: [1, 1.06, 1, 1.06, 1] },
+        { duration: 0.6, ease: 'easeInOut' },
+      );
     }
   }
 
@@ -202,7 +212,8 @@
   function addWord() {
     turnWords += 1;
     haptic('tick');
-    if (countEl) animateMotion(countEl, { scale: [1, 1.22, 1] }, { duration: 0.16, ease: 'easeOut' });
+    if (countEl)
+      animateMotion(countEl, { scale: [1, 1.22, 1] }, { duration: 0.16, ease: 'easeOut' });
   }
   function removeWord() {
     if (turnWords <= 0) return;
@@ -241,7 +252,9 @@
         <strong>Round {ctx.roundIndex + 1} · {theme.name}</strong>
         <span class="rail" aria-hidden="true">
           {#each rail as r, i (i)}
-            <span class="rung" class:now={i === ctx.roundIndex} class:done={i < ctx.roundIndex}>{r.emoji}</span>
+            <span class="rung" class:now={i === ctx.roundIndex} class:done={i < ctx.roundIndex}
+              >{r.emoji}</span
+            >
           {/each}
         </span>
       </div>
@@ -281,7 +294,8 @@
     <div class="clock" class:low class:up={timesUp} bind:this={clockEl}>
       <span class="time" aria-live="off">{formatClock(remaining)}</span>
       <span class="clabel">
-        {#if timesUp}⏰ Time! — tap End turn{:else if running}🥗 {activeEmoji} {activeName} is up!{:else}⏱️ {formatClock(turn)} per turn{/if}
+        {#if timesUp}⏰ Time! — tap End turn{:else if running}🥗 {activeEmoji}
+          {activeName} is up!{:else}⏱️ {formatClock(turn)} per turn{/if}
       </span>
       <div class="track"><div class="fill" style="transform: scaleX({barPct / 100})"></div></div>
     </div>
@@ -292,17 +306,27 @@
       {:else}
         <button type="button" class="btn grow" onclick={start}>▶ Start</button>
       {/if}
-      <button type="button" class="btn" onclick={resetClock} aria-label="Reset the turn clock">↺</button>
+      <button type="button" class="btn" onclick={resetClock} aria-label="Reset the turn clock"
+        >↺</button
+      >
     </div>
 
     <button type="button" class="tally" onclick={addWord}>
       <span class="plus" aria-hidden="true">＋</span>
-      <span class="tlabel">Got one! <span class="thisturn"><span class="tn" bind:this={countEl}>{turnWords}</span> this turn</span></span>
+      <span class="tlabel"
+        >Got one! <span class="thisturn"
+          ><span class="tn" bind:this={countEl}>{turnWords}</span> this turn</span
+        ></span
+      >
     </button>
 
     <div class="row spread endrow">
-      <button type="button" class="btn small ghost" onclick={removeWord} disabled={turnWords <= 0}>− undo word</button>
-      <button type="button" class="btn small" onclick={endTurn}>Bank {turnWords} → {activeEmoji} · next team ↦</button>
+      <button type="button" class="btn small ghost" onclick={removeWord} disabled={turnWords <= 0}
+        >− undo word</button
+      >
+      <button type="button" class="btn small" onclick={endTurn}
+        >Bank {turnWords} → {activeEmoji} · next team ↦</button
+      >
     </div>
   </div>
 
@@ -318,7 +342,9 @@
         </span>
         <span class="totals">
           <span class="total" class:lead={leaderTeams.has(t.index)}>{projected[t.index]}</span>
-          <span class="pts">+{wordsFor(input, t.index) * perWord}<span class="unit">this rd</span></span>
+          <span class="pts"
+            >+{wordsFor(input, t.index) * perWord}<span class="unit">this rd</span></span
+          >
         </span>
       </div>
 
@@ -554,7 +580,9 @@
     font-weight: 700;
     font-size: 1.15rem;
     cursor: pointer;
-    transition: transform var(--dur-press, 0.08s) var(--ease-standard, ease), background var(--dur-base, 0.2s);
+    transition:
+      transform var(--dur-press, 0.08s) var(--ease-standard, ease),
+      background var(--dur-base, 0.2s);
   }
   .tally:hover {
     background: color-mix(in srgb, var(--good) 14%, var(--surface-3));

@@ -99,14 +99,20 @@ export function spikeballStats({ games, rounds, canonical }: GameStatsInput): Ga
         emoji: '📈',
       },
     ];
-    if (a.deuce) metrics.push({ key: 'sb_deuce', label: 'Deuce games', value: `${a.deuce}`, emoji: '🥵' });
+    if (a.deuce)
+      metrics.push({ key: 'sb_deuce', label: 'Deuce games', value: `${a.deuce}`, emoji: '🥵' });
     perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
   if (totalGames) {
     global.push({ key: 'sb_games', label: 'Games played', value: fmtInt(totalGames), emoji: '🏐' });
-    global.push({ key: 'sb_points', label: 'Rally points', value: fmtInt(totalPoints), emoji: '🎯' });
+    global.push({
+      key: 'sb_points',
+      label: 'Rally points',
+      value: fmtInt(totalPoints),
+      emoji: '🎯',
+    });
     if (biggestMargin >= 0) {
       global.push({
         key: 'sb_blowout',

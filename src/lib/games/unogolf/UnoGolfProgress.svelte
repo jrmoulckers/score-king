@@ -40,7 +40,10 @@
 
 <div class="links">
   <div class="cap">
-    <span class="where">⛳ Hole {hole}{#if format === 'holes'} <span class="of">of {holes}</span>{/if}</span>
+    <span class="where"
+      >⛳ Hole {hole}{#if format === 'holes'}
+        <span class="of">of {holes}</span>{/if}</span
+    >
     {#if format === 'holes' && nine}
       <span class="nine">{nine}</span>
     {:else if format === 'target'}
@@ -52,14 +55,16 @@
     <div class="fairway" aria-hidden="true">
       {#each flags as f (f)}
         <span class="flag" class:played={f < hole} class:current={f === hole}
-          >{f === hole ? '⛳' : f < hole ? '🚩' : '·'}</span>
+          >{f === hole ? '⛳' : f < hole ? '🚩' : '·'}</span
+        >
       {/each}
     </div>
     <span class="sr-only">Hole {hole} of {holes}{nine ? `, ${nine}` : ''}, {done} played.</span>
   {:else}
     <div class="racetop">
       {#if leaderName}
-        <span class="lead">👑 <strong class="ellipsis">{leaderName}</strong>
+        <span class="lead"
+          >👑 <strong class="ellipsis">{leaderName}</strong>
           <span class="tnum leadnum" use:bumpOnChange={leaderTotal}>{leaderTotal}</span>
           <span class="sub">out front</span>
         </span>
@@ -69,7 +74,9 @@
     </div>
     <div class="track"><div class="fill" style="width: {pct}%"></div></div>
     <span class="sr-only">
-      Racing to {target}. {leaderName ? `${leaderName} leads with ${leaderTotal}.` : 'No leader yet.'}
+      Racing to {target}. {leaderName
+        ? `${leaderName} leads with ${leaderTotal}.`
+        : 'No leader yet.'}
     </span>
   {/if}
 </div>

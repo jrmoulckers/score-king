@@ -4,14 +4,14 @@
 
 This project has committed design context. **Read these before changing any UI:**
 
-- **[PRODUCT.md](../PRODUCT.md)** — strategy: register (`product`), users, purpose,
-  brand personality (*Whimsical, Easy, Game-Night Energy*), anti-references, design
-  principles, and the accessibility/inclusion brief.
+- **[PRODUCT.md](../PRODUCT.md)** — strategy: register (`product`), users, purpose, brand
+  personality (_Whimsical, Easy, Game-Night Energy_), anti-references, design principles, and
+  the accessibility/inclusion brief.
 - **[DESIGN.md](../DESIGN.md)** — the visual system: color tokens, typography, elevation,
   components, and forceful Do's & Don'ts. Creative North Star: **"The Game-Night LARPer"**
   (consistent chrome underneath, thematic per-game costume on top).
-- **`.impeccable/design.json`** — machine-readable sidecar (tonal ramps, shadows, motion,
-  live component snippets) consumed by the impeccable design skill.
+- **`.impeccable/design.json`** — machine-readable sidecar (tonal ramps, shadows, motion, live
+  component snippets) consumed by the impeccable design skill.
 
 The binding design non-negotiables are **not** repeated here. Root `AGENTS.md`
 §"Product design constraints" owns them, and `DESIGN.md` carries the full rationale and

@@ -31,7 +31,8 @@
   let readoutEl: HTMLSpanElement | undefined = $state();
 
   function bump() {
-    if (readoutEl) animateMotion(readoutEl, { scale: [1, 1.14, 1] }, { duration: 0.16, ease: 'easeOut' });
+    if (readoutEl)
+      animateMotion(readoutEl, { scale: [1, 1.14, 1] }, { duration: 0.16, ease: 'easeOut' });
   }
 
   function addTile(n: number) {
@@ -58,35 +59,41 @@
 </script>
 
 <div class="keypad">
-  <div class="pad" role="group" aria-label={label ? `Add leftover tiles for ${label}` : 'Add leftover tiles'}>
+  <div
+    class="pad"
+    role="group"
+    aria-label={label ? `Add leftover tiles for ${label}` : 'Add leftover tiles'}
+  >
     {#each values as n (n)}
       <button
         type="button"
         class="key tile"
         style="--ink: {tileInk(n)}; --face: {TILE_FACE}"
         onclick={() => addTile(n)}
-        aria-label={`Add a ${n} tile`}
-      >{n}</button>
+        aria-label={`Add a ${n} tile`}>{n}</button
+      >
     {/each}
     <button
       type="button"
       class="key joker"
       onclick={addJoker}
       disabled={(Number(jokers) || 0) >= maxJokers}
-      aria-label={`Add a stranded joker, worth ${jokerValue}`}
-    >🃏</button>
+      aria-label={`Add a stranded joker, worth ${jokerValue}`}>🃏</button
+    >
   </div>
 
   <div class="foot">
     <span class="readout" aria-hidden="true">
-      🧮 <strong bind:this={readoutEl} class="sum">{tiles}</strong>{#if jokers > 0}<span class="jk"> + 🃏×{jokers}</span>{/if}
+      🧮 <strong bind:this={readoutEl} class="sum">{tiles}</strong>{#if jokers > 0}<span class="jk">
+          + 🃏×{jokers}</span
+        >{/if}
     </span>
     <button
       type="button"
       class="clear"
       onclick={clear}
-      disabled={!(Number(tiles) > 0) && !(Number(jokers) > 0)}
-    >Clear rack</button>
+      disabled={!(Number(tiles) > 0) && !(Number(jokers) > 0)}>Clear rack</button
+    >
   </div>
 </div>
 
@@ -109,7 +116,9 @@
     font-size: 0.95rem;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
-    transition: transform var(--dur-press) var(--ease-standard), filter var(--dur-base) var(--ease-standard);
+    transition:
+      transform var(--dur-press) var(--ease-standard),
+      filter var(--dur-base) var(--ease-standard);
   }
   /* Ivory tile face with a coloured numeral — the physical Rummikub tile as a key. */
   .key.tile {
@@ -161,7 +170,9 @@
     color: var(--muted);
     font-weight: 600;
     cursor: pointer;
-    transition: transform var(--dur-press) var(--ease-standard), background var(--dur-base) var(--ease-standard);
+    transition:
+      transform var(--dur-press) var(--ease-standard),
+      background var(--dur-base) var(--ease-standard);
   }
   .clear:active {
     transform: scale(0.94);

@@ -71,7 +71,15 @@ export const avalon: GameModule = {
   createRoundInput: (ctx: RoundContext): AvalonInput => {
     const setup = roleSetup(ctx.players.length);
     const teamSize = setup.questTeams[ctx.roundIndex] ?? setup.questTeams[MAX_QUESTS - 1] ?? 3;
-    return { fails: 0, teamSize, assassinFoundMerlin: null, winners: [], rejects: 0, leaderId: null, team: [] };
+    return {
+      fails: 0,
+      teamSize,
+      assassinFoundMerlin: null,
+      winners: [],
+      rejects: 0,
+      leaderId: null,
+      team: [],
+    };
   },
 
   validateRound: (input: AvalonInput, ctx: RoundContext) =>

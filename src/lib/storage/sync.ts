@@ -65,14 +65,16 @@ const ILLEGAL_NAME_CHARS = /[\\/:*?"<>|]/g;
 
 /** Clean a user title into something safe to use as a file name. */
 export function sanitizeBackupTitle(title: string): string {
-  return title
-    // Drop a trailing ".json" the user typed themselves, so "Backup.json" doesn't
-    // become the file "Backup.json.json" (and round-trip to the wrong display title).
-    .replace(/\.json$/i, '')
-    .replace(ILLEGAL_NAME_CHARS, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 60);
+  return (
+    title
+      // Drop a trailing ".json" the user typed themselves, so "Backup.json" doesn't
+      // become the file "Backup.json.json" (and round-trip to the wrong display title).
+      .replace(/\.json$/i, '')
+      .replace(ILLEGAL_NAME_CHARS, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 60)
+  );
 }
 
 /**
@@ -258,7 +260,14 @@ export interface SyncProvider {
 
 export async function buildSnapshot(): Promise<Snapshot> {
   const { players, games, rounds, gameDefs } = await db.getAllForSync();
-  return { players, games, rounds, gameDefs, settings: getBackupSettings(), exportedAt: Date.now() };
+  return {
+    players,
+    games,
+    rounds,
+    gameDefs,
+    settings: getBackupSettings(),
+    exportedAt: Date.now(),
+  };
 }
 
 export async function restoreSnapshot(snapshot: Snapshot): Promise<void> {

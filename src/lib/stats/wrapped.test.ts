@@ -9,8 +9,17 @@ const DAY = 86_400_000;
 const BASE = 1_700_000_000_000;
 const player = (id: string): Player => ({ id, name: id, color: '#7c5cff', createdAt: 0 });
 
-function mkGame(p: Partial<Game> & { id: string; type: string; playerIds: ID[]; winnerIds: ID[] }): Game {
-  return { config: {}, status: 'finished', createdAt: p.finishedAt ?? BASE, finishedAt: p.finishedAt ?? BASE, roundCount: 1, ...p } as Game;
+function mkGame(
+  p: Partial<Game> & { id: string; type: string; playerIds: ID[]; winnerIds: ID[] },
+): Game {
+  return {
+    config: {},
+    status: 'finished',
+    createdAt: p.finishedAt ?? BASE,
+    finishedAt: p.finishedAt ?? BASE,
+    roundCount: 1,
+    ...p,
+  } as Game;
 }
 function mkRound(gameId: string, deltas: Record<ID, number>): Round {
   return { id: `${gameId}-r0`, gameId, index: 0, input: {}, deltas, createdAt: BASE };
@@ -31,7 +40,9 @@ function season() {
   ];
   winByType.forEach(([type, w], i) => {
     const id = `g${i}`;
-    games.push(mkGame({ id, type, playerIds: ['A', 'B', 'C'], winnerIds: [w], finishedAt: BASE + i * DAY }));
+    games.push(
+      mkGame({ id, type, playerIds: ['A', 'B', 'C'], winnerIds: [w], finishedAt: BASE + i * DAY }),
+    );
     // Winner gets the best score in the game's direction (Hearts = lower is better).
     const others = ['A', 'B', 'C'].filter((p) => p !== w);
     const deltas: Record<ID, number> = {};
@@ -97,7 +108,10 @@ describe('wrapped — year arc', () => {
   it('surfaces vs-prior deltas when a comparison is supplied', () => {
     const cur = inputFor();
     // Prior window with zero games -> +4 wins improvement.
-    const priorResult = computeStats({ players: [player('A')], games: [], rounds: [] }, { playerId: 'A' });
+    const priorResult = computeStats(
+      { players: [player('A')], games: [], rounds: [] },
+      { playerId: 'A' },
+    );
     cur.prior = compareStats(cur.result, priorResult, 'A');
     const rec = buildWrapped(cur).find((c) => c.kind === 'record');
     expect(rec?.lines?.some((l) => l.includes('▲'))).toBe(true);
@@ -115,7 +129,10 @@ describe('wrapped — recap arc', () => {
 
 describe('wrapped — low data', () => {
   it('gives a single welcome card when nothing was finished', () => {
-    const empty = computeStats({ players: [player('A')], games: [], rounds: [] }, { playerId: 'A' });
+    const empty = computeStats(
+      { players: [player('A')], games: [], rounds: [] },
+      { playerId: 'A' },
+    );
     const cards = buildWrapped({
       meId: 'A',
       me: empty.perPlayer['A'],

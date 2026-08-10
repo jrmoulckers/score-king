@@ -156,8 +156,7 @@ async function token(interactive = true): Promise<string> {
     const res = await app.acquireTokenSilent({ scopes: scopes(), account });
     return res.accessToken;
   } catch {
-    if (!interactive)
-      throw new InteractionRequiredError('Silent OneDrive token refresh failed');
+    if (!interactive) throw new InteractionRequiredError('Silent OneDrive token refresh failed');
     sessionStorage.setItem(RETURN_KEY, window.location.pathname + window.location.search);
     await app.acquireTokenRedirect({ scopes: scopes(), account });
     throw new Error('Redirecting to Microsoft to refresh sign-in…');

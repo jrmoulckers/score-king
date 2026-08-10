@@ -62,7 +62,9 @@
   const size = $derived(effectiveTeamSize(input));
 
   const outcome = $derived<Outcome>(outcomeOf(input, twoFail));
-  const clinchedBy = $derived<Side | null>(decided ? null : clinch(before, resolutionOf(input, twoFail)));
+  const clinchedBy = $derived<Side | null>(
+    decided ? null : clinch(before, resolutionOf(input, twoFail)),
+  );
   const sideKnown = $derived(
     clinchedBy === 'evil' || (clinchedBy === 'good' && input.assassinFoundMerlin !== null),
   );
@@ -86,7 +88,9 @@
       } else {
         const r = ctx.rounds.find((x) => x.index === i);
         const inp = r?.input as AvalonInput | undefined;
-        if (r && inp) state = resolutionOf(inp, setup.twoFailQuests[i] ?? false) === 'success' ? 'success' : 'fail';
+        if (r && inp)
+          state =
+            resolutionOf(inp, setup.twoFailQuests[i] ?? false) === 'success' ? 'success' : 'fail';
       }
       list.push({ n: i + 1, state });
     }
@@ -199,7 +203,11 @@
         >
           <span class="pn tnum">Q{p.n}</span>
           {#key p.state}
-            <span class="pmark" class:stamp={p.state === 'success' || p.state === 'fail'} aria-hidden="true">
+            <span
+              class="pmark"
+              class:stamp={p.state === 'success' || p.state === 'fail'}
+              aria-hidden="true"
+            >
               {#if p.state === 'success'}✓{:else if p.state === 'fail'}✗{:else if p.state === 'current'}●{:else}·{/if}
             </span>
           {/key}
@@ -220,20 +228,31 @@
   </div>
 
   <div class="panel">
-    <button class="rowbtn" type="button" onclick={() => (showBriefing = !showBriefing)} aria-expanded={showBriefing}>
+    <button
+      class="rowbtn"
+      type="button"
+      onclick={() => (showBriefing = !showBriefing)}
+      aria-expanded={showBriefing}
+    >
       <span class="row" style="gap: 8px">
         <span aria-hidden="true">🎭</span>
-        <span><strong>{playerCount} at the round table</strong> · 🛡️ {setup.good} Good · 🗡️ {setup.evil} Evil</span>
+        <span
+          ><strong>{playerCount} at the round table</strong> · 🛡️ {setup.good} Good · 🗡️ {setup.evil}
+          Evil</span
+        >
       </span>
       <span class="muted small">{showBriefing ? 'Hide' : 'Briefing'}</span>
     </button>
     {#if showBriefing}
       <div class="briefing">
-        <p class="brief-lead small muted">🌙 Douse the lights — here's who wakes, and who they see.</p>
+        <p class="brief-lead small muted">
+          🌙 Douse the lights — here's who wakes, and who they see.
+        </p>
         <div class="roles">
           {#each roles as r (r.name + r.emoji)}
             <span class="pill role" class:good={r.side === 'good'} class:evil={r.side === 'evil'}>
-              {r.emoji} {r.name}{#if r.note}<span class="muted"> · {r.note}</span>{/if}
+              {r.emoji}
+              {r.name}{#if r.note}<span class="muted"> · {r.note}</span>{/if}
             </span>
           {/each}
         </div>
@@ -243,7 +262,8 @@
           {/each}
         </ul>
         <p class="muted small teams">
-          Team sizes by quest: {setup.questTeams.join(' · ')}{#if setup.twoFailQuests.some(Boolean)} · Quest 4 needs 2 fails{/if}
+          Team sizes by quest: {setup.questTeams.join(' · ')}{#if setup.twoFailQuests.some(Boolean)}
+            · Quest 4 needs 2 fails{/if}
         </p>
       </div>
     {/if}
@@ -252,20 +272,27 @@
   {#if decided}
     <div class="panel">
       <p class="done">
-        This game is already decided — three quests have gone to one side. Tap <strong>Finish</strong> to record the result.
+        This game is already decided — three quests have gone to one side. Tap <strong
+          >Finish</strong
+        > to record the result.
       </p>
     </div>
   {:else}
     <div class="panel entry">
       <div class="row spread">
         <strong>Quest {questNo}</strong>
-        <span class="muted small">Suggested team {suggestedTeam}{#if twoFail} · needs 2 fails{/if}</span>
+        <span class="muted small"
+          >Suggested team {suggestedTeam}{#if twoFail}
+            · needs 2 fails{/if}</span
+        >
       </div>
 
       <!-- The vote track: rejected proposals stack up toward the Hammer. -->
       <div class="votetrack" class:hammered={hammer}>
         <div class="row spread">
-          <span class="vt-lbl">🗳️ Vote track <span class="muted small">· rejected proposals</span></span>
+          <span class="vt-lbl"
+            >🗳️ Vote track <span class="muted small">· rejected proposals</span></span
+          >
           <span class="pill tnum" class:score-bad={hammer}>{rejects}/{HAMMER}</span>
         </div>
         <div class="vbeads" role="group" aria-label="Rejected proposals this quest">
@@ -278,11 +305,14 @@
               aria-pressed={i < rejects}
               aria-label={`${i + 1} rejected proposal${i === 0 ? '' : 's'}`}
               onclick={() => setRejects(i + 1 === rejects ? i : i + 1)}
-            >{i === HAMMER - 1 ? '🔨' : (i < rejects ? '✗' : '·')}</button>
+              >{i === HAMMER - 1 ? '🔨' : i < rejects ? '✗' : '·'}</button
+            >
           {/each}
         </div>
         {#if hammer}
-          <p class="hammer-call">🔨 <strong>The Hammer falls!</strong> Five proposals rejected — Evil seizes Avalon.</p>
+          <p class="hammer-call">
+            🔨 <strong>The Hammer falls!</strong> Five proposals rejected — Evil seizes Avalon.
+          </p>
         {/if}
       </div>
 
@@ -325,12 +355,19 @@
             <Stepper bind:value={input.fails} min={requiredFails} max={size} />
           </div>
         {:else if twoFail}
-          <p class="muted small hint">On Quest 4 a single Fail still succeeds — treachery needs two.</p>
+          <p class="muted small hint">
+            On Quest 4 a single Fail still succeeds — treachery needs two.
+          </p>
         {/if}
       {/if}
 
       <!-- Optional council log: who led, who sailed. Never required — the tool stays fast. -->
-      <button class="rowbtn council-toggle" type="button" onclick={() => (showCouncil = !showCouncil)} aria-expanded={showCouncil}>
+      <button
+        class="rowbtn council-toggle"
+        type="button"
+        onclick={() => (showCouncil = !showCouncil)}
+        aria-expanded={showCouncil}
+      >
         <span class="row" style="gap: 8px">
           <span aria-hidden="true">👑</span>
           <span>Record the council <span class="muted small">· optional</span></span>
@@ -358,7 +395,9 @@
             </div>
           </div>
           <div class="csec">
-            <span class="muted small">🚣 Who sailed? <span class="muted">· sets the team size</span></span>
+            <span class="muted small"
+              >🚣 Who sailed? <span class="muted">· sets the team size</span></span
+            >
             <div class="chips">
               {#each players as p (p.id)}
                 <button
@@ -384,7 +423,9 @@
         <AssassinReveal token={strikeToken} found={strikeFound} />
 
         {#if clinchedBy === 'good'}
-          <p class="rhead">🛡️ Good completed three quests! The Assassin rises for one shot at Merlin.</p>
+          <p class="rhead">
+            🛡️ Good completed three quests! The Assassin rises for one shot at Merlin.
+          </p>
           <div class="atoggles">
             <button
               type="button"
@@ -406,7 +447,9 @@
             </button>
           </div>
         {:else if hammer}
-          <p class="rhead">🔨 The Hammer fell — the Minions of Mordred take Avalon without a fight.</p>
+          <p class="rhead">
+            🔨 The Hammer fell — the Minions of Mordred take Avalon without a fight.
+          </p>
         {:else}
           <p class="rhead">🗡️ Evil sank three quests — the Minions of Mordred win.</p>
         {/if}
@@ -524,9 +567,18 @@
     animation: stamp 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   }
   @keyframes stamp {
-    0% { transform: scale(1.9) rotate(-14deg); opacity: 0; }
-    55% { transform: scale(0.86) rotate(4deg); opacity: 1; }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    0% {
+      transform: scale(1.9) rotate(-14deg);
+      opacity: 0;
+    }
+    55% {
+      transform: scale(0.86) rotate(4deg);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
   }
   .matchpoint {
     margin: 0;
@@ -607,7 +659,9 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     background: var(--surface);
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease;
   }
   .votetrack.hammered {
     border-color: var(--bad);

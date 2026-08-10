@@ -20,7 +20,11 @@
 </script>
 
 <div class="gauge" class:reduced>
-  <div class="tank zone-{zone.key}" role="img" aria-label={`Ocean depth: ${zone.label} zone, ${total} points`}>
+  <div
+    class="tank zone-{zone.key}"
+    role="img"
+    aria-label={`Ocean depth: ${zone.label} zone, ${total} points`}
+  >
     <div class="water" style="--fill: {fill}">
       <span class="waterline" aria-hidden="true"></span>
     </div>

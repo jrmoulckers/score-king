@@ -51,7 +51,10 @@ export interface VolleyballInput {
 export type Format = 'beach' | 'fours' | 'indoor' | 'custom';
 
 /** Per-format guidance: the roster size and the set target players expect. */
-export const FORMAT_PRESETS: Record<Format, { label: string; teamSize: number; pointsPerSet: number }> = {
+export const FORMAT_PRESETS: Record<
+  Format,
+  { label: string; teamSize: number; pointsPerSet: number }
+> = {
   beach: { label: 'Beach (2s)', teamSize: 2, pointsPerSet: 21 },
   fours: { label: 'Fours (4s)', teamSize: 4, pointsPerSet: 25 },
   indoor: { label: 'Indoor (6s)', teamSize: 6, pointsPerSet: 25 },
@@ -89,11 +92,14 @@ export function readConfig(config: Record<string, unknown> | undefined): VolleyC
     return Number.isFinite(n) && n > 0 ? n : fallback;
   };
 
-  const format: Format = (['beach', 'fours', 'indoor', 'custom'] as const).includes(cfg.format as Format)
+  const format: Format = (['beach', 'fours', 'indoor', 'custom'] as const).includes(
+    cfg.format as Format,
+  )
     ? (cfg.format as Format)
     : DEFAULTS.format;
   const preset = FORMAT_PRESETS[format];
-  const teamSize = format === 'custom' ? Math.max(0, Math.floor(Number(cfg.teamSize)) || 0) : preset.teamSize;
+  const teamSize =
+    format === 'custom' ? Math.max(0, Math.floor(Number(cfg.teamSize)) || 0) : preset.teamSize;
 
   const capRaw = Math.floor(Number(cfg.hardCap));
   const hardCap = Number.isFinite(capRaw) && capRaw > 0 ? capRaw : 0;
@@ -118,7 +124,13 @@ function effectiveCap(target: number, hardCap: number): number {
  * a final score). Encodes rally scoring: reach the target and lead by two — unless
  * a hard cap is set, where the first side to the cap takes it by a single point.
  */
-export function setWinner(a: number, b: number, target: number, winBy2: boolean, hardCap = 0): Side | null {
+export function setWinner(
+  a: number,
+  b: number,
+  target: number,
+  winBy2: boolean,
+  hardCap = 0,
+): Side | null {
   if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
   if (a < 0 || b < 0) return null;
   if (a === b) return null; // level: nobody has won
@@ -141,7 +153,13 @@ export function setWinner(a: number, b: number, target: number, winBy2: boolean,
  * is a legal end-of-set: someone has won, and the set stopped at the earliest
  * winning point (you can't overshoot, since a set ends the instant it's decided).
  */
-export function validateSetScore(a: number, b: number, target: number, winBy2: boolean, hardCap = 0): string | null {
+export function validateSetScore(
+  a: number,
+  b: number,
+  target: number,
+  winBy2: boolean,
+  hardCap = 0,
+): string | null {
   if (!Number.isInteger(a) || !Number.isInteger(b)) {
     return 'Enter whole point totals for each side.';
   }
@@ -162,7 +180,16 @@ export function validateSetScore(a: number, b: number, target: number, winBy2: b
   return null;
 }
 
-const TEAM_NAMES = ['Sharks', 'Eagles', 'Dragons', 'Wolves', 'Lions', 'Tigers', 'Scorpions', 'Vipers'];
+const TEAM_NAMES = [
+  'Sharks',
+  'Eagles',
+  'Dragons',
+  'Wolves',
+  'Lions',
+  'Tigers',
+  'Scorpions',
+  'Vipers',
+];
 const TEAM_EMOJIS = ['🦈', '🦅', '🐉', '🐺', '🦁', '🐯', '🦂', '🐍'];
 
 /** Build a fresh team with whimsical default branding for slot `i`. */
@@ -224,7 +251,11 @@ export interface TeamStanding {
  * branding can be renamed mid-session without losing history), using the current
  * `teams` list for identity/display. Sets whose team is no longer present are skipped.
  */
-export function foldStandings(teams: Team[], sets: VolleyballInput[], cfg: VolleyConfig): TeamStanding[] {
+export function foldStandings(
+  teams: Team[],
+  sets: VolleyballInput[],
+  cfg: VolleyConfig,
+): TeamStanding[] {
   const byId = new Map<string, TeamStanding>(
     teams.map((t) => [t.id, { team: t, setsWon: 0, setsPlayed: 0, pointsFor: 0 }]),
   );
@@ -249,7 +280,13 @@ export function foldStandings(teams: Team[], sets: VolleyballInput[], cfg: Volle
 
 /** The winning team's id for a set, or null while it's still live. */
 export function winningTeamId(input: VolleyballInput, cfg: VolleyConfig): string | null {
-  const w = setWinner(input.points.home, input.points.away, cfg.pointsPerSet, cfg.winBy2, cfg.hardCap);
+  const w = setWinner(
+    input.points.home,
+    input.points.away,
+    cfg.pointsPerSet,
+    cfg.winBy2,
+    cfg.hardCap,
+  );
   if (!w) return null;
   return w === 'a' ? input.home : input.away;
 }
@@ -317,7 +354,13 @@ export function serving(rallies: Side[]): Side | null {
  * point when winning the next rally would end the set and it hasn't ended already. Honours
  * win-by-two and the hard cap via {@link setWinner}.
  */
-export function setPointSide(a: number, b: number, target: number, winBy2: boolean, hardCap = 0): Side | null {
+export function setPointSide(
+  a: number,
+  b: number,
+  target: number,
+  winBy2: boolean,
+  hardCap = 0,
+): Side | null {
   if (setWinner(a, b, target, winBy2, hardCap) !== null) return null;
   if (setWinner(a + 1, b, target, winBy2, hardCap) === 'a') return 'a';
   if (setWinner(a, b + 1, target, winBy2, hardCap) === 'b') return 'b';
@@ -331,7 +374,13 @@ export function setPointSide(a: number, b: number, target: number, winBy2: boole
  * without win-by-two. A hard cap dissolves the deuce the instant it's in reach, since then
  * a single rally to the cap can win.
  */
-export function isDeuceSet(a: number, b: number, target: number, winBy2: boolean, hardCap = 0): boolean {
+export function isDeuceSet(
+  a: number,
+  b: number,
+  target: number,
+  winBy2: boolean,
+  hardCap = 0,
+): boolean {
   if (!winBy2) return false;
   if (setWinner(a, b, target, winBy2, hardCap) !== null) return false;
   if (setPointSide(a, b, target, winBy2, hardCap) !== null) return false;
@@ -344,7 +393,12 @@ export function isDeuceSet(a: number, b: number, target: number, winBy2: boolean
  * order, honouring the format's roster cap (Custom = no limit); any overflow lands on the
  * bench. Pure: takes an injectable `rng` (default `Math.random`) so tests are deterministic.
  */
-export function shuffleTeams(teams: Team[], pool: string[], cfg: VolleyConfig, rng: () => number = Math.random): Team[] {
+export function shuffleTeams(
+  teams: Team[],
+  pool: string[],
+  cfg: VolleyConfig,
+  rng: () => number = Math.random,
+): Team[] {
   const next = teams.map((t) => ({ ...t, memberIds: [] as string[] }));
   if (next.length === 0) return next;
 

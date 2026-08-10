@@ -10,9 +10,7 @@ import { reportStorageError } from './storage';
 export const players = writable<Player[]>([]);
 
 /** Active (non-archived) members: the roster shown for play and selection. */
-export const activePlayers = derived(players, ($players) =>
-  $players.filter((p) => !p.archived),
-);
+export const activePlayers = derived(players, ($players) => $players.filter((p) => !p.archived));
 
 export async function refreshPlayers(): Promise<void> {
   try {
@@ -30,9 +28,7 @@ export async function refreshPlayers(): Promise<void> {
 export function nameExists(name: string, exceptId?: ID): boolean {
   const clean = cleanName(name);
   if (!clean) return false;
-  return get(players).some(
-    (p) => !p.archived && p.id !== exceptId && sameName(p.name, clean),
-  );
+  return get(players).some((p) => !p.archived && p.id !== exceptId && sameName(p.name, clean));
 }
 
 /** Create a claimed member from a name the user typed. */

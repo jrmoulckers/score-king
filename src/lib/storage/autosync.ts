@@ -1,19 +1,26 @@
 import { get, writable } from 'svelte/store';
-import { settings, markSynced, markChecked, getBackupSettings, setActiveBackupEtag } from '../stores/settings';
+import {
+  settings,
+  markSynced,
+  markChecked,
+  getBackupSettings,
+  setActiveBackupEtag,
+} from '../stores/settings';
 import { dataVersion } from './changes';
-import { buildSnapshot, getOneDrive, reconcile, pullMerge, ConflictError, InteractionRequiredError } from './sync';
+import {
+  buildSnapshot,
+  getOneDrive,
+  reconcile,
+  pullMerge,
+  ConflictError,
+  InteractionRequiredError,
+} from './sync';
 import type { SyncProvider } from './sync';
 import { refreshPlayers } from '../stores/players';
 import { refreshGames } from '../stores/games';
 
 export type AutoSyncStatus =
-  | 'idle'
-  | 'syncing'
-  | 'synced'
-  | 'pending'
-  | 'offline'
-  | 'conflict'
-  | 'error';
+  'idle' | 'syncing' | 'synced' | 'pending' | 'offline' | 'conflict' | 'error';
 
 /** Live status for the Settings indicator. */
 export const autoSyncStatus = writable<AutoSyncStatus>('idle');

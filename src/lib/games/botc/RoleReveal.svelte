@@ -78,7 +78,9 @@
         {#if reveal.team === 'evil'}
           <div class="intel">
             {#if reveal.demonName}
-              <p class="intel-line"><span class="ilabel">The Demon</span> <span class="iname">{reveal.demonName}</span></p>
+              <p class="intel-line">
+                <span class="ilabel">The Demon</span> <span class="iname">{reveal.demonName}</span>
+              </p>
             {/if}
             {#if reveal.fellowEvil.length}
               <p class="intel-line">
@@ -93,7 +95,9 @@
           <p class="flavor">Sleep well — and trust no one. 🌙</p>
         {/if}
 
-        <button type="button" class="btn primary block" onclick={onclose}>👀 Hide &amp; hand it back</button>
+        <button type="button" class="btn primary block" onclick={onclose}
+          >👀 Hide &amp; hand it back</button
+        >
       </div>
     {/if}
   </div>
@@ -225,13 +229,26 @@
   }
 
   @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
   @keyframes flip-in {
-    0% { opacity: 0; transform: perspective(700px) rotateY(-90deg) scale(0.94); }
-    60% { opacity: 1; transform: perspective(700px) rotateY(8deg) scale(1); }
-    100% { opacity: 1; transform: perspective(700px) rotateY(0deg) scale(1); }
+    0% {
+      opacity: 0;
+      transform: perspective(700px) rotateY(-90deg) scale(0.94);
+    }
+    60% {
+      opacity: 1;
+      transform: perspective(700px) rotateY(8deg) scale(1);
+    }
+    100% {
+      opacity: 1;
+      transform: perspective(700px) rotateY(0deg) scale(1);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .card,

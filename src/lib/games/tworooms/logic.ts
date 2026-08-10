@@ -55,7 +55,10 @@ export function roundCount(config: Record<string, unknown> | undefined): number 
 }
 
 /** True when this 0-based round is the last one — the round that records the reveal. */
-export function isFinalRound(roundIndex: number, config: Record<string, unknown> | undefined): boolean {
+export function isFinalRound(
+  roundIndex: number,
+  config: Record<string, unknown> | undefined,
+): boolean {
   return roundIndex >= roundCount(config) - 1;
 }
 
@@ -63,7 +66,10 @@ export function isFinalRound(roundIndex: number, config: Record<string, unknown>
  * Suggested round length in minutes. Rounds count down to a tense one-minute
  * finish (3-round game → 3, 2, 1; a 5-round game → 5, 4, 3, 2, 1).
  */
-export function suggestedMinutes(roundIndex: number, config: Record<string, unknown> | undefined): number {
+export function suggestedMinutes(
+  roundIndex: number,
+  config: Record<string, unknown> | undefined,
+): number {
   return Math.max(1, roundCount(config) - roundIndex);
 }
 
@@ -71,7 +77,10 @@ export function suggestedMinutes(roundIndex: number, config: Record<string, unkn
  * The Fuse length for this round in whole seconds — the shrinking-round rule
  * ({@link suggestedMinutes}) turned into a real countdown the editor can tick.
  */
-export function roundSeconds(roundIndex: number, config: Record<string, unknown> | undefined): number {
+export function roundSeconds(
+  roundIndex: number,
+  config: Record<string, unknown> | undefined,
+): number {
   return suggestedMinutes(roundIndex, config) * 60;
 }
 
@@ -246,7 +255,9 @@ export function describe(input: TwoRoomsInput, nameOf: (id: ID | null) => string
           : 'the Bomber caught the President';
       return `💥 Red Team wins — ${who}`;
     }
-    const who = r.president ? `${nameOf(r.president)} escaped the Bomber` : 'the Bomber was contained';
+    const who = r.president
+      ? `${nameOf(r.president)} escaped the Bomber`
+      : 'the Bomber was contained';
     return `🕊️ Blue Team wins — ${who}`;
   }
   const a = Number(input?.sent1) || 0;

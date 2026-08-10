@@ -16,7 +16,12 @@ interface FSAgg {
  * game is one round (the scoresheet), so every recorded round is a full game total.
  * Pure — no Svelte — so it is independently unit-testable and safe for the engine.
  */
-export function finspanStats({ games, rounds, players, canonical }: GameStatsInput): GameSpecificStats {
+export function finspanStats({
+  games,
+  rounds,
+  players,
+  canonical,
+}: GameStatsInput): GameSpecificStats {
   const gameIds = new Set(games.map((g) => g.id));
   const nameById = new Map(players.map((p) => [p.id, p.name]));
   const per = new Map<ID, FSAgg>();
@@ -68,17 +73,33 @@ export function finspanStats({ games, rounds, players, canonical }: GameStatsInp
       { key: 'fs_best', label: 'Best ocean', value: fmtInt(a.best), emoji: '⭐' },
     ];
     if (a.schools) {
-      metrics.push({ key: 'fs_schools', label: 'Schools formed', value: fmtInt(a.schools), emoji: '🐠' });
+      metrics.push({
+        key: 'fs_schools',
+        label: 'Schools formed',
+        value: fmtInt(a.schools),
+        emoji: '🐠',
+      });
     }
     perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
   if (winGames) {
-    global.push({ key: 'fs_avgwin', label: 'Avg winning ocean', value: fmtInt(winSum / winGames), emoji: '🏅' });
+    global.push({
+      key: 'fs_avgwin',
+      label: 'Avg winning ocean',
+      value: fmtInt(winSum / winGames),
+      emoji: '🏅',
+    });
   }
   if (topHolder) {
-    global.push({ key: 'fs_top', label: 'Deepest ocean', value: fmtInt(topScore), sub: nameById.get(topHolder), emoji: '🐟' });
+    global.push({
+      key: 'fs_top',
+      label: 'Deepest ocean',
+      value: fmtInt(topScore),
+      sub: nameById.get(topHolder),
+      emoji: '🐟',
+    });
   }
   return { perPlayer, global };
 }

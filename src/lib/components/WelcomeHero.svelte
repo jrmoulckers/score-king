@@ -4,13 +4,18 @@
 </script>
 
 <section class="card hero" aria-labelledby="welcome-heading">
-  <button class="dismiss iconbtn" onclick={dismissWelcome} aria-label="Dismiss welcome" title="Dismiss">✕</button>
+  <button
+    class="dismiss iconbtn"
+    onclick={dismissWelcome}
+    aria-label="Dismiss welcome"
+    title="Dismiss">✕</button
+  >
 
   <div class="crown" aria-hidden="true">👑</div>
   <h1 id="welcome-heading" class="hero-title">Welcome to Score King</h1>
   <p class="lede">
-    Keep score for cards &amp; party games — pick a game below, add your players, and start
-    tapping in rounds.
+    Keep score for cards &amp; party games — pick a game below, add your players, and start tapping
+    in rounds.
   </p>
 
   <ul class="assurances" aria-label="What to expect">

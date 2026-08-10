@@ -48,7 +48,12 @@
     const d = new Date(now);
     if (preset === 'tonight') {
       const from = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-      return { range: { from, to: now }, prior: undefined, label: 'tonight', mode: 'recap' as const };
+      return {
+        range: { from, to: now },
+        prior: undefined,
+        label: 'tonight',
+        mode: 'recap' as const,
+      };
     }
     if (preset === 'rolling') {
       const from = now - 365 * DAY;
@@ -79,7 +84,11 @@
 
   const result = $derived(
     loaded && meId
-      ? computeStats({ players: $players, games: $games, rounds }, { playerId: meId, range: cfg.range }, { gameStats })
+      ? computeStats(
+          { players: $players, games: $games, rounds },
+          { playerId: meId, range: cfg.range },
+          { gameStats },
+        )
       : undefined,
   );
   const me = $derived(meId && result ? result.perPlayer[meId] : undefined);
@@ -100,16 +109,24 @@
   const newBadges = $derived.by(() => {
     if (!me) return [];
     const before = beforeResult?.perPlayer[meId as string];
-    const beforeBadges = before ? computeBadges(before, { records: beforeResult?.records ?? [] }) : [];
+    const beforeBadges = before
+      ? computeBadges(before, { records: beforeResult?.records ?? [] })
+      : [];
     return newlyEarned(badges, new Set(beforeBadges.map((b) => b.key)));
   });
 
   const priorResult = $derived(
     loaded && meId && cfg.prior
-      ? computeStats({ players: $players, games: $games, rounds }, { playerId: meId, range: cfg.prior }, { gameStats })
+      ? computeStats(
+          { players: $players, games: $games, rounds },
+          { playerId: meId, range: cfg.prior },
+          { gameStats },
+        )
       : undefined,
   );
-  const prior = $derived(result && priorResult && meId ? compareStats(result, priorResult, meId) : undefined);
+  const prior = $derived(
+    result && priorResult && meId ? compareStats(result, priorResult, meId) : undefined,
+  );
 
   const cards = $derived.by(() => {
     if (!me || !meId || !result) return [];
@@ -169,7 +186,9 @@
   <!-- Personal-first: Wrapped is a portrait of you — pick who "you" are. -->
   <div class="card stack">
     <div class="section-title" style="margin: 0">Whose Wrapped?</div>
-    <p class="muted" style="margin: 0">Pick your player to see your year in Score King. Stays on this device.</p>
+    <p class="muted" style="margin: 0">
+      Pick your player to see your year in Score King. Stays on this device.
+    </p>
     {#if chooserPlayers.length === 0}
       <div class="empty">Add a player first, then come back for your Wrapped.</div>
     {:else}
@@ -188,17 +207,25 @@
   <!-- Range presets -->
   <div class="row wrap seg" role="group" aria-label="Wrapped range">
     {#each presetOptions as o (o.key)}
-      <button class="chip" class:on={preset === o.key} onclick={() => choose(o.key)}>{o.label}</button>
+      <button class="chip" class:on={preset === o.key} onclick={() => choose(o.key)}
+        >{o.label}</button
+      >
     {/each}
   </div>
 
   {#if cards.length === 0}
     <div class="empty">
-      No finished games {preset === 'tonight' ? 'tonight' : `in ${cfg.label}`} yet — try another range or play a game.
+      No finished games {preset === 'tonight' ? 'tonight' : `in ${cfg.label}`} yet — try another range
+      or play a game.
     </div>
   {:else if card}
     <!-- Swipeable card story: manual advance (reduced-motion safe by default). -->
-    <section class="stage" role="group" aria-roledescription="carousel" aria-label="Your Wrapped cards">
+    <section
+      class="stage"
+      role="group"
+      aria-roledescription="carousel"
+      aria-label="Your Wrapped cards"
+    >
       {#key clamped}
         <article class="wcard" class:gold={card.gold} aria-live="polite">
           <span class="wc-emoji" aria-hidden="true">{card.emoji}</span>
@@ -226,7 +253,9 @@
 
     <!-- Progress + controls -->
     <div class="row spread controls">
-      <button class="nav" onclick={prev} disabled={clamped === 0} aria-label="Previous card">←</button>
+      <button class="nav" onclick={prev} disabled={clamped === 0} aria-label="Previous card"
+        >←</button
+      >
       <div class="dots" role="tablist" aria-label="Wrapped progress">
         {#each cards as c, i (c.key)}
           <button
@@ -241,10 +270,17 @@
           </button>
         {/each}
       </div>
-      <button class="nav" onclick={next} disabled={clamped >= cards.length - 1} aria-label="Next card">→</button>
+      <button
+        class="nav"
+        onclick={next}
+        disabled={clamped >= cards.length - 1}
+        aria-label="Next card">→</button
+      >
     </div>
     <p class="center muted sm counter">
-      <span class="tnum">{clamped + 1}</span> / <span class="tnum">{cards.length}</span> · as {nameOf(meId)}
+      <span class="tnum">{clamped + 1}</span> / <span class="tnum">{cards.length}</span> · as {nameOf(
+        meId,
+      )}
     </p>
   {/if}
 {/if}
@@ -298,7 +334,11 @@
   }
   .wcard.gold {
     border-color: var(--accent);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, var(--surface-2)), var(--surface-2));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 14%, var(--surface-2)),
+      var(--surface-2)
+    );
   }
   .wc-emoji {
     font-size: 3.4rem;
@@ -388,7 +428,9 @@
     height: 7px;
     border-radius: 999px;
     background: var(--border);
-    transition: transform 0.15s ease, background 0.15s ease;
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease;
   }
   .dot.on .dot-mark {
     background: var(--text);

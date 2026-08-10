@@ -65,10 +65,17 @@ export const explodingkittens: GameModule = {
   createRoundInput: (): EKInput => emptyInput(),
 
   validateRound: (input: EKInput, ctx: RoundContext): string | null =>
-    validateMatch(input, ctx.players.map((p) => p.id), trackOrderOn(ctx.config)),
+    validateMatch(
+      input,
+      ctx.players.map((p) => p.id),
+      trackOrderOn(ctx.config),
+    ),
 
   scoreRound: (input: EKInput, ctx: RoundContext): Record<ID, number> =>
-    scoreMatch(input, ctx.players.map((p) => p.id)),
+    scoreMatch(
+      input,
+      ctx.players.map((p) => p.id),
+    ),
 
   pickWinners: (totals): ID[] => pickMatchLeaders(totals),
 

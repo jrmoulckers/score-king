@@ -47,7 +47,11 @@
                 {c.label}{#if c.negative}<span class="neg" aria-label="subtracts"> −</span>{/if}
               </span>
               {#if input.values?.[p.id]}
-                <Stepper bind:value={input.values[p.id][c.key]} {step} label={`${p.name} ${c.label}`} />
+                <Stepper
+                  bind:value={input.values[p.id][c.key]}
+                  {step}
+                  label={`${p.name} ${c.label}`}
+                />
               {/if}
             </div>
           {/each}

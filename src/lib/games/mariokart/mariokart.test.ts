@@ -330,7 +330,7 @@ describe('mariokart stats', () => {
   function statsInput(rounds: MarioKartInput[]): GameStatsInput {
     const games = [{ id: 'g1' } as unknown as Game];
     const roundRecords = rounds.map(
-      (input, i) => ({ id: `r${i}`, gameId: 'g1', index: i, input } as unknown as Round),
+      (input, i) => ({ id: `r${i}`, gameId: 'g1', index: i, input }) as unknown as Round,
     );
     return { games, rounds: roundRecords, players: P, canonical: (id) => id };
   }

@@ -183,7 +183,10 @@ export async function renderRecapCard(view: RecapView): Promise<Blob> {
 
 /** A short, safe file name for the shared card. */
 export function recapCardFileName(view: RecapView): string {
-  const slug = view.title.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase();
+  const slug = view.title
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
   return `score-king-${slug || 'results'}.png`;
 }
 

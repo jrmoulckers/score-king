@@ -56,11 +56,41 @@ interface Archetype {
 
 // Ordered rarest → most common so ties break toward the more distinctive persona.
 const ARCHETYPES: Archetype[] = [
-  { key: 'closer', name: 'The Closer', emoji: '🧊', voice: 'Ice in your veins when it’s tight.', w: { clutch: 1 } },
-  { key: 'wildcard', name: 'Wildcard', emoji: '🎲', voice: 'Boom or bust, never boring.', w: { volatility: 1 } },
-  { key: 'comeback', name: 'Comeback Kid', emoji: '🪦', voice: 'Down? Never out.', w: { comeback: 1 } },
-  { key: 'frontrunner', name: 'Front-Runner', emoji: '🐎', voice: 'Grab the lead, never give it back.', w: { frontRunning: 1, comeback: -0.4 } },
-  { key: 'consistent', name: 'Mr./Ms. Consistent', emoji: '📏', voice: 'Always there or thereabouts.', w: { consistency: 1, volatility: -0.4 } },
+  {
+    key: 'closer',
+    name: 'The Closer',
+    emoji: '🧊',
+    voice: 'Ice in your veins when it’s tight.',
+    w: { clutch: 1 },
+  },
+  {
+    key: 'wildcard',
+    name: 'Wildcard',
+    emoji: '🎲',
+    voice: 'Boom or bust, never boring.',
+    w: { volatility: 1 },
+  },
+  {
+    key: 'comeback',
+    name: 'Comeback Kid',
+    emoji: '🪦',
+    voice: 'Down? Never out.',
+    w: { comeback: 1 },
+  },
+  {
+    key: 'frontrunner',
+    name: 'Front-Runner',
+    emoji: '🐎',
+    voice: 'Grab the lead, never give it back.',
+    w: { frontRunning: 1, comeback: -0.4 },
+  },
+  {
+    key: 'consistent',
+    name: 'Mr./Ms. Consistent',
+    emoji: '📏',
+    voice: 'Always there or thereabouts.',
+    w: { consistency: 1, volatility: -0.4 },
+  },
 ];
 
 const score = (t: PersonaTraits, a: Archetype): number => {
@@ -109,5 +139,12 @@ export function assignPersona(m: MemberStats): Persona {
     };
   }
 
-  return { key: best.key, name: best.name, emoji: best.emoji, voice: best.voice, confidence: clamp01(bestScore), traits };
+  return {
+    key: best.key,
+    name: best.name,
+    emoji: best.emoji,
+    voice: best.voice,
+    confidence: clamp01(bestScore),
+    traits,
+  };
 }

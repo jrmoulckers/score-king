@@ -57,7 +57,12 @@ export function saladbowlStats({ games, rounds, canonical }: GameStatsInput): Ga
   for (const [id, a] of per) {
     const metrics: Metric[] = [];
     if (a.words) {
-      metrics.push({ key: 'sb_words', label: 'Words guessed', value: fmtInt(a.words), emoji: '🥗' });
+      metrics.push({
+        key: 'sb_words',
+        label: 'Words guessed',
+        value: fmtInt(a.words),
+        emoji: '🥗',
+      });
     }
     if (a.best) {
       metrics.push({ key: 'sb_best', label: 'Best round', value: fmtInt(a.best), emoji: '🔥' });
@@ -67,10 +72,20 @@ export function saladbowlStats({ games, rounds, canonical }: GameStatsInput): Ga
 
   const global: Metric[] = [];
   if (totalWords) {
-    global.push({ key: 'sb_words_all', label: 'Words from the bowl', value: fmtInt(totalWords), emoji: '🥗' });
+    global.push({
+      key: 'sb_words_all',
+      label: 'Words from the bowl',
+      value: fmtInt(totalWords),
+      emoji: '🥗',
+    });
   }
   if (biggest) {
-    global.push({ key: 'sb_best_all', label: 'Biggest round haul', value: fmtInt(biggest), emoji: '🔥' });
+    global.push({
+      key: 'sb_best_all',
+      label: 'Biggest round haul',
+      value: fmtInt(biggest),
+      emoji: '🔥',
+    });
   }
   return { perPlayer, global };
 }

@@ -23,12 +23,7 @@ export function showToast(message: string, ms = 2200): void {
 /** A toast with a single action (e.g. Undo). Stays longer so keyboard and
  * screen-reader users have time to Tab to and trigger the action before it
  * auto-dismisses. */
-export function showActionToast(
-  message: string,
-  label: string,
-  run: () => void,
-  ms = 9000,
-): void {
+export function showActionToast(message: string, label: string, run: () => void, ms = 9000): void {
   toast.set({
     message,
     action: {

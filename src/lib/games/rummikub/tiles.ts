@@ -19,6 +19,6 @@ export const TILE_FACE = '#f4efe1';
  * rack while staying deterministic (same number, same colour, every render).
  */
 export function tileInk(n: number): string {
-  const i = ((Math.round(n) - 1) % TILE_INKS.length + TILE_INKS.length) % TILE_INKS.length;
+  const i = (((Math.round(n) - 1) % TILE_INKS.length) + TILE_INKS.length) % TILE_INKS.length;
   return TILE_INKS[i];
 }

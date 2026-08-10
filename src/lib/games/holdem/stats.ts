@@ -70,7 +70,8 @@ export function holdemStats({ games, rounds, canonical }: GameStatsInput): GameS
       const wonBy = new Map<ID, number>();
       for (const p of event.pots) {
         const share = (Number(p.amount) || 0) / Math.max(1, p.winnerIds.length);
-        for (const w of p.winnerIds) wonBy.set(canonical(w), (wonBy.get(canonical(w)) ?? 0) + share);
+        for (const w of p.winnerIds)
+          wonBy.set(canonical(w), (wonBy.get(canonical(w)) ?? 0) + share);
       }
       for (const id of winners) {
         const a = get(id);
@@ -98,7 +99,12 @@ export function holdemStats({ games, rounds, canonical }: GameStatsInput): GameS
   const perPlayer: Record<ID, Metric[]> = {};
   for (const [id, a] of per) {
     const metrics: Metric[] = [
-      { key: 'net', label: 'Net', value: fmtSigned(Math.round(a.net)), emoji: a.net >= 0 ? '📈' : '📉' },
+      {
+        key: 'net',
+        label: 'Net',
+        value: fmtSigned(Math.round(a.net)),
+        emoji: a.net >= 0 ? '📈' : '📉',
+      },
       { key: 'invested', label: 'Bought in', value: fmtInt(a.invested), emoji: '💰' },
       {
         key: 'winRate',
@@ -109,7 +115,12 @@ export function holdemStats({ games, rounds, canonical }: GameStatsInput): GameS
       },
     ];
     if (a.biggestPot > 0)
-      metrics.push({ key: 'bigpot', label: 'Biggest pot', value: fmtInt(a.biggestPot), emoji: '🏆' });
+      metrics.push({
+        key: 'bigpot',
+        label: 'Biggest pot',
+        value: fmtInt(a.biggestPot),
+        emoji: '🏆',
+      });
     perPlayer[id] = metrics;
   }
 
@@ -117,7 +128,8 @@ export function holdemStats({ games, rounds, canonical }: GameStatsInput): GameS
   const global: Metric[] = [];
   let bigPot = 0;
   for (const [, a] of per) bigPot = Math.max(bigPot, a.biggestPot);
-  if (bigPot > 0) global.push({ key: 'bigpot', label: 'Biggest pot', value: fmtInt(bigPot), emoji: '🏆' });
+  if (bigPot > 0)
+    global.push({ key: 'bigpot', label: 'Biggest pot', value: fmtInt(bigPot), emoji: '🏆' });
 
   return { perPlayer, global: global.length ? global : undefined };
 }

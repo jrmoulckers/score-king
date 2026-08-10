@@ -116,11 +116,7 @@
       stickySynced = true;
       // Springy celebration on the green dot.
       if (dotEl) {
-        animateMotion(
-          dotEl,
-          { scale: [0.3, 1.4, 0.9, 1] },
-          { duration: 0.5, ease: 'easeOut' },
-        );
+        animateMotion(dotEl, { scale: [0.3, 1.4, 0.9, 1] }, { duration: 0.5, ease: 'easeOut' });
       }
       const t = setTimeout(() => (stickySynced = false), 2200);
       return () => clearTimeout(t);

@@ -242,11 +242,16 @@
                 class:on={winners.includes(p.id)}
                 aria-pressed={winners.includes(p.id)}
                 aria-label={`${p.name} wins`}
-                onclick={() => toggleWinner(p.id)}
-              >{winners.includes(p.id) ? '⭐' : '☆'}</button>
+                onclick={() => toggleWinner(p.id)}>{winners.includes(p.id) ? '⭐' : '☆'}</button
+              >
               <Avatar name={p.name} color={p.color} size={24} decorative />
               <span class="nm">{p.name}</span>
-              <Stepper bind:value={committed[p.id]} min={0} step={cfg.bigBlind || 1} label={`${p.name} chips in`} />
+              <Stepper
+                bind:value={committed[p.id]}
+                min={0}
+                step={cfg.bigBlind || 1}
+                label={`${p.name} chips in`}
+              />
             </li>
           {/each}
         </ul>
@@ -266,14 +271,20 @@
           <li class="hrow">
             <Avatar name={p.name} color={p.color} size={24} decorative />
             <span class="nm">{p.name}</span>
-            <Stepper bind:value={counts[p.id]} min={0} step={cfg.bigBlind || 1} label={`${p.name} final chips`} />
+            <Stepper
+              bind:value={counts[p.id]}
+              min={0}
+              step={cfg.bigBlind || 1}
+              label={`${p.name} final chips`}
+            />
           </li>
         {/each}
       </ul>
       {#if Math.round(cashoutDiff) !== 0}
         <p class="warn-note" role="status">
           ⚠️ Counts are off by {fmtMoney(Math.abs(cashoutDiff))}
-          {cashoutDiff > 0 ? 'more' : 'less'} than the buy-ins. Recount, or save anyway if someone left with chips.
+          {cashoutDiff > 0 ? 'more' : 'less'} than the buy-ins. Recount, or save anyway if someone left
+          with chips.
         </p>
       {/if}
       <Settlement net={finalNet} players={ctx.players} {cfg} />

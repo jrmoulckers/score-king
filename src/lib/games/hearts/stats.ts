@@ -64,19 +64,32 @@ export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameS
   for (const [id, a] of per) {
     totMoons += a.moons;
     const metrics: Metric[] = [];
-    if (a.moons) metrics.push({ key: 'h_moon', label: 'Moons shot', value: `${a.moons}`, emoji: '🌙' });
-    if (a.queens) metrics.push({ key: 'h_queen', label: '♠Q taken', value: `${a.queens}`, emoji: '♠️' });
+    if (a.moons)
+      metrics.push({ key: 'h_moon', label: 'Moons shot', value: `${a.moons}`, emoji: '🌙' });
+    if (a.queens)
+      metrics.push({ key: 'h_queen', label: '♠Q taken', value: `${a.queens}`, emoji: '♠️' });
     if (a.rounds) {
-      metrics.push({ key: 'h_clean', label: 'Clean rounds', value: fmtPct(a.clean / a.rounds), emoji: '😇' });
+      metrics.push({
+        key: 'h_clean',
+        label: 'Clean rounds',
+        value: fmtPct(a.clean / a.rounds),
+        emoji: '😇',
+      });
     }
     if (a.scored) {
-      metrics.push({ key: 'h_avg', label: 'Avg per hand', value: fmtAvg(a.points / a.scored), emoji: '♥️' });
+      metrics.push({
+        key: 'h_avg',
+        label: 'Avg per hand',
+        value: fmtAvg(a.points / a.scored),
+        emoji: '♥️',
+      });
       metrics.push({ key: 'h_worst', label: 'Worst hand', value: fmtInt(a.worst), emoji: '😱' });
     }
     if (metrics.length) perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
-  if (totMoons) global.push({ key: 'h_moon_all', label: 'Moons shot', value: `${totMoons}`, emoji: '🌙' });
+  if (totMoons)
+    global.push({ key: 'h_moon_all', label: 'Moons shot', value: `${totMoons}`, emoji: '🌙' });
   return { perPlayer, global };
 }

@@ -19,15 +19,15 @@
   // Show a real tile per round only when the count is small enough to read as a rack;
   // otherwise fall back to a single current tile + text so it never overflows.
   const asTiles = $derived(total != null && total > 0 && total <= 14);
-  const tiles = $derived(
-    asTiles ? Array.from({ length: total as number }, (_, i) => i + 1) : [],
-  );
-  const label = $derived(
-    total != null ? `Round ${round} of ${total}` : `Round ${round}`,
-  );
+  const tiles = $derived(asTiles ? Array.from({ length: total as number }, (_, i) => i + 1) : []);
+  const label = $derived(total != null ? `Round ${round} of ${total}` : `Round ${round}`);
 </script>
 
-<div class="rack" role="img" aria-label={`${label}${target != null ? `, playing to ${target}` : ''}`}>
+<div
+  class="rack"
+  role="img"
+  aria-label={`${label}${target != null ? `, playing to ${target}` : ''}`}
+>
   <div class="shelf">
     {#if asTiles}
       <div class="tiles" aria-hidden="true">
@@ -38,11 +38,16 @@
             class:current={n === round}
             class:upcoming={n > round}
             style={n <= round ? `--ink: ${tileInk(n)}; --face: ${TILE_FACE}` : ''}
-          >{n <= round ? n : ''}</span>
+            >{n <= round ? n : ''}</span
+          >
         {/each}
       </div>
     {:else}
-      <span class="tile current solo" aria-hidden="true" style={`--ink: ${tileInk(round)}; --face: ${TILE_FACE}`}>{round}</span>
+      <span
+        class="tile current solo"
+        aria-hidden="true"
+        style={`--ink: ${tileInk(round)}; --face: ${TILE_FACE}`}>{round}</span
+      >
     {/if}
   </div>
   <div class="ledge" aria-hidden="true"></div>

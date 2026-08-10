@@ -53,7 +53,8 @@
               --rise: {b.rise}px;
               --drift: {b.drift}px;
               --spin: {b.spin}deg;
-            ">✨</span>
+            ">✨</span
+          >
         {:else}
           <span
             class="fly tile"
@@ -68,7 +69,8 @@
               --rise: {b.rise}px;
               --drift: {b.drift}px;
               --spin: {b.spin}deg;
-            ">{b.num}</span>
+            ">{b.num}</span
+          >
         {/if}
       {/each}
     </div>

@@ -67,9 +67,7 @@ export function buildRecapPayload(
     cfg: game.config,
     f: game.finishedAt ?? Date.now(),
     p: orderedPlayers.map((p) => [p.name, p.color] as [string, string]),
-    w: (game.winnerIds ?? [])
-      .map((id) => idIndex.get(id))
-      .filter((i): i is number => i != null),
+    w: (game.winnerIds ?? []).map((id) => idIndex.get(id)).filter((i): i is number => i != null),
     r: ordered.map((round) => orderedPlayers.map((p) => round.deltas[p.id] ?? 0)),
   };
 }

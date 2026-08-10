@@ -112,7 +112,11 @@
 
 <div class="stack">
   <!-- Cup progress: which race, how far through the cup, and the announcer's call. -->
-  <div class="gp" role="group" aria-label={`Race ${cup.race}${cup.endless ? '' : ` of ${cup.total}`}`}>
+  <div
+    class="gp"
+    role="group"
+    aria-label={`Race ${cup.race}${cup.endless ? '' : ` of ${cup.total}`}`}
+  >
     <div class="row spread gp-head">
       <span class="race-label tnum">
         🏁 Race <strong>{cup.race}</strong>{cup.endless ? ' ♾️' : ` of ${cup.total}`}
@@ -145,11 +149,21 @@
   <!-- Toolbar: reveal the payout table and (from race 2) the running cup board. -->
   <div class="row toolbar">
     {#if hasBanked}
-      <button type="button" class="btn small ghost" aria-pressed={showStandings} onclick={() => (showStandings = !showStandings)}>
+      <button
+        type="button"
+        class="btn small ghost"
+        aria-pressed={showStandings}
+        onclick={() => (showStandings = !showStandings)}
+      >
         {showStandings ? 'Hide cup' : '🏆 Cup standings'}
       </button>
     {/if}
-    <button type="button" class="btn small ghost" aria-pressed={showPoints} onclick={() => (showPoints = !showPoints)}>
+    <button
+      type="button"
+      class="btn small ghost"
+      aria-pressed={showPoints}
+      onclick={() => (showPoints = !showPoints)}
+    >
       {showPoints ? 'Hide points' : 'Points'}
     </button>
   </div>
@@ -515,8 +529,12 @@
   .checker {
     flex: 1 1 0;
     height: 12px;
-    background-image:
-      conic-gradient(var(--text) 90deg, transparent 0 180deg, var(--text) 0 270deg, transparent 0);
+    background-image: conic-gradient(
+      var(--text) 90deg,
+      transparent 0 180deg,
+      var(--text) 0 270deg,
+      transparent 0
+    );
     background-size: 12px 12px;
     opacity: 0.7;
   }

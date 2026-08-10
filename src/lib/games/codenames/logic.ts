@@ -78,10 +78,7 @@ export function defaultTeams(playerIds: ID[]): Record<ID, Team> {
  * fall back to the balanced default for anyone new, and drop players no longer
  * in the game. Keeps fixed teams stable game-to-game.
  */
-export function carryTeams(
-  prev: Record<ID, Team> | undefined,
-  playerIds: ID[],
-): Record<ID, Team> {
+export function carryTeams(prev: Record<ID, Team> | undefined, playerIds: ID[]): Record<ID, Team> {
   const base = defaultTeams(playerIds);
   const teams: Record<ID, Team> = {};
   for (const id of playerIds) {
@@ -91,10 +88,7 @@ export function carryTeams(
   return teams;
 }
 
-export function teamCounts(
-  teams: Record<ID, Team>,
-  playerIds: ID[],
-): Record<Team, number> {
+export function teamCounts(teams: Record<ID, Team>, playerIds: ID[]): Record<Team, number> {
   const counts: Record<Team, number> = { red: 0, blue: 0 };
   for (const id of playerIds) {
     const t = teams[id];
@@ -211,7 +205,15 @@ export function seriesState(counts: Record<Team, number>, winTarget: number): Se
   const leader: Team | null = red === blue ? null : red > blue ? 'red' : 'blue';
 
   if (target <= 0) {
-    return { target: 0, leader, redNeeded: 0, blueNeeded: 0, matchPoint: false, decider: false, over: false };
+    return {
+      target: 0,
+      leader,
+      redNeeded: 0,
+      blueNeeded: 0,
+      matchPoint: false,
+      decider: false,
+      over: false,
+    };
   }
   const redNeeded = Math.max(0, target - red);
   const blueNeeded = Math.max(0, target - blue);
@@ -270,10 +272,7 @@ export function swapTeams(teams: Record<ID, Team>): Record<ID, Team> {
  * A random *balanced* split: shuffle the roster, then deal alternately so the
  * teams differ by at most one. RNG is injectable so tests are deterministic.
  */
-export function shuffleTeams(
-  playerIds: ID[],
-  rand: () => number = Math.random,
-): Record<ID, Team> {
+export function shuffleTeams(playerIds: ID[], rand: () => number = Math.random): Record<ID, Team> {
   const shuffled = [...playerIds];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
@@ -290,8 +289,22 @@ export function shuffleTeams(
  */
 export function codeword(seed: number | string): string {
   const words = [
-    'NIGHTFALL', 'COBRA', 'ECHO', 'LANTERN', 'MIRAGE', 'FALCON', 'CIPHER', 'VELVET',
-    'DOMINO', 'GLACIER', 'ORCHID', 'THUNDER', 'SPARROW', 'JACKAL', 'HALO', 'RIPTIDE',
+    'NIGHTFALL',
+    'COBRA',
+    'ECHO',
+    'LANTERN',
+    'MIRAGE',
+    'FALCON',
+    'CIPHER',
+    'VELVET',
+    'DOMINO',
+    'GLACIER',
+    'ORCHID',
+    'THUNDER',
+    'SPARROW',
+    'JACKAL',
+    'HALO',
+    'RIPTIDE',
   ];
   let h = 2166136261;
   const s = String(seed);
@@ -301,4 +314,3 @@ export function codeword(seed: number | string): string {
   }
   return words[Math.abs(h) % words.length];
 }
-

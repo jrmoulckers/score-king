@@ -38,16 +38,49 @@ export const cornhole: GameModule = {
   name: 'Cornhole',
   tagline: 'Toss the bags. Cancel & climb to 21.',
   emoji: '🌽',
-  keywords: ['bags', 'bag toss', 'corn toss', 'baggo', 'cornhole', 'tailgate', 'backyard', '2v2', 'doubles', 'teams'],
+  keywords: [
+    'bags',
+    'bag toss',
+    'corn toss',
+    'baggo',
+    'cornhole',
+    'tailgate',
+    'backyard',
+    '2v2',
+    'doubles',
+    'teams',
+  ],
   // Two sides, each a team of one or two players — a solo duel (1v1) or partners (2v2).
   // Build the sides from the player pool; the board shows two scores racing to 21.
   minPlayers: 2,
   maxPlayers: 4,
   teams: true,
   configFields: [
-    { key: 'target', label: 'Play to', type: 'number', default: 21, min: 11, max: 51, help: 'First side to reach this wins. Backyard standard is 21.' },
-    { key: 'bust', label: 'Bust — overshoot and you drop to 15', type: 'boolean', default: false, help: 'Blow past the target and your side tumbles back to 15. Land it exactly to win.' },
-    { key: 'winBy', label: 'Win by', type: 'number', default: 1, min: 1, max: 5, help: 'Margin needed to close it out. 1 = first side to the target takes it.' },
+    {
+      key: 'target',
+      label: 'Play to',
+      type: 'number',
+      default: 21,
+      min: 11,
+      max: 51,
+      help: 'First side to reach this wins. Backyard standard is 21.',
+    },
+    {
+      key: 'bust',
+      label: 'Bust — overshoot and you drop to 15',
+      type: 'boolean',
+      default: false,
+      help: 'Blow past the target and your side tumbles back to 15. Land it exactly to win.',
+    },
+    {
+      key: 'winBy',
+      label: 'Win by',
+      type: 'number',
+      default: 1,
+      min: 1,
+      max: 5,
+      help: 'Margin needed to close it out. 1 = first side to the target takes it.',
+    },
   ],
 
   createRoundInput: (ctx: RoundContext): CornholeInput => {
@@ -67,7 +100,8 @@ export const cornhole: GameModule = {
     for (const [i, t] of teams.entries()) {
       const label = t.name || `Side ${i === 0 ? 'A' : 'B'}`;
       if (t.memberIds.length === 0) return `${label} needs at least one player.`;
-      if (t.memberIds.length > MAX_PER_SIDE) return `${label}: up to ${MAX_PER_SIDE} players a side (got ${t.memberIds.length}).`;
+      if (t.memberIds.length > MAX_PER_SIDE)
+        return `${label}: up to ${MAX_PER_SIDE} players a side (got ${t.memberIds.length}).`;
 
       const bag = throws[t.id];
       const inHole = Math.trunc(Number(bag?.inHole) || 0);
@@ -80,7 +114,8 @@ export const cornhole: GameModule = {
 
     // Every selected player must be on a side (nobody benched — everyone tosses).
     for (const p of ctx.players) {
-      if (!assigned.includes(p.id)) return `${byId.get(p.id)?.name ?? 'A player'} isn't on a side yet.`;
+      if (!assigned.includes(p.id))
+        return `${byId.get(p.id)?.name ?? 'A player'} isn't on a side yet.`;
     }
     return null;
   },

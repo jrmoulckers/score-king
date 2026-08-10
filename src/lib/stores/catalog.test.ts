@@ -27,9 +27,24 @@ function game(partial: Partial<Game> & Pick<Game, 'id' | 'type'>): Game {
   } as Game;
 }
 
-const HEARTS: CatalogType = { id: 'hearts', name: 'Hearts', emoji: '♥️', tagline: 'Avoid the points' };
-const SKULL: CatalogType = { id: 'skullking', name: 'Skull King', emoji: '🏴‍☠️', tagline: 'Bid your tricks' };
-const CODENAMES: CatalogType = { id: 'codenames', name: 'Codenames', emoji: '🕵️', tagline: 'Word clues' };
+const HEARTS: CatalogType = {
+  id: 'hearts',
+  name: 'Hearts',
+  emoji: '♥️',
+  tagline: 'Avoid the points',
+};
+const SKULL: CatalogType = {
+  id: 'skullking',
+  name: 'Skull King',
+  emoji: '🏴‍☠️',
+  tagline: 'Bid your tricks',
+};
+const CODENAMES: CatalogType = {
+  id: 'codenames',
+  name: 'Codenames',
+  emoji: '🕵️',
+  tagline: 'Word clues',
+};
 
 describe('foldSearch', () => {
   it('lower-cases and strips diacritics', () => {

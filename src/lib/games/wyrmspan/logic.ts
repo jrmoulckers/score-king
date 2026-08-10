@@ -248,7 +248,8 @@ export function validateRow(row: WyrmspanRow | undefined, name = 'A player'): st
     if (Number.isFinite(raw) && raw < 0) return `${name}: ${cat.label} can't be negative.`;
   }
   const dragons = Number(row.dragonCount);
-  if (Number.isFinite(dragons) && dragons < 0) return `${name}: ${DRAGON_TIEBREAK.label} can't be negative.`;
+  if (Number.isFinite(dragons) && dragons < 0)
+    return `${name}: ${DRAGON_TIEBREAK.label} can't be negative.`;
   return null;
 }
 

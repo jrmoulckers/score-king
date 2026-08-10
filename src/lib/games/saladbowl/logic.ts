@@ -177,11 +177,7 @@ export function validate(input: SaladBowlInput, teams: Team[]): string | null {
  * Per-player deltas for the round: every member of a team receives that team's
  * `words × pointsPerWord`, so teammates always share an identical running total.
  */
-export function score(
-  input: SaladBowlInput,
-  teams: Team[],
-  perWord: number,
-): Record<ID, number> {
+export function score(input: SaladBowlInput, teams: Team[], perWord: number): Record<ID, number> {
   const out: Record<ID, number> = {};
   for (const t of teams) {
     const pts = wordsFor(input, t.index) * perWord;

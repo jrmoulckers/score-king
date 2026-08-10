@@ -21,10 +21,7 @@
    * "Grass"), and the point value — so nothing depends on color. Motion is a small
    * one-frame pop on the tapped bag, skipped under reduced motion.
    */
-  let {
-    bag = $bindable(),
-    label,
-  }: { bag: SideThrow; label: string } = $props();
+  let { bag = $bindable(), label }: { bag: SideThrow; label: string } = $props();
 
   // A fixed, positionally-stable row of four bags. Seeded from the counts and
   // re-synced only when the counts change from the outside (a new round, or an
@@ -59,9 +56,7 @@
     if (el) {
       animateMotion(
         el,
-        next[i] === 'hole'
-          ? { scale: [1, 1.28, 1], rotate: [0, -6, 0] }
-          : { scale: [1, 1.16, 1] },
+        next[i] === 'hole' ? { scale: [1, 1.28, 1], rotate: [0, -6, 0] } : { scale: [1, 1.16, 1] },
         { duration: 0.2, ease: 'easeOut' },
       );
     }
@@ -106,7 +101,9 @@
     background: var(--surface);
     color: var(--text);
     cursor: pointer;
-    transition: background var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
+    transition:
+      background var(--dur-base) var(--ease-standard),
+      border-color var(--dur-base) var(--ease-standard);
   }
   .bag:active {
     transform: translateY(1px);

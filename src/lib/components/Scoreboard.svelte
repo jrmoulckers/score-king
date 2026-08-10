@@ -23,16 +23,20 @@
   // A leader only exists once scores diverge — at an all-tie (including 0-0)
   // nobody is "leading yet", so the crown and the gold `.lead` number stay
   // hidden. `leaders()` is the shared source of truth for that scarcity.
-  const leaderSet = $derived(leaders(totals, players.map((p) => p.id), lowerIsBetter));
+  const leaderSet = $derived(
+    leaders(
+      totals,
+      players.map((p) => p.id),
+      lowerIsBetter,
+    ),
+  );
   const winnerSet = $derived(new Set(winners));
   // Gold (`.lead`) marks the reigning leader now, or the winner once the game is
   // over — never a row that's merely tied-at-zero with everyone else.
   const isGold = (id: ID) => leaderSet.has(id) || winnerSet.has(id);
   // How far a trailing player sits behind the best score, as a positive number,
   // so "5 back" reads the same whether high or low totals win.
-  const best = $derived(
-    ranked.length ? ranked[0].total : 0,
-  );
+  const best = $derived(ranked.length ? ranked[0].total : 0);
   const singleLeader = $derived(leaderSet.size === 1);
   function gap(total: number): number {
     return Math.abs(total - best);
@@ -59,9 +63,13 @@
             {#if p}<Avatar name={p.name} color={p.color} size={24} decorative />{p.name}{/if}
             {#if youId && s.playerId === youId}<span class="you">You</span>{/if}
             {#if winnerSet.has(s.playerId)}
-              <span aria-hidden="true" title="Winner" use:popIn>🏆</span><span class="sr-only">Winner</span>
+              <span aria-hidden="true" title="Winner" use:popIn>🏆</span><span class="sr-only"
+                >Winner</span
+              >
             {:else if leaderSet.has(s.playerId)}
-              <span aria-hidden="true" title="Leading" use:popIn>👑</span><span class="sr-only">Leading</span>
+              <span aria-hidden="true" title="Leading" use:popIn>👑</span><span class="sr-only"
+                >Leading</span
+              >
             {/if}
           </span>
         </td>

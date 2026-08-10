@@ -103,17 +103,53 @@ export function cornholeStats({ games, rounds, canonical }: GameStatsInput): Gam
   const perPlayer: Record<ID, Metric[]> = {};
   for (const [id, a] of perId) {
     const metrics: Metric[] = [];
-    if (a.inHole) metrics.push({ key: 'ch_hole', label: 'Bags in the hole', value: fmtInt(a.inHole), emoji: '🕳️' });
-    if (a.fourBaggers) metrics.push({ key: 'ch_four', label: 'Four-baggers', value: fmtInt(a.fourBaggers), emoji: '💣' });
+    if (a.inHole)
+      metrics.push({
+        key: 'ch_hole',
+        label: 'Bags in the hole',
+        value: fmtInt(a.inHole),
+        emoji: '🕳️',
+      });
+    if (a.fourBaggers)
+      metrics.push({
+        key: 'ch_four',
+        label: 'Four-baggers',
+        value: fmtInt(a.fourBaggers),
+        emoji: '💣',
+      });
     const bags = a.inHole + a.onBoard;
-    if (bags) metrics.push({ key: 'ch_acc', label: 'On-target bags', value: fmtPct((a.inHole + a.onBoard) / (a.rounds * BAGS_PER_SIDE)), emoji: '🎯' });
+    if (bags)
+      metrics.push({
+        key: 'ch_acc',
+        label: 'On-target bags',
+        value: fmtPct((a.inHole + a.onBoard) / (a.rounds * BAGS_PER_SIDE)),
+        emoji: '🎯',
+      });
     if (metrics.length) perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
-  if (totalInHole) global.push({ key: 'ch_hole_all', label: 'Bags in the hole', value: fmtInt(totalInHole), emoji: '🕳️' });
-  if (totalFourBaggers) global.push({ key: 'ch_four_all', label: 'Four-baggers', value: fmtInt(totalFourBaggers), emoji: '💣' });
-  if (scoredRounds) global.push({ key: 'ch_wash', label: 'Washed rounds', value: fmtPct(washes / scoredRounds), emoji: '🧺' });
+  if (totalInHole)
+    global.push({
+      key: 'ch_hole_all',
+      label: 'Bags in the hole',
+      value: fmtInt(totalInHole),
+      emoji: '🕳️',
+    });
+  if (totalFourBaggers)
+    global.push({
+      key: 'ch_four_all',
+      label: 'Four-baggers',
+      value: fmtInt(totalFourBaggers),
+      emoji: '💣',
+    });
+  if (scoredRounds)
+    global.push({
+      key: 'ch_wash',
+      label: 'Washed rounds',
+      value: fmtPct(washes / scoredRounds),
+      emoji: '🧺',
+    });
 
   return { perPlayer, global };
 }

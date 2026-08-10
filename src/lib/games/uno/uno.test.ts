@@ -55,7 +55,12 @@ describe('readConfig', () => {
   });
 
   it('falls back on garbage values and unknown modes', () => {
-    const c = readConfig({ target: 'nope', mode: 'chaos', actionValue: null, wildValue: undefined });
+    const c = readConfig({
+      target: 'nope',
+      mode: 'chaos',
+      actionValue: null,
+      wildValue: undefined,
+    });
     expect(c).toEqual({ target: 500, mode: 'winner', actionValue: 20, wildValue: 50 });
   });
 });
@@ -100,7 +105,9 @@ describe('handValue', () => {
   });
 
   it('honours custom card values', () => {
-    expect(handValue({ numbers: 0, actions: 1, wilds: 1 }, { actionValue: 15, wildValue: 40 })).toBe(55);
+    expect(
+      handValue({ numbers: 0, actions: 1, wilds: 1 }, { actionValue: 15, wildValue: 40 }),
+    ).toBe(55);
   });
 });
 
@@ -275,8 +282,22 @@ describe('unoStats', () => {
     roundCount: 2,
   };
   const rounds = [
-    { id: 'r1', gameId: 'g1', index: 0, input: input('A', { A: 0, B: 20, C: 35 }), deltas: {}, createdAt: 0 },
-    { id: 'r2', gameId: 'g1', index: 1, input: input('B', { A: 5, B: 0, C: 50 }), deltas: {}, createdAt: 0 },
+    {
+      id: 'r1',
+      gameId: 'g1',
+      index: 0,
+      input: input('A', { A: 0, B: 20, C: 35 }),
+      deltas: {},
+      createdAt: 0,
+    },
+    {
+      id: 'r2',
+      gameId: 'g1',
+      index: 1,
+      input: input('B', { A: 5, B: 0, C: 50 }),
+      deltas: {},
+      createdAt: 0,
+    },
   ] as Round[];
 
   const res = unoStats({ games: [game], rounds, players, canonical: (id) => id });

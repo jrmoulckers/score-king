@@ -128,10 +128,13 @@ describe('scoreEuchre', () => {
   });
 
   it('honours house-rule options', () => {
-    const loneEuchre = scoreEuchre(mk({ maker: 0, result: 'euchred', alone: true, alonePlayer: 'a' }), {
-      aloneBonus: true,
-      loneEuchreBonus: true,
-    });
+    const loneEuchre = scoreEuchre(
+      mk({ maker: 0, result: 'euchred', alone: true, alonePlayer: 'a' }),
+      {
+        aloneBonus: true,
+        loneEuchreBonus: true,
+      },
+    );
     expect(loneEuchre).toEqual({ a: 0, b: 0, c: 4, d: 4 });
   });
 
@@ -185,11 +188,17 @@ describe('validateEuchre', () => {
 
 describe('describeHand', () => {
   it('summarises a made hand with the recorded points', () => {
-    expect(describeHand(mk({ maker: 0, result: 'made' }), players, 1)).toBe('✋ Ann & Bo made it +1');
+    expect(describeHand(mk({ maker: 0, result: 'made' }), players, 1)).toBe(
+      '✋ Ann & Bo made it +1',
+    );
   });
 
   it('summarises a lone march with the lone player', () => {
-    const s = describeHand(mk({ maker: 0, result: 'march', alone: true, alonePlayer: 'a' }), players, 4);
+    const s = describeHand(
+      mk({ maker: 0, result: 'march', alone: true, alonePlayer: 'a' }),
+      players,
+      4,
+    );
     expect(s).toBe('🧹 Ann & Bo marched — Ann alone +4');
   });
 
@@ -365,9 +374,9 @@ describe('euchre module', () => {
     }
     expect(totals.a).toBe(10);
     expect(totals.b).toBe(10); // partner mirrors the team score exactly
-    expect(euchre.isFinished!(totals, { config: {}, roundCount: hands.length, playerCount: 4 })).toBe(
-      true,
-    );
+    expect(
+      euchre.isFinished!(totals, { config: {}, roundCount: hands.length, playerCount: 4 }),
+    ).toBe(true);
     // every hand shifted only one team
     expect(sum(euchre.scoreRound(hands[0], ctx()))).toBe(4); // march = 2 to each of two partners
   });
@@ -375,7 +384,15 @@ describe('euchre module', () => {
 
 describe('euchreStats', () => {
   const games: Game[] = [
-    { id: 'g', type: 'euchre', config: {}, playerIds: ['a', 'b', 'c', 'd'], status: 'finished', createdAt: 0, roundCount: 4 } as Game,
+    {
+      id: 'g',
+      type: 'euchre',
+      config: {},
+      playerIds: ['a', 'b', 'c', 'd'],
+      status: 'finished',
+      createdAt: 0,
+      roundCount: 4,
+    } as Game,
   ];
   const mkRound = (index: number, input: EuchreInput): Round =>
     ({ id: `r${index}`, gameId: 'g', index, input, deltas: {}, createdAt: 0 }) as Round;

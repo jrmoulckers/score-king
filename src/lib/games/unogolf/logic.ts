@@ -101,11 +101,7 @@ export function scoreHole(
  * than two players are counting strokes, or the lowest count is tied. Pure so the
  * editor and tests share one definition of who parked it closest.
  */
-export function closestToPin(
-  input: UnoGolfInput,
-  playerIds: ID[],
-  cfg: CardValues,
-): ID | null {
+export function closestToPin(input: UnoGolfInput, playerIds: ID[], cfg: CardValues): ID | null {
   if (!input.out) return null;
   const counters = playerIds.filter((id) => id !== input.out);
   if (counters.length < 2) return null;

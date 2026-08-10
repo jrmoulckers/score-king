@@ -67,20 +67,36 @@ describe('dailyCrown', () => {
   it('resolves opponent names for rivalry lines', () => {
     const line = dailyCrown({
       meId: 'me',
-      me: mkStats({ currentStreak: 0, wins: 4, headToHead: { p2: { opponentId: 'p2', games: 5, wins: 4, losses: 1, ties: 0 } } }),
+      me: mkStats({
+        currentStreak: 0,
+        wins: 4,
+        headToHead: { p2: { opponentId: 'p2', games: 5, wins: 4, losses: 1, ties: 0 } },
+      }),
       nameOf: (id) => (id === 'p2' ? 'Sam' : id),
       lastKey: 'rival_own',
       now: DAY,
     });
     // The rival line, when it surfaces, uses the display name not the id.
-    const rival = nudges({ meId: 'me', me: mkStats({ wins: 4, headToHead: { p2: { opponentId: 'p2', games: 5, wins: 4, losses: 1, ties: 0 } } }), nameOf: (id) => (id === 'p2' ? 'Sam' : id) }).find((n) => n.key === 'rival_own');
+    const rival = nudges({
+      meId: 'me',
+      me: mkStats({
+        wins: 4,
+        headToHead: { p2: { opponentId: 'p2', games: 5, wins: 4, losses: 1, ties: 0 } },
+      }),
+      nameOf: (id) => (id === 'p2' ? 'Sam' : id),
+    }).find((n) => n.key === 'rival_own');
     expect(rival?.text).toContain('Sam');
     expect(line).toBeTruthy();
   });
 });
 
 describe('roast mode', () => {
-  const me = mkStats({ played: 6, wins: 0, winRate: 0, headToHead: { foe: { opponentId: 'foe', games: 4, wins: 1, losses: 3, ties: 0 } } });
+  const me = mkStats({
+    played: 6,
+    wins: 0,
+    winRate: 0,
+    headToHead: { foe: { opponentId: 'foe', games: 4, wins: 1, losses: 3, ties: 0 } },
+  });
 
   it('includes roast lines by default', () => {
     const tones = nudges({ meId: 'me', me }).map((n) => n.tone);
@@ -95,7 +111,10 @@ describe('roast mode', () => {
 
 describe('nudges', () => {
   it('omits everyday fallbacks and the excluded hero key', () => {
-    const list = nudges({ meId: 'me', me: mkStats({ currentStreak: 4, comebackWins: 2 }) }, 'hot_streak');
+    const list = nudges(
+      { meId: 'me', me: mkStats({ currentStreak: 4, comebackWins: 2 }) },
+      'hot_streak',
+    );
     const ks = list.map((n) => n.key);
     expect(ks).not.toContain('hot_streak');
     expect(ks).not.toContain('tally');

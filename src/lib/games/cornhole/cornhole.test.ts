@@ -40,7 +40,12 @@ function team(id: string, memberIds: string[], name = id): CornholeTeam {
   return { id, name, emoji: '🌽', color: '#7c5cff', memberIds };
 }
 /** Score two single-member sides — the 1v1 path, keyed the new (team) way. */
-function score1v1(a: [number, number], b: [number, number], totals: Record<ID, number>, cfg = DEFAULT) {
+function score1v1(
+  a: [number, number],
+  b: [number, number],
+  totals: Record<ID, number>,
+  cfg = DEFAULT,
+) {
   const teams = [team('ta', ['a']), team('tb', ['b'])];
   const throws = { ta: throwOf(a[0], a[1]), tb: throwOf(b[0], b[1]) };
   return scoreCornhole(teams, throws, totals, cfg);
@@ -66,7 +71,12 @@ function legacyInput(a: [number, number], b: [number, number]): CornholeInput {
   return { sides: { a: throwOf(a[0], a[1]), b: throwOf(b[0], b[1]) } };
 }
 /** A team round input for the two sides A/B with fixed ids. */
-function teamInput(aM: string[], bM: string[], a: [number, number], b: [number, number]): CornholeInput {
+function teamInput(
+  aM: string[],
+  bM: string[],
+  a: [number, number],
+  b: [number, number],
+): CornholeInput {
   return {
     teams: [team('ta', aM, 'Side A'), team('tb', bM, 'Side B')],
     throws: { ta: throwOf(a[0], a[1]), tb: throwOf(b[0], b[1]) },
@@ -318,34 +328,53 @@ describe('cornhole: module wiring', () => {
   });
 
   it('scoreRound honors the bust config from ctx', () => {
-    const deltas = cornhole.scoreRound(legacyInput([2, 0], [0, 0]), ctxOf({ a: 20, b: 0 }, { bust: true }));
+    const deltas = cornhole.scoreRound(
+      legacyInput([2, 0], [0, 0]),
+      ctxOf({ a: 20, b: 0 }, { bust: true }),
+    );
     expect(20 + deltas.a).toBe(15);
   });
 
   it('isFinished fires exactly at the target', () => {
-    expect(cornhole.isFinished!({ a: 20, b: 10 }, { config: {}, roundCount: 8, playerCount: 2 })).toBe(false);
-    expect(cornhole.isFinished!({ a: 21, b: 10 }, { config: {}, roundCount: 9, playerCount: 2 })).toBe(true);
+    expect(
+      cornhole.isFinished!({ a: 20, b: 10 }, { config: {}, roundCount: 8, playerCount: 2 }),
+    ).toBe(false);
+    expect(
+      cornhole.isFinished!({ a: 21, b: 10 }, { config: {}, roundCount: 9, playerCount: 2 }),
+    ).toBe(true);
   });
 
   it('validateRound rejects more than four bags a side', () => {
     const ctx = ctxOf({ a: 0, b: 0 });
-    expect(cornhole.validateRound(teamInput(['a'], ['b'], [3, 2], [0, 0]), ctx)).toMatch(/bags per round/i);
-    expect(cornhole.validateRound(teamInput(['a'], ['b'], [BAGS_PER_SIDE, 0], [1, 3]), ctx)).toBeNull();
+    expect(cornhole.validateRound(teamInput(['a'], ['b'], [3, 2], [0, 0]), ctx)).toMatch(
+      /bags per round/i,
+    );
+    expect(
+      cornhole.validateRound(teamInput(['a'], ['b'], [BAGS_PER_SIDE, 0], [1, 3]), ctx),
+    ).toBeNull();
   });
 
   it('validateRound enforces the team shape (both sides filled, cap of two, no dupes)', () => {
     const two = ctxOf({ a: 0, b: 0 });
     // Empty side (both players stacked on Side A, within the cap).
-    expect(cornhole.validateRound(teamInput(['a', 'b'], [], [0, 0], [0, 0]), two)).toMatch(/at least one player/i);
+    expect(cornhole.validateRound(teamInput(['a', 'b'], [], [0, 0], [0, 0]), two)).toMatch(
+      /at least one player/i,
+    );
 
     const four = [player('a', 'A'), player('b', 'B'), player('c', 'C'), player('d', 'D')];
     const ctx = ctxOf({ a: 0, b: 0, c: 0, d: 0 }, {}, four);
     // Over the cap.
-    expect(cornhole.validateRound(teamInput(['a', 'b', 'c'], ['d'], [0, 0], [0, 0]), ctx)).toMatch(/up to 2 players/i);
+    expect(cornhole.validateRound(teamInput(['a', 'b', 'c'], ['d'], [0, 0], [0, 0]), ctx)).toMatch(
+      /up to 2 players/i,
+    );
     // Unassigned player.
-    expect(cornhole.validateRound(teamInput(['a'], ['b'], [0, 0], [0, 0]), ctx)).toMatch(/isn't on a side/i);
+    expect(cornhole.validateRound(teamInput(['a'], ['b'], [0, 0], [0, 0]), ctx)).toMatch(
+      /isn't on a side/i,
+    );
     // A clean 2v2 passes.
-    expect(cornhole.validateRound(teamInput(['a', 'c'], ['b', 'd'], [0, 0], [0, 0]), ctx)).toBeNull();
+    expect(
+      cornhole.validateRound(teamInput(['a', 'c'], ['b', 'd'], [0, 0], [0, 0]), ctx),
+    ).toBeNull();
   });
 
   it('describeRound narrates the cancelled result with the winning side', () => {
@@ -366,23 +395,41 @@ describe('cornhole: module wiring', () => {
 describe('cornhole: tactile bag-slot model', () => {
   it('expands counts into a positional row — holes, then boards, then ground', () => {
     expect(slotsFromThrow({ inHole: 2, onBoard: 1 })).toEqual(['hole', 'hole', 'board', 'ground']);
-    expect(slotsFromThrow({ inHole: 0, onBoard: 0 })).toEqual(['ground', 'ground', 'ground', 'ground']);
+    expect(slotsFromThrow({ inHole: 0, onBoard: 0 })).toEqual([
+      'ground',
+      'ground',
+      'ground',
+      'ground',
+    ]);
     expect(slotsFromThrow({ inHole: 4, onBoard: 0 })).toEqual(['hole', 'hole', 'hole', 'hole']);
   });
 
   it('folds a row of slots back into in-hole / on-board counts', () => {
     expect(throwFromSlots(['hole', 'ground', 'board', 'hole'])).toEqual({ inHole: 2, onBoard: 1 });
-    expect(throwFromSlots(['ground', 'ground', 'ground', 'ground'])).toEqual({ inHole: 0, onBoard: 0 });
+    expect(throwFromSlots(['ground', 'ground', 'ground', 'ground'])).toEqual({
+      inHole: 0,
+      onBoard: 0,
+    });
   });
 
   it('round-trips counts through the slot model', () => {
-    for (const t of [{ inHole: 0, onBoard: 0 }, { inHole: 1, onBoard: 2 }, { inHole: 4, onBoard: 0 }, { inHole: 0, onBoard: 3 }]) {
+    for (const t of [
+      { inHole: 0, onBoard: 0 },
+      { inHole: 1, onBoard: 2 },
+      { inHole: 4, onBoard: 0 },
+      { inHole: 0, onBoard: 3 },
+    ]) {
       expect(throwFromSlots(slotsFromThrow(t))).toEqual(t);
     }
   });
 
   it('clamps junk counts and never emits more than the row length', () => {
-    expect(slotsFromThrow({ inHole: -3, onBoard: 1 })).toEqual(['board', 'ground', 'ground', 'ground']);
+    expect(slotsFromThrow({ inHole: -3, onBoard: 1 })).toEqual([
+      'board',
+      'ground',
+      'ground',
+      'ground',
+    ]);
     expect(slotsFromThrow(undefined)).toEqual(['ground', 'ground', 'ground', 'ground']);
     expect(slotsFromThrow({ inHole: 9, onBoard: 9 })).toHaveLength(BAGS_PER_SIDE);
   });
@@ -427,7 +474,15 @@ describe('cornhole: four-bagger + bust risk', () => {
 });
 
 describe('cornhole: toss flavor (pure, deterministic)', () => {
-  const base = { net: 3, aRaw: 7, bRaw: 4, busted: false, fourBaggerName: null, bothFourBaggers: false, seed: 0 };
+  const base = {
+    net: 3,
+    aRaw: 7,
+    bRaw: 4,
+    busted: false,
+    fourBaggerName: null,
+    bothFourBaggers: false,
+    seed: 0,
+  };
 
   it('leads with the bust when a side overcooks it', () => {
     const f = tossFlavor({ ...base, gainerName: 'Aces', busted: true });
@@ -444,7 +499,13 @@ describe('cornhole: toss flavor (pure, deterministic)', () => {
   });
 
   it('washes when both sides four-bag', () => {
-    const f = tossFlavor({ ...base, gainerName: null, net: 0, fourBaggerName: null, bothFourBaggers: true });
+    const f = tossFlavor({
+      ...base,
+      gainerName: null,
+      net: 0,
+      fourBaggerName: null,
+      bothFourBaggers: true,
+    });
     expect(f.emoji).toBe('🧺');
     expect(f.tone).toBe('muted');
   });
@@ -475,23 +536,41 @@ describe('cornhole: toss flavor (pure, deterministic)', () => {
 describe('cornhole: tactile bag-slot model', () => {
   it('expands counts into a positional row — holes, then boards, then ground', () => {
     expect(slotsFromThrow({ inHole: 2, onBoard: 1 })).toEqual(['hole', 'hole', 'board', 'ground']);
-    expect(slotsFromThrow({ inHole: 0, onBoard: 0 })).toEqual(['ground', 'ground', 'ground', 'ground']);
+    expect(slotsFromThrow({ inHole: 0, onBoard: 0 })).toEqual([
+      'ground',
+      'ground',
+      'ground',
+      'ground',
+    ]);
     expect(slotsFromThrow({ inHole: 4, onBoard: 0 })).toEqual(['hole', 'hole', 'hole', 'hole']);
   });
 
   it('folds a row of slots back into in-hole / on-board counts', () => {
     expect(throwFromSlots(['hole', 'ground', 'board', 'hole'])).toEqual({ inHole: 2, onBoard: 1 });
-    expect(throwFromSlots(['ground', 'ground', 'ground', 'ground'])).toEqual({ inHole: 0, onBoard: 0 });
+    expect(throwFromSlots(['ground', 'ground', 'ground', 'ground'])).toEqual({
+      inHole: 0,
+      onBoard: 0,
+    });
   });
 
   it('round-trips counts through the slot model', () => {
-    for (const t of [{ inHole: 0, onBoard: 0 }, { inHole: 1, onBoard: 2 }, { inHole: 4, onBoard: 0 }, { inHole: 0, onBoard: 3 }]) {
+    for (const t of [
+      { inHole: 0, onBoard: 0 },
+      { inHole: 1, onBoard: 2 },
+      { inHole: 4, onBoard: 0 },
+      { inHole: 0, onBoard: 3 },
+    ]) {
       expect(throwFromSlots(slotsFromThrow(t))).toEqual(t);
     }
   });
 
   it('clamps junk counts and never emits more than the row length', () => {
-    expect(slotsFromThrow({ inHole: -3, onBoard: 1 })).toEqual(['board', 'ground', 'ground', 'ground']);
+    expect(slotsFromThrow({ inHole: -3, onBoard: 1 })).toEqual([
+      'board',
+      'ground',
+      'ground',
+      'ground',
+    ]);
     expect(slotsFromThrow(undefined)).toEqual(['ground', 'ground', 'ground', 'ground']);
     expect(slotsFromThrow({ inHole: 9, onBoard: 9 })).toHaveLength(BAGS_PER_SIDE);
   });
@@ -536,7 +615,15 @@ describe('cornhole: four-bagger + bust risk', () => {
 });
 
 describe('cornhole: toss flavor (pure, deterministic)', () => {
-  const base = { net: 3, aRaw: 7, bRaw: 4, busted: false, fourBaggerName: null, bothFourBaggers: false, seed: 0 };
+  const base = {
+    net: 3,
+    aRaw: 7,
+    bRaw: 4,
+    busted: false,
+    fourBaggerName: null,
+    bothFourBaggers: false,
+    seed: 0,
+  };
 
   it('leads with the bust when a side overcooks it', () => {
     const f = tossFlavor({ ...base, gainerName: 'Aces', busted: true });
@@ -553,7 +640,13 @@ describe('cornhole: toss flavor (pure, deterministic)', () => {
   });
 
   it('washes when both sides four-bag', () => {
-    const f = tossFlavor({ ...base, gainerName: null, net: 0, fourBaggerName: null, bothFourBaggers: true });
+    const f = tossFlavor({
+      ...base,
+      gainerName: null,
+      net: 0,
+      fourBaggerName: null,
+      bothFourBaggers: true,
+    });
     expect(f.emoji).toBe('🧺');
     expect(f.tone).toBe('muted');
   });

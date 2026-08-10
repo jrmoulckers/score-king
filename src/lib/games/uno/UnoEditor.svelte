@@ -46,7 +46,11 @@
       if (!input.hands) input.hands = {};
       for (const id of ids) {
         if (!input.hands[id]) {
-          input.hands[id] = { numbers: Math.max(0, Number(input.left?.[id]) || 0), actions: 0, wilds: 0 };
+          input.hands[id] = {
+            numbers: Math.max(0, Number(input.left?.[id]) || 0),
+            actions: 0,
+            wilds: 0,
+          };
         }
       }
     });
@@ -92,7 +96,9 @@
       <span class="mini c-blue"></span>
     </span>
     <div class="mode">
-      <strong class="modeline">{golf ? '⛳ Everyone banks their own' : '🎉 Winner scoops the table'}</strong>
+      <strong class="modeline"
+        >{golf ? '⛳ Everyone banks their own' : '🎉 Winner scoops the table'}</strong
+      >
       <span class="sub">{golf ? 'Lowest total wins' : 'Highest total wins'}</span>
     </div>
   </div>
@@ -116,7 +122,9 @@
 
   <div class="row spread">
     <span class="muted prompt">
-      {input.out ? 'Now tally the cards left in every other hand.' : 'Who shouted “Uno!” and emptied their hand?'}
+      {input.out
+        ? 'Now tally the cards left in every other hand.'
+        : 'Who shouted “Uno!” and emptied their hand?'}
     </span>
     {#if !golf && input.out}
       <span class="pill take"><span class="tnum" use:bumpOnChange={pot}>🎉 +{pot}</span></span>
@@ -156,7 +164,9 @@
 
       {#if isOut}
         <p class="note">
-          {golf ? 'Empty hand — banks 0 this round.' : `Scoops the table · +${pot} point${pot === 1 ? '' : 's'}`}
+          {golf
+            ? 'Empty hand — banks 0 this round.'
+            : `Scoops the table · +${pot} point${pot === 1 ? '' : 's'}`}
         </p>
       {:else}
         <div class="tally">
@@ -172,7 +182,11 @@
           </label>
           <label class="f">
             <span class="klabel">⛔ Actions <span class="hint">×{cfg.actionValue}</span></span>
-            <Stepper bind:value={input.hands![p.id].actions} min={0} label="{p.name} action cards" />
+            <Stepper
+              bind:value={input.hands![p.id].actions}
+              min={0}
+              label="{p.name} action cards"
+            />
           </label>
           <label class="f">
             <span class="klabel">🌈 Wilds <span class="hint">×{cfg.wildValue}</span></span>
@@ -208,10 +222,24 @@
     border: 1.5px solid var(--surface);
     transform-origin: bottom center;
   }
-  .c-red { background: #d63d3d; transform: rotate(-18deg); }
-  .c-yellow { background: #f0b429; transform: rotate(-6deg); left: 12px; }
-  .c-green { background: #2fa84f; transform: rotate(6deg); left: 12px; }
-  .c-blue { background: #3b78c4; transform: rotate(18deg); }
+  .c-red {
+    background: #d63d3d;
+    transform: rotate(-18deg);
+  }
+  .c-yellow {
+    background: #f0b429;
+    transform: rotate(-6deg);
+    left: 12px;
+  }
+  .c-green {
+    background: #2fa84f;
+    transform: rotate(6deg);
+    left: 12px;
+  }
+  .c-blue {
+    background: #3b78c4;
+    transform: rotate(18deg);
+  }
   .modeline {
     display: block;
     font-size: 1rem;
@@ -267,7 +295,9 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   /* The player who went out is the round's winner — the restrained Crown-Gold wash the
      scoreboard uses, co-signalled by the 🎉 badge, never colour alone. */
@@ -315,7 +345,10 @@
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
   }
   .wentout:hover {
     color: var(--text);

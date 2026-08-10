@@ -38,7 +38,8 @@ const P4 = ['a', 'b', 'c', 'd'].map(player);
 
 function totalsOf(outcomes: ReturnType<typeof scoreGame>): Record<string, number> {
   const t: Record<string, number> = {};
-  for (const o of outcomes) for (const [id, d] of Object.entries(o.deltas)) t[id] = (t[id] ?? 0) + d;
+  for (const o of outcomes)
+    for (const [id, d] of Object.entries(o.deltas)) t[id] = (t[id] ?? 0) + d;
   return t;
 }
 
@@ -117,7 +118,14 @@ describe('scoreUnitHand', () => {
   });
   it('scores a broken nil at −100 and turns its tricks into bags', () => {
     const r = scoreUnitHand([row(0, 2, 'nil')], cfg(), 0);
-    expect(r).toMatchObject({ contract: 0, tricks: 2, made: true, bags: 2, nilPoints: -100, score: -98 });
+    expect(r).toMatchObject({
+      contract: 0,
+      tricks: 2,
+      made: true,
+      bags: 2,
+      nilPoints: -100,
+      score: -98,
+    });
   });
   it('scores blind nil at ±200', () => {
     expect(scoreUnitHand([row(0, 0, 'blind')], cfg(), 0).score).toBe(200);
@@ -129,7 +137,15 @@ describe('scoreUnitHand', () => {
   });
   it('combines a partner nil with the other partner’s contract', () => {
     const made = scoreUnitHand([row(0, 0, 'nil'), row(4, 5)], cfg(), 0);
-    expect(made).toMatchObject({ contract: 4, tricks: 5, made: true, base: 40, bags: 1, nilPoints: 100, score: 141 });
+    expect(made).toMatchObject({
+      contract: 4,
+      tricks: 5,
+      made: true,
+      base: 40,
+      bags: 1,
+      nilPoints: 100,
+      score: 141,
+    });
   });
   it('lets a broken nil’s tricks still count toward the team contract', () => {
     const r = scoreUnitHand([row(0, 2, 'nil'), row(4, 4)], cfg(), 0);
@@ -141,7 +157,12 @@ describe('scoreUnitHand', () => {
 // ── bag accumulation across hands ───────────────────────────────────────────
 describe('bag penalty accumulation', () => {
   const seat = [player('a')];
-  const four = [hand({ a: row(3, 6) }), hand({ a: row(3, 6) }), hand({ a: row(3, 6) }), hand({ a: row(3, 6) })];
+  const four = [
+    hand({ a: row(3, 6) }),
+    hand({ a: row(3, 6) }),
+    hand({ a: row(3, 6) }),
+    hand({ a: row(3, 6) }),
+  ];
 
   it('charges −100 when bags cross the threshold and rolls the remainder over', () => {
     const out = scoreGame(four, seat, { mode: 'solo' });
@@ -165,7 +186,12 @@ describe('bag penalty accumulation', () => {
   it('can charge multiple penalties in one brutal hand', () => {
     const out = scoreGame([hand({ a: row(1, 13) })], seat, { mode: 'solo', bagThreshold: 5 });
     // 12 bags -> floor(12/5) = 2 penalties
-    expect(out[0].perUnit.a).toMatchObject({ bags: 12, penalties: 2, penaltyPoints: -200, bagsAfter: 2 });
+    expect(out[0].perUnit.a).toMatchObject({
+      bags: 12,
+      penalties: 2,
+      penaltyPoints: -200,
+      bagsAfter: 2,
+    });
     expect(out[0].deltas.a).toBe(10 + 12 - 200);
   });
 });
@@ -182,11 +208,9 @@ describe('scoreGame', () => {
   });
 
   it('mirrors a team’s hand score onto both partners', () => {
-    const out = scoreGame(
-      [hand({ a: row(4, 5), b: row(3, 3), c: row(2, 2), d: row(3, 3) })],
-      P4,
-      { mode: 'partners' },
-    );
+    const out = scoreGame([hand({ a: row(4, 5), b: row(3, 3), c: row(2, 2), d: row(3, 3) })], P4, {
+      mode: 'partners',
+    });
     // team1: contract 7, tricks 8 -> 71 ; team2: contract 5, tricks 5 -> 50
     expect(out[0].deltas).toEqual({ a: 71, b: 71, c: 50, d: 50 });
   });
@@ -307,7 +331,11 @@ describe('targetView', () => {
     });
   });
   it('reports how far short a projected total falls', () => {
-    expect(targetView(300, 50, 500)).toMatchObject({ projected: 350, reaches: false, remaining: 150 });
+    expect(targetView(300, 50, 500)).toMatchObject({
+      projected: 350,
+      reaches: false,
+      remaining: 150,
+    });
   });
   it('never reaches a non-positive target', () => {
     expect(targetView(999, 10, 0)).toMatchObject({ reaches: false, remaining: 0 });
@@ -315,7 +343,12 @@ describe('targetView', () => {
 });
 
 // ── module wiring ───────────────────────────────────────────────────────────
-function ctxFor(players: Player[], config: Record<string, unknown>, roundIndex: number, rounds: Round[]): RoundContext {
+function ctxFor(
+  players: Player[],
+  config: Record<string, unknown>,
+  roundIndex: number,
+  rounds: Round[],
+): RoundContext {
   return { game: { id: 'g' } as never, players, config, roundIndex, totals: {}, rounds };
 }
 function asRound(index: number, input: SpadesInput): Round {
@@ -345,25 +378,46 @@ describe('spades module', () => {
   });
 
   it('scoreRound accumulates bags from prior rounds only', () => {
-    const prior = [asRound(0, hand({ a: row(3, 6) })), asRound(1, hand({ a: row(3, 6) })), asRound(2, hand({ a: row(3, 6) }))];
-    const deltas = spades.scoreRound(hand({ a: row(3, 6) }), ctxFor([player('a')], { mode: 'solo' }, 3, prior));
+    const prior = [
+      asRound(0, hand({ a: row(3, 6) })),
+      asRound(1, hand({ a: row(3, 6) })),
+      asRound(2, hand({ a: row(3, 6) })),
+    ];
+    const deltas = spades.scoreRound(
+      hand({ a: row(3, 6) }),
+      ctxFor([player('a')], { mode: 'solo' }, 3, prior),
+    );
     expect(deltas.a).toBe(-67);
   });
 
   it('scoreRound ignores rounds at/after the edited index', () => {
     // Editing round 1: ctx.rounds contains later rounds, which must not leak into the replay.
-    const rounds = [asRound(0, hand({ a: row(3, 6) })), asRound(1, hand({ a: row(3, 6) })), asRound(2, hand({ a: row(3, 6) }))];
-    const deltas = spades.scoreRound(hand({ a: row(3, 6) }), ctxFor([player('a')], { mode: 'solo' }, 1, rounds));
+    const rounds = [
+      asRound(0, hand({ a: row(3, 6) })),
+      asRound(1, hand({ a: row(3, 6) })),
+      asRound(2, hand({ a: row(3, 6) })),
+    ];
+    const deltas = spades.scoreRound(
+      hand({ a: row(3, 6) }),
+      ctxFor([player('a')], { mode: 'solo' }, 1, rounds),
+    );
     expect(deltas.a).toBe(33); // only round 0 (3 bags) precedes it — no penalty yet
   });
 
   it('isFinished when a total reaches the target', () => {
-    expect(spades.isFinished!({ a: 480, b: 480 }, { config: {}, roundCount: 9, playerCount: 4 })).toBe(false);
-    expect(spades.isFinished!({ a: 510, b: 510 }, { config: {}, roundCount: 10, playerCount: 4 })).toBe(true);
+    expect(
+      spades.isFinished!({ a: 480, b: 480 }, { config: {}, roundCount: 9, playerCount: 4 }),
+    ).toBe(false);
+    expect(
+      spades.isFinished!({ a: 510, b: 510 }, { config: {}, roundCount: 10, playerCount: 4 }),
+    ).toBe(true);
   });
 
   it('describeRound summarises bids, tricks and nils', () => {
-    const r = asRound(0, hand({ a: row(4, 5), b: row(0, 0, 'nil'), c: row(3, 3), d: row(0, 2, 'blind') }));
+    const r = asRound(
+      0,
+      hand({ a: row(4, 5), b: row(0, 0, 'nil'), c: row(3, 3), d: row(0, 2, 'blind') }),
+    );
     expect(spades.describeRound!(r, P4)).toBe('A 4/5 · B 🚫✓ · C 3/3 · D 🙈✗');
   });
 

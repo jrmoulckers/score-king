@@ -25,8 +25,7 @@
   let raf = 0;
   let done = false;
 
-  const cameraCapable =
-    typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
+  const cameraCapable = typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
 
   async function startCamera() {
     camError = '';
@@ -129,7 +128,9 @@
       autocomplete="off"
       autocapitalize="off"
     ></textarea>
-    <button class="btn block" disabled={!pasted.trim()} onclick={submitPaste}>Use pasted code</button>
+    <button class="btn block" disabled={!pasted.trim()} onclick={submitPaste}
+      >Use pasted code</button
+    >
   {/if}
   <canvas bind:this={canvas} class="hidden"></canvas>
 </div>

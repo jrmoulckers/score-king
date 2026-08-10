@@ -109,7 +109,9 @@ describe('category configuration', () => {
   });
 
   it('splits entry between fast point fields and +1 token steppers', () => {
-    const byKey = Object.fromEntries(scoringCategories({ nectar: true }).map((c) => [c.key, c.entry]));
+    const byKey = Object.fromEntries(
+      scoringCategories({ nectar: true }).map((c) => [c.key, c.entry]),
+    );
     // Big totals get a typeable field...
     expect(byKey.birds).toBe('points');
     expect(byKey.bonus).toBe('points');
@@ -181,15 +183,21 @@ describe('validateWingspanRound', () => {
   });
 
   it('rejects fractional values', () => {
-    expect(validateWingspanRound({ rows: { a: row({ eggs: 2.5 }) } }, players)).toContain('whole number');
+    expect(validateWingspanRound({ rows: { a: row({ eggs: 2.5 }) } }, players)).toContain(
+      'whole number',
+    );
   });
 
   it('rejects absurdly high typos', () => {
-    expect(validateWingspanRound({ rows: { a: row({ birds: 1000 }) } }, players)).toContain('too high');
+    expect(validateWingspanRound({ rows: { a: row({ birds: 1000 }) } }, players)).toContain(
+      'too high',
+    );
   });
 
   it('validates the unused-food tiebreaker column too', () => {
-    expect(validateWingspanRound({ rows: { a: row({ leftover: -3 }) } }, players)).toContain('negative');
+    expect(validateWingspanRound({ rows: { a: row({ leftover: -3 }) } }, players)).toContain(
+      'negative',
+    );
   });
 
   it('is lenient about a player who has no row yet', () => {

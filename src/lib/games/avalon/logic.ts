@@ -127,9 +127,12 @@ export function roleList(playerCount: number, cfg: RolesConfig): RoleLine[] {
   const evilRoles: RoleLine[] = [
     { side: 'evil', name: 'Assassin', emoji: '🗡️', note: 'may name Merlin if Good wins' },
   ];
-  if (cfg.morgana) evilRoles.push({ side: 'evil', name: 'Morgana', emoji: '🎭', note: 'appears as Merlin' });
-  if (cfg.mordred) evilRoles.push({ side: 'evil', name: 'Mordred', emoji: '🕶️', note: 'hidden from Merlin' });
-  if (cfg.oberon) evilRoles.push({ side: 'evil', name: 'Oberon', emoji: '👁️', note: 'unknown to fellow Evil' });
+  if (cfg.morgana)
+    evilRoles.push({ side: 'evil', name: 'Morgana', emoji: '🎭', note: 'appears as Merlin' });
+  if (cfg.mordred)
+    evilRoles.push({ side: 'evil', name: 'Mordred', emoji: '🕶️', note: 'hidden from Merlin' });
+  if (cfg.oberon)
+    evilRoles.push({ side: 'evil', name: 'Oberon', emoji: '👁️', note: 'unknown to fellow Evil' });
   for (let i = evilRoles.length; i < evil; i++) {
     evilRoles.push({ side: 'evil', name: 'Minion of Mordred', emoji: '😈' });
   }
@@ -159,7 +162,10 @@ export function isHammer(input: Pick<AvalonInput, 'rejects'>): boolean {
  * How a quest resolved: the Hammer (vote track maxed → no mission) takes precedence over the
  * Success/Fail cards, since the team never actually goes.
  */
-export function resolutionOf(input: Pick<AvalonInput, 'fails' | 'rejects'>, twoFail: boolean): Resolution {
+export function resolutionOf(
+  input: Pick<AvalonInput, 'fails' | 'rejects'>,
+  twoFail: boolean,
+): Resolution {
   return isHammer(input) ? 'hammer' : outcomeOf(input, twoFail);
 }
 

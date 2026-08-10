@@ -70,10 +70,20 @@ export function werewordsStats({ games, rounds, canonical }: GameStatsInput): Ga
   for (const [id, a] of per) {
     const metrics: Metric[] = [];
     if (a.played) {
-      metrics.push({ key: 'ww_win', label: 'Round win rate', value: fmtPct(a.won / a.played), emoji: '🏆' });
+      metrics.push({
+        key: 'ww_win',
+        label: 'Round win rate',
+        value: fmtPct(a.won / a.played),
+        emoji: '🏆',
+      });
     }
     if (a.wolfGames) {
-      metrics.push({ key: 'ww_wolf', label: 'As werewolf', value: `${a.wolfWins}/${a.wolfGames}`, emoji: '🐺' });
+      metrics.push({
+        key: 'ww_wolf',
+        label: 'As werewolf',
+        value: `${a.wolfWins}/${a.wolfGames}`,
+        emoji: '🐺',
+      });
     }
     if (a.mayor) {
       metrics.push({ key: 'ww_mayor', label: 'Mayor rounds', value: `${a.mayor}`, emoji: '👑' });
@@ -92,8 +102,18 @@ export function werewordsStats({ games, rounds, canonical }: GameStatsInput): Ga
 
   const global: Metric[] = [];
   if (totalRounds) {
-    global.push({ key: 'ww_cracked', label: 'Words cracked', value: fmtPct(guessedRounds / totalRounds), emoji: '🧩' });
-    global.push({ key: 'ww_wolves', label: 'Werewolf wins', value: fmtPct(wolfTeamWins / totalRounds), emoji: '🐺' });
+    global.push({
+      key: 'ww_cracked',
+      label: 'Words cracked',
+      value: fmtPct(guessedRounds / totalRounds),
+      emoji: '🧩',
+    });
+    global.push({
+      key: 'ww_wolves',
+      label: 'Werewolf wins',
+      value: fmtPct(wolfTeamWins / totalRounds),
+      emoji: '🐺',
+    });
   }
   return { perPlayer, global };
 }

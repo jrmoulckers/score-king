@@ -60,7 +60,9 @@ export const golf: GameModule = {
     const parts = players
       .filter((p) => p.id in scores)
       .map((p) => `${p.name} ${Math.trunc(Number(scores[p.id]) || 0)}`);
-    return parts.length ? `Hole ${round.index + 1} · ${parts.join(' · ')}` : `Hole ${round.index + 1}`;
+    return parts.length
+      ? `Hole ${round.index + 1} · ${parts.join(' · ')}`
+      : `Hole ${round.index + 1}`;
   },
 
   help: [
