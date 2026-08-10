@@ -1,8 +1,13 @@
 {
   "version": 1,
   "backbone": "jrmoulckers/.github",
-  "generatedAt": "2026-08-09T22:48:46.602Z",
+  "generatedAt": "2026-08-10T08:27:56.413Z",
   "entries": {
+    ".gitattributes": {
+      "sourceSha256": "4be6041de14159436002446da3193a178a4defa235fe71585c04002d070d80c7",
+      "targetSha256": "a591a7816b02daf54849d69af18396ff6175f24de0b06d0a1def97d0b5a9274a",
+      "syncedAt": "2026-08-10T08:27:56.409Z"
+    },
     ".github/agents/accessibility-reviewer.agent.md": {
       "sourceSha256": "f83d90b50ea87be04935ba849c0a93eda729452a2d7eee81e0cb02b4bf04dae5",
       "targetSha256": "f616ea0dbb9d4fc8414ea502196b4b6dd1da7a3e67e0c71b65c0352fabb1d38a",
@@ -111,7 +116,7 @@
     ".github/copilot-instructions.md": {
       "sourceSha256": "997b381ea68e9e081a6bb47b3f395c26d9a78b565c2c2974263b11b08703d932",
       "targetSha256": "311544714e626b2377a1025ae1e3994cfaac00adff635ef7c5b9d35e33e360fa",
-      "syncedAt": "2026-08-09T22:48:46.599Z"
+      "syncedAt": "2026-08-10T08:27:56.409Z"
     },
     ".github/instructions/agents.instructions.md": {
       "sourceSha256": "70f066ca74342a504f7411fbb21e62012b5b8ce05403ed32e93c3d39d145c8aa",
@@ -134,9 +139,9 @@
       "syncedAt": "2026-08-08T22:39:33.892Z"
     },
     ".github/instructions/workflow.instructions.md": {
-      "sourceSha256": "b63ec55be43b7ee397910905d076f8d4e3ce5c648cb723a84f33033eac3e7279",
-      "targetSha256": "6dd70bdb2087822aa5f1f7ade4e28714785dc61ce468d4e490d6b57fcdd0da3d",
-      "syncedAt": "2026-08-09T22:48:46.602Z"
+      "sourceSha256": "5f9ac806833620e496f4a13c8efa0494b90a3a43a5ff887c3d6d9d75477626cd",
+      "targetSha256": "6cea1057721f85a69713c5bd0c99706418dfe549ae07a07bfabe7ac646da435f",
+      "syncedAt": "2026-08-10T08:27:56.412Z"
     },
     ".github/prompts/backlog.prompt.md": {
       "sourceSha256": "662578e4e512ac591b86127f50c601283a27b6ce96c9e09b022b833f720fe750",
@@ -196,12 +201,12 @@
     ".github/skills/edge-sync/SKILL.md": {
       "sourceSha256": "9f19298b4b1e97dd1af00550ad04ddc4b0f0f894b69bacc898fe8a977bd9544b",
       "targetSha256": "b9893c29f908f10224369a44a32dfc3315b2b633db4fe1eebec876015dfb71ed",
-      "syncedAt": "2026-08-09T22:48:46.600Z"
+      "syncedAt": "2026-08-10T08:27:56.411Z"
     },
     ".github/skills/fleet-orchestration/SKILL.md": {
       "sourceSha256": "e8a1ebe885f80ddfc64fa2974677117328c81900d6e627eab213e776d7adfe04",
       "targetSha256": "2a09b3780cf9ef2f0836522d75f58c7b991cb220ba469967e25c66d726fd2575",
-      "syncedAt": "2026-08-09T22:48:46.600Z"
+      "syncedAt": "2026-08-10T08:27:56.411Z"
     },
     ".github/skills/go-to-market/SKILL.md": {
       "sourceSha256": "e0bddf960967f049fd3c395868bd462ad55d5e6df99a696b4377f686509019ab",
