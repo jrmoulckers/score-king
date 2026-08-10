@@ -33,3 +33,5 @@ jobs:
       output-dir: dist
       registry-url: https://npm.pkg.github.com
       registry-scope: '@jrmoulckers'
+    secrets:
+      NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}

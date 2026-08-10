@@ -28,6 +28,8 @@ jobs:
       format-check-command: npm run format:check
       registry-url: https://npm.pkg.github.com
       registry-scope: '@jrmoulckers'
+    secrets:
+      NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
 
   web:
     name: Web
@@ -46,6 +48,8 @@ jobs:
       artifact-retention-days: 1
       registry-url: https://npm.pkg.github.com
       registry-scope: '@jrmoulckers'
+    secrets:
+      NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
 
   relay-typecheck:
     name: Relay typecheck
@@ -96,3 +100,5 @@ jobs:
       bundle-budget-kb: 2048
       registry-url: https://npm.pkg.github.com
       registry-scope: '@jrmoulckers'
+    secrets:
+      NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
