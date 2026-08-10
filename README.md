@@ -95,7 +95,8 @@ The lint, format, and TypeScript configurations come from
 [jrmoulckers/engineering](https://github.com/jrmoulckers/engineering) via GitHub Packages, so
 reading them needs a token with `read:packages`. The committed `.npmrc` routes the
 `@jrmoulckers` scope and nothing else; keep the credential in your **user-level** npm config,
-never in the repository:
+never in the repository, per
+[`ENG-SEC-001`](https://github.com/jrmoulckers/engineering/blob/main/principles/assurance/security-and-privacy.md#eng-sec-001):
 
 ```bash
 npm config set //npm.pkg.github.com/:_authToken ghp_...   # classic PAT, read:packages scope
@@ -103,11 +104,6 @@ npm config set //npm.pkg.github.com/:_authToken ghp_...   # classic PAT, read:pa
 
 See [`docs/adopting.md`](https://github.com/jrmoulckers/engineering/blob/main/docs/adopting.md)
 in that repository for the full consumption guide.
-
-> `package.json` carries one `overrides` entry pinning `@jrmoulckers/tsconfig`'s `typescript`
-> peer to this repo's own version. The published preset declares `typescript@^5.5.0` while Score
-> King is on TypeScript 6; the override is a temporary bridge until the shared preset widens
-> that range, and should be deleted then.
 
 ---
 
