@@ -8,6 +8,7 @@ relay/package-lock.json
 # Generated or upstream-owned content — formatting these would create drift
 # against the repository that owns them (see .studio-sync.lock.json).
 .github/agents
+.github/copilot-instructions.md
 .github/instructions
 .github/prompts
 .github/skills
