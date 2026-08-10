@@ -86,7 +86,9 @@ export function pickColor(used: string[]): string {
 export function resolvePlayerColor(hex: string, colorBlind: boolean): string {
   if (!colorBlind) return hex;
   const i = PALETTE.indexOf(hex.toLowerCase());
-  return i >= 0 ? CVD_PALETTE[i] : hex;
+  // CVD_PALETTE is index-aligned with PALETTE. If the two ever drift, fall back to
+  // the original color rather than returning undefined typed as string.
+  return i >= 0 ? (CVD_PALETTE[i] ?? hex) : hex;
 }
 
 function relativeLuminance(hex: string): number {
