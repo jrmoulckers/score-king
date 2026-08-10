@@ -13,17 +13,9 @@ This project has committed design context. **Read these before changing any UI:*
 - **`.impeccable/design.json`** — machine-readable sidecar (tonal ramps, shadows, motion,
   live component snippets) consumed by the impeccable design skill.
 
-Non-negotiables pulled from DESIGN.md:
-
-- **Royal Violet** (`#7c5cff`) marks exactly one primary action per screen; **Crown Gold**
-  (`#ffd166`) is reserved for the leader and the winner — never buttons or decoration.
-- Build depth by climbing the surface ramp (`surface` → `surface-2` → `surface-3`), not by
-  stacking shadows. One Soft Lift shadow only. Glass (backdrop blur) only on the top app
-  bar and bottom tab bar.
-- Render every changing number with `tabular-nums`; keep touch targets ≥46px (one-handed,
-  dim-light use); never signal state with color alone; honor `prefers-reduced-motion`.
-- Keep the chrome identical game to game — express per-game personality through emoji,
-  copy, and accent moments, not by restyling the shell.
+The binding design non-negotiables are **not** repeated here. Root `AGENTS.md`
+§"Product design constraints" owns them, and `DESIGN.md` carries the full rationale and
+token-level detail. Read both before changing any UI.
 
 To evolve the design system, use the **impeccable** skill (e.g. `/impeccable critique`,
 `/impeccable craft`, `/impeccable live`). Re-run `/impeccable document` if the visual
