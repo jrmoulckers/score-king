@@ -12,10 +12,10 @@
 
 Local durable ownership, an optional sync seam, and zero-config safe degradation are ratified
 engineering rules:
-[`ENG-LOCAL-001`](https://github.com/jrmoulckers/engineering/blob/v0.16.2/principles/platforms/local-first.md#eng-local-001),
-[`ENG-LOCAL-002`](https://github.com/jrmoulckers/engineering/blob/v0.16.2/principles/platforms/local-first.md#eng-local-002),
+[`ENG-LOCAL-001`](https://github.com/jrmoulckers/engineering/blob/v0.16.3/principles/platforms/local-first.md#eng-local-001),
+[`ENG-LOCAL-002`](https://github.com/jrmoulckers/engineering/blob/v0.16.3/principles/platforms/local-first.md#eng-local-002),
 and
-[`ENG-LOCAL-004`](https://github.com/jrmoulckers/engineering/blob/v0.16.2/principles/platforms/local-first.md#eng-local-004).
+[`ENG-LOCAL-004`](https://github.com/jrmoulckers/engineering/blob/v0.16.3/principles/platforms/local-first.md#eng-local-004).
 They are cited rather than restated.
 
 **Score King's expression of them: an account, and the World it lives in, are local-first
@@ -71,7 +71,7 @@ reusing a handle can never impersonate or collide.
 ## Change & merge model
 
 The conflict model required by
-[`ENG-LOCAL-003`](https://github.com/jrmoulckers/engineering/blob/v0.16.2/principles/platforms/local-first.md#eng-local-003)
+[`ENG-LOCAL-003`](https://github.com/jrmoulckers/engineering/blob/v0.16.3/principles/platforms/local-first.md#eng-local-003)
 is declared here and exercised by the merge tests.
 
 **Score King's declaration: per-entity last-writer-wins (LWW) with tombstones — deliberately
@@ -112,7 +112,7 @@ is ephemeral propagation, not a second source of truth.
 ### Transport — a seam, not a fork
 
 One narrow provider contract, per
-[`ENG-LOCAL-002`](https://github.com/jrmoulckers/engineering/blob/v0.16.2/principles/platforms/local-first.md#eng-local-002).
+[`ENG-LOCAL-002`](https://github.com/jrmoulckers/engineering/blob/v0.16.3/principles/platforms/local-first.md#eng-local-002).
 A single `SessionTransport` interface (sibling to the storage `SyncProvider`):
 
 - **Relay first, peer-to-peer too** — the host-authoritative logic above it is unchanged as
@@ -164,7 +164,7 @@ neither touches the core bundle.
   (`ENG-LOCAL-002`, `ENG-LOCAL-004`).
 - **No global event log as the source of truth** — per-entity LWW is the right weight.
 - **The relay never holds game data** — storage stays self-owned
-  ([`ENG-INT-005`](https://github.com/jrmoulckers/engineering/blob/v0.16.2/principles/platforms/integration-boundaries.md#eng-int-005)).
+  ([`ENG-INT-005`](https://github.com/jrmoulckers/engineering/blob/v0.16.3/principles/platforms/integration-boundaries.md#eng-int-005)).
 - **Never key identity off the mutable handle** — always the stable `id`.
 - **No CRDTs for live concurrency** — host-authority removes the need.
 - **Build P2P last, not first** — it dropped in behind the transport seam with no engine changes.

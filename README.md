@@ -222,7 +222,7 @@ OneDrive settings.
 3. **Add a platform → Single‑page application (SPA)** — this matters; don't use "Web". Redirect
    URIs: `https://score.jrmoulckers.com` and `http://localhost:5173`.
 4. No client secret (public client + PKCE). Any future credential must stay out of source under
-   [`ENG-SEC-001`](https://github.com/jrmoulckers/engineering/blob/v0.16.2/principles/assurance/security-and-privacy.md#eng-sec-001).
+   [`ENG-SEC-001`](https://github.com/jrmoulckers/engineering/blob/v0.16.3/principles/assurance/security-and-privacy.md#eng-sec-001).
    Scopes are requested at sign‑in via **dynamic consent**, so you don't pre‑list them: the default
    **app‑folder** mode uses **`Files.ReadWrite.AppFolder`** (sandboxed to `/Apps/Score King`), while
    choosing a **custom folder** in Settings uses the broader **`Files.ReadWrite`** (Graph can't
@@ -326,7 +326,7 @@ King's own product definition.
 Engineering mechanisms are defined in
 [jrmoulckers/engineering](https://github.com/jrmoulckers/engineering) and consumed the same way:
 cite ratified principles by stable ID, resolved through the pinned
-[`v0.16.2` principles index](https://github.com/jrmoulckers/engineering/blob/v0.16.2/principles/index.json).
+[`v0.16.3` principles index](https://github.com/jrmoulckers/engineering/blob/v0.16.3/principles/index.json).
 Its dependency-free Prettier and TypeScript presets are vendored at that tag rather than
 reimplemented or fetched from a package registry; see
 [`engineering-configs.lock.json`](engineering-configs.lock.json) and
