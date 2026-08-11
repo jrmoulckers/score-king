@@ -104,6 +104,7 @@ jobs:
     needs: web
     permissions:
       contents: read
+      packages: read
     uses: jrmoulckers/.github/.github/workflows/reusable-perf-budget.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
     with:
       artifact-name: score-king-web
