@@ -239,15 +239,7 @@ export function recentlyFinished(games: Game[], limit = RECENT_LIMIT): Game[] {
  * up (just uncategorized) until it's mapped here.
  */
 export type GameCategory =
-  | 'universal'
-  | 'cards'
-  | 'tiles'
-  | 'party'
-  | 'board'
-  | 'sports'
-  | 'video'
-  | 'custom'
-  | 'other';
+  'universal' | 'cards' | 'tiles' | 'party' | 'board' | 'sports' | 'video' | 'custom' | 'other';
 
 export interface CategoryMeta {
   id: GameCategory;

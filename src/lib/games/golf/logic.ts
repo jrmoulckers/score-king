@@ -44,10 +44,25 @@ export interface GolfInput {
  * enables it. Equality is by code, so two Kings — or two Jokers — in the same
  * column cancel just like two 7s do.
  */
-export type CardCode = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K' | 'JK';
+export type CardCode =
+  'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K' | 'JK';
 
 /** The base deck order shown in the card picker (Jokers appended per-ruleset). */
-export const BASE_CARD_CODES: CardCode[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+export const BASE_CARD_CODES: CardCode[] = [
+  'A',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '10',
+  'J',
+  'Q',
+  'K',
+];
 
 /** The card codes a player can pick for this ruleset (adds the Joker when enabled). */
 export function cardCodes(cfg: GolfConfig): CardCode[] {
@@ -108,7 +123,10 @@ export function gridShape(grid: string): GridShape {
  * per-cell `canceled` mask so the editor can strike the cards that zeroed out —
  * a single source of truth for the math and its visual explanation.
  */
-export function computeGrid(cells: (CardCode | null)[], cfg: GolfConfig): { total: number; canceled: boolean[] } {
+export function computeGrid(
+  cells: (CardCode | null)[],
+  cfg: GolfConfig,
+): { total: number; canceled: boolean[] } {
   const { cols, rows } = gridShape(cfg.grid);
   const size = cols * rows;
   const canceled = new Array(size).fill(false);
@@ -243,7 +261,8 @@ export function validateGolf(input: GolfInput, ctx: RoundContext): string | null
     if (!Number.isFinite(v) || !Number.isInteger(v)) {
       return `${p.name}: enter a whole-number hole score.`;
     }
-    if (v < floor) return `${p.name}: ${v} is below the lowest possible ${cards}-card hole (${floor}).`;
+    if (v < floor)
+      return `${p.name}: ${v} is below the lowest possible ${cards}-card hole (${floor}).`;
     if (v > ceil) return `${p.name}: ${v} looks too high for a ${cards}-card hole.`;
   }
   return null;

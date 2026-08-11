@@ -229,7 +229,13 @@ describe('isFinished', () => {
 describe('endgameInfo', () => {
   it('is quiet at the start (nobody near the finish)', () => {
     const e = endgameInfo({ a: 0, b: 0, c: 0, d: 0 }, IDS, {});
-    expect(e).toMatchObject({ end: 100, atRiskTotal: 0, toEnd: 100, imminent: false, reached: false });
+    expect(e).toMatchObject({
+      end: 100,
+      atRiskTotal: 0,
+      toEnd: 100,
+      imminent: false,
+      reached: false,
+    });
   });
   it('flags the highest total as the seat racing to end it', () => {
     const e = endgameInfo({ a: 40, b: 62, c: 10, d: 0 }, IDS, {});
@@ -269,7 +275,9 @@ describe('hearts module', () => {
     const i = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
     expect(hearts.validateRound(i, ctx)).toBeNull();
     expect(hearts.scoreRound(i, ctx)).toEqual({ a: 0, b: 26, c: 26, d: 26 });
-    expect(hearts.isFinished!({ a: 100 }, { config: {}, roundCount: 3, playerCount: 4 })).toBe(true);
+    expect(hearts.isFinished!({ a: 100 }, { config: {}, roundCount: 3, playerCount: 4 })).toBe(
+      true,
+    );
   });
 
   it('createRoundInput seeds every seat', () => {

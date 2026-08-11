@@ -53,14 +53,17 @@ export const uno: GameModule = {
     },
   ],
 
-  createRoundInput: (ctx: RoundContext): UnoInput =>
-    createUnoInput(ctx.players.map((p) => p.id)),
+  createRoundInput: (ctx: RoundContext): UnoInput => createUnoInput(ctx.players.map((p) => p.id)),
 
   validateRound: (input: UnoInput, ctx: RoundContext): string | null =>
     validateUno(input, ctx.players),
 
   scoreRound: (input: UnoInput, ctx: RoundContext): Record<ID, number> =>
-    scoreUno(input, ctx.players.map((p) => p.id), ctx.config),
+    scoreUno(
+      input,
+      ctx.players.map((p) => p.id),
+      ctx.config,
+    ),
 
   isFinished: (totals, { config }) => isUnoFinished(totals, config),
 
@@ -71,8 +74,13 @@ export const uno: GameModule = {
     // Mode isn't available here, so stay mode-neutral: the count of leftover points on the
     // table reads right whether the winner scooped it (standard) or each player banked their
     // own (golf) — never the misleading "+pot" that only makes sense in standard.
-    const onTable = opponentsTotal(input, players.map((p) => p.id));
-    return onTable > 0 ? `🎉 ${winner} out · ${onTable} left in hands` : `🎉 ${winner} out · clean sweep`;
+    const onTable = opponentsTotal(
+      input,
+      players.map((p) => p.id),
+    );
+    return onTable > 0
+      ? `🎉 ${winner} out · ${onTable} left in hands`
+      : `🎉 ${winner} out · clean sweep`;
   },
 
   help: [

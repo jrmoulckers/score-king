@@ -43,8 +43,18 @@ export function rosterFor(playerIds: ID[], roster: Player[]): Player[] {
 }
 
 export const PALETTE = [
-  '#7c5cff', '#34d399', '#f87171', '#fbbf24', '#38bdf8', '#fb7185',
-  '#a78bfa', '#4ade80', '#f59e0b', '#22d3ee', '#e879f9', '#facc15',
+  '#7c5cff',
+  '#34d399',
+  '#f87171',
+  '#fbbf24',
+  '#38bdf8',
+  '#fb7185',
+  '#a78bfa',
+  '#4ade80',
+  '#f59e0b',
+  '#22d3ee',
+  '#e879f9',
+  '#facc15',
 ];
 
 /**
@@ -53,8 +63,18 @@ export const PALETTE = [
  * deuteranopia, protanopia, and tritanopia.
  */
 export const CVD_PALETTE = [
-  '#332288', '#44aa99', '#cc6677', '#e69f00', '#56b4e9', '#882255',
-  '#aa4499', '#117733', '#d55e00', '#88ccee', '#ddcc77', '#999933',
+  '#332288',
+  '#44aa99',
+  '#cc6677',
+  '#e69f00',
+  '#56b4e9',
+  '#882255',
+  '#aa4499',
+  '#117733',
+  '#d55e00',
+  '#88ccee',
+  '#ddcc77',
+  '#999933',
 ];
 
 export function pickColor(used: string[]): string {
@@ -66,12 +86,19 @@ export function pickColor(used: string[]): string {
 export function resolvePlayerColor(hex: string, colorBlind: boolean): string {
   if (!colorBlind) return hex;
   const i = PALETTE.indexOf(hex.toLowerCase());
-  return i >= 0 ? CVD_PALETTE[i] : hex;
+  // The palettes are index-aligned; preserve the original color if they ever drift.
+  return i >= 0 ? (CVD_PALETTE[i] ?? hex) : hex;
 }
 
 function relativeLuminance(hex: string): number {
   const h = hex.replace('#', '');
-  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const full =
+    h.length === 3
+      ? h
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : h;
   const n = parseInt(full, 16);
   const lin = (c: number) => {
     const s = c / 255;
@@ -137,15 +164,57 @@ export function relativeTimeSec(ts: number, now: number = Date.now()): string {
 }
 
 const HANDLE_ADJECTIVES = [
-  'Royal', 'Crowned', 'Sneaky', 'Lucky', 'Mighty', 'Jolly', 'Dapper', 'Cosmic',
-  'Turbo', 'Wily', 'Brave', 'Cheeky', 'Noble', 'Zany', 'Swift', 'Grand',
-  'Merry', 'Bold', 'Sly', 'Epic', 'Plucky', 'Gilded', 'Rowdy', 'Fuzzy',
+  'Royal',
+  'Crowned',
+  'Sneaky',
+  'Lucky',
+  'Mighty',
+  'Jolly',
+  'Dapper',
+  'Cosmic',
+  'Turbo',
+  'Wily',
+  'Brave',
+  'Cheeky',
+  'Noble',
+  'Zany',
+  'Swift',
+  'Grand',
+  'Merry',
+  'Bold',
+  'Sly',
+  'Epic',
+  'Plucky',
+  'Gilded',
+  'Rowdy',
+  'Fuzzy',
 ];
 
 const HANDLE_NOUNS = [
-  'Otter', 'Wizard', 'Badger', 'Comet', 'Monarch', 'Jester', 'Phoenix', 'Walrus',
-  'Goose', 'Raccoon', 'Dragon', 'Penguin', 'Yeti', 'Narwhal', 'Falcon', 'Hedgehog',
-  'Bandit', 'Maverick', 'Champion', 'Gremlin', 'Knight', 'Wombat', 'Llama', 'Pixel',
+  'Otter',
+  'Wizard',
+  'Badger',
+  'Comet',
+  'Monarch',
+  'Jester',
+  'Phoenix',
+  'Walrus',
+  'Goose',
+  'Raccoon',
+  'Dragon',
+  'Penguin',
+  'Yeti',
+  'Narwhal',
+  'Falcon',
+  'Hedgehog',
+  'Bandit',
+  'Maverick',
+  'Champion',
+  'Gremlin',
+  'Knight',
+  'Wombat',
+  'Llama',
+  'Pixel',
 ];
 
 /**

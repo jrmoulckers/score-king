@@ -13,8 +13,7 @@ import {
 export type { UnoGolfInput, UnoGolfHand, UnoGolfConfig, UnoGolfFormat } from './logic';
 
 const ids = (ctx: RoundContext): ID[] => ctx.players.map((p) => p.id);
-const nameOf = (ctx: RoundContext) => (id: ID) =>
-  ctx.players.find((p) => p.id === id)?.name ?? '?';
+const nameOf = (ctx: RoundContext) => (id: ID) => ctx.players.find((p) => p.id === id)?.name ?? '?';
 
 export const unogolf: GameModule = {
   id: 'unogolf',

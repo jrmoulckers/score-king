@@ -173,7 +173,19 @@ export function scoreUnitHand(
   const penaltyPoints = -BAG_PENALTY * penalties;
   const score = base + bags + nilPoints + penaltyPoints;
 
-  return { contract, tricks, made, base, bags, nilPoints, bagsBefore, bagsAfter, penalties, penaltyPoints, score };
+  return {
+    contract,
+    tricks,
+    made,
+    base,
+    bags,
+    nilPoints,
+    bagsBefore,
+    bagsAfter,
+    penalties,
+    penaltyPoints,
+    score,
+  };
 }
 
 export interface RoundOutcome {
@@ -255,7 +267,8 @@ export function validateHand(
   for (const p of players) {
     const row = input?.rows?.[p.id] ?? emptyRow();
     if (row.nil !== 'none' && !cfg.nil) return `Nil bids are turned off — clear ${p.name}'s nil.`;
-    if (row.nil === 'blind' && !cfg.blindNil) return `Blind nil is turned off — clear ${p.name}'s blind nil.`;
+    if (row.nil === 'blind' && !cfg.blindNil)
+      return `Blind nil is turned off — clear ${p.name}'s blind nil.`;
     const bid = row.nil === 'none' ? numOr(row.bid, 0) : 0;
     if (bid < 0 || bid > table) return `${p.name}: bid must be between 0 and ${table}.`;
     const tricks = numOr(row.tricks, 0);

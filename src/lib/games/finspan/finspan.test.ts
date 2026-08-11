@@ -56,7 +56,16 @@ describe('Finspan categories', () => {
     expect(FINSPAN_CATEGORIES).toHaveLength(8);
     const keys = FINSPAN_CATEGORIES.map((c) => c.key);
     expect(new Set(keys).size).toBe(keys.length);
-    expect(keys).toEqual(['week1', 'week2', 'week3', 'gameEnd', 'fish', 'consumed', 'eggsYoung', 'schools']);
+    expect(keys).toEqual([
+      'week1',
+      'week2',
+      'week3',
+      'gameEnd',
+      'fish',
+      'consumed',
+      'eggsYoung',
+      'schools',
+    ]);
   });
 
   it('scores schools at 6 each and everything else at 1', () => {
@@ -179,7 +188,14 @@ describe('scoreRow', () => {
 
   it('sums a fully-populated sheet', () => {
     const full = row({
-      week1: 7, week2: 6, week3: 8, gameEnd: 3, fish: 46, consumed: 4, eggsYoung: 8, schools: 3,
+      week1: 7,
+      week2: 6,
+      week3: 8,
+      gameEnd: 3,
+      fish: 46,
+      consumed: 4,
+      eggsYoung: 8,
+      schools: 3,
     });
     // 7+6+8 + 3 + 46 + 4 + 8 + 18
     expect(scoreRow(full)).toBe(100);
@@ -255,7 +271,14 @@ describe('describeFinspan', () => {
   });
 
   it('returns empty string when nothing is recorded', () => {
-    const rd = { id: 'r', gameId: 'g', index: 0, input: undefined, deltas: {}, createdAt: 0 } as Round;
+    const rd = {
+      id: 'r',
+      gameId: 'g',
+      index: 0,
+      input: undefined,
+      deltas: {},
+      createdAt: 0,
+    } as Round;
     expect(describeFinspan(rd, players)).toBe('');
   });
 });

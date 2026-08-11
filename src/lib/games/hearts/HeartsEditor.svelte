@@ -176,14 +176,14 @@
             type="button"
             class="btn small ghost"
             aria-pressed={effMoon === 'add26'}
-            onclick={() => setMoonRule('add26')}
-          >Everyone else +26</button>
+            onclick={() => setMoonRule('add26')}>Everyone else +26</button
+          >
           <button
             type="button"
             class="btn small ghost"
             aria-pressed={effMoon === 'subtract'}
-            onclick={() => setMoonRule('subtract')}
-          >{moonName} takes −26</button>
+            onclick={() => setMoonRule('subtract')}>{moonName} takes −26</button
+          >
         </div>
       </div>
     </div>
@@ -201,16 +201,15 @@
           <strong class="pname">{p.name}</strong>
         </span>
         <span class="preview-wrap">
-          <span
-            class="preview"
-            class:score-good={pts <= 0}
-            class:score-bad={pts > 0}
-          >{signed(pts)}</span>
+          <span class="preview" class:score-good={pts <= 0} class:score-bad={pts > 0}
+            >{signed(pts)}</span
+          >
           <span
             class="outcome"
             class:score-good={oc.kind === 'clean' || oc.kind === 'moon'}
             class:score-bad={oc.kind === 'lady' || (oc.kind === 'points' && pts > 0)}
-          >{oc.emoji} {oc.label}</span>
+            >{oc.emoji} {oc.label}</span
+          >
         </span>
       </div>
 

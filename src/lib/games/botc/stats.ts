@@ -71,10 +71,22 @@ export function botcStats({ games, rounds, canonical }: GameStatsInput): GameSpe
   const perPlayer: Record<ID, Metric[]> = {};
   for (const [id, a] of per) {
     const metrics: Metric[] = [];
-    if (a.evil) metrics.push({ key: 'botc_evil', label: 'Games as Evil', value: `${a.evil}`, emoji: '😈' });
-    if (a.executed) metrics.push({ key: 'botc_exec', label: 'Times executed', value: `${a.executed}`, emoji: '⚰️' });
+    if (a.evil)
+      metrics.push({ key: 'botc_evil', label: 'Games as Evil', value: `${a.evil}`, emoji: '😈' });
+    if (a.executed)
+      metrics.push({
+        key: 'botc_exec',
+        label: 'Times executed',
+        value: `${a.executed}`,
+        emoji: '⚰️',
+      });
     if (a.games) {
-      metrics.push({ key: 'botc_survive', label: 'Survived to the end', value: fmtPct(a.survived / a.games), emoji: '🕯️' });
+      metrics.push({
+        key: 'botc_survive',
+        label: 'Survived to the end',
+        value: fmtPct(a.survived / a.games),
+        emoji: '🕯️',
+      });
     }
     if (metrics.length) perPlayer[id] = metrics;
   }
@@ -82,10 +94,21 @@ export function botcStats({ games, rounds, canonical }: GameStatsInput): GameSpe
   const global: Metric[] = [];
   if (goodWins || evilWins) {
     const lead = goodWins === evilWins ? 'Even' : goodWins > evilWins ? 'Good leads' : 'Evil leads';
-    global.push({ key: 'botc_split', label: 'Good vs Evil wins', value: `${goodWins}–${evilWins}`, sub: lead, emoji: '⚖️' });
+    global.push({
+      key: 'botc_split',
+      label: 'Good vs Evil wins',
+      value: `${goodWins}–${evilWins}`,
+      sub: lead,
+      emoji: '⚖️',
+    });
   }
   if (counted) {
-    global.push({ key: 'botc_len', label: 'Avg game length', value: `${fmtAvg(totalPhases / counted)} phases`, emoji: '🕒' });
+    global.push({
+      key: 'botc_len',
+      label: 'Avg game length',
+      value: `${fmtAvg(totalPhases / counted)} phases`,
+      emoji: '🕒',
+    });
   }
 
   return { perPlayer, global };

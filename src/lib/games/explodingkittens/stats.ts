@@ -111,7 +111,12 @@ export function explodingKittensStats({
   for (const [id, a] of per) {
     const metrics: Metric[] = [];
     if (a.firstOut) {
-      metrics.push({ key: 'ek_first', label: 'First to explode', value: `${a.firstOut}`, emoji: '💥' });
+      metrics.push({
+        key: 'ek_first',
+        label: 'First to explode',
+        value: `${a.firstOut}`,
+        emoji: '💥',
+      });
     }
     if (a.runnerUp) {
       metrics.push({ key: 'ek_runnerup', label: 'Runner-up', value: `${a.runnerUp}`, emoji: '🥈' });
@@ -125,20 +130,40 @@ export function explodingKittensStats({
       });
     }
     if (a.defuses) {
-      metrics.push({ key: 'ek_defuse', label: 'Deaths cheated', value: `${a.defuses}`, emoji: '🛡' });
+      metrics.push({
+        key: 'ek_defuse',
+        label: 'Deaths cheated',
+        value: `${a.defuses}`,
+        emoji: '🛡',
+      });
     }
     if (a.bestStreak >= 2) {
-      metrics.push({ key: 'ek_streak', label: 'Best win streak', value: `${a.bestStreak}`, emoji: '🔥' });
+      metrics.push({
+        key: 'ek_streak',
+        label: 'Best win streak',
+        value: `${a.bestStreak}`,
+        emoji: '🔥',
+      });
     }
     if (metrics.length) perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
   if (totalExploded) {
-    global.push({ key: 'ek_boom', label: 'Kittens exploded', value: `${totalExploded}`, emoji: '💥' });
+    global.push({
+      key: 'ek_boom',
+      label: 'Kittens exploded',
+      value: `${totalExploded}`,
+      emoji: '💥',
+    });
   }
   if (totalDefused) {
-    global.push({ key: 'ek_defused', label: 'Deaths cheated', value: `${totalDefused}`, emoji: '🛡' });
+    global.push({
+      key: 'ek_defused',
+      label: 'Deaths cheated',
+      value: `${totalDefused}`,
+      emoji: '🛡',
+    });
   }
 
   return { perPlayer, global };

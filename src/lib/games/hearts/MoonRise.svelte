@@ -50,7 +50,8 @@
               animation-delay: {s.delay}s;
               animation-duration: {s.duration}s;
               --rise: {s.rise}px;
-            ">{s.glyph}</span>
+            ">{s.glyph}</span
+          >
         {/each}
       </div>
       <span class="moon">🌕</span>
@@ -72,7 +73,11 @@
     inset: 0;
     opacity: 0;
     background:
-      radial-gradient(120% 80% at 50% 120%, color-mix(in srgb, var(--primary) 34%, transparent), transparent 70%),
+      radial-gradient(
+        120% 80% at 50% 120%,
+        color-mix(in srgb, var(--primary) 34%, transparent),
+        transparent 70%
+      ),
       linear-gradient(to top, color-mix(in srgb, var(--primary) 16%, transparent), transparent 55%);
     animation: sky-wash 1.5s ease-out both;
   }
@@ -102,19 +107,45 @@
     animation: moon-rise 1.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   }
   @keyframes sky-wash {
-    0% { opacity: 0; }
-    28% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    28% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
   @keyframes twinkle-rise {
-    0% { opacity: 0; transform: translateY(6px) scale(0.6); }
-    30% { opacity: 0.9; }
-    100% { opacity: 0; transform: translateY(calc(var(--rise) * -1)) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translateY(6px) scale(0.6);
+    }
+    30% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(calc(var(--rise) * -1)) scale(1);
+    }
   }
   @keyframes moon-rise {
-    0% { opacity: 0; transform: translate(-50%, 40px) scale(0.7); }
-    35% { opacity: 1; transform: translate(-50%, -18px) scale(1.05); }
-    75% { opacity: 0.9; transform: translate(-50%, -24px) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -30px) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translate(-50%, 40px) scale(0.7);
+    }
+    35% {
+      opacity: 1;
+      transform: translate(-50%, -18px) scale(1.05);
+    }
+    75% {
+      opacity: 0.9;
+      transform: translate(-50%, -24px) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -30px) scale(1);
+    }
   }
 </style>

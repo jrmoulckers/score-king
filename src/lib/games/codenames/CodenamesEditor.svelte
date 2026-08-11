@@ -162,7 +162,8 @@
         </div>
         {#if series.leader}
           <p class="lead-line">
-            {TEAM_META[series.leader].emoji} <strong>{TEAM_META[series.leader].label}</strong> leads the match
+            {TEAM_META[series.leader].emoji} <strong>{TEAM_META[series.leader].label}</strong> leads the
+            match
           </p>
         {:else}
           <p class="lead-line muted">All square — {prior.red} apiece</p>
@@ -173,9 +174,13 @@
 
       {#if series.target > 0}
         <div class="pips" aria-hidden="true">
-          <span class="prow red">{#each redPips as on, i (i)}<i class:on></i>{/each}</span>
+          <span class="prow red"
+            >{#each redPips as on, i (i)}<i class:on></i>{/each}</span
+          >
           <span class="pspacer"></span>
-          <span class="prow blue">{#each bluePips as on, i (i)}<i class:on></i>{/each}</span>
+          <span class="prow blue"
+            >{#each bluePips as on, i (i)}<i class:on></i>{/each}</span
+          >
         </div>
       {/if}
 
@@ -322,14 +327,16 @@
                   class="chip {t}"
                   class:on={input.spymasters?.[t] === p.id}
                   aria-pressed={input.spymasters?.[t] === p.id}
-                  onclick={() => setSpy(t, p.id)}
-                >{p.name}</button>
+                  onclick={() => setSpy(t, p.id)}>{p.name}</button
+                >
               {/each}
             </div>
           {/if}
         </div>
       {/each}
-      <p class="muted small">The spymaster gives one-word clues — logging them unlocks a win-rate stat.</p>
+      <p class="muted small">
+        The spymaster gives one-word clues — logging them unlocks a win-rate stat.
+      </p>
     </div>
   </details>
 </div>
@@ -523,7 +530,10 @@
     background: var(--surface-2);
     color: var(--text);
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.05s ease;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease,
+      transform 0.05s ease;
   }
   .teamwin.red {
     --tc: #e5484d;
@@ -579,7 +589,9 @@
     color: var(--text);
     font-weight: 700;
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
   .endbtn:active {
     transform: translateY(1px);
@@ -619,7 +631,9 @@
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
   .qbtn:hover {
     border-color: var(--primary);
@@ -760,7 +774,9 @@
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
   .chip.blue {
     --tc: #4c7dff;

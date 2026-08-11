@@ -58,11 +58,7 @@ export function savePreset(
 }
 
 /** Overwrite a preset's saved lineup + rules with the current setup (keeps its name). */
-export function updatePreset(
-  id: ID,
-  playerIds: ID[],
-  config: Record<string, unknown>,
-): void {
+export function updatePreset(id: ID, playerIds: ID[], config: Record<string, unknown>): void {
   settings.update((s) => ({
     ...s,
     gamePresets: s.gamePresets.map((p) =>

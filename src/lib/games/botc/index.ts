@@ -32,9 +32,7 @@ export const botc: GameModule = {
     const prevRound = ctx.rounds[ctx.roundIndex - 1];
     const prev = prevRound ? (prevRound.input as BotcInput).states : undefined;
     const states =
-      ctx.roundIndex === 0
-        ? logic.initialRoster(ids(ctx))
-        : logic.carryRoster(prev, ids(ctx));
+      ctx.roundIndex === 0 ? logic.initialRoster(ids(ctx)) : logic.carryRoster(prev, ids(ctx));
     return { states, nominations: [], result: null, note: '' };
   },
 

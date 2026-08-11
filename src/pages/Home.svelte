@@ -198,7 +198,9 @@
     {#if nearbySupported}
       {#if liveSupported}<span class="ordiv"><span>or</span></span>{/if}
       <a class="btn ghost block scanbtn" href="/nearby" use:link>📷 Scan a QR to join</a>
-      <span class="muted sm scanhint">Scan the host’s invite — works online or with no internet at all.</span>
+      <span class="muted sm scanhint"
+        >Scan the host’s invite — works online or with no internet at all.</span
+      >
     {/if}
   </form>
 {/if}

@@ -34,9 +34,7 @@
 
   // Stable registry order here (favoriting reorders the *catalog*, not this list) so rows
   // don't jump under your thumb while you curate.
-  const visible = $derived(
-    mods.filter((m) => !hidden.includes(m.id) && matchModule(m, query)),
-  );
+  const visible = $derived(mods.filter((m) => !hidden.includes(m.id) && matchModule(m, query)));
   const hiddenModules = $derived(
     mods.filter((m) => hidden.includes(m.id) && matchModule(m, query)),
   );
@@ -66,8 +64,8 @@
 
 <h1>Manage games</h1>
 <p class="lede muted">
-  Favorite the games your group plays and hide the ones you don’t. Favorites pin to the top of
-  the catalog; hidden games leave it — both are easy to undo here.
+  Favorite the games your group plays and hide the ones you don’t. Favorites pin to the top of the
+  catalog; hidden games leave it — both are easy to undo here.
 </p>
 
 <input
@@ -116,7 +114,11 @@
               <span aria-hidden="true">{fav ? '★' : '☆'}</span>
               <span class="sr-only">{fav ? `Unfavorite ${m.name}` : `Favorite ${m.name}`}</span>
             </button>
-            <button class="btn small ghost" type="button" onclick={() => hideWithUndo(m.id, m.name)}>
+            <button
+              class="btn small ghost"
+              type="button"
+              onclick={() => hideWithUndo(m.id, m.name)}
+            >
               Hide
             </button>
           </span>
@@ -252,7 +254,10 @@
     font-size: 1.3rem;
     line-height: 1;
     cursor: pointer;
-    transition: transform 0.05s ease, background 0.15s ease, color 0.15s ease;
+    transition:
+      transform 0.05s ease,
+      background 0.15s ease,
+      color 0.15s ease;
   }
   .starbtn[aria-pressed='true'] {
     color: var(--text);

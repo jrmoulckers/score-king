@@ -1,15 +1,7 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
 import { holdemStats } from './stats';
-import {
-  investedByPlayer,
-  readConfig,
-  scoreEvent,
-  toMoney,
-  validateEvent,
-  type HoldemConfig,
-  type HoldemEvent,
-} from './logic';
+import { investedByPlayer, readConfig, scoreEvent, validateEvent, type HoldemEvent } from './logic';
 
 // One entry point for importers (editor, stats) even though the pure model lives
 // in ./logic.
@@ -22,20 +14,22 @@ export {
   type HoldemEvent,
 } from './logic';
 
-/** Money-ish formatter for round summaries — a "$" prefix only in dollar modes. */
-function fmtAmount(amount: number, cfg: HoldemConfig): string {
-  const money = toMoney(amount, cfg);
-  const rounded = Math.round(money * 100) / 100;
-  const body = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
-  return cfg.unit === 'chips' ? body : `$${body}`;
-}
-
 export const holdem: GameModule = {
   id: 'holdem',
   name: "Texas Hold'em",
   tagline: 'Post the blinds. Rake the pot. Settle up.',
   emoji: '♠️',
-  keywords: ['poker', 'holdem', "hold 'em", 'cards', 'chips', 'buy-in', 'cash game', 'tournament', 'betting'],
+  keywords: [
+    'poker',
+    'holdem',
+    "hold 'em",
+    'cards',
+    'chips',
+    'buy-in',
+    'cash game',
+    'tournament',
+    'betting',
+  ],
   minPlayers: 2,
   maxPlayers: 12,
 
@@ -139,7 +133,8 @@ export const holdem: GameModule = {
     return { kind: 'buyin', playerId: next?.id ?? '', amount: cfg.defaultBuyin };
   },
 
-  validateRound: (input: HoldemEvent, ctx: RoundContext): string | null => validateEvent(input, ctx),
+  validateRound: (input: HoldemEvent, ctx: RoundContext): string | null =>
+    validateEvent(input, ctx),
 
   scoreRound: (input: HoldemEvent, ctx: RoundContext): Record<ID, number> => scoreEvent(input, ctx),
 

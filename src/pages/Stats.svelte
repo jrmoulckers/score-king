@@ -37,11 +37,9 @@
 
   const result = $derived(
     loaded
-      ? computeStats(
-          { players: $players, games: $games, rounds },
-          meId ? { playerId: meId } : {},
-          { gameStats: (type) => getModule(type)?.stats },
-        )
+      ? computeStats({ players: $players, games: $games, rounds }, meId ? { playerId: meId } : {}, {
+          gameStats: (type) => getModule(type)?.stats,
+        })
       : undefined,
   );
 
@@ -142,8 +140,8 @@
   <div class="card stack">
     <div class="section-title" style="margin: 0">Who are you?</div>
     <p class="muted" style="margin: 0">
-      Pick your player to unlock your Daily Crown, persona, records and rivalries. This lives only on
-      this device.
+      Pick your player to unlock your Daily Crown, persona, records and rivalries. This lives only
+      on this device.
     </p>
     {#if chooserPlayers.length === 0}
       <div class="empty">Add a player first, then come back to claim your crown.</div>
@@ -166,7 +164,9 @@
       <span class="hero-emoji" aria-hidden="true">{hero.emoji}</span>
       <p class="hero-text">{hero.text}</p>
       <div class="row wrap hero-stats">
-        <span class="pill"><b class="tnum">{me?.wins}</b>–<b class="tnum">{recordLosses}</b> record</span>
+        <span class="pill"
+          ><b class="tnum">{me?.wins}</b>–<b class="tnum">{recordLosses}</b> record</span
+        >
         <span class="pill"><b class="tnum">{fmtPct(me?.winRate ?? 0)}</b> win rate</span>
         {#if me?.avgFinish !== undefined}
           <span class="pill">avg <b class="tnum">{fmtAvg(me.avgFinish)}</b></span>
@@ -241,7 +241,12 @@
           </span>
         {/snippet}
         {#if r.gameId}
-          <a class="row spread reclink" href={`/play/${r.gameId}`} use:link aria-label={`${r.label} — view game`}>{@render recBody()}</a>
+          <a
+            class="row spread reclink"
+            href={`/play/${r.gameId}`}
+            use:link
+            aria-label={`${r.label} — view game`}>{@render recBody()}</a
+          >
         {:else}
           <div class="row spread">{@render recBody()}</div>
         {/if}
@@ -298,11 +303,14 @@
             <span>
               <div><strong>{m?.name ?? g.type}</strong></div>
               <div class="muted sm">
-                {#if g.status === 'abandoned'}🪦 abandoned{:else}👑 {winnerNames(g.winnerIds) || '—'}{/if}
+                {#if g.status === 'abandoned'}🪦 abandoned{:else}👑 {winnerNames(g.winnerIds) ||
+                    '—'}{/if}
               </div>
             </span>
           </span>
-          <span class="muted sm" title={new Date(g.finishedAt ?? g.createdAt).toLocaleString()}>{relativeTime(g.finishedAt ?? g.createdAt)}</span>
+          <span class="muted sm" title={new Date(g.finishedAt ?? g.createdAt).toLocaleString()}
+            >{relativeTime(g.finishedAt ?? g.createdAt)}</span
+          >
         </a>
       {/each}
     </div>
@@ -330,7 +338,11 @@
   }
   .hero.gold {
     border-color: var(--accent);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 12%, var(--surface-2)), var(--surface-2));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 12%, var(--surface-2)),
+      var(--surface-2)
+    );
   }
   .hero-emoji {
     font-size: 2rem;

@@ -29,9 +29,7 @@
 
   const byId = $derived(new Map(ctx.players.map((p) => [p.id, p])));
   function members(team: 0 | 1): Player[] {
-    return (input.teams?.[team] ?? [])
-      .map((id) => byId.get(id))
-      .filter((p): p is Player => !!p);
+    return (input.teams?.[team] ?? []).map((id) => byId.get(id)).filter((p): p is Player => !!p);
   }
   const teamA = $derived(members(0));
   const teamB = $derived(members(1));
@@ -96,19 +94,35 @@
 
   // One sportscaster line for the live status region — whimsy in the copy, never clutter.
   const call = $derived.by(() => {
-    if (mismatch) return { tone: 'warn', text: `⚠️ ${cfg.format} needs ${needPlayers} players — you have ${ctx.players.length}. Start a new game with ${needPlayers}.` };
+    if (mismatch)
+      return {
+        tone: 'warn',
+        text: `⚠️ ${cfg.format} needs ${needPlayers} players — you have ${ctx.players.length}. Start a new game with ${needPlayers}.`,
+      };
     if (done) {
       const w = winner === 0 ? nameA : nameB;
       const hi = Math.max(a, b);
       const lo = Math.min(a, b);
       return clinches
-        ? { tone: 'good', text: `🏆 Match! ${w} take it all ${hi}–${lo} — tap “Save round” to seal it.` }
+        ? {
+            tone: 'good',
+            text: `🏆 Match! ${w} take it all ${hi}–${lo} — tap “Save round” to seal it.`,
+          }
         : { tone: 'good', text: `🏐 Game! ${w} win ${hi}–${lo} — tap “Save round” to bank it.` };
     }
-    if (gp !== null && matchPoint) return { tone: 'point', text: `🔵 Match point — ${gp === 0 ? nameA : nameB} serving for the match!` };
-    if (gp !== null) return { tone: 'point', text: `🔵 Game point — ${gp === 0 ? nameA : nameB} one rally away.` };
+    if (gp !== null && matchPoint)
+      return {
+        tone: 'point',
+        text: `🔵 Match point — ${gp === 0 ? nameA : nameB} serving for the match!`,
+      };
+    if (gp !== null)
+      return { tone: 'point', text: `🔵 Game point — ${gp === 0 ? nameA : nameB} one rally away.` };
     if (deuce) return { tone: 'point', text: `🔥 Deuce at ${a}–${b} — win by 2, nobody blinks.` };
-    if (run.team !== null && run.length >= 4) return { tone: 'muted', text: `🔥 ${run.team === 0 ? nameA : nameB} rolling — ${run.length} straight.` };
+    if (run.team !== null && run.length >= 4)
+      return {
+        tone: 'muted',
+        text: `🔥 ${run.team === 0 ? nameA : nameB} rolling — ${run.length} straight.`,
+      };
     if (a === 0 && b === 0) return { tone: 'muted', text: `First rally serves it up! ${rules}.` };
     return { tone: 'muted', text: `Tap ＋1 for the team that won each rally. ${rules}.` };
   });
@@ -167,8 +181,8 @@
               class="iconbtn minus"
               onclick={() => sub(team)}
               disabled={score <= 0}
-              aria-label={`Remove a point from ${teamName}`}
-            >−</button>
+              aria-label={`Remove a point from ${teamName}`}>−</button
+            >
           {/if}
           {#key score}
             <span class="bigscore">{score}</span>
@@ -179,7 +193,9 @@
           {#if isWinner}
             <span class="tag win">{clinches ? '🏆 Match' : '🏐 Game'}</span>
           {:else if atPoint}
-            <span class="tag point" class:match={matchPoint}>{matchPoint ? '🔵 Match pt' : '🔵 Game pt'}</span>
+            <span class="tag point" class:match={matchPoint}
+              >{matchPoint ? '🔵 Match pt' : '🔵 Game pt'}</span
+            >
           {:else if showRun(team)}
             <span class="tag run">🔥 {run.length} in a row</span>
           {:else}
@@ -207,7 +223,9 @@
       class="undo"
       onclick={undoLast}
       disabled={!canUndo}
-      aria-label={lastTeamName ? `Undo the last rally point for ${lastTeamName}` : 'Undo the last rally'}
+      aria-label={lastTeamName
+        ? `Undo the last rally point for ${lastTeamName}`
+        : 'Undo the last rally'}
     >
       <span class="undoicon" aria-hidden="true">↩</span>
       <span>{canUndo ? `Undo · ${lastTeamName}’s point` : 'Undo last rally'}</span>
@@ -234,7 +252,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      box-shadow 0.18s ease;
   }
   /* A finished game reads as success (green) — distinct from the match winner's gold. */
   .teamcard.won {
@@ -414,7 +435,10 @@
     color: var(--text);
     cursor: pointer;
     font: inherit;
-    transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+    transition:
+      transform 0.05s ease,
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   .plus:hover {
     background: color-mix(in srgb, var(--text) 6%, var(--surface-3));
@@ -456,7 +480,10 @@
     cursor: pointer;
     font: inherit;
     font-weight: 600;
-    transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+    transition:
+      transform 0.05s ease,
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   .undo:hover:not(:disabled) {
     background: var(--surface-2);

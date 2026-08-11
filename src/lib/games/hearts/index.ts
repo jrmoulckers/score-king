@@ -23,7 +23,13 @@ export const hearts: GameModule = {
   maxPlayers: 6,
   lowerIsBetter: true,
   configFields: [
-    { key: 'endScore', label: 'End the game when a player reaches', type: 'number', default: 100, min: 10 },
+    {
+      key: 'endScore',
+      label: 'End the game when a player reaches',
+      type: 'number',
+      default: 100,
+      min: 10,
+    },
     {
       key: 'variantJack',
       label: 'Jack of Diamonds = −10 (Omnibus variant)',
@@ -51,14 +57,17 @@ export const hearts: GameModule = {
     },
   ],
 
-  createRoundInput: (ctx: RoundContext): HeartsInput =>
-    emptyInput(ctx.players.map((p) => p.id)),
+  createRoundInput: (ctx: RoundContext): HeartsInput => emptyInput(ctx.players.map((p) => p.id)),
 
   validateRound: (input: HeartsInput, ctx: RoundContext): string | null =>
     validateHearts(input, ctx.players, ctx.config),
 
   scoreRound: (input: HeartsInput, ctx: RoundContext): Record<ID, number> =>
-    scoreHearts(input, ctx.players.map((p) => p.id), ctx.config),
+    scoreHearts(
+      input,
+      ctx.players.map((p) => p.id),
+      ctx.config,
+    ),
 
   isFinished: (totals, { config }) => heartsFinished(totals, config),
 

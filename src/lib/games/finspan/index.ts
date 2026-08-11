@@ -21,7 +21,16 @@ export const finspan: GameModule = {
   name: 'Finspan',
   tagline: 'Tally your ocean — biggest catch wins.',
   emoji: '🐟',
-  keywords: ['fish', 'ocean', 'sea', 'wingspan', 'stonemaier', 'category', 'end game', 'scoresheet'],
+  keywords: [
+    'fish',
+    'ocean',
+    'sea',
+    'wingspan',
+    'stonemaier',
+    'category',
+    'end game',
+    'scoresheet',
+  ],
   minPlayers: 1,
   maxPlayers: 5,
 

@@ -145,7 +145,13 @@ export type ConfigField =
       step?: number;
       help?: string;
     } & ConfigFieldDisplay)
-  | ({ key: string; label: string; type: 'boolean'; default: boolean; help?: string } & ConfigFieldDisplay)
+  | ({
+      key: string;
+      label: string;
+      type: 'boolean';
+      default: boolean;
+      help?: string;
+    } & ConfigFieldDisplay)
   | ({
       key: string;
       label: string;
@@ -240,13 +246,8 @@ export function defaultConfig(fields: ConfigField[] | undefined): Record<string,
   return cfg;
 }
 
-export function resolveLower(
-  module: GameModule,
-  config: Record<string, unknown>,
-): boolean {
-  return module.resolveLowerIsBetter
-    ? module.resolveLowerIsBetter(config)
-    : !!module.lowerIsBetter;
+export function resolveLower(module: GameModule, config: Record<string, unknown>): boolean {
+  return module.resolveLowerIsBetter ? module.resolveLowerIsBetter(config) : !!module.lowerIsBetter;
 }
 
 /** Default winner logic when a module doesn't override pickWinners. */

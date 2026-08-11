@@ -19,7 +19,11 @@ import {
 const player = (id: string, name = id): Player => ({ id, name, color: '#7c5cff', createdAt: 0 });
 
 /** Build a RoundContext with prior rounds + totals for cashout/scoring tests. */
-function ctxWith(players: Player[], events: HoldemEvent[], totals: Record<ID, number> = {}): RoundContext {
+function ctxWith(
+  players: Player[],
+  events: HoldemEvent[],
+  totals: Record<ID, number> = {},
+): RoundContext {
   const rounds = events.map((input, index) => ({
     id: `r${index}`,
     gameId: 'g',
@@ -268,11 +272,14 @@ describe('validateEvent', () => {
   });
 
   it('requires a winner and non-empty pot', () => {
+    expect(validateEvent({ kind: 'hand', level: 2, committed: { a: 10 }, pots: [] }, ctx)).toMatch(
+      /who wins/,
+    );
     expect(
-      validateEvent({ kind: 'hand', level: 2, committed: { a: 10 }, pots: [] }, ctx),
-    ).toMatch(/who wins/);
-    expect(
-      validateEvent({ kind: 'hand', level: 2, committed: {}, pots: [{ amount: 0, winnerIds: ['a'] }] }, ctx),
+      validateEvent(
+        { kind: 'hand', level: 2, committed: {}, pots: [{ amount: 0, winnerIds: ['a'] }] },
+        ctx,
+      ),
     ).toMatch(/No chips/);
   });
 

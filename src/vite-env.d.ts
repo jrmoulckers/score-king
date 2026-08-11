@@ -5,4 +5,3 @@
 interface ImportMetaEnv {
   readonly VITE_ONEDRIVE_CLIENT_ID?: string;
 }
-

@@ -172,8 +172,8 @@ describe('preset apply/dirty helpers', () => {
 
     expect(presetMatches(preset, players, config, valid, 12, FIELDS)).toBe(true);
     expect(presetMatches(preset, ['p1'], config, valid, 12, FIELDS)).toBe(false);
-    expect(
-      presetMatches(preset, players, { ...config, morgana: false }, valid, 12, FIELDS),
-    ).toBe(false);
+    expect(presetMatches(preset, players, { ...config, morgana: false }, valid, 12, FIELDS)).toBe(
+      false,
+    );
   });
 });

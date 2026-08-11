@@ -53,7 +53,8 @@
               animation-duration: {s.duration}s;
               --spread: {s.spread}px;
               --rise: {s.rise}px;
-            ">{s.glyph}</span>
+            ">{s.glyph}</span
+          >
         {/each}
       </div>
     </div>
@@ -74,8 +75,7 @@
     inset: 0;
     opacity: 0;
     /* The assassin steals the game — a dark, ominous scrim. Never Crown Gold. */
-    background:
-      radial-gradient(120% 90% at 50% 46%, rgba(0, 0, 0, 0.72), transparent 70%);
+    background: radial-gradient(120% 90% at 50% 46%, rgba(0, 0, 0, 0.72), transparent 70%);
     animation: wash 1.6s ease-out both;
   }
   .card {
@@ -106,20 +106,46 @@
   }
 
   @keyframes wash {
-    0% { opacity: 0; }
-    28% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    28% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
   /* The black card snaps up out of the grid, spins on its face, then settles. */
   @keyframes card-flip {
-    0% { opacity: 0; transform: translate(-50%, -50%) rotateY(90deg) scale(0.6); }
-    30% { opacity: 1; transform: translate(-50%, -50%) rotateY(0deg) scale(1.08); }
-    58% { opacity: 1; transform: translate(-50%, -50%) rotateY(0deg) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -50%) rotateY(0deg) scale(1.16); }
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) rotateY(90deg) scale(0.6);
+    }
+    30% {
+      opacity: 1;
+      transform: translate(-50%, -50%) rotateY(0deg) scale(1.08);
+    }
+    58% {
+      opacity: 1;
+      transform: translate(-50%, -50%) rotateY(0deg) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) rotateY(0deg) scale(1.16);
+    }
   }
   @keyframes shard-fly {
-    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
-    30% { opacity: 1; }
-    100% { opacity: 0; transform: translate(var(--spread), calc(var(--rise) * -1)) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0.5);
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--spread), calc(var(--rise) * -1)) scale(1);
+    }
   }
 </style>

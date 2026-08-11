@@ -1,4 +1,4 @@
-import type { GameModule, ID, Round, RoundContext } from '../../types';
+import type { GameModule, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
 import { golfStats } from './stats';
 import { createGolfInput, readConfig, scoreGolf, validateGolf, type GolfInput } from './logic';
@@ -60,7 +60,9 @@ export const golf: GameModule = {
     const parts = players
       .filter((p) => p.id in scores)
       .map((p) => `${p.name} ${Math.trunc(Number(scores[p.id]) || 0)}`);
-    return parts.length ? `Hole ${round.index + 1} · ${parts.join(' · ')}` : `Hole ${round.index + 1}`;
+    return parts.length
+      ? `Hole ${round.index + 1} · ${parts.join(' · ')}`
+      : `Hole ${round.index + 1}`;
   },
 
   help: [

@@ -68,7 +68,9 @@
   // Only offer the Abandoned lens when there's actually something to lens — a
   // called-off game only appears under "All" otherwise, with no way to isolate it.
   const hasAbandoned = $derived($activeGames.some((g) => g.status === 'abandoned'));
-  const statusOptions = $derived(hasAbandoned ? [...STATUS_OPTIONS, ABANDONED_OPTION] : STATUS_OPTIONS);
+  const statusOptions = $derived(
+    hasAbandoned ? [...STATUS_OPTIONS, ABANDONED_OPTION] : STATUS_OPTIONS,
+  );
 
   /** Glanceable margin of victory for a finished game, when both totals are known. */
   function margin(g: Game): number | null {
@@ -114,9 +116,7 @@
   });
 
   const groups = $derived.by<Group[]>(() => {
-    const list = [...filtered].sort((a, b) =>
-      sort === 'oldest' ? ts(a) - ts(b) : ts(b) - ts(a),
-    );
+    const list = [...filtered].sort((a, b) => (sort === 'oldest' ? ts(a) - ts(b) : ts(b) - ts(a)));
 
     if (groupBy === 'date') {
       const now = new Date();
@@ -134,24 +134,23 @@
         }));
     }
 
-    const byLead = (a: Game[], b: Game[]) => (sort === 'oldest' ? ts(a[0]) - ts(b[0]) : ts(b[0]) - ts(a[0]));
+    const byLead = (a: Game[], b: Game[]) =>
+      sort === 'oldest' ? ts(a[0]) - ts(b[0]) : ts(b[0]) - ts(a[0]);
 
     if (groupBy === 'game') {
       const map = new Map<string, Game[]>();
       for (const g of list) push(map, g.type, g);
-      return [...map.values()]
-        .sort(byLead)
-        .map((gs) => {
-          const m = getModule(gs[0].type);
-          return {
-            key: `game-${gs[0].type}`,
-            kind: 'game' as const,
-            title: m?.name ?? gs[0].type,
-            emoji: m?.emoji ?? '🎲',
-            count: gs.length,
-            games: gs,
-          };
-        });
+      return [...map.values()].sort(byLead).map((gs) => {
+        const m = getModule(gs[0].type);
+        return {
+          key: `game-${gs[0].type}`,
+          kind: 'game' as const,
+          title: m?.name ?? gs[0].type,
+          emoji: m?.emoji ?? '🎲',
+          count: gs.length,
+          games: gs,
+        };
+      });
     }
 
     // crew — grouped by the exact line-up
@@ -208,7 +207,8 @@
   async function share(g: Game) {
     const rounds = await getRounds(g.id);
     const ordered: Player[] = g.playerIds.map(
-      (id, i) => playerMap.get(id) ?? { id, name: `Player ${i + 1}`, color: '#8a8f98', createdAt: 0 },
+      (id, i) =>
+        playerMap.get(id) ?? { id, name: `Player ${i + 1}`, color: '#8a8f98', createdAt: 0 },
     );
     sharePayload = buildRecapPayload(g, ordered, rounds);
   }
@@ -231,23 +231,38 @@
       <span class="meta">
         <span class="titleline">
           <strong>{m?.name ?? g.type}</strong>
-          {#if g.status === 'active'}<span class="pill">In progress</span>{:else if g.status === 'abandoned'}<span class="pill">🪦 Abandoned</span>{/if}
+          {#if g.status === 'active'}<span class="pill">In progress</span
+            >{:else if g.status === 'abandoned'}<span class="pill">🪦 Abandoned</span>{/if}
         </span>
         <span class="muted sm oneline">{names(g.playerIds)}</span>
         <span class="muted sm oneline" title={formatDateTime(ts(g))}>
           {relativeTime(ts(g))}
-          {#if g.roundCount} · {g.roundCount} {g.roundCount === 1 ? 'round' : 'rounds'}{/if}
-          {#if g.status === 'finished'} · 🏆 {winners(g.winnerIds) || '—'}{#if g.winnerScore != null} <strong class="lead score">{g.winnerScore}</strong>{/if}{#if margin(g)} · by {margin(g)}{/if}{/if}
-          {#if g.status === 'abandoned'} · no winner{/if}
+          {#if g.roundCount}
+            · {g.roundCount} {g.roundCount === 1 ? 'round' : 'rounds'}{/if}
+          {#if g.status === 'finished'}
+            · 🏆 {winners(g.winnerIds) || '—'}{#if g.winnerScore != null}
+              <strong class="lead score">{g.winnerScore}</strong>{/if}{#if margin(g)}
+              · by {margin(g)}{/if}{/if}
+          {#if g.status === 'abandoned'}
+            · no winner{/if}
         </span>
       </span>
     </a>
     <span class="row actions">
       {#if g.status === 'finished'}
-        <button class="iconbtn" onclick={() => share(g)} aria-label="Share results" title="Share results">📤</button>
+        <button
+          class="iconbtn"
+          onclick={() => share(g)}
+          aria-label="Share results"
+          title="Share results">📤</button
+        >
       {/if}
-      <button class="iconbtn" onclick={() => archive(g)} aria-label="Archive game" title="Archive">🗄</button>
-      <button class="iconbtn" onclick={() => del(g)} aria-label="Delete game" title="Delete">🗑</button>
+      <button class="iconbtn" onclick={() => archive(g)} aria-label="Archive game" title="Archive"
+        >🗄</button
+      >
+      <button class="iconbtn" onclick={() => del(g)} aria-label="Delete game" title="Delete"
+        >🗑</button
+      >
     </span>
   </div>
 {/snippet}
@@ -273,7 +288,8 @@
           bind:value={search}
         />
         {#if search}
-          <button class="clearbtn" onclick={() => (search = '')} aria-label="Clear search">✕</button>
+          <button class="clearbtn" onclick={() => (search = '')} aria-label="Clear search">✕</button
+          >
         {/if}
       </div>
 
@@ -315,7 +331,9 @@
   {:else if filtered.length === 0}
     <div class="empty">
       <div>No games match — try a different search or filter.</div>
-      <button class="btn small ghost" style="margin-top: 10px" onclick={clearFilters}>Clear filters</button>
+      <button class="btn small ghost" style="margin-top: 10px" onclick={clearFilters}
+        >Clear filters</button
+      >
     </div>
   {:else}
     {#each groups as grp (grp.key)}
@@ -326,7 +344,10 @@
         <div class="grouphead">
           <span class="big-emoji" aria-hidden="true">{grp.emoji}</span>
           <span class="gh-title">{grp.title}</span>
-          {#if lead}<span class="gh-lead">👑 {lead.tie ? 'Tied' : lead.name}{#if !lead.tie} ×<span class="tnum">{lead.wins}</span>{/if}</span>{/if}
+          {#if lead}<span class="gh-lead"
+              >👑 {lead.tie ? 'Tied' : lead.name}{#if !lead.tie}
+                ×<span class="tnum">{lead.wins}</span>{/if}</span
+            >{/if}
           <span class="pill count">{grp.count}</span>
         </div>
       {:else}
@@ -336,7 +357,8 @@
               {@const p = playerMap.get(id)}
               <Avatar name={p?.name ?? '?'} color={p?.color ?? '#7c5cff'} size={22} />
             {/each}
-            {#if grp.memberIds!.length > 4}<span class="avmore">+{grp.memberIds!.length - 4}</span>{/if}
+            {#if grp.memberIds!.length > 4}<span class="avmore">+{grp.memberIds!.length - 4}</span
+              >{/if}
           </span>
           {#if editingCrew === grp.signature}
             <input
@@ -350,21 +372,26 @@
                 else if (e.key === 'Escape') editingCrew = null;
               }}
             />
-            <button class="btn small primary" onclick={() => saveCrewEdit(grp.signature!)}>Save</button>
+            <button class="btn small primary" onclick={() => saveCrewEdit(grp.signature!)}
+              >Save</button
+            >
             <button class="btn small ghost" onclick={() => (editingCrew = null)}>Cancel</button>
           {:else}
             <span class="gh-crew">
               <span class="gh-title">{grp.title}</span>
               {#if grp.nickname}<span class="muted sm oneline">{names(grp.memberIds!)}</span>{/if}
             </span>
-            {#if lead}<span class="gh-lead">👑 {lead.tie ? 'Tied' : lead.name}{#if !lead.tie} ×<span class="tnum">{lead.wins}</span>{/if}</span>{/if}
+            {#if lead}<span class="gh-lead"
+                >👑 {lead.tie ? 'Tied' : lead.name}{#if !lead.tie}
+                  ×<span class="tnum">{lead.wins}</span>{/if}</span
+              >{/if}
             <span class="pill count">{grp.count}</span>
             <button
               class="iconbtn small-icon"
               onclick={() => startCrewEdit(grp.signature!, grp.nickname ?? '')}
               aria-label="Name this crew"
-              title="Name this crew"
-            >✎</button>
+              title="Name this crew">✎</button
+            >
           {/if}
         </div>
       {/if}
@@ -381,7 +408,8 @@
       class="viewtoggle archtoggle"
       onclick={() => (showArchived = !showArchived)}
       aria-expanded={showArchived}
-    >{showArchived ? '▾' : '▸'} Archived ({archivedGames.length})</button>
+      >{showArchived ? '▾' : '▸'} Archived ({archivedGames.length})</button
+    >
     {#if showArchived}
       <div class="stack">
         {#each archivedGames as g (g.id)}
@@ -394,14 +422,18 @@
                 <span class="muted sm oneline">{names(g.playerIds)}</span>
                 <span class="muted sm oneline" title={formatDateTime(ts(g))}>
                   {relativeTime(ts(g))}
-                  {#if g.status === 'finished'} · 🏆 {winners(g.winnerIds) || '—'}{/if}
-                  {#if g.status === 'abandoned'} · no winner{/if}
+                  {#if g.status === 'finished'}
+                    · 🏆 {winners(g.winnerIds) || '—'}{/if}
+                  {#if g.status === 'abandoned'}
+                    · no winner{/if}
                 </span>
               </span>
             </a>
             <span class="row actions">
               <button class="btn small ghost" onclick={() => unarchiveGame(g)}>Restore</button>
-              <button class="iconbtn" onclick={() => del(g)} aria-label="Delete game" title="Delete">🗑</button>
+              <button class="iconbtn" onclick={() => del(g)} aria-label="Delete game" title="Delete"
+                >🗑</button
+              >
             </span>
           </div>
         {/each}

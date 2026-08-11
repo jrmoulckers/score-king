@@ -53,7 +53,11 @@
     position: absolute;
     inset: 0;
     opacity: 0;
-    background: radial-gradient(90% 120% at 50% 40%, color-mix(in srgb, var(--bad) 30%, transparent), transparent 70%);
+    background: radial-gradient(
+      90% 120% at 50% 40%,
+      color-mix(in srgb, var(--bad) 30%, transparent),
+      transparent 70%
+    );
     animation: toll-wash 1.1s ease-out both;
   }
   .bell {
@@ -77,22 +81,55 @@
     animation: skull-drop 1.1s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
   @keyframes toll-wash {
-    0% { opacity: 0; }
-    30% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
   @keyframes bell-swing {
-    0% { opacity: 0; transform: rotate(-26deg); }
-    22% { opacity: 1; transform: rotate(22deg); }
-    44% { transform: rotate(-16deg); }
-    64% { transform: rotate(12deg); }
-    82% { transform: rotate(-6deg); }
-    100% { opacity: 0; transform: rotate(0deg); }
+    0% {
+      opacity: 0;
+      transform: rotate(-26deg);
+    }
+    22% {
+      opacity: 1;
+      transform: rotate(22deg);
+    }
+    44% {
+      transform: rotate(-16deg);
+    }
+    64% {
+      transform: rotate(12deg);
+    }
+    82% {
+      transform: rotate(-6deg);
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(0deg);
+    }
   }
   @keyframes skull-drop {
-    0% { opacity: 0; transform: translateY(-14px) scale(0.7); }
-    38% { opacity: 1; transform: translateY(0) scale(1.12); }
-    70% { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(10px) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translateY(-14px) scale(0.7);
+    }
+    38% {
+      opacity: 1;
+      transform: translateY(0) scale(1.12);
+    }
+    70% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(10px) scale(1);
+    }
   }
 </style>

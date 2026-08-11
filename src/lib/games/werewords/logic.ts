@@ -89,10 +89,7 @@ export function teamOf(input: WerewordsInput, id: ID): WerewordsTeam {
  * Per-player deltas: every player on the winning side banks +1, everyone else 0.
  * Totals therefore read as "rounds won", and the leader is whoever has won most.
  */
-export function scoreWerewords(
-  input: WerewordsInput,
-  playerIds: ID[],
-): Record<ID, number> {
+export function scoreWerewords(input: WerewordsInput, playerIds: ID[]): Record<ID, number> {
   const winner = resolveOutcome(input).team;
   const out: Record<ID, number> = {};
   for (const id of playerIds) {

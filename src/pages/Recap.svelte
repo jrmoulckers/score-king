@@ -73,15 +73,25 @@
     <span style="font-size: 1.7rem">{view.emoji}</span>
     <span>
       <div><strong>{view.title}</strong></div>
-      <div class="muted" style="font-size: 0.8rem">Final results · {formatDate(view.finishedAt)}</div>
+      <div class="muted" style="font-size: 0.8rem">
+        Final results · {formatDate(view.finishedAt)}
+      </div>
     </span>
   </div>
 
   {#if winnerNames}
-    <div class="card center banner">🏆 {winnerNames} {view.winners.length > 1 ? 'tie!' : 'wins!'}</div>
+    <div class="card center banner">
+      🏆 {winnerNames}
+      {view.winners.length > 1 ? 'tie!' : 'wins!'}
+    </div>
   {/if}
 
-  <Scoreboard {players} totals={view.totals} lowerIsBetter={view.lowerIsBetter} winners={view.winners} />
+  <Scoreboard
+    {players}
+    totals={view.totals}
+    lowerIsBetter={view.lowerIsBetter}
+    winners={view.winners}
+  />
 
   {#if view.rounds.length}
     <div class="section-title">Scorecard</div>

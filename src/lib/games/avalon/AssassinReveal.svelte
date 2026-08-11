@@ -53,7 +53,8 @@
               animation-duration: {s.duration}s;
               --spread: {s.spread}px;
               --rise: {s.rise}px;
-            ">{s.glyph}</span>
+            ">{s.glyph}</span
+          >
         {/each}
       </div>
     </div>
@@ -74,13 +75,19 @@
     inset: 0;
     opacity: 0;
     /* Miss → a calm violet/good glow; hit → the Loss-Coral steal. Never Crown Gold. */
-    background:
-      radial-gradient(120% 90% at 50% 60%, color-mix(in srgb, var(--good) 30%, transparent), transparent 70%);
+    background: radial-gradient(
+      120% 90% at 50% 60%,
+      color-mix(in srgb, var(--good) 30%, transparent),
+      transparent 70%
+    );
     animation: wash 1.5s ease-out both;
   }
   .reveal.found .wash {
-    background:
-      radial-gradient(120% 90% at 50% 55%, color-mix(in srgb, var(--bad) 40%, transparent), transparent 72%);
+    background: radial-gradient(
+      120% 90% at 50% 55%,
+      color-mix(in srgb, var(--bad) 40%, transparent),
+      transparent 72%
+    );
     animation-duration: 1.7s;
   }
   .target {
@@ -120,26 +127,67 @@
   }
 
   @keyframes wash {
-    0% { opacity: 0; }
-    32% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    32% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
   /* Blade sweeps in from the left, pauses at the target, then drives through on the strike. */
   @keyframes dagger-sweep {
-    0% { opacity: 0; left: -12%; transform: rotate(-20deg) scale(0.9); }
-    35% { opacity: 1; left: 42%; transform: rotate(-8deg) scale(1); }
-    58% { left: 46%; transform: rotate(-8deg) scale(1.08); }
-    100% { opacity: 0; left: 52%; transform: rotate(6deg) scale(1.18); }
+    0% {
+      opacity: 0;
+      left: -12%;
+      transform: rotate(-20deg) scale(0.9);
+    }
+    35% {
+      opacity: 1;
+      left: 42%;
+      transform: rotate(-8deg) scale(1);
+    }
+    58% {
+      left: 46%;
+      transform: rotate(-8deg) scale(1.08);
+    }
+    100% {
+      opacity: 0;
+      left: 52%;
+      transform: rotate(6deg) scale(1.18);
+    }
   }
   @keyframes target-beat {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
-    30% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    58% { opacity: 1; transform: translate(-50%, -50%) scale(1.14); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.7);
+    }
+    30% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    58% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.14);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1);
+    }
   }
   @keyframes spark-fly {
-    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
-    30% { opacity: 1; }
-    100% { opacity: 0; transform: translate(var(--spread), calc(var(--rise) * -1)) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0.5);
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--spread), calc(var(--rise) * -1)) scale(1);
+    }
   }
 </style>

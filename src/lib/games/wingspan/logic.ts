@@ -66,12 +66,54 @@ export interface CategoryDef {
 
 /** The base six categories — always present, in the order they sit on the real score pad. */
 export const BASE_CATEGORIES: CategoryDef[] = [
-  { key: 'birds', label: 'Birds', short: 'Birds', emoji: '🐦', entry: 'points', help: 'Points printed on the birds in your habitats.' },
-  { key: 'bonus', label: 'Bonus cards', short: 'Bonus', emoji: '🎯', entry: 'points', help: "Points from your bonus cards' conditions." },
-  { key: 'goals', label: 'End-of-round goals', short: 'Goals', emoji: '🎖️', entry: 'points', help: 'Points from the four end-of-round goal tiles.' },
-  { key: 'eggs', label: 'Eggs', short: 'Eggs', emoji: '🥚', entry: 'count', help: '1 point per egg on your bird cards.' },
-  { key: 'food', label: 'Cached food', short: 'Cached', emoji: '🌰', entry: 'count', help: '1 point per food token cached on your bird cards.' },
-  { key: 'tucked', label: 'Tucked cards', short: 'Tucked', emoji: '🃏', entry: 'count', help: '1 point per card tucked under your birds.' },
+  {
+    key: 'birds',
+    label: 'Birds',
+    short: 'Birds',
+    emoji: '🐦',
+    entry: 'points',
+    help: 'Points printed on the birds in your habitats.',
+  },
+  {
+    key: 'bonus',
+    label: 'Bonus cards',
+    short: 'Bonus',
+    emoji: '🎯',
+    entry: 'points',
+    help: "Points from your bonus cards' conditions.",
+  },
+  {
+    key: 'goals',
+    label: 'End-of-round goals',
+    short: 'Goals',
+    emoji: '🎖️',
+    entry: 'points',
+    help: 'Points from the four end-of-round goal tiles.',
+  },
+  {
+    key: 'eggs',
+    label: 'Eggs',
+    short: 'Eggs',
+    emoji: '🥚',
+    entry: 'count',
+    help: '1 point per egg on your bird cards.',
+  },
+  {
+    key: 'food',
+    label: 'Cached food',
+    short: 'Cached',
+    emoji: '🌰',
+    entry: 'count',
+    help: '1 point per food token cached on your bird cards.',
+  },
+  {
+    key: 'tucked',
+    label: 'Tucked cards',
+    short: 'Tucked',
+    emoji: '🃏',
+    entry: 'count',
+    help: '1 point per card tucked under your birds.',
+  },
 ];
 
 /** Oceania's Nectar category, shown only when the expansion is toggled on. */
@@ -187,10 +229,7 @@ export function validateWingspanRound(
 }
 
 /** A concise, glanceable per-player summary of a recorded scoresheet for the history table. */
-export function describeWingspanRound(
-  input: WingspanInput | undefined,
-  players: Player[],
-): string {
+export function describeWingspanRound(input: WingspanInput | undefined, players: Player[]): string {
   const parts: string[] = [];
   for (const p of players) {
     const row = input?.rows?.[p.id];

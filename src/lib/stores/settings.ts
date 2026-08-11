@@ -156,7 +156,7 @@ export type BackupSettings = Pick<Settings, PortableSettingKey>;
  */
 type AssertNever<T extends never> = T;
 type UncategorizedSettingKey = Exclude<keyof Settings, PortableSettingKey | LocalSettingKey>;
-type _AllSettingsCategorized = AssertNever<UncategorizedSettingKey>;
+export type AllSettingsCategorized = AssertNever<UncategorizedSettingKey>;
 
 const KEY = 'sk_settings';
 
@@ -333,9 +333,6 @@ export const GAMEPLAY_SETTING_KEYS = [
 ] as const satisfies readonly PortableSettingKey[];
 
 /** True when any key in `keys` currently differs from its factory default. */
-export function differsFromDefaults(
-  s: Settings,
-  keys: readonly PortableSettingKey[],
-): boolean {
+export function differsFromDefaults(s: Settings, keys: readonly PortableSettingKey[]): boolean {
   return keys.some((k) => JSON.stringify(s[k]) !== JSON.stringify(defaults[k]));
 }

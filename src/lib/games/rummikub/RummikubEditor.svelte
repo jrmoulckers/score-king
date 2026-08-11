@@ -17,10 +17,18 @@
   const fixedRounds = $derived(
     ctx.config.endMode === 'target' ? null : Number(ctx.config.rounds) || 4,
   );
-  const target = $derived(ctx.config.endMode === 'target' ? Number(ctx.config.target) || 100 : null);
+  const target = $derived(
+    ctx.config.endMode === 'target' ? Number(ctx.config.target) || 100 : null,
+  );
 
   /** The pot: the sum of every non-winner's leftovers — what the player who goes out scoops. */
-  const pot = $derived(potTotal(input, ctx.players.map((p) => p.id), jokerValue));
+  const pot = $derived(
+    potTotal(
+      input,
+      ctx.players.map((p) => p.id),
+      jokerValue,
+    ),
+  );
   const winnerName = $derived(ctx.players.find((p) => p.id === input.winner)?.name ?? null);
 
   let showHelp = $state(false);
@@ -81,7 +89,9 @@
         {#if isWinner}
           <span class="preview score-good">+{pot}</span>
         {:else}
-          <span class="preview" class:score-bad={penalty > 0}>{penalty > 0 ? `−${penalty}` : '0'}</span>
+          <span class="preview" class:score-bad={penalty > 0}
+            >{penalty > 0 ? `−${penalty}` : '0'}</span
+          >
         {/if}
       </div>
 
@@ -113,7 +123,12 @@
             </label>
             <label class="f">
               Jokers
-              <Stepper bind:value={input.hands[p.id].jokers} min={0} max={2} label={`${p.name} jokers`} />
+              <Stepper
+                bind:value={input.hands[p.id].jokers}
+                min={0}
+                max={2}
+                label={`${p.name} jokers`}
+              />
             </label>
           </div>
         {/if}
@@ -152,7 +167,9 @@
     color: var(--text);
     cursor: pointer;
     font-weight: 700;
-    transition: background var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
+    transition:
+      background var(--dur-base) var(--ease-standard),
+      border-color var(--dur-base) var(--ease-standard);
   }
   /* The winner toggle uses the semantic good accent — NOT Royal Violet, which the shell
      reserves for the single Save action, nor Crown Gold, reserved for the leader/winner. */

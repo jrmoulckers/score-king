@@ -16,7 +16,12 @@
    * flavor name carry the meaning in text, so the walking chicken is decoration
    * only and is skipped under reduced motion (it simply appears on the current tile).
    */
-  let { start, current, round, total }: {
+  let {
+    start,
+    current,
+    round,
+    total,
+  }: {
     start: number;
     current: number;
     round: number;
@@ -51,24 +56,27 @@
 
 <div class="countdown" class:blank={isBlank}>
   <div class="head">
-    <DominoFace a={current} size="lg" label={`${doubleLabel(current)} — this round's chicken foot`} />
+    <DominoFace
+      a={current}
+      size="lg"
+      label={`${doubleLabel(current)} — this round's chicken foot`}
+    />
     <div class="cap">
       <span class="round">Round {round} of {total}</span>
       <span class="name">{isBlank ? '🥚 ' : '🐔 '}{doubleLabel(current)} · {flavor}</span>
       <span class="sub muted">
-        {isBlank ? 'the dreaded goose egg — mind the penalty' : 'counting the doubles down to the 🥚'}
+        {isBlank
+          ? 'the dreaded goose egg — mind the penalty'
+          : 'counting the doubles down to the 🥚'}
       </span>
     </div>
   </div>
   <div class="track-wrap" aria-hidden="true">
     <div class="track">
       {#each doubles as d (d)}
-        <span
-          class="tile"
-          class:done={d > current}
-          class:here={d === current}
-          class:egg={d === 0}
-        >{d}</span>
+        <span class="tile" class:done={d > current} class:here={d === current} class:egg={d === 0}
+          >{d}</span
+        >
       {/each}
     </div>
     <span class="chick" bind:this={chick} style="left: {chickPct}%">{isBlank ? '🐥' : '🐔'}</span>

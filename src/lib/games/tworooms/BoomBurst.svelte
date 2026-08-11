@@ -78,7 +78,8 @@
             --dx: {p.dx};
             --dy: {p.dy};
             --spin: {p.spin}deg;
-          ">{p.glyph}</span>
+          ">{p.glyph}</span
+        >
       {/each}
     </div>
   {/key}

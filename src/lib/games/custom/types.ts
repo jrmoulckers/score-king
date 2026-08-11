@@ -35,9 +35,36 @@ export const MAX_HELP_LEN = 500;
 
 /** A curated palette of game-night emojis offered as one-tap picks in the builder. */
 export const EMOJI_CHOICES = [
-  '🎲', '🃏', '👑', '🏆', '🎯', '🀄', '♠️', '♥️', '♦️', '♣️',
-  '🎰', '🎳', '🏀', '⚽', '🏈', '🥏', '🏓', '🎱', '🧩', '🕹️',
-  '🍻', '🎉', '🔥', '⭐', '💎', '🚀', '🐉', '🦄', '🐔', '🎩',
+  '🎲',
+  '🃏',
+  '👑',
+  '🏆',
+  '🎯',
+  '🀄',
+  '♠️',
+  '♥️',
+  '♦️',
+  '♣️',
+  '🎰',
+  '🎳',
+  '🏀',
+  '⚽',
+  '🏈',
+  '🥏',
+  '🏓',
+  '🎱',
+  '🧩',
+  '🕹️',
+  '🍻',
+  '🎉',
+  '🔥',
+  '⭐',
+  '💎',
+  '🚀',
+  '🐉',
+  '🦄',
+  '🐔',
+  '🎩',
 ];
 
 /**
@@ -193,7 +220,8 @@ export function validateDef(def: CustomGameDef): string | null {
   if ((def.help ?? '').trim().length > MAX_HELP_LEN) {
     return `Keep the how-to-play under ${MAX_HELP_LEN} characters.`;
   }
-  if (!Number.isFinite(def.minPlayers) || def.minPlayers < 1) return 'Minimum players must be at least 1.';
+  if (!Number.isFinite(def.minPlayers) || def.minPlayers < 1)
+    return 'Minimum players must be at least 1.';
   if (def.maxPlayers < def.minPlayers) return "Max players can't be less than min players.";
   if (def.inputShape === 'columns') {
     if (def.columns.length < 1) return 'Add at least one scoring column.';

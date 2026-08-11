@@ -53,7 +53,8 @@
             --dx: {p.dx}px;
             --dy: {p.dy}px;
             --spin: {p.spin}deg;
-          ">{p.glyph}</span>
+          ">{p.glyph}</span
+        >
       {/each}
     </div>
   {/key}
@@ -88,7 +89,8 @@
     }
     18% {
       opacity: 1;
-      transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5)) rotate(calc(var(--spin) * 0.5)) scale(1.15);
+      transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5))
+        rotate(calc(var(--spin) * 0.5)) scale(1.15);
     }
     100% {
       opacity: 0;

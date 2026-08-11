@@ -25,9 +25,7 @@
   const target = $derived(targetFromConfig(ctx.config));
 
   function members(idx: TeamIndex): Player[] {
-    return (input.teams[idx] ?? [])
-      .map((id) => byId.get(id))
-      .filter((p): p is Player => !!p);
+    return (input.teams[idx] ?? []).map((id) => byId.get(id)).filter((p): p is Player => !!p);
   }
   function teamLabel(idx: TeamIndex): string {
     const names = members(idx).map((p) => p.name);
@@ -121,7 +119,11 @@
           </div>
         {:else}
           <div class="bar" aria-hidden="true">
-            <span class="fill" class:gold={ahead} style="width: {Math.min(100, (s / target) * 100)}%"></span>
+            <span
+              class="fill"
+              class:gold={ahead}
+              style="width: {Math.min(100, (s / target) * 100)}%"
+            ></span>
           </div>
         {/if}
         <span class="tobarn">
@@ -213,7 +215,14 @@
   <div class="preview" class:ready={!!cel} class:big={cel?.big}>
     {#if cel}
       {#key celKey}
-        <span class="cel-emoji" class:animate={cel.big && !reduced} class:sweep={celClass === 'sweep'} class:howl={celClass === 'howl'} class:stamp={celClass === 'stamp'} aria-hidden="true">{cel.emoji}</span>
+        <span
+          class="cel-emoji"
+          class:animate={cel.big && !reduced}
+          class:sweep={celClass === 'sweep'}
+          class:howl={celClass === 'howl'}
+          class:stamp={celClass === 'stamp'}
+          aria-hidden="true">{cel.emoji}</span
+        >
       {/key}
       <span class="cel-copy">
         <span class="cel-head">{cel.headline}</span>
@@ -492,22 +501,52 @@
     animation: eu-stamp 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   @keyframes eu-sweep {
-    0% { transform: translateX(-12px) rotate(-14deg); opacity: 0.2; }
-    60% { transform: translateX(5px) rotate(9deg); opacity: 1; }
-    100% { transform: none; }
+    0% {
+      transform: translateX(-12px) rotate(-14deg);
+      opacity: 0.2;
+    }
+    60% {
+      transform: translateX(5px) rotate(9deg);
+      opacity: 1;
+    }
+    100% {
+      transform: none;
+    }
   }
   @keyframes eu-howl {
-    0% { transform: scale(0.6); opacity: 0.2; }
-    40% { transform: scale(1.25); opacity: 1; }
-    55% { transform: scale(1.1) rotate(-7deg); }
-    70% { transform: scale(1.18) rotate(7deg); }
-    100% { transform: scale(1); }
+    0% {
+      transform: scale(0.6);
+      opacity: 0.2;
+    }
+    40% {
+      transform: scale(1.25);
+      opacity: 1;
+    }
+    55% {
+      transform: scale(1.1) rotate(-7deg);
+    }
+    70% {
+      transform: scale(1.18) rotate(7deg);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
   @keyframes eu-stamp {
-    0% { transform: scale(1.8) rotate(-14deg); opacity: 0; }
-    55% { transform: scale(0.82) rotate(4deg); opacity: 1; }
-    75% { transform: scale(1.07); }
-    100% { transform: scale(1) rotate(0); }
+    0% {
+      transform: scale(1.8) rotate(-14deg);
+      opacity: 0;
+    }
+    55% {
+      transform: scale(0.82) rotate(4deg);
+      opacity: 1;
+    }
+    75% {
+      transform: scale(1.07);
+    }
+    100% {
+      transform: scale(1) rotate(0);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .cel-emoji.animate {

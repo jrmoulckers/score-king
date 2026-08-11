@@ -117,8 +117,8 @@
             class="proj"
             class:score-good={helps(p.id)}
             class:score-bad={hurts(p.id)}
-            use:bumpOnChange={pr}
-          >{pr}</span>
+            use:bumpOnChange={pr}>{pr}</span
+          >
           {#if delta(p.id) !== 0}
             <span class="dchip" class:score-good={helps(p.id)} class:score-bad={hurts(p.id)}>
               {signed(delta(p.id))}
@@ -160,8 +160,8 @@
             onclick={() => reset(p.id)}
             disabled={delta(p.id) === 0}
             aria-label={`Reset ${p.name} to no change`}
-            title="Reset to no change"
-          >↺</button>
+            title="Reset to no change">↺</button
+          >
         </div>
         <Stepper bind:value={input.deltas[p.id]} step={cfg.step} label={p.name} />
       </div>
@@ -304,7 +304,10 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, transform var(--dur-press, 0.09s) ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      transform var(--dur-press, 0.09s) ease;
   }
   .chip:hover {
     background: var(--surface-3);

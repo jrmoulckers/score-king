@@ -204,9 +204,7 @@
       <button class="btn small ghost" type="button" onclick={remove}>Delete</button>
     </div>
   {:else}
-    <button class="linkbtn" type="button" onclick={startSave}>
-      ＋ Save current setup
-    </button>
+    <button class="linkbtn" type="button" onclick={startSave}> ＋ Save current setup </button>
   {/if}
 </div>
 

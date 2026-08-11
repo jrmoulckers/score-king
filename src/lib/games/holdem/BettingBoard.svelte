@@ -353,7 +353,9 @@
     <div class="topline">
       <span class="pill">{STREET_LABEL[street]}</span>
       <span class="pill">🔘 {dealerName}</span>
-      <span class="pill">SB {cfg.smallBlind} / BB {cfg.bigBlind}{cfg.ante ? ` · ante ${cfg.ante}` : ''}</span>
+      <span class="pill"
+        >SB {cfg.smallBlind} / BB {cfg.bigBlind}{cfg.ante ? ` · ante ${cfg.ante}` : ''}</span
+      >
     </div>
 
     <div class="pot">
@@ -391,13 +393,27 @@
           <button type="button" class="btn small" onclick={() => potFraction(0.5)}>½ pot</button>
           <button type="button" class="btn small" onclick={() => potFraction(0.75)}>¾ pot</button>
           <button type="button" class="btn small" onclick={() => potFraction(1)}>Pot</button>
-          <button type="button" class="btn small" onclick={() => (raiseTo = actingSeat.committedStreet + actingSeat.stack)}>Max</button>
+          <button
+            type="button"
+            class="btn small"
+            onclick={() => (raiseTo = actingSeat.committedStreet + actingSeat.stack)}>Max</button
+          >
         </div>
         <div class="raise-row">
-          <Stepper bind:value={raiseTo} min={currentBet + 1} max={actingSeat.committedStreet + actingSeat.stack} step={cfg.bigBlind || 1} label="Raise to" />
-          <button type="button" class="btn primary" onclick={confirmRaise}>Raise to {raiseTo.toLocaleString()}</button>
+          <Stepper
+            bind:value={raiseTo}
+            min={currentBet + 1}
+            max={actingSeat.committedStreet + actingSeat.stack}
+            step={cfg.bigBlind || 1}
+            label="Raise to"
+          />
+          <button type="button" class="btn primary" onclick={confirmRaise}
+            >Raise to {raiseTo.toLocaleString()}</button
+          >
         </div>
-        <button type="button" class="btn ghost small" onclick={() => (showRaise = false)}>Cancel</button>
+        <button type="button" class="btn ghost small" onclick={() => (showRaise = false)}
+          >Cancel</button
+        >
       </div>
     {:else}
       <div class="actions">
@@ -410,7 +426,9 @@
             {currentBet > 0 ? 'Raise' : 'Bet'}
           </button>
         {/if}
-        <button type="button" class="btn" onclick={allIn}>All-in {actingSeat.stack.toLocaleString()}</button>
+        <button type="button" class="btn" onclick={allIn}
+          >All-in {actingSeat.stack.toLocaleString()}</button
+        >
       </div>
     {/if}
   {:else if phase === 'showdown'}
@@ -419,7 +437,9 @@
       {#each layers as l, i (i)}
         <div class="potlayer">
           <div class="potlayer-head">
-            <span class="pl-name">{layers.length > 1 ? (i === 0 ? 'Main pot' : `Side pot ${i}`) : 'Pot'}</span>
+            <span class="pl-name"
+              >{layers.length > 1 ? (i === 0 ? 'Main pot' : `Side pot ${i}`) : 'Pot'}</span
+            >
             <span class="pl-amt">{l.amount.toLocaleString()}</span>
           </div>
           <div class="cands">
@@ -439,7 +459,12 @@
           </div>
         </div>
       {/each}
-      <button type="button" class="btn primary block" disabled={!allPotsAwarded} onclick={awardPots}>
+      <button
+        type="button"
+        class="btn primary block"
+        disabled={!allPotsAwarded}
+        onclick={awardPots}
+      >
         Award {layers.length > 1 ? 'pots' : 'pot'}
       </button>
     </div>
@@ -531,7 +556,9 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--surface);
-    transition: border-color var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard);
+    transition:
+      border-color var(--dur-base) var(--ease-standard),
+      opacity var(--dur-base) var(--ease-standard);
   }
   .seat.acting {
     border-color: var(--primary);

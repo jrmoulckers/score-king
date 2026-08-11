@@ -1,12 +1,6 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
-import {
-  DEFAULT_JOKER_VALUE,
-  potTotal,
-  scoreRummikub,
-  validateRummikub,
-  type RummikubInput,
-} from './logic';
+import { DEFAULT_JOKER_VALUE, scoreRummikub, validateRummikub, type RummikubInput } from './logic';
 import { rummikubStats } from './stats';
 
 export type { RummikubHand, RummikubInput } from './logic';
@@ -77,10 +71,17 @@ export const rummikub: GameModule = {
   }),
 
   validateRound: (input: RummikubInput, ctx: RoundContext): string | null =>
-    validateRummikub(input, ctx.players.map((p) => p.id)),
+    validateRummikub(
+      input,
+      ctx.players.map((p) => p.id),
+    ),
 
   scoreRound: (input: RummikubInput, ctx: RoundContext): Record<ID, number> =>
-    scoreRummikub(input, ctx.players.map((p) => p.id), jokerValueOf(ctx.config)),
+    scoreRummikub(
+      input,
+      ctx.players.map((p) => p.id),
+      jokerValueOf(ctx.config),
+    ),
 
   describeRound: (round: Round, players): string => {
     const input = round.input as RummikubInput;

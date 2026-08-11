@@ -19,8 +19,14 @@
   // A small, deterministic scatter so every win feels lively but never chaotic.
   const pieces = $derived(
     Array.from({ length: count }, (_, i) => {
-      const rand = (n: number) => ((Math.sin(i * 12.9898 + n * 78.233) * 43758.5453) % 1 + 1) % 1;
-      const palette = ['var(--accent)', 'var(--accent)', 'var(--primary)', 'var(--good)', 'var(--bad)'];
+      const rand = (n: number) => (((Math.sin(i * 12.9898 + n * 78.233) * 43758.5453) % 1) + 1) % 1;
+      const palette = [
+        'var(--accent)',
+        'var(--accent)',
+        'var(--primary)',
+        'var(--good)',
+        'var(--bad)',
+      ];
       return {
         left: 6 + rand(1) * 88, // vw-ish %, kept off the edges
         delay: rand(2) * 0.25,

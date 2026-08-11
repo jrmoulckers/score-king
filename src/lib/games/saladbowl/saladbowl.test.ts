@@ -220,8 +220,12 @@ describe('score', () => {
 
 describe('describe', () => {
   it('summarises the round with its theme and per-team tallies', () => {
-    expect(describeRound({ index: 0, input: { guessed: [5, 3] } })).toBe('🗣️ Describe — 🥬 5 · 🍅 3');
-    expect(describeRound({ index: 2, input: { guessed: [1, 4] } })).toBe('🎭 Charades — 🥬 1 · 🍅 4');
+    expect(describeRound({ index: 0, input: { guessed: [5, 3] } })).toBe(
+      '🗣️ Describe — 🥬 5 · 🍅 3',
+    );
+    expect(describeRound({ index: 2, input: { guessed: [1, 4] } })).toBe(
+      '🎭 Charades — 🥬 1 · 🍅 4',
+    );
   });
 
   it('degrades gracefully with no recorded teams', () => {

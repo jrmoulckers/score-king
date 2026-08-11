@@ -16,7 +16,10 @@ function hand(tiles: number, jokers = 0) {
   return { tiles, jokers };
 }
 
-function input(winner: string | null, hands: Record<string, { tiles: number; jokers: number }>): RummikubInput {
+function input(
+  winner: string | null,
+  hands: Record<string, { tiles: number; jokers: number }>,
+): RummikubInput {
   return { winner, hands };
 }
 
@@ -58,7 +61,9 @@ describe('potTotal', () => {
   });
 
   it('folds stranded jokers into the pot at the house joker value', () => {
-    expect(potTotal(input('b', { a: hand(12, 1), b: hand(0), c: hand(3) }), ['a', 'b', 'c'])).toBe(45);
+    expect(potTotal(input('b', { a: hand(12, 1), b: hand(0), c: hand(3) }), ['a', 'b', 'c'])).toBe(
+      45,
+    );
     expect(potTotal(input('a', { a: hand(0), b: hand(4, 1) }), ['a', 'b'], 15)).toBe(19);
   });
 
@@ -77,12 +82,20 @@ describe('potTotal', () => {
 
 describe('scoreRummikub', () => {
   it('gives the winner the sum of opponents’ leftovers and others their negative', () => {
-    const deltas = scoreRummikub(input('a', { a: hand(0), b: hand(15), c: hand(8) }), ['a', 'b', 'c']);
+    const deltas = scoreRummikub(input('a', { a: hand(0), b: hand(15), c: hand(8) }), [
+      'a',
+      'b',
+      'c',
+    ]);
     expect(deltas).toEqual({ a: 23, b: -15, c: -8 });
   });
 
   it('folds stranded jokers into the penalty and the winner’s haul', () => {
-    const deltas = scoreRummikub(input('b', { a: hand(12, 1), b: hand(0), c: hand(3) }), ['a', 'b', 'c']);
+    const deltas = scoreRummikub(input('b', { a: hand(12, 1), b: hand(0), c: hand(3) }), [
+      'a',
+      'b',
+      'c',
+    ]);
     // a: 12 + 30 = 42, c: 3  → winner b: 45
     expect(deltas).toEqual({ a: -42, b: 45, c: -3 });
   });
@@ -93,13 +106,20 @@ describe('scoreRummikub', () => {
   });
 
   it('returns a delta for every player, including zero-leftover opponents', () => {
-    const deltas = scoreRummikub(input('a', { a: hand(0), b: hand(0), c: hand(9) }), ['a', 'b', 'c']);
+    const deltas = scoreRummikub(input('a', { a: hand(0), b: hand(0), c: hand(9) }), [
+      'a',
+      'b',
+      'c',
+    ]);
     expect(Object.keys(deltas).sort()).toEqual(['a', 'b', 'c']);
     expect(deltas).toEqual({ a: 9, b: 0, c: -9 });
   });
 
   it('works head-to-head (two players)', () => {
-    expect(scoreRummikub(input('b', { a: hand(17), b: hand(0) }), ['a', 'b'])).toEqual({ a: -17, b: 17 });
+    expect(scoreRummikub(input('b', { a: hand(17), b: hand(0) }), ['a', 'b'])).toEqual({
+      a: -17,
+      b: 17,
+    });
   });
 
   describe('is zero-sum for every valid winner', () => {
@@ -139,19 +159,27 @@ describe('scoreRummikub', () => {
 
 describe('validateRummikub', () => {
   it('requires someone to be marked as gone out', () => {
-    expect(validateRummikub(input(null, { a: hand(0), b: hand(5) }), ['a', 'b'])).toMatch(/went out/i);
+    expect(validateRummikub(input(null, { a: hand(0), b: hand(5) }), ['a', 'b'])).toMatch(
+      /went out/i,
+    );
   });
 
   it('rejects a winner who left the game', () => {
-    expect(validateRummikub(input('z', { a: hand(0), b: hand(5) }), ['a', 'b'])).toMatch(/no longer/i);
+    expect(validateRummikub(input('z', { a: hand(0), b: hand(5) }), ['a', 'b'])).toMatch(
+      /no longer/i,
+    );
   });
 
   it('rejects negative leftovers', () => {
-    expect(validateRummikub(input('a', { a: hand(0), b: hand(-1) }), ['a', 'b'])).toMatch(/negative/i);
+    expect(validateRummikub(input('a', { a: hand(0), b: hand(-1) }), ['a', 'b'])).toMatch(
+      /negative/i,
+    );
   });
 
   it('accepts a well-formed round', () => {
-    expect(validateRummikub(input('a', { a: hand(0), b: hand(5), c: hand(12, 1) }), ['a', 'b', 'c'])).toBeNull();
+    expect(
+      validateRummikub(input('a', { a: hand(0), b: hand(5), c: hand(12, 1) }), ['a', 'b', 'c']),
+    ).toBeNull();
   });
 });
 
@@ -200,9 +228,27 @@ describe('rummikub module', () => {
 
   it('finishes on the target only in target mode', () => {
     const totals = { a: 104, b: 40, c: -10 };
-    expect(rummikub.isFinished!(totals, { config: { endMode: 'target', target: 100 }, roundCount: 5, playerCount: 3 })).toBe(true);
-    expect(rummikub.isFinished!(totals, { config: { endMode: 'target', target: 120 }, roundCount: 5, playerCount: 3 })).toBe(false);
-    expect(rummikub.isFinished!(totals, { config: { endMode: 'rounds', rounds: 4 }, roundCount: 5, playerCount: 3 })).toBe(false);
+    expect(
+      rummikub.isFinished!(totals, {
+        config: { endMode: 'target', target: 100 },
+        roundCount: 5,
+        playerCount: 3,
+      }),
+    ).toBe(true);
+    expect(
+      rummikub.isFinished!(totals, {
+        config: { endMode: 'target', target: 120 },
+        roundCount: 5,
+        playerCount: 3,
+      }),
+    ).toBe(false);
+    expect(
+      rummikub.isFinished!(totals, {
+        config: { endMode: 'rounds', rounds: 4 },
+        roundCount: 5,
+        playerCount: 3,
+      }),
+    ).toBe(false);
   });
 
   it('describes a recorded round with the winner and their haul', () => {

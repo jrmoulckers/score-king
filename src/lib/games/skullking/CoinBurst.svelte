@@ -20,7 +20,8 @@
 
   const coins = $derived(
     Array.from({ length: count }, (_, i) => {
-      const rand = (n: number) => ((Math.sin((token + i) * 12.9898 + n * 78.233) * 43758.5453) % 1 + 1) % 1;
+      const rand = (n: number) =>
+        (((Math.sin((token + i) * 12.9898 + n * 78.233) * 43758.5453) % 1) + 1) % 1;
       const glyphs = ['🪙', '🪙', '💰', '✨'];
       return {
         left: 50 + (rand(1) - 0.5) * (big ? 120 : 70),
@@ -50,7 +51,8 @@
             --rise: {c.rise}px;
             --drift: {c.drift}px;
             --spin: {c.spin}deg;
-          ">{c.glyph}</span>
+          ">{c.glyph}</span
+        >
       {/each}
     </div>
   {/key}

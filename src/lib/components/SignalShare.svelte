@@ -50,7 +50,9 @@
 
 <div class="share">
   {#if qr}
-    <div class="qr"><img src={qr} alt="Code to scan with the other device" width="200" height="200" /></div>
+    <div class="qr">
+      <img src={qr} alt="Code to scan with the other device" width="200" height="200" />
+    </div>
   {/if}
   <span class="cap">{caption}</span>
   <button class="btn block" onclick={copy}>Copy code instead</button>

@@ -13,10 +13,7 @@
    */
   import { prefersReducedMotion } from '../../motion';
 
-  let {
-    total = 0,
-    winnerName = null,
-  }: { total?: number; winnerName?: string | null } = $props();
+  let { total = 0, winnerName = null }: { total?: number; winnerName?: string | null } = $props();
 
   const reduced = prefersReducedMotion();
   // A soft, capped scale so the bar reads as "small / building / fat pot" without pretending
@@ -25,10 +22,14 @@
   const claimed = $derived(!!winnerName && total > 0);
 </script>
 
-<div class="pot" class:claimed role="img"
+<div
+  class="pot"
+  class:claimed
+  role="img"
   aria-label={winnerName
     ? `Pot of ${total}, going to ${winnerName}`
-    : `Pot of ${total}, up for grabs`}>
+    : `Pot of ${total}, up for grabs`}
+>
   <div class="bar" class:reduced aria-hidden="true">
     <div class="fillbar" style="--fill: {fill}"></div>
   </div>
@@ -71,7 +72,9 @@
     transform: scaleX(var(--fill, 0));
     transform-origin: left center;
     background: color-mix(in srgb, var(--muted) 22%, transparent);
-    transition: transform 0.4s var(--ease-out), background var(--dur-base) var(--ease-standard);
+    transition:
+      transform 0.4s var(--ease-out),
+      background var(--dur-base) var(--ease-standard);
   }
   .claimed .fillbar {
     background: color-mix(in srgb, var(--good) 26%, transparent);

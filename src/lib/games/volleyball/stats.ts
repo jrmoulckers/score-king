@@ -85,17 +85,32 @@ export function volleyballStats({ games, rounds, canonical }: GameStatsInput): G
   const perPlayer: Record<ID, Metric[]> = {};
   for (const [id, a] of per) {
     const metrics: Metric[] = [];
-    if (a.setsWon) metrics.push({ key: 'v_sets', label: 'Sets won', value: `${a.setsWon}`, emoji: '🏐' });
-    if (a.pointsFor) metrics.push({ key: 'v_points', label: 'Points scored', value: fmtInt(a.pointsFor), emoji: '🔥' });
-    if (a.deuceSets) metrics.push({ key: 'v_deuce', label: 'Deuce sets', value: `${a.deuceSets}`, emoji: '😤' });
+    if (a.setsWon)
+      metrics.push({ key: 'v_sets', label: 'Sets won', value: `${a.setsWon}`, emoji: '🏐' });
+    if (a.pointsFor)
+      metrics.push({
+        key: 'v_points',
+        label: 'Points scored',
+        value: fmtInt(a.pointsFor),
+        emoji: '🔥',
+      });
+    if (a.deuceSets)
+      metrics.push({ key: 'v_deuce', label: 'Deuce sets', value: `${a.deuceSets}`, emoji: '😤' });
     if (metrics.length) perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
-  if (totalSets) global.push({ key: 'v_sets_all', label: 'Sets played', value: `${totalSets}`, emoji: '🏐' });
-  if (totalDeuce) global.push({ key: 'v_deuce_all', label: 'Deuce sets', value: `${totalDeuce}`, emoji: '😤' });
+  if (totalSets)
+    global.push({ key: 'v_sets_all', label: 'Sets played', value: `${totalSets}`, emoji: '🏐' });
+  if (totalDeuce)
+    global.push({ key: 'v_deuce_all', label: 'Deuce sets', value: `${totalDeuce}`, emoji: '😤' });
   if (biggestSet) {
-    global.push({ key: 'v_biggest', label: 'Longest set', value: `${biggestSet.hi}–${biggestSet.lo}`, emoji: '⚔️' });
+    global.push({
+      key: 'v_biggest',
+      label: 'Longest set',
+      value: `${biggestSet.hi}–${biggestSet.lo}`,
+      emoji: '⚔️',
+    });
   }
 
   return { perPlayer, global };

@@ -43,9 +43,15 @@ describe('computeBadges', () => {
   });
 
   it('tiers played count and streaks', () => {
-    expect(computeBadges(mkStats({ played: 25 })).find((b) => b.key === 'played_tier')?.name).toBe('Regular');
-    expect(computeBadges(mkStats({ longestStreak: 3 })).find((b) => b.key === 'streak_tier')?.name).toBe('Hat-trick');
-    expect(computeBadges(mkStats({ longestStreak: 8 })).find((b) => b.key === 'streak_tier')?.rarity).toBe('epic');
+    expect(computeBadges(mkStats({ played: 25 })).find((b) => b.key === 'played_tier')?.name).toBe(
+      'Regular',
+    );
+    expect(
+      computeBadges(mkStats({ longestStreak: 3 })).find((b) => b.key === 'streak_tier')?.name,
+    ).toBe('Hat-trick');
+    expect(
+      computeBadges(mkStats({ longestStreak: 8 })).find((b) => b.key === 'streak_tier')?.rarity,
+    ).toBe('epic');
   });
 
   it('awards drama badges from comeback / wire-to-wire wins', () => {

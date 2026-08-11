@@ -41,8 +41,13 @@
     {#if survivorName}
       <span class="win">🐱👑 {survivorName} — last kitten standing!</span>
     {:else}
-      <span class="count"><span class="num">{aliveCount}</span> {aliveCount === 1 ? 'kitten' : 'kittens'} still clawing</span>
-      <span class="sub muted">{imploding ? '☠️ one of them can’t be defused…' : 'draw til someone goes 💥'}</span>
+      <span class="count"
+        ><span class="num">{aliveCount}</span>
+        {aliveCount === 1 ? 'kitten' : 'kittens'} still clawing</span
+      >
+      <span class="sub muted"
+        >{imploding ? '☠️ one of them can’t be defused…' : 'draw til someone goes 💥'}</span
+      >
     {/if}
   </div>
 

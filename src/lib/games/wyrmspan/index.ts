@@ -24,7 +24,15 @@ export const wyrmspan: GameModule = {
   name: 'Wyrmspan',
   tagline: 'Hoard the most VP across your caves 🐉',
   emoji: '🐉',
-  keywords: ['wingspan', 'dragon', 'engine builder', 'stonemaier', 'end game', 'categories', 'eggs'],
+  keywords: [
+    'wingspan',
+    'dragon',
+    'engine builder',
+    'stonemaier',
+    'end game',
+    'categories',
+    'eggs',
+  ],
   minPlayers: 1,
   maxPlayers: 5,
 

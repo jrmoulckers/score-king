@@ -59,6 +59,10 @@ Node `ws` server with the same no-echo forwarding contract and drives the app's
 
 ## What it deliberately is not
 
+Its isolation posture follows
+[`ENG-INT-005`](https://github.com/jrmoulckers/engineering/blob/v0.15.1/principles/platforms/integration-boundaries.md#eng-int-005):
+credential proxy isolation with no user-data persistence.
+
 - Not a database. It never persists a game; it forwards live frames only.
 - Not authoritative. The leader's device is the single source of truth (see ARCHITECTURE.md).
 - Not required to play. Offline/local and same-browser live play work with no relay at all.

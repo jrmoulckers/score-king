@@ -66,8 +66,7 @@
     skyToken += 1;
   });
 
-  const nameOf = (id: string | null): string =>
-    ctx.players.find((p) => p.id === id)?.name ?? '—';
+  const nameOf = (id: string | null): string => ctx.players.find((p) => p.id === id)?.name ?? '—';
 
   function toggleAlive(id: string) {
     const st = input.states[id];
@@ -184,7 +183,9 @@
       <span class="stat">😈 <span class="sn">{evilN}</span></span>
       {#if ghosts > 0}
         <span class="dot" aria-hidden="true">·</span>
-        <span class="stat">🗳️ <span class="sn">{ghosts}</span> ghost {ghosts === 1 ? 'vote' : 'votes'}</span>
+        <span class="stat"
+          >🗳️ <span class="sn">{ghosts}</span> ghost {ghosts === 1 ? 'vote' : 'votes'}</span
+        >
       {/if}
     </div>
 
@@ -195,7 +196,9 @@
       <p class="nudge">🕯️ Good wins the moment the Demon dies.</p>
     {/if}
     {#if evilIn > 0 && evilIn <= 2}
-      <p class="nudge evil">😈 Evil wins with {evilIn} more {evilIn === 1 ? 'death' : 'deaths'} — 2 left alive.</p>
+      <p class="nudge evil">
+        😈 Evil wins with {evilIn} more {evilIn === 1 ? 'death' : 'deaths'} — 2 left alive.
+      </p>
     {:else if alive <= 2 && ctx.players.length > 2}
       <p class="nudge evil">😈 Only two stand — Evil takes the town.</p>
     {/if}
@@ -246,10 +249,18 @@
               oninput={(e) => onRole(p.id, e.currentTarget.value)}
             />
             <div class="team" role="group" aria-label={`${p.name}'s team`}>
-              <button type="button" class:on={st.team === 'good'} onclick={() => setTeam(p.id, 'good')}>
+              <button
+                type="button"
+                class:on={st.team === 'good'}
+                onclick={() => setTeam(p.id, 'good')}
+              >
                 😇 Good
               </button>
-              <button type="button" class:on={st.team === 'evil'} onclick={() => setTeam(p.id, 'evil')}>
+              <button
+                type="button"
+                class:on={st.team === 'evil'}
+                onclick={() => setTeam(p.id, 'evil')}
+              >
                 😈 Evil
               </button>
             </div>
@@ -262,23 +273,23 @@
               class="act"
               class:on={st.isDemon}
               aria-pressed={st.isDemon}
-              onclick={() => toggleDemon(p.id)}
-            >😈 Demon</button>
+              onclick={() => toggleDemon(p.id)}>😈 Demon</button
+            >
             <button
               type="button"
               class="act"
               class:on={expanded[p.id]}
               aria-expanded={!!expanded[p.id]}
-              onclick={() => toggleNotes(p.id)}
-            >📝 Notes</button>
+              onclick={() => toggleNotes(p.id)}>📝 Notes</button
+            >
             {#if !st.alive}
               <button
                 type="button"
                 class="act ghostvote"
                 class:used={st.ghostUsed}
                 aria-pressed={st.ghostUsed}
-                onclick={() => toggleGhost(p.id)}
-              >🗳️ Ghost {st.ghostUsed ? 'used' : 'ready'}</button>
+                onclick={() => toggleGhost(p.id)}>🗳️ Ghost {st.ghostUsed ? 'used' : 'ready'}</button
+              >
             {/if}
           </div>
 
@@ -329,8 +340,8 @@
                 class="rm"
                 aria-label="Remove nomination"
                 title="Remove"
-                onclick={() => removeNomination(nom)}
-              >✕</button>
+                onclick={() => removeNomination(nom)}>✕</button
+              >
             </div>
             <div class="nom-line by">
               <span class="by-lbl">by</span>
@@ -344,7 +355,9 @@
             <div class="row spread nom-tally">
               <span class="votes-lbl">
                 Votes
-                <span class="reach" class:hit={reaches}>{reaches ? '· reaches majority' : `· needs ${threshold}`}</span>
+                <span class="reach" class:hit={reaches}
+                  >{reaches ? '· reaches majority' : `· needs ${threshold}`}</span
+                >
               </span>
               <span class="row" style="gap: 10px">
                 <Stepper bind:value={nom.votes} min={0} max={ctx.players.length} />
@@ -353,8 +366,8 @@
                   class="exec"
                   class:on={nom.executed}
                   aria-pressed={nom.executed}
-                  onclick={() => toggleExecuted(nom)}
-                >⚖️ Executed</button>
+                  onclick={() => toggleExecuted(nom)}>⚖️ Executed</button
+                >
               </span>
             </div>
           </div>
@@ -371,16 +384,29 @@
       <TownVerdict token={verdictToken} team={verdictTeam} />
       <span class="section-lbl">End the game</span>
       <div class="result-btns">
-        <button type="button" class="res good" class:on={input.result === 'good'} aria-pressed={input.result === 'good'} onclick={() => setResult('good')}>
+        <button
+          type="button"
+          class="res good"
+          class:on={input.result === 'good'}
+          aria-pressed={input.result === 'good'}
+          onclick={() => setResult('good')}
+        >
           😇 Good wins
         </button>
-        <button type="button" class="res evil" class:on={input.result === 'evil'} aria-pressed={input.result === 'evil'} onclick={() => setResult('evil')}>
+        <button
+          type="button"
+          class="res evil"
+          class:on={input.result === 'evil'}
+          aria-pressed={input.result === 'evil'}
+          onclick={() => setResult('evil')}
+        >
           😈 Evil wins
         </button>
       </div>
       {#if input.result}
         <p class="recorded">
-          🏁 {input.result === 'good' ? 'Good' : 'Evil'} recorded — Save round, then <strong>Finish &amp; record winner</strong>.
+          🏁 {input.result === 'good' ? 'Good' : 'Evil'} recorded — Save round, then
+          <strong>Finish &amp; record winner</strong>.
         </p>
       {/if}
     </div>
@@ -755,7 +781,10 @@
   .act,
   .exec,
   .res {
-    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
   }
   @media (prefers-reduced-motion: reduce) {
     .life,

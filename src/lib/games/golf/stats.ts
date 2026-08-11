@@ -79,7 +79,12 @@ export function golfStats({ games, rounds, canonical }: GameStatsInput): GameSpe
 
   const global: Metric[] = [];
   if (Number.isFinite(courseRecord)) {
-    global.push({ key: 'golf_record', label: 'Lowest hole', value: fmtInt(courseRecord), emoji: '🏌️' });
+    global.push({
+      key: 'golf_record',
+      label: 'Lowest hole',
+      value: fmtInt(courseRecord),
+      emoji: '🏌️',
+    });
   }
 
   return { perPlayer, global };

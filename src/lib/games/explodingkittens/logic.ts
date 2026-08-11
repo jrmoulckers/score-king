@@ -61,11 +61,7 @@ export function scoreMatch(input: EKInput, playerIds: ID[]): Record<ID, number> 
  * ends — which also gives clean finishing positions for stats. When it's off we
  * only need the survivor. Returns `null` when valid, else a human-readable reason.
  */
-export function validateMatch(
-  input: EKInput,
-  playerIds: ID[],
-  trackOrder: boolean,
-): string | null {
+export function validateMatch(input: EKInput, playerIds: ID[], trackOrder: boolean): string | null {
   const known = new Set(playerIds);
   const seen = new Set<ID>();
   for (const id of input.order) {

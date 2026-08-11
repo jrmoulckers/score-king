@@ -24,11 +24,7 @@ function isTeam(value: unknown): value is Team {
  * Svelte-free (mirrors the module's own `logic.ts`), so the engine can import it
  * without touching the round editor.
  */
-export function codenamesStats({
-  games,
-  rounds,
-  canonical,
-}: GameStatsInput): GameSpecificStats {
+export function codenamesStats({ games, rounds, canonical }: GameStatsInput): GameSpecificStats {
   const gameIds = new Set(games.map((g) => g.id));
   const per = new Map<ID, CodenamesAgg>();
   const get = (id: ID): CodenamesAgg => {

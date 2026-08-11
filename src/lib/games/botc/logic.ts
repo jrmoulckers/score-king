@@ -172,10 +172,7 @@ export interface EvilKnowledge {
  * The fellow-evil + Demon info surfaced in a minion/demon's private reveal.
  * Pure so it can be unit-tested; the editor only renders what it returns.
  */
-export function evilKnowledge(
-  states: Record<ID, PlayerState>,
-  selfId: ID,
-): EvilKnowledge {
+export function evilKnowledge(states: Record<ID, PlayerState>, selfId: ID): EvilKnowledge {
   const ids = Object.keys(states);
   return {
     fellowEvil: ids.filter((id) => id !== selfId && states[id]?.team === 'evil'),
@@ -234,11 +231,7 @@ export function validate(input: BotcInput, playerIds: ID[]): string | null {
 
 // ── History summary ───────────────────────────────────────────────────────
 
-export function describe(
-  input: BotcInput,
-  index: number,
-  nameOf: (id: ID) => string,
-): string {
+export function describe(input: BotcInput, index: number, nameOf: (id: ID) => string): string {
   const label = phaseLabel(index);
   const emoji = phaseEmoji(index);
   if (input.result) {
@@ -303,7 +296,21 @@ export const SCRIPTS: ScriptRef[] = [
     value: 'tb',
     label: 'Trouble Brewing',
     roles: roles(
-      ['Washerwoman', 'Librarian', 'Investigator', 'Chef', 'Empath', 'Fortune Teller', 'Undertaker', 'Monk', 'Ravenkeeper', 'Virgin', 'Slayer', 'Soldier', 'Mayor'],
+      [
+        'Washerwoman',
+        'Librarian',
+        'Investigator',
+        'Chef',
+        'Empath',
+        'Fortune Teller',
+        'Undertaker',
+        'Monk',
+        'Ravenkeeper',
+        'Virgin',
+        'Slayer',
+        'Soldier',
+        'Mayor',
+      ],
       ['Butler', 'Drunk', 'Recluse', 'Saint'],
       ['Poisoner', 'Spy', 'Scarlet Woman', 'Baron'],
       ['Imp'],
@@ -313,7 +320,21 @@ export const SCRIPTS: ScriptRef[] = [
     value: 'bmr',
     label: 'Bad Moon Rising',
     roles: roles(
-      ['Grandmother', 'Sailor', 'Chambermaid', 'Exorcist', 'Innkeeper', 'Gambler', 'Gossip', 'Courtier', 'Professor', 'Minstrel', 'Tea Lady', 'Pacifist', 'Fool'],
+      [
+        'Grandmother',
+        'Sailor',
+        'Chambermaid',
+        'Exorcist',
+        'Innkeeper',
+        'Gambler',
+        'Gossip',
+        'Courtier',
+        'Professor',
+        'Minstrel',
+        'Tea Lady',
+        'Pacifist',
+        'Fool',
+      ],
       ['Goon', 'Lunatic', 'Tinker', 'Moonchild'],
       ['Godfather', "Devil's Advocate", 'Assassin', 'Mastermind'],
       ['Zombuul', 'Pukka', 'Shabaloth', 'Po'],
@@ -323,7 +344,21 @@ export const SCRIPTS: ScriptRef[] = [
     value: 'snv',
     label: 'Sects & Violets',
     roles: roles(
-      ['Clockmaker', 'Dreamer', 'Snake Charmer', 'Mathematician', 'Flowergirl', 'Town Crier', 'Oracle', 'Savant', 'Seamstress', 'Philosopher', 'Artist', 'Juggler', 'Sage'],
+      [
+        'Clockmaker',
+        'Dreamer',
+        'Snake Charmer',
+        'Mathematician',
+        'Flowergirl',
+        'Town Crier',
+        'Oracle',
+        'Savant',
+        'Seamstress',
+        'Philosopher',
+        'Artist',
+        'Juggler',
+        'Sage',
+      ],
       ['Mutant', 'Sweetheart', 'Barber', 'Klutz'],
       ['Evil Twin', 'Witch', 'Cerenovus', 'Pit-Hag'],
       ['Fang Gu', 'Vigormortis', 'No Dashii', 'Vortox'],

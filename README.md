@@ -1,7 +1,7 @@
 # 👑 Score King
 
 A lightweight, local‑first **score‑keeping PWA** for card & party games — Hearts, Spades,
-Cribbage, Finding Friends, Skull King, and a generic tally for *any* game you can think of.
+Cribbage, Finding Friends, Skull King, and a generic tally for _any_ game you can think of.
 
 Live at **[score.jrmoulckers.com](https://score.jrmoulckers.com)**. Installable on phone & desktop,
 works fully offline, and can back itself up to a **JSON file in your OneDrive**.
@@ -30,11 +30,11 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
   occasion) and switch between them. Writes are guarded by an **ETag** and reconciled by a **per‑entity
   merge** (newest edit wins per player, game, and round), so two devices that change different things
   combine cleanly instead of one silently overwriting the other. Auto‑backup is on by default,
-  push‑only, and never interrupts you. Uses your own free Azure app registration — *no secrets live in
-  this repo.*
+  push‑only, and never interrupts you. Uses your own free Azure app registration — _no secrets live in
+  this repo._
 - **Local JSON export/import** as a zero‑setup backup option.
 - **Play together (live).** Host a game and others follow along in real time on a shared board:
-  the host stays the single source of truth and players send round entries as *intents* the host
+  the host stays the single source of truth and players send round entries as _intents_ the host
   records. It links players in the **same browser** (multi‑tab) with **zero infrastructure**, and —
   once you deploy the tiny relay in [`relay/`](relay/README.md) and set its URL — **across devices**
   by code, link, or QR. The same engine sits behind a transport seam, so the relay swaps in without
@@ -46,13 +46,15 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
 - **Dark / light** themes.
 
 ### Games today
-| Game | Notes |
-|------|-------|
-| 🏴‍☠️ **Skull King** | 10 rounds, bid vs. tricks, configurable bonus handling |
-| ♥️ **Hearts** | 26‑point validation, shoot‑the‑moon, optional J♦ variant, lower‑is‑better |
-| 🎲 **Tally** | Generic counter — pick high‑ or low‑score‑wins and an optional target |
+
+| Game              | Notes                                                                     |
+| ----------------- | ------------------------------------------------------------------------- |
+| 🏴‍☠️ **Skull King** | 10 rounds, bid vs. tricks, configurable bonus handling                    |
+| ♥️ **Hearts**     | 26‑point validation, shoot‑the‑moon, optional J♦ variant, lower‑is‑better |
+| 🎲 **Tally**      | Generic counter — pick high‑ or low‑score‑wins and an optional target     |
 
 ### Games on the roadmap
+
 Spades (bags/nil), Cribbage (121 pegboard + skunks), Finding Friends / Zhao Pengyou
 (needs house‑rule config). See [Adding a game](#-adding-a-game).
 
@@ -182,7 +184,7 @@ export/import and OneDrive) and merge per‑entity across devices, tombstones in
 Sync is **opt‑in** — the app is fully usable offline without it. When enabled, each user signs in
 with **their own** Microsoft account and the app writes a `Main.json` file to **their own**
 OneDrive. By default the file lives in a **sandboxed app folder** (`OneDrive → Apps → Score King`)
-that the app is the *only* thing able to read — it can't see the rest of your OneDrive. Power users
+that the app is the _only_ thing able to read — it can't see the rest of your OneDrive. Power users
 can switch to a **custom folder** in Settings (which needs broader access — see below). There's a
 single shared app registration; the client ID is **public** (for SPAs it isn't a secret — security
 comes from PKCE + the redirect‑URI allowlist), so end users never configure anything. They just open
@@ -190,8 +192,8 @@ comes from PKCE + the redirect‑URI allowlist), so end users never configure an
 then returns you to Settings — there's no popup to allow or unblock.
 
 **Multiple titled backups.** The chosen folder is the source of truth: Score King treats every
-`.json` file in it as a backup, so you can keep more than one — say one for the *Friday Night
-Crew* and one for *Family*. A backup's title is exactly what you type, saved as **`<Title>.json`**
+`.json` file in it as a backup, so you can keep more than one — say one for the _Friday Night
+Crew_ and one for _Family_. A backup's title is exactly what you type, saved as **`<Title>.json`**
 (e.g. `Friday Night Crew.json`) so it reads naturally in OneDrive. New connections start
 on **`Main.json`**. In **Settings → Backups** you can add a new titled backup (a copy of your current
 scores), rename or delete one, and pick which backup is **active**. Switching the active backup loads
@@ -215,14 +217,16 @@ OneDrive settings.
 ### One‑time developer setup (register the shared app)
 
 1. [Azure Portal → App registrations](https://portal.azure.com/) → **New registration**.
-2. Name it *Score King*; supported accounts = **Accounts in any organizational directory and
+2. Name it _Score King_; supported accounts = **Accounts in any organizational directory and
    personal Microsoft accounts** (so anyone with a Microsoft/Outlook account can sign in).
 3. **Add a platform → Single‑page application (SPA)** — this matters; don't use "Web". Redirect
    URIs: `https://score.jrmoulckers.com` and `http://localhost:5173`.
-4. No client secret (public client + PKCE). Scopes are requested at sign‑in via **dynamic consent**,
-   so you don't pre‑list them: the default **app‑folder** mode uses **`Files.ReadWrite.AppFolder`**
-   (sandboxed to `/Apps/Score King`), while choosing a **custom folder** in Settings uses the
-   broader **`Files.ReadWrite`** (Graph can't scope a delegated permission to one arbitrary folder).
+4. No client secret (public client + PKCE). Any future credential must stay out of source under
+   [`ENG-SEC-001`](https://github.com/jrmoulckers/engineering/blob/v0.15.1/principles/assurance/security-and-privacy.md#eng-sec-001).
+   Scopes are requested at sign‑in via **dynamic consent**, so you don't pre‑list them: the default
+   **app‑folder** mode uses **`Files.ReadWrite.AppFolder`** (sandboxed to `/Apps/Score King`), while
+   choosing a **custom folder** in Settings uses the broader **`Files.ReadWrite`** (Graph can't
+   scope a delegated permission to one arbitrary folder).
 5. Copy the **Application (client) ID** into `BUILT_IN_ONEDRIVE_CLIENT_ID` in
    [`src/lib/config.ts`](src/lib/config.ts) (or set `VITE_ONEDRIVE_CLIENT_ID` at build time). It's
    safe to commit.
@@ -302,6 +306,7 @@ Pages.
   (e.g. `/play/abc`) resolve correctly on Pages.
 
 ### Vanity subdomains (later)
+
 GitHub Pages serves a single custom domain, so per‑game subdomains like
 `skullking.jrmoulckers.com` are done with a redirect layer (e.g. a **Cloudflare** redirect rule:
 `skullking.jrmoulckers.com/*` → `https://score.jrmoulckers.com/skullking`). The app already routes
@@ -319,9 +324,15 @@ this repository and cite the obligation they satisfy — see [`PRODUCT.md`](PROD
 King's own product definition.
 
 Engineering mechanisms are defined in
-[jrmoulckers/engineering](https://github.com/jrmoulckers/engineering), design and interface in
-[jrmoulckers/studio](https://github.com/jrmoulckers/studio), and automation and shared agent
-assets in [jrmoulckers/.github](https://github.com/jrmoulckers/.github).
+[jrmoulckers/engineering](https://github.com/jrmoulckers/engineering) and consumed the same way:
+cite ratified principles by stable ID, resolved through the pinned
+[`v0.15.1` principles index](https://github.com/jrmoulckers/engineering/blob/v0.15.1/principles/index.json).
+Its dependency-free Prettier and TypeScript presets are vendored at that tag rather than
+reimplemented or fetched from a package registry; see
+[`engineering-configs.lock.json`](engineering-configs.lock.json) and
+[`scripts/vendor-configs.mjs`](scripts/vendor-configs.mjs). Design and interface live in
+[jrmoulckers/studio](https://github.com/jrmoulckers/studio), and automation and shared agent assets
+in [jrmoulckers/.github](https://github.com/jrmoulckers/.github).
 
 ---
 

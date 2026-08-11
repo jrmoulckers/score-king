@@ -48,8 +48,7 @@ function skippedAnimation(): AnimateControls {
     cancel: noop,
     attachTimeline: () => noop,
     finished,
-    then: (onResolve: VoidFunction, onReject?: VoidFunction) =>
-      finished.then(onResolve, onReject),
+    then: (onResolve: VoidFunction, onReject?: VoidFunction) => finished.then(onResolve, onReject),
   } as unknown as AnimateControls;
 }
 

@@ -115,16 +115,10 @@ export function leftOf(input: UnoInput, id: ID): number {
 
 /** Sum of the leftover points held by everyone except the player who went out. */
 export function opponentsTotal(input: UnoInput, playerIds: ID[]): number {
-  return playerIds.reduce(
-    (sum, id) => (id === input.out ? sum : sum + leftOf(input, id)),
-    0,
-  );
+  return playerIds.reduce((sum, id) => (id === input.out ? sum : sum + leftOf(input, id)), 0);
 }
 
-export function validateUno(
-  input: UnoInput,
-  players: { id: ID; name: string }[],
-): string | null {
+export function validateUno(input: UnoInput, players: { id: ID; name: string }[]): string | null {
   if (!input.out) return 'Tap the player who went out (emptied their hand).';
   if (!players.some((p) => p.id === input.out)) {
     return 'The player who went out is not in this game.';

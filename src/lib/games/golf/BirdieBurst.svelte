@@ -48,7 +48,8 @@
             animation-duration: {f.duration}s;
             --drift: {f.drift}px;
             --rise: {f.rise}px;
-          ">{f.glyph}</span>
+          ">{f.glyph}</span
+        >
       {/each}
     </div>
   {/key}

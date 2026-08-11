@@ -136,12 +136,7 @@ export function clinchesMatch(
  * Winner of a single game from the two scores, or null if the game isn't over yet.
  * A game ends when the higher score reaches `target` and (with win-by-2) leads by two.
  */
-export function gameWinner(
-  a: number,
-  b: number,
-  target: number,
-  winByTwo: boolean,
-): 0 | 1 | null {
+export function gameWinner(a: number, b: number, target: number, winByTwo: boolean): 0 | 1 | null {
   const hi = Math.max(a, b);
   const lo = Math.min(a, b);
   if (hi < target) return null;

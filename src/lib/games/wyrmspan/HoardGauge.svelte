@@ -21,11 +21,7 @@
 </script>
 
 <div class="gauge" class:reduced>
-  <div
-    class="lair tier-{tier.key}"
-    role="img"
-    aria-label={`Lair: ${tier.label}, ${total} VP`}
-  >
+  <div class="lair tier-{tier.key}" role="img" aria-label={`Lair: ${tier.label}, ${total} VP`}>
     <div class="fill" style="--fill: {fill}">
       <span class="ember" aria-hidden="true"></span>
     </div>

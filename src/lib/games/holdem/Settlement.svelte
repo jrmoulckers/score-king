@@ -101,7 +101,9 @@
     font: inherit;
     cursor: pointer;
     text-align: left;
-    transition: background var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard);
+    transition:
+      background var(--dur-base) var(--ease-standard),
+      opacity var(--dur-base) var(--ease-standard);
   }
   .pay:active {
     transform: translateY(1px);

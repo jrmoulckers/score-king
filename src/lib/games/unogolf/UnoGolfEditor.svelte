@@ -112,7 +112,10 @@
         {#if isOut}
           <span class="badge">⛳ Sank it</span>
         {:else}
-          <span class="subtotal tnum" aria-label="{p.name} carries {strokes(p.id)} strokes this hole">
+          <span
+            class="subtotal tnum"
+            aria-label="{p.name} carries {strokes(p.id)} strokes this hole"
+          >
             +{strokes(p.id)}<span class="sub">strokes</span>
           </span>
         {/if}
@@ -191,7 +194,9 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
   /* The player who sank the hole took the best possible line — 0 strokes. That reads as
      a semantic-good win (green + ⛳ + words), never a second Royal Violet fill and never
@@ -273,7 +278,10 @@
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
   }
   .sink:hover {
     color: var(--text);

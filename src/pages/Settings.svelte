@@ -36,7 +36,11 @@
     ({ sm: 'Small', md: 'Medium', lg: 'Large', xl: 'XL' } as const)[$settings.fontScale],
   );
   const motionLabel = $derived(
-    $settings.motion === 'reduce' ? 'Reduced motion' : $settings.motion === 'full' ? 'Full motion' : 'System motion',
+    $settings.motion === 'reduce'
+      ? 'Reduced motion'
+      : $settings.motion === 'full'
+        ? 'Full motion'
+        : 'System motion',
   );
   const displaySummary = $derived(
     [
@@ -318,7 +322,9 @@
       cancelRename();
       return;
     }
-    if (displayBackups.some((x) => !sameBackupFile(x.file, b.file) && sameBackupFile(x.file, newFile))) {
+    if (
+      displayBackups.some((x) => !sameBackupFile(x.file, b.file) && sameBackupFile(x.file, newFile))
+    ) {
       showToast('A backup with that name already exists');
       return;
     }
@@ -635,190 +641,192 @@
 <div class="card stack">
   {#if !configured}
     <div class="muted sm">
-      OneDrive sync isn’t enabled in this build yet. Your scores are still saved on this device,
-      and you can use the local JSON backup below. (To turn on OneDrive, add the app’s client ID
-      under Advanced or in <code>src/lib/config.ts</code>.)
+      OneDrive sync isn’t enabled in this build yet. Your scores are still saved on this device, and
+      you can use the local JSON backup below. (To turn on OneDrive, add the app’s client ID under
+      Advanced or in <code>src/lib/config.ts</code>.)
     </div>
-  {:else}
-    {#if signedIn}
-      <div class="row spread">
-        <span class="row provider" style="gap: 9px">
-          <svg class="od-logo" viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="OneDrive">
-            <path
-              fill="#0078D4"
-              d="M19.35 10.04A7.49 7.49 0 0 0 12 4 7.49 7.49 0 0 0 5.1 8.36 5.994 5.994 0 0 0 6 20h13a4.99 4.99 0 0 0 .35-9.96z"
-            />
-          </svg>
-          <strong>Connected to OneDrive</strong>
-        </span>
-        <button class="btn small ghost" onclick={disconnect}>Disconnect</button>
-      </div>
-
-      <label class="sw-row row spread">
-        <span>Automatically sync changes</span>
-        <Switch
-          label="Automatically sync changes"
-          checked={$settings.autoSync}
-          onchange={(v) => settings.update((s) => ({ ...s, autoSync: v }))}
-        />
-      </label>
-      <span class="muted sm">
-        Backs up your edits and pulls in changes from your other devices — on open, on
-        focus, when you reconnect, and periodically while it’s open. Same-record edits keep
-        the newest; nothing is lost.
+  {:else if signedIn}
+    <div class="row spread">
+      <span class="row provider" style="gap: 9px">
+        <svg
+          class="od-logo"
+          viewBox="0 0 24 24"
+          width="22"
+          height="22"
+          role="img"
+          aria-label="OneDrive"
+        >
+          <path
+            fill="#0078D4"
+            d="M19.35 10.04A7.49 7.49 0 0 0 12 4 7.49 7.49 0 0 0 5.1 8.36 5.994 5.994 0 0 0 6 20h13a4.99 4.99 0 0 0 .35-9.96z"
+          />
+        </svg>
+        <strong>Connected to OneDrive</strong>
       </span>
+      <button class="btn small ghost" onclick={disconnect}>Disconnect</button>
+    </div>
 
-      <div class="pathchip" title={locationLabel}>
-        <JsonIcon size={18} />
-        <code>{prettyPath}</code>
-      </div>
+    <label class="sw-row row spread">
+      <span>Automatically sync changes</span>
+      <Switch
+        label="Automatically sync changes"
+        checked={$settings.autoSync}
+        onchange={(v) => settings.update((s) => ({ ...s, autoSync: v }))}
+      />
+    </label>
+    <span class="muted sm">
+      Backs up your edits and pulls in changes from your other devices — on open, on focus, when you
+      reconnect, and periodically while it’s open. Same-record edits keep the newest; nothing is
+      lost.
+    </span>
 
-      <hr class="sep" />
+    <div class="pathchip" title={locationLabel}>
+      <JsonIcon size={18} />
+      <code>{prettyPath}</code>
+    </div>
 
-      <div class="syncrow row spread">
-        <span class="row" style="gap: 8px; min-width: 0">
-          <span class="dot {dotClass}"></span>
-          <span class="sm">{backupText}</span>
-        </span>
-        {#if $autoSyncStatus === 'conflict'}
-          <button class="btn small primary" onclick={resolveNow} disabled={busy}>Merge</button>
-        {:else}
-          <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
-        {/if}
-      </div>
+    <hr class="sep" />
 
-      {#if $settings.autoSync && checkedText}
-        <span class="muted" style="font-size: 0.72rem; margin-top: -4px">{checkedText}</span>
+    <div class="syncrow row spread">
+      <span class="row" style="gap: 8px; min-width: 0">
+        <span class="dot {dotClass}"></span>
+        <span class="sm">{backupText}</span>
+      </span>
+      {#if $autoSyncStatus === 'conflict'}
+        <button class="btn small primary" onclick={resolveNow} disabled={busy}>Merge</button>
+      {:else}
+        <button class="btn small primary" onclick={backup} disabled={busy}>Sync now</button>
       {/if}
+    </div>
 
-      <div class="syncrow row spread">
-        <span class="sm muted" style="min-width: 0">Pull in changes from your other devices</span>
-        <button class="btn small ghost" onclick={checkForUpdates} disabled={busy}>
-          Check for updates
+    {#if $settings.autoSync && checkedText}
+      <span class="muted" style="font-size: 0.72rem; margin-top: -4px">{checkedText}</span>
+    {/if}
+
+    <div class="syncrow row spread">
+      <span class="sm muted" style="min-width: 0">Pull in changes from your other devices</span>
+      <button class="btn small ghost" onclick={checkForUpdates} disabled={busy}>
+        Check for updates
+      </button>
+    </div>
+
+    <div class="syncrow stack" style="gap: 6px">
+      <div class="row spread">
+        <span class="sm muted">Replace this device with a backup</span>
+        <button class="btn small ghost danger" onclick={restore} disabled={busy}> Replace… </button>
+      </div>
+      <span class="muted sm">
+        Escape hatch — a one-way overwrite that discards anything on this device that isn’t in the
+        chosen backup. You rarely need this; syncing above is automatic and merges both sides.
+      </span>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="stack" style="gap: 10px">
+      <div class="row spread">
+        <div class="fieldlabel" style="margin: 0">Backups</div>
+        <button class="btn small ghost" onclick={() => loadBackups(true)} disabled={loadingBackups}>
+          {loadingBackups ? 'Refreshing…' : 'Refresh'}
         </button>
       </div>
+      <span class="muted sm">
+        Each backup is its own JSON file in this folder — keep one per group or occasion. The active
+        one is what auto-sync, Sync now, and Restore now use.
+      </span>
 
-      <div class="syncrow stack" style="gap: 6px">
-        <div class="row spread">
-          <span class="sm muted">Replace this device with a backup</span>
-          <button class="btn small ghost danger" onclick={restore} disabled={busy}>
-            Replace…
-          </button>
-        </div>
-        <span class="muted sm">
-          Escape hatch — a one-way overwrite that discards anything on this device that isn’t
-          in the chosen backup. You rarely need this; syncing above is automatic and merges
-          both sides.
-        </span>
-      </div>
-
-      <hr class="sep" />
-
-      <div class="stack" style="gap: 10px">
-        <div class="row spread">
-          <div class="fieldlabel" style="margin: 0">Backups</div>
-          <button class="btn small ghost" onclick={() => loadBackups(true)} disabled={loadingBackups}>
-            {loadingBackups ? 'Refreshing…' : 'Refresh'}
-          </button>
-        </div>
-        <span class="muted sm">
-          Each backup is its own JSON file in this folder — keep one per group or occasion. The active
-          one is what auto-sync, Sync now, and Restore now use.
-        </span>
-
-        <div class="bklist" role="list">
-          {#each displayBackups as b (b.file)}
-            {@const isActive = b.file === activeFileName}
-            <div class="bkrow" class:active={isActive} role="listitem">
-              {#if renamingFile === b.file}
-                <input
-                  class="bkrename"
-                  type="text"
-                  maxlength="60"
-                  bind:value={renameTitle}
-                  aria-label="Backup title"
-                  onkeydown={(e) => {
-                    if (e.key === 'Enter') commitRename(b);
-                    if (e.key === 'Escape') cancelRename();
-                  }}
-                />
-                <div class="bkactions">
-                  <button class="btn small" onclick={() => commitRename(b)} disabled={backupBusy}>
-                    Save
-                  </button>
-                  <button class="btn small ghost" onclick={cancelRename} disabled={backupBusy}>
-                    Cancel
-                  </button>
-                </div>
-              {:else}
-                <button
-                  class="bkmain"
-                  onclick={() => useBackup(b)}
-                  disabled={backupBusy || isActive}
-                  aria-pressed={isActive}
-                  title={isActive ? 'Active backup' : 'Switch to this backup'}
-                >
-                  <span class="bkmark" class:on={isActive} aria-hidden="true"></span>
-                  <span class="bkmeta">
-                    <span class="bktitle">
-                      <span class="bkname">{b.title}</span>
-                      {#if isActive}<span class="pill bkpill">Active</span>{/if}
-                      {#if b.isDefault}<span class="pill">Default</span>{/if}
-                    </span>
-                    <span class="muted sm">{backupMeta(b)}</span>
-                  </span>
+      <div class="bklist" role="list">
+        {#each displayBackups as b (b.file)}
+          {@const isActive = b.file === activeFileName}
+          <div class="bkrow" class:active={isActive} role="listitem">
+            {#if renamingFile === b.file}
+              <input
+                class="bkrename"
+                type="text"
+                maxlength="60"
+                bind:value={renameTitle}
+                aria-label="Backup title"
+                onkeydown={(e) => {
+                  if (e.key === 'Enter') commitRename(b);
+                  if (e.key === 'Escape') cancelRename();
+                }}
+              />
+              <div class="bkactions">
+                <button class="btn small" onclick={() => commitRename(b)} disabled={backupBusy}>
+                  Save
                 </button>
-                <div class="bkactions">
-                  <button
-                    class="iconbtn bkicon"
-                    onclick={() => startRename(b)}
-                    disabled={backupBusy}
-                    title="Rename backup"
-                    aria-label={'Rename ' + b.title}
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    class="iconbtn bkicon"
-                    onclick={() => deleteBackup(b)}
-                    disabled={backupBusy}
-                    title="Delete backup"
-                    aria-label={'Delete ' + b.title}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              {/if}
-            </div>
-          {/each}
-        </div>
+                <button class="btn small ghost" onclick={cancelRename} disabled={backupBusy}>
+                  Cancel
+                </button>
+              </div>
+            {:else}
+              <button
+                class="bkmain"
+                onclick={() => useBackup(b)}
+                disabled={backupBusy || isActive}
+                aria-pressed={isActive}
+                title={isActive ? 'Active backup' : 'Switch to this backup'}
+              >
+                <span class="bkmark" class:on={isActive} aria-hidden="true"></span>
+                <span class="bkmeta">
+                  <span class="bktitle">
+                    <span class="bkname">{b.title}</span>
+                    {#if isActive}<span class="pill bkpill">Active</span>{/if}
+                    {#if b.isDefault}<span class="pill">Default</span>{/if}
+                  </span>
+                  <span class="muted sm">{backupMeta(b)}</span>
+                </span>
+              </button>
+              <div class="bkactions">
+                <button
+                  class="iconbtn bkicon"
+                  onclick={() => startRename(b)}
+                  disabled={backupBusy}
+                  title="Rename backup"
+                  aria-label={'Rename ' + b.title}
+                >
+                  ✏️
+                </button>
+                <button
+                  class="iconbtn bkicon"
+                  onclick={() => deleteBackup(b)}
+                  disabled={backupBusy}
+                  title="Delete backup"
+                  aria-label={'Delete ' + b.title}
+                >
+                  🗑️
+                </button>
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
 
-        <form
-          class="bkadd row"
-          onsubmit={(e) => {
-            e.preventDefault();
-            addBackup();
-          }}
-        >
-          <input
-            class="bkadd-input"
-            type="text"
-            maxlength="60"
-            bind:value={newTitle}
-            placeholder="New backup title, e.g. Friday Night Crew"
-            aria-label="New backup title"
-          />
-          <button class="btn small" type="submit" disabled={backupBusy || !newTitle.trim()}>
-            Add backup
-          </button>
-        </form>
-      </div>
-    {:else}
-      <div class="muted sm">
-        Sign in with your Microsoft account to back up your scores to OneDrive.
-      </div>
-      <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
-    {/if}
+      <form
+        class="bkadd row"
+        onsubmit={(e) => {
+          e.preventDefault();
+          addBackup();
+        }}
+      >
+        <input
+          class="bkadd-input"
+          type="text"
+          maxlength="60"
+          bind:value={newTitle}
+          placeholder="New backup title, e.g. Friday Night Crew"
+          aria-label="New backup title"
+        />
+        <button class="btn small" type="submit" disabled={backupBusy || !newTitle.trim()}>
+          Add backup
+        </button>
+      </form>
+    </div>
+  {:else}
+    <div class="muted sm">
+      Sign in with your Microsoft account to back up your scores to OneDrive.
+    </div>
+    <button class="btn primary" onclick={connect} disabled={busy}>Connect OneDrive</button>
   {/if}
 
   <hr class="sep" />
@@ -834,9 +842,9 @@
           <span class="optbody">
             <strong>App folder <span class="tag">recommended</span></strong>
             <span class="muted sm block">
-              Score King can access only its own folder
-              (<code>OneDrive › Apps › Score King</code>). It cannot see or touch anything else in
-              your OneDrive. Grants only the sandboxed <code>Files.ReadWrite.AppFolder</code>
+              Score King can access only its own folder (<code>OneDrive › Apps › Score King</code>).
+              It cannot see or touch anything else in your OneDrive. Grants only the sandboxed
+              <code>Files.ReadWrite.AppFolder</code>
               permission to the Apps folder.
             </span>
           </span>
@@ -848,8 +856,8 @@
             <strong>Custom folder</strong>
             <span class="muted sm block">
               Store your backups anywhere you like — Score King treats every
-              <code>.json</code> file in this folder as a backup it can read and write.
-              Microsoft can’t limit access to a single folder, so this grants the broader
+              <code>.json</code> file in this folder as a backup it can read and write. Microsoft
+              can’t limit access to a single folder, so this grants the broader
               <code>Files.ReadWrite</code> permission to your entire OneDrive.
             </span>
           </span>
@@ -898,12 +906,13 @@
         <div class="fieldlabel">Live play relay URL</div>
         <div class="muted sm">
           Play a live game together across different devices. Deploy the tiny relay in
-          <code>relay/</code> (see its <a
+          <code>relay/</code> (see its
+          <a
             href="https://github.com/jrmoulckers/score-king/blob/main/relay/README.md"
             target="_blank"
             rel="noopener noreferrer">README</a
-          >) and paste its <code>wss://</code> address here — the same one on every device that
-          plays together. Leave blank to keep live play to this browser only.
+          >) and paste its <code>wss://</code> address here — the same one on every device that plays
+          together. Leave blank to keep live play to this browser only.
         </div>
         <input type="text" bind:value={relayInput} placeholder="wss://your-relay.workers.dev" />
         <button class="btn small" onclick={saveRelay}>Save relay</button>
@@ -1035,7 +1044,9 @@
   .navrow {
     text-decoration: none;
     color: var(--text);
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
   .navrow:hover {
     border-color: var(--primary);

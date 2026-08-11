@@ -35,12 +35,23 @@ function ctxFor(playerIds: string[], config: Record<string, unknown> = {}): Roun
 }
 
 function mkRound(gameId: string, index: number, input: EKInput, players: string[]): Round {
-  return { id: `${gameId}-r${index}`, gameId, index, input, deltas: scoreMatch(input, players), createdAt: 0 };
+  return {
+    id: `${gameId}-r${index}`,
+    gameId,
+    index,
+    input,
+    deltas: scoreMatch(input, players),
+    createdAt: 0,
+  };
 }
 
 describe('scoreMatch — a match win is +1 to the survivor', () => {
   it('gives the survivor +1 and everyone else 0', () => {
-    expect(scoreMatch({ winner: 'A', order: ['C', 'B'] }, ['A', 'B', 'C'])).toEqual({ A: 1, B: 0, C: 0 });
+    expect(scoreMatch({ winner: 'A', order: ['C', 'B'] }, ['A', 'B', 'C'])).toEqual({
+      A: 1,
+      B: 0,
+      C: 0,
+    });
   });
 
   it('keys every seat so the whole table appears on the scorecard', () => {
@@ -60,7 +71,9 @@ describe('scoreMatch — a match win is +1 to the survivor', () => {
 
 describe('validateMatch — survivor only (track order off)', () => {
   it('requires a survivor', () => {
-    expect(validateMatch({ winner: null, order: [] }, ['A', 'B'], false)).toMatch(/last player standing/i);
+    expect(validateMatch({ winner: null, order: [] }, ['A', 'B'], false)).toMatch(
+      /last player standing/i,
+    );
   });
 
   it('accepts a valid survivor', () => {
@@ -68,7 +81,9 @@ describe('validateMatch — survivor only (track order off)', () => {
   });
 
   it('rejects a survivor who is not in the game', () => {
-    expect(validateMatch({ winner: 'Z', order: [] }, ['A', 'B'], false)).toMatch(/one of the players/i);
+    expect(validateMatch({ winner: 'Z', order: [] }, ['A', 'B'], false)).toMatch(
+      /one of the players/i,
+    );
   });
 });
 
@@ -78,27 +93,39 @@ describe('validateMatch — full elimination order (track order on)', () => {
   });
 
   it('nudges while players are still in play', () => {
-    expect(validateMatch({ winner: null, order: ['B'] }, ['A', 'B', 'C'], true)).toMatch(/2 still in play/);
+    expect(validateMatch({ winner: null, order: ['B'] }, ['A', 'B', 'C'], true)).toMatch(
+      /2 still in play/,
+    );
   });
 
   it('requires the survivor to be crowned once one remains', () => {
-    expect(validateMatch({ winner: null, order: ['C', 'B'] }, ['A', 'B', 'C'], true)).toMatch(/last kitten standing/i);
+    expect(validateMatch({ winner: null, order: ['C', 'B'] }, ['A', 'B', 'C'], true)).toMatch(
+      /last kitten standing/i,
+    );
   });
 
   it('rejects a duplicate explosion', () => {
-    expect(validateMatch({ winner: null, order: ['B', 'B'] }, ['A', 'B', 'C'], true)).toMatch(/only explode once/i);
+    expect(validateMatch({ winner: null, order: ['B', 'B'] }, ['A', 'B', 'C'], true)).toMatch(
+      /only explode once/i,
+    );
   });
 
   it('rejects an unknown player in the order', () => {
-    expect(validateMatch({ winner: null, order: ['Z'] }, ['A', 'B', 'C'], true)).toMatch(/isn’t in this game/i);
+    expect(validateMatch({ winner: null, order: ['Z'] }, ['A', 'B', 'C'], true)).toMatch(
+      /isn’t in this game/i,
+    );
   });
 
   it('rejects a survivor who also appears in the elimination pile', () => {
-    expect(validateMatch({ winner: 'B', order: ['C', 'B'] }, ['A', 'B', 'C'], true)).toMatch(/elimination pile/i);
+    expect(validateMatch({ winner: 'B', order: ['C', 'B'] }, ['A', 'B', 'C'], true)).toMatch(
+      /elimination pile/i,
+    );
   });
 
   it('rejects a match where everybody exploded', () => {
-    expect(validateMatch({ winner: null, order: ['A', 'B', 'C'] }, ['A', 'B', 'C'], true)).toMatch(/has to survive/i);
+    expect(validateMatch({ winner: null, order: ['A', 'B', 'C'] }, ['A', 'B', 'C'], true)).toMatch(
+      /has to survive/i,
+    );
   });
 });
 
@@ -122,7 +149,11 @@ describe('pickMatchLeaders — most match wins leads', () => {
 
 describe('finishingPositions — 1 = survivor, first-out finishes last', () => {
   it('orders a full 3-player match', () => {
-    expect(finishingPositions({ winner: 'A', order: ['C', 'B'] }, ['A', 'B', 'C'])).toEqual({ A: 1, B: 2, C: 3 });
+    expect(finishingPositions({ winner: 'A', order: ['C', 'B'] }, ['A', 'B', 'C'])).toEqual({
+      A: 1,
+      B: 2,
+      C: 3,
+    });
   });
 
   it('only positions the players it knows about', () => {
@@ -188,7 +219,15 @@ describe('explodingkittens module', () => {
 
 describe('explodingKittensStats', () => {
   const games: Game[] = [
-    { id: 'g', type: 'explodingkittens', config: {}, playerIds: ['A', 'B', 'C'], status: 'finished', createdAt: 0, roundCount: 2 } as Game,
+    {
+      id: 'g',
+      type: 'explodingkittens',
+      config: {},
+      playerIds: ['A', 'B', 'C'],
+      status: 'finished',
+      createdAt: 0,
+      roundCount: 2,
+    } as Game,
   ];
   const rounds: Round[] = [
     mkRound('g', 0, { winner: 'A', order: ['C', 'B'] }, ['A', 'B', 'C']),
@@ -251,7 +290,9 @@ describe('defuseTotal — sums the deaths cheated in a match', () => {
 
 describe('defuses never change scoring — the survivor still banks exactly +1', () => {
   it('ignores defuses when scoring the match', () => {
-    expect(scoreMatch({ winner: 'A', order: ['C', 'B'], defuses: { B: 3, A: 1 } }, ['A', 'B', 'C'])).toEqual({
+    expect(
+      scoreMatch({ winner: 'A', order: ['C', 'B'], defuses: { B: 3, A: 1 } }, ['A', 'B', 'C']),
+    ).toEqual({
       A: 1,
       B: 0,
       C: 0,
@@ -261,21 +302,39 @@ describe('defuses never change scoring — the survivor still banks exactly +1',
 
 describe('validateMatch — defuse guards', () => {
   it('accepts a match with valid per-player defuses', () => {
-    expect(validateMatch({ winner: 'A', order: ['C', 'B'], defuses: { B: 2, A: 1 } }, ['A', 'B', 'C'], true)).toBeNull();
+    expect(
+      validateMatch(
+        { winner: 'A', order: ['C', 'B'], defuses: { B: 2, A: 1 } },
+        ['A', 'B', 'C'],
+        true,
+      ),
+    ).toBeNull();
   });
 
   it('rejects a defuse logged for an unknown player', () => {
-    expect(validateMatch({ winner: 'A', order: [], defuses: { Z: 1 } }, ['A', 'B'], false)).toMatch(/isn’t in this game/i);
+    expect(validateMatch({ winner: 'A', order: [], defuses: { Z: 1 } }, ['A', 'B'], false)).toMatch(
+      /isn’t in this game/i,
+    );
   });
 
   it('rejects a negative defuse count', () => {
-    expect(validateMatch({ winner: 'A', order: [], defuses: { B: -1 } }, ['A', 'B'], false)).toMatch(/can’t be negative/i);
+    expect(
+      validateMatch({ winner: 'A', order: [], defuses: { B: -1 } }, ['A', 'B'], false),
+    ).toMatch(/can’t be negative/i);
   });
 });
 
 describe('explodingKittensStats — defuses & win streaks', () => {
   const games: Game[] = [
-    { id: 'g', type: 'explodingkittens', config: {}, playerIds: ['A', 'B', 'C'], status: 'finished', createdAt: 0, roundCount: 3 } as Game,
+    {
+      id: 'g',
+      type: 'explodingkittens',
+      config: {},
+      playerIds: ['A', 'B', 'C'],
+      status: 'finished',
+      createdAt: 0,
+      roundCount: 3,
+    } as Game,
   ];
 
   it('totals deaths cheated per player and globally', () => {

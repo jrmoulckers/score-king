@@ -113,7 +113,12 @@ describe('customIsFinished', () => {
 
 describe('describeCustomRound', () => {
   const round = (input: unknown): Round => ({
-    id: 'r', gameId: 'g', index: 0, input, deltas: {}, createdAt: 0,
+    id: 'r',
+    gameId: 'g',
+    index: 0,
+    input,
+    deltas: {},
+    createdAt: 0,
   });
 
   it('summarises a counter round with signed values, skipping zeros', () => {

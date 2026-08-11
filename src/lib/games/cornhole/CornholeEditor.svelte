@@ -59,7 +59,7 @@
   }
   function teamGain(t: CornholeTeam | undefined): number {
     const m = t?.memberIds?.[0];
-    return m ? outcome.deltas[m] ?? 0 : 0;
+    return m ? (outcome.deltas[m] ?? 0) : 0;
   }
 
   // Who's reigning right now (before this frame). A tie has no leader — Crown Gold only
@@ -111,7 +111,24 @@
   let managing = $state(false);
   let selectedMember = $state<string | null>(null);
 
-  const EMOJIS = ['🌽', '🎒', '🏆', '🔥', '⚡', '💥', '🦅', '🐺', '🦁', '🐝', '🚜', '🍺', '🌭', '⭐', '🎯', '👑'];
+  const EMOJIS = [
+    '🌽',
+    '🎒',
+    '🏆',
+    '🔥',
+    '⚡',
+    '💥',
+    '🦅',
+    '🐺',
+    '🦁',
+    '🐝',
+    '🚜',
+    '🍺',
+    '🌭',
+    '⭐',
+    '🎯',
+    '👑',
+  ];
 
   function commit(next: CornholeTeam[]) {
     input.teams = next;
@@ -152,7 +169,7 @@
 
   const assignedIds = $derived(new Set(teams.flatMap((t) => t.memberIds)));
   const benchIds = $derived(pool.map((p) => p.id).filter((id) => !assignedIds.has(id)));
-  const selectedName = $derived(selectedMember ? playerById.get(selectedMember)?.name ?? '' : '');
+  const selectedName = $derived(selectedMember ? (playerById.get(selectedMember)?.name ?? '') : '');
 </script>
 
 <div class="stack" use:sideDnd={{ onMove: onDrop }}>
@@ -161,7 +178,9 @@
   <div class="showdown" class:wash={!gainer} class:bust={outcome.busted}>
     <div class="row spread head">
       <span class="pill">Round {n}</span>
-      <span class="pill">to {cfg.target}{cfg.winBy > 1 ? ` · by ${cfg.winBy}` : ''}{cfg.bust ? ' · bust' : ''}</span>
+      <span class="pill"
+        >to {cfg.target}{cfg.winBy > 1 ? ` · by ${cfg.winBy}` : ''}{cfg.bust ? ' · bust' : ''}</span
+      >
     </div>
 
     <div class="flavor {flavor.tone}" use:bumpOnChange={flavorKey}>
@@ -170,9 +189,17 @@
     </div>
 
     <div class="cancel" aria-hidden="true">
-      <span class="craw" class:beaten={outcome.aRaw < outcome.bRaw} class:tie={outcome.aRaw === outcome.bRaw}>{outcome.aRaw}</span>
+      <span
+        class="craw"
+        class:beaten={outcome.aRaw < outcome.bRaw}
+        class:tie={outcome.aRaw === outcome.bRaw}>{outcome.aRaw}</span
+      >
       <span class="cvs">⟷</span>
-      <span class="craw" class:beaten={outcome.bRaw < outcome.aRaw} class:tie={outcome.aRaw === outcome.bRaw}>{outcome.bRaw}</span>
+      <span
+        class="craw"
+        class:beaten={outcome.bRaw < outcome.aRaw}
+        class:tie={outcome.aRaw === outcome.bRaw}>{outcome.bRaw}</span
+      >
       <span class="carrow">→</span>
       {#if gainer}
         <span class="cnet">{gainer.emoji} {gainer.name} keeps <strong>+{outcome.net}</strong></span>
@@ -218,7 +245,12 @@
       Tap each bag — <strong>🕳️ Drano</strong> (+3), <strong>🫘 Woody</strong> (+1),
       <strong>🌱 Grass</strong> (0). {BAGS_PER_SIDE} a side; only the higher side scores the difference.
     </p>
-    <button type="button" class="linklike" onclick={() => (managing = !managing)} aria-expanded={managing}>
+    <button
+      type="button"
+      class="linklike"
+      onclick={() => (managing = !managing)}
+      aria-expanded={managing}
+    >
       {managing ? '✕ Done' : '⚙ Sides'}
     </button>
   </div>
@@ -232,28 +264,54 @@
           <div class="mvtargets">
             {#each teams as t (t.id)}
               <button type="button" class="mvbtn" onclick={() => moveMember(selectedMember, t.id)}>
-                <span aria-hidden="true">{t.emoji}</span> {t.name}
+                <span aria-hidden="true">{t.emoji}</span>
+                {t.name}
               </button>
             {/each}
-            <button type="button" class="mvbtn ghost" onclick={() => (selectedMember = null)}>Cancel</button>
+            <button type="button" class="mvbtn ghost" onclick={() => (selectedMember = null)}
+              >Cancel</button
+            >
           </div>
         </div>
       {:else}
-        <p class="draghint"><span aria-hidden="true">✋</span> Drag players between the two sides — or tap one to pick a side.</p>
+        <p class="draghint">
+          <span aria-hidden="true">✋</span> Drag players between the two sides — or tap one to pick a
+          side.
+        </p>
       {/if}
 
       {#each teams as t, i (t.id)}
         <div class="tcard" data-drop={t.id} style={`--tc:${t.color}`}>
           <div class="tcard-head">
-            <button type="button" class="temoji btn-emoji" style={`--tc:${t.color}`} onclick={() => cycleEmoji(t)} aria-label="Change side emoji" title="Tap to change emoji">{t.emoji}</button>
+            <button
+              type="button"
+              class="temoji btn-emoji"
+              style={`--tc:${t.color}`}
+              onclick={() => cycleEmoji(t)}
+              aria-label="Change side emoji"
+              title="Tap to change emoji">{t.emoji}</button
+            >
             <span class="overline side-tag">Side {i === 0 ? 'A' : 'B'}</span>
-            <input class="tnameinput" value={t.name} oninput={(e) => updateTeam(t.id, { name: e.currentTarget.value })} aria-label={`Side ${i === 0 ? 'A' : 'B'} name`} maxlength="24" />
+            <input
+              class="tnameinput"
+              value={t.name}
+              oninput={(e) => updateTeam(t.id, { name: e.currentTarget.value })}
+              aria-label={`Side ${i === 0 ? 'A' : 'B'} name`}
+              maxlength="24"
+            />
             <span class="tcount" class:over={overCap(t)}>{t.memberIds.length}/{MAX_PER_SIDE}</span>
           </div>
 
           <div class="palette" role="group" aria-label="Side colour">
             {#each PALETTE as c (c)}
-              <button type="button" class="dot" class:sel={t.color === c} style={`background:${c}`} onclick={() => updateTeam(t.id, { color: c })} aria-label="Set side colour"></button>
+              <button
+                type="button"
+                class="dot"
+                class:sel={t.color === c}
+                style={`background:${c}`}
+                onclick={() => updateTeam(t.id, { color: c })}
+                aria-label="Set side colour"
+              ></button>
             {/each}
           </div>
 

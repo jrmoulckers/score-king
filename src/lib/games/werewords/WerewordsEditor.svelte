@@ -149,7 +149,11 @@
     >
       <span class="row" style="gap: 8px">
         <span aria-hidden="true">🌙</span>
-        <span><strong>Lower the lights</strong> · {expectedWolves} 🐺 · {seerOn ? '🔮 Seer in play' : 'no Seer'}</span>
+        <span
+          ><strong>Lower the lights</strong> · {expectedWolves} 🐺 · {seerOn
+            ? '🔮 Seer in play'
+            : 'no Seer'}</span
+        >
       </span>
       <span class="muted small">{showBriefing ? 'Hide' : 'How to play'}</span>
     </button>
@@ -157,11 +161,26 @@
       <div class="brief-body">
         <p class="brief-lead small muted">Douse the lights — here’s the night ritual.</p>
         <ul class="brief-list">
-          <li>👑 The <strong>Mayor</strong> knows the word and answers only 👍&nbsp;yes · 👎&nbsp;no · 🤷&nbsp;maybe.</li>
-          <li>🏘️ The <strong>Villagers</strong> race the clock to crack it — about {timerMins} min at the table (you run the clock).</li>
-          {#if seerOn}<li>🔮 The <strong>Seer</strong> secretly knows the word too, and quietly nudges the town.</li>{/if}
-          <li>🐺 The <strong>{expectedWolves === 1 ? 'werewolf' : `${expectedWolves} werewolves`}</strong> {expectedWolves === 1 ? 'also knows' : 'also know'} the word — they blend in and stall.</li>
-          <li>🔀 Guessed in time? A wolf can <strong>steal it</strong> by naming the Seer. Out of time? The Mayor can <strong>steal it back</strong> by naming a wolf.</li>
+          <li>
+            👑 The <strong>Mayor</strong> knows the word and answers only 👍&nbsp;yes · 👎&nbsp;no · 🤷&nbsp;maybe.
+          </li>
+          <li>
+            🏘️ The <strong>Villagers</strong> race the clock to crack it — about {timerMins} min at the
+            table (you run the clock).
+          </li>
+          {#if seerOn}<li>
+              🔮 The <strong>Seer</strong> secretly knows the word too, and quietly nudges the town.
+            </li>{/if}
+          <li>
+            🐺 The <strong
+              >{expectedWolves === 1 ? 'werewolf' : `${expectedWolves} werewolves`}</strong
+            >
+            {expectedWolves === 1 ? 'also knows' : 'also know'} the word — they blend in and stall.
+          </li>
+          <li>
+            🔀 Guessed in time? A wolf can <strong>steal it</strong> by naming the Seer. Out of
+            time? The Mayor can <strong>steal it back</strong> by naming a wolf.
+          </li>
         </ul>
       </div>
     {/if}
@@ -169,7 +188,9 @@
 
   <div class="row spread rolehead">
     <span class="muted small">Tap each player’s role — untapped are Villagers.</span>
-    <span class="pill tnum" class:score-bad={wolfCount !== expectedWolves}>🐺 pack {wolfCount}/{expectedWolves}</span>
+    <span class="pill tnum" class:score-bad={wolfCount !== expectedWolves}
+      >🐺 pack {wolfCount}/{expectedWolves}</span
+    >
   </div>
 
   {#each ctx.players as p (p.id)}
@@ -189,8 +210,8 @@
           aria-pressed={input.mayor === p.id}
           aria-label={`${p.name}: Mayor`}
           title="Mayor"
-          onclick={() => toggleMayor(p.id)}
-        >👑</button>
+          onclick={() => toggleMayor(p.id)}>👑</button
+        >
         {#if seerOn}
           <button
             type="button"
@@ -199,8 +220,8 @@
             aria-pressed={input.seer === p.id}
             aria-label={`${p.name}: Seer`}
             title="Seer"
-            onclick={() => toggleSeer(p.id)}
-          >🔮</button>
+            onclick={() => toggleSeer(p.id)}>🔮</button
+          >
         {/if}
         <button
           type="button"
@@ -209,8 +230,8 @@
           aria-pressed={isWolf(p.id)}
           aria-label={`${p.name}: Werewolf`}
           title="Werewolf"
-          onclick={() => toggleWolf(p.id)}
-        >🐺</button>
+          onclick={() => toggleWolf(p.id)}>🐺</button
+        >
       </span>
     </div>
   {/each}
@@ -224,16 +245,16 @@
         aria-checked={input.guessed}
         class="ch"
         class:on={input.guessed}
-        onclick={() => setGuessed(true)}
-      >✅ Guessed it</button>
+        onclick={() => setGuessed(true)}>✅ Guessed it</button
+      >
       <button
         type="button"
         role="radio"
         aria-checked={!input.guessed}
         class="ch"
         class:on={!input.guessed}
-        onclick={() => setGuessed(false)}
-      >⏳ Ran out of time</button>
+        onclick={() => setGuessed(false)}>⏳ Ran out of time</button
+      >
     </div>
 
     <!-- The steal: the game's soul. A dramatic, clearly-labelled flip, co-signalled by
@@ -300,14 +321,17 @@
     {#if showStandings}
       <div class="ladder">
         {#if !anyScored}
-          <p class="small muted ladder-empty">No rounds banked yet — the first to crack it takes the lead.</p>
+          <p class="small muted ladder-empty">
+            No rounds banked yet — the first to crack it takes the lead.
+          </p>
         {/if}
         {#each standings as s, i (s.id)}
           <div class="lrow" class:leader={anyScored && s.wins === topWins}>
             <span class="lrank tnum muted">{i + 1}</span>
             <Avatar name={s.name} color={s.color} size={24} />
             <span class="lname">{s.name}</span>
-            {#if anyScored && s.wins === topWins}<span class="lcrown" aria-hidden="true">👑</span>{/if}
+            {#if anyScored && s.wins === topWins}<span class="lcrown" aria-hidden="true">👑</span
+              >{/if}
             <span class="lwins tnum" class:lead={anyScored && s.wins === topWins}>{s.wins}</span>
           </div>
         {/each}
@@ -348,7 +372,9 @@
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: border-color 0.12s ease, background 0.12s ease;
+    transition:
+      border-color 0.12s ease,
+      background 0.12s ease;
   }
   .dice:hover {
     border-color: var(--primary);
@@ -438,7 +464,9 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 10px 12px;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   /* Wolf rows take on a subtle night tint — always paired with the 🐺 label + pressed
      wolf button, so the hidden side is never signalled by colour alone. */
@@ -483,7 +511,11 @@
     cursor: pointer;
     filter: grayscale(0.55);
     opacity: 0.75;
-    transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
+    transition:
+      background 0.12s ease,
+      border-color 0.12s ease,
+      opacity 0.12s ease,
+      filter 0.12s ease;
   }
   .rbtn:hover {
     border-color: var(--primary);
@@ -528,7 +560,9 @@
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
   }
   .ch:hover {
     color: var(--text);
@@ -557,7 +591,9 @@
     color: var(--text);
     cursor: pointer;
     text-align: left;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   .twist:hover {
     border-color: var(--primary);

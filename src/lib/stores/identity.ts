@@ -1,10 +1,5 @@
 import { get, derived } from 'svelte/store';
-import {
-  settings,
-  getBackupSettings,
-  applyBackupSettings,
-  type BackupSettings,
-} from './settings';
+import { settings, getBackupSettings, applyBackupSettings, type BackupSettings } from './settings';
 import { players, savePlayerPrefs, refreshPlayers } from './players';
 
 /**
@@ -14,9 +9,7 @@ import { players, savePlayerPrefs, refreshPlayers } from './players';
  * member can lead different devices, and their look follows them.
  */
 export const leadMember = derived([settings, players], ([$settings, $players]) =>
-  $settings.leadMemberId
-    ? $players.find((m) => m.id === $settings.leadMemberId) ?? null
-    : null,
+  $settings.leadMemberId ? ($players.find((m) => m.id === $settings.leadMemberId) ?? null) : null,
 );
 
 // While we push a member's prefs INTO settings, the settings subscriber must not
