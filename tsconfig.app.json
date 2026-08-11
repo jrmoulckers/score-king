@@ -4,13 +4,12 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "types": ["svelte", "vite/client"],
 
-    // The shared base enables this; Score King has 368 pre-existing violations
-    // (263 under tsc alone: 176 in tests, 87 in production code). A file-by-file audit of
-    // the production hits found them dominated by provably safe idioms TypeScript cannot
-    // narrow: loop-guarded `while (i < arr.length)`, Fisher-Yates swaps, `% arr.length`,
-    // and `new Uint32Array(1)[0]`, plus one genuine latent bug fixed in src/lib/util.ts.
-    // Adopting the flag is tracked in issue #125 rather than deferred indefinitely.
-    // Every other flag from the shared base is taken as-is.
+    // The shared base exposes 263 current-main diagnostics: 176 in tests and 87 in
+    // production. The production audit found mostly provably safe idioms TypeScript cannot
+    // narrow, plus one genuine latent bug fixed in src/lib/util.ts (262 remain afterward).
+    // A finite legacy config is not sound here: svelte-check follows src/main.ts through
+    // App.svelte and re-includes excluded legacy dependencies under the strict config.
+    // Issue #125 tracks shrinking that imported graph; every other shared flag is enabled.
     "noUncheckedIndexedAccess": false
   },
   "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"]
