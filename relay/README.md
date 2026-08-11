@@ -60,7 +60,7 @@ Node `ws` server with the same no-echo forwarding contract and drives the app's
 ## What it deliberately is not
 
 Its isolation posture follows
-[`ENG-INT-005`](https://github.com/jrmoulckers/engineering/blob/v0.15.7/principles/platforms/integration-boundaries.md#eng-int-005):
+[`ENG-INT-005`](https://github.com/jrmoulckers/engineering/blob/v0.16.1/principles/platforms/integration-boundaries.md#eng-int-005):
 credential proxy isolation with no user-data persistence.
 
 - Not a database. It never persists a game; it forwards live frames only.
