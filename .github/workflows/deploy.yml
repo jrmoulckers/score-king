@@ -11,6 +11,7 @@ on:
       - public/**
       - src/**
       - svelte.config.js
+      - config/engineering/tsconfig/**
       - tsconfig*.json
       - vite.config.ts
   workflow_dispatch:
@@ -22,9 +23,10 @@ jobs:
     name: Build and deploy Pages
     permissions:
       contents: read
+      packages: read
       pages: write
       id-token: write
-    uses: jrmoulckers/.github/.github/workflows/reusable-deploy-pages.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
+    uses: jrmoulckers/.github/.github/workflows/reusable-deploy-pages.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
     with:
       node-version: '22'
       package-manager: npm

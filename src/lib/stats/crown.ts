@@ -95,8 +95,14 @@ function candidates(input: CrownInput): CrownLine[] {
   const name = input.nameOf ?? ((id: ID) => id);
   const roast = input.roast !== false;
   const out: CrownLine[] = [];
-  const add = (key: string, emoji: string, text: string, tone: CrownTone, score: number, gold = false) =>
-    out.push({ key, emoji, text, tone, gold, score });
+  const add = (
+    key: string,
+    emoji: string,
+    text: string,
+    tone: CrownTone,
+    score: number,
+    gold = false,
+  ) => out.push({ key, emoji, text, tone, gold, score });
 
   if (!me || me.played === 0) {
     add('welcome', '👑', 'A king is born — play your first game.', 'neutral', 0.3);
@@ -114,17 +120,35 @@ function candidates(input: CrownInput): CrownLine[] {
 
   for (const rec of records) {
     if (rec.holderId === meId) {
-      add(`record_${rec.key}`, rec.emoji ?? '📈', `You hold the ${rec.label.toLowerCase()} — ${rec.value}.`, 'flex', 0.8);
+      add(
+        `record_${rec.key}`,
+        rec.emoji ?? '📈',
+        `You hold the ${rec.label.toLowerCase()} — ${rec.value}.`,
+        'flex',
+        0.8,
+      );
     }
   }
 
   const rival = bestRival(me.headToHead);
   if (rival) {
-    add('rival_own', '😤', `You own ${name(rival.opponentId)}, ${rival.wins}–${rival.losses}.`, 'flex', 0.8);
+    add(
+      'rival_own',
+      '😤',
+      `You own ${name(rival.opponentId)}, ${rival.wins}–${rival.losses}.`,
+      'flex',
+      0.8,
+    );
   }
 
   if (me.comebackWins >= 1) {
-    add('comeback', '🪦', `Comeback royalty — ${me.comebackWins} won from behind.`, 'flex', me.comebackWins >= 3 ? 0.8 : 0.6);
+    add(
+      'comeback',
+      '🪦',
+      `Comeback royalty — ${me.comebackWins} won from behind.`,
+      'flex',
+      me.comebackWins >= 3 ? 0.8 : 0.6,
+    );
   }
 
   for (const b of newBadges) {
@@ -133,7 +157,13 @@ function candidates(input: CrownInput): CrownLine[] {
 
   const near = nextMilestone(me.wins);
   if (near) {
-    add('milestone', '🎯', `${near.gap} ${near.gap === 1 ? 'win' : 'wins'} from ${near.next}.`, 'neutral', 0.65);
+    add(
+      'milestone',
+      '🎯',
+      `${near.gap} ${near.gap === 1 ? 'win' : 'wins'} from ${near.next}.`,
+      'neutral',
+      0.65,
+    );
   }
 
   if (persona && persona.key !== 'rookie' && persona.confidence >= 0.5) {
@@ -143,7 +173,13 @@ function candidates(input: CrownInput): CrownLine[] {
   if (roast) {
     const foe = nemesis(me.headToHead);
     if (foe) {
-      add('nemesis', '💀', `${name(foe.opponentId)}'s got your number, ${foe.losses}–${foe.wins}.`, 'roast', 0.7);
+      add(
+        'nemesis',
+        '💀',
+        `${name(foe.opponentId)}'s got your number, ${foe.losses}–${foe.wins}.`,
+        'roast',
+        0.7,
+      );
     }
     if (me.wins === 0 && me.played >= 3) {
       add('winless', '🥶', 'Still hunting that first win.', 'roast', 0.7);
@@ -176,7 +212,14 @@ export function dailyCrown(input: CrownInput): CrownLine {
     .sort((a, b) => b.s - a.s);
 
   if (ranked.length === 0) {
-    return { key: 'welcome', emoji: '👑', text: 'A king is born — play your first game.', tone: 'neutral', gold: false, score: 0 };
+    return {
+      key: 'welcome',
+      emoji: '👑',
+      text: 'A king is born — play your first game.',
+      tone: 'neutral',
+      gold: false,
+      score: 0,
+    };
   }
   if (ranked.length > 1 && ranked[0].c.key === input.lastKey) return ranked[1].c;
   return ranked[0].c;

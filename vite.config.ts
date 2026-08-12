@@ -1,24 +1,24 @@
-import { defineConfig } from 'vite'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
-import { VitePWA } from 'vite-plugin-pwa'
-import { copyFileSync, existsSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { VitePWA } from 'vite-plugin-pwa';
+import { copyFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 // Copy index.html to 404.html so GitHub Pages serves the SPA for deep links.
 function spa404() {
   return {
     name: 'spa-404',
     closeBundle() {
-      const index = resolve('dist', 'index.html')
-      if (existsSync(index)) copyFileSync(index, resolve('dist', '404.html'))
+      const index = resolve('dist', 'index.html');
+      if (existsSync(index)) copyFileSync(index, resolve('dist', '404.html'));
     },
-  }
+  };
 }
 
 // https://vite.dev/config/
 // Deploy base: '/' for the score.jrmoulckers.com custom domain (served at root).
 // Use '/score-king/' instead to serve from the github.io project URL.
-const base = '/'
+const base = '/';
 
 export default defineConfig({
   base,
@@ -66,4 +66,4 @@ export default defineConfig({
     }),
     spa404(),
   ],
-})
+});

@@ -11,9 +11,7 @@
 
   const flags = $derived(Array.from({ length: holes }, (_, i) => i + 1));
   // Only split into nines when there's a back nine to speak of.
-  const nine = $derived(
-    holes > 9 ? (hole <= 9 ? 'Front nine' : 'Back nine') : '',
-  );
+  const nine = $derived(holes > 9 ? (hole <= 9 ? 'Front nine' : 'Back nine') : '');
   const done = $derived(hole - 1);
 </script>
 
@@ -24,11 +22,9 @@
   </div>
   <div class="fairway" aria-hidden="true">
     {#each flags as f (f)}
-      <span
-        class="flag"
-        class:played={f < hole}
-        class:current={f === hole}
-      >{f === hole ? '⛳' : f < hole ? '🚩' : '·'}</span>
+      <span class="flag" class:played={f < hole} class:current={f === hole}
+        >{f === hole ? '⛳' : f < hole ? '🚩' : '·'}</span
+      >
     {/each}
   </div>
   <span class="sr-only">Hole {hole} of {holes}{nine ? `, ${nine}` : ''}, {done} played.</span>

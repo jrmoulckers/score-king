@@ -131,11 +131,15 @@ describe('fluff / validateRound', () => {
   const players = mkPlayers(3);
 
   it('requires a selected player', () => {
-    expect(validateRound(input(null), ctx(players, { p1: 0, p2: 0, p3: 0 }))).toMatch(/Tap the player/);
+    expect(validateRound(input(null), ctx(players, { p1: 0, p2: 0, p3: 0 }))).toMatch(
+      /Tap the player/,
+    );
   });
 
   it('rejects an unknown player', () => {
-    expect(validateRound(input('ghost'), ctx(players, { p1: 0, p2: 0, p3: 0 }))).toMatch(/still in the game/);
+    expect(validateRound(input('ghost'), ctx(players, { p1: 0, p2: 0, p3: 0 }))).toMatch(
+      /still in the game/,
+    );
   });
 
   it('rejects taking a die from an eliminated player', () => {
@@ -161,18 +165,24 @@ describe('fluff / validateRound', () => {
 
   it('will not let a player exceed their starting dice', () => {
     const t = { p1: 0, p2: 0, p3: 0 };
-    expect(validateRound(input('p1', 'gain'), ctx(players, t, { spotOn: true }))).toMatch(/all 5 dice/);
+    expect(validateRound(input('p1', 'gain'), ctx(players, t, { spotOn: true }))).toMatch(
+      /all 5 dice/,
+    );
   });
 
   it('cannot gain a die once eliminated', () => {
     const t = { p1: 5, p2: 0, p3: 0 };
-    expect(validateRound(input('p1', 'gain'), ctx(players, t, { spotOn: true }))).toMatch(/already out/);
+    expect(validateRound(input('p1', 'gain'), ctx(players, t, { spotOn: true }))).toMatch(
+      /already out/,
+    );
   });
 
   it('honours a custom starting-dice count', () => {
     const t = { p1: 2, p2: 0, p3: 0 };
     // With 3 starting dice, p1 has lost 2 → 1 left → gaining is fine.
-    expect(validateRound(input('p1', 'gain'), ctx(players, t, { spotOn: true, startDice: 3 }))).toBeNull();
+    expect(
+      validateRound(input('p1', 'gain'), ctx(players, t, { spotOn: true, startDice: 3 })),
+    ).toBeNull();
     // A third loss would take p1 to 0 (out), but that's a *lose*, still allowed here (others alive).
     expect(validateRound(input('p1', 'lose'), ctx(players, t, { startDice: 3 }))).toBeNull();
   });
@@ -220,8 +230,12 @@ describe('fluff / pickWinners', () => {
 describe('fluff / describeRound', () => {
   const players = mkPlayers(2);
   it('summarises a loss and a gain', () => {
-    expect(describeRound({ input: input('p1', 'lose') } as Round, players)).toBe('💀 Alice lost a die');
-    expect(describeRound({ input: input('p2', 'gain') } as Round, players)).toBe('🎲 Bob won a die back');
+    expect(describeRound({ input: input('p1', 'lose') } as Round, players)).toBe(
+      '💀 Alice lost a die',
+    );
+    expect(describeRound({ input: input('p2', 'gain') } as Round, players)).toBe(
+      '🎲 Bob won a die back',
+    );
   });
   it('handles an empty round', () => {
     expect(describeRound({ input: input(null) } as Round, players)).toBe('no change');

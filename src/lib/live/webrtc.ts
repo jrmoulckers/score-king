@@ -82,7 +82,8 @@ export class WebRtcTransport implements SessionTransport {
   private messageHandlers = new Set<(env: TransportEnvelope) => void>();
   private statusHandlers = new Set<(status: TransportStatus) => void>();
   private closing = false;
-  private guestGate: { resolve: () => void; reject: (e: Error) => void; settled: boolean } | null = null;
+  private guestGate: { resolve: () => void; reject: (e: Error) => void; settled: boolean } | null =
+    null;
   private guestTimer: ReturnType<typeof setTimeout> | undefined;
   private guestOpened = false;
 
@@ -139,9 +140,11 @@ export class WebRtcTransport implements SessionTransport {
   async acceptAnswer(text: string): Promise<void> {
     if (this.role !== 'leader') throw new Error('Only the host accepts answers.');
     const sig = await decodeSignal(text);
-    if (sig.k !== 'answer') throw new Error('That’s an invite, not a reply — swap the codes around.');
+    if (sig.k !== 'answer')
+      throw new Error('That’s an invite, not a reply — swap the codes around.');
     const conn = this.conns.find((c) => c.inviteId === sig.i);
-    if (!conn) throw new Error('That reply is for a different invite. Show this player a fresh code.');
+    if (!conn)
+      throw new Error('That reply is for a different invite. Show this player a fresh code.');
     await conn.peer.acceptAnswer(sig.s);
   }
 
@@ -166,9 +169,15 @@ export class WebRtcTransport implements SessionTransport {
   async acceptInvite(text: string): Promise<string> {
     if (this.role !== 'guest') throw new Error('Only a guest accepts an invite.');
     const sig = await decodeSignal(text);
-    if (sig.k !== 'offer') throw new Error('That’s a reply, not an invite. Ask the host for their code.');
+    if (sig.k !== 'offer')
+      throw new Error('That’s a reply, not an invite. Ask the host for their code.');
     this._code = sig.c;
-    const conn: Conn = { inviteId: sig.i, peer: null as unknown as RtcPeer, open: false, peerId: null };
+    const conn: Conn = {
+      inviteId: sig.i,
+      peer: null as unknown as RtcPeer,
+      open: false,
+      peerId: null,
+    };
     conn.peer = this.factory(this.hooksFor(conn));
     this.conns = [conn];
     const sdp = await conn.peer.acceptOffer(sig.s);

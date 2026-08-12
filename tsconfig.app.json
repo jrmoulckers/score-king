@@ -1,20 +1,16 @@
 {
-  "extends": "@tsconfig/svelte/tsconfig.json",
+  "extends": "./config/engineering/tsconfig/vite-app.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "target": "es2023",
-    "module": "esnext",
     "types": ["svelte", "vite/client"],
-    "noEmit": true,
-    /**
-     * Typecheck JS in `.svelte` and `.js` files by default.
-     * Disable checkJs if you'd like to use dynamic types in JS.
-     * Note that setting allowJs false does not prevent the use
-     * of JS in `.svelte` files.
-     */
-    "allowJs": true,
-    "checkJs": true,
-    "moduleDetection": "force"
+
+    // The shared base exposes 263 current-main diagnostics: 176 in tests and 87 in
+    // production. The production audit found mostly provably safe idioms TypeScript cannot
+    // narrow, plus one genuine latent bug fixed in src/lib/util.ts (262 remain afterward).
+    // A finite legacy config is not sound here: svelte-check follows src/main.ts through
+    // App.svelte and re-includes excluded legacy dependencies under the strict config.
+    // Issue #125 tracks shrinking that imported graph; every other shared flag is enabled.
+    "noUncheckedIndexedAccess": false
   },
   "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"]
 }

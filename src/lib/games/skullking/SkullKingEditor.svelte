@@ -23,8 +23,12 @@
   const n = $derived(ctx.roundIndex + 1);
   const total = $derived(readConfig(ctx.config).rounds);
   const requireBid = $derived(readConfig(ctx.config).bonusesRequireBid);
-  const won = $derived(ctx.players.reduce((a, p) => a + (Number(input.rows[p.id]?.actual) || 0), 0));
-  const bidSum = $derived(ctx.players.reduce((a, p) => a + (Number(input.rows[p.id]?.bid) || 0), 0));
+  const won = $derived(
+    ctx.players.reduce((a, p) => a + (Number(input.rows[p.id]?.actual) || 0), 0),
+  );
+  const bidSum = $derived(
+    ctx.players.reduce((a, p) => a + (Number(input.rows[p.id]?.bid) || 0), 0),
+  );
   const bidRead = $derived(
     bidSum === n ? '⚖️ dead even' : bidSum > n ? '🌊 over-bid seas' : '🍃 tricks to spare',
   );
@@ -99,7 +103,9 @@
   <div class="row spread wrap">
     <span class="pill" class:score-bad={won > n}>🃏 won {won}/{n}</span>
     <span class="row wrap" style="gap: 8px">
-      <span class="pill" title="Total tricks bid vs. tricks available">🗣️ bids {bidSum} · {bidRead}</span>
+      <span class="pill" title="Total tricks bid vs. tricks available"
+        >🗣️ bids {bidSum} · {bidRead}</span
+      >
       <button type="button" class="btn small ghost" onclick={() => (showHelp = !showHelp)}>
         Bounty guide
       </button>
@@ -130,14 +136,19 @@
             class:score-good={oc.kind === 'hit' || oc.kind === 'zero'}
             class:score-bad={oc.kind === 'miss'}
           >
-            {oc.emoji} {oc.label}
+            {oc.emoji}
+            {oc.label}
           </span>
         </span>
       </div>
 
       <div class="fields">
-        <label class="f">Bid<Stepper bind:value={row.bid} min={0} max={n} label={`${p.name} bid`} /></label>
-        <label class="f">Won<Stepper bind:value={row.actual} min={0} max={n} label={`${p.name} won`} /></label>
+        <label class="f"
+          >Bid<Stepper bind:value={row.bid} min={0} max={n} label={`${p.name} bid`} /></label
+        >
+        <label class="f"
+          >Won<Stepper bind:value={row.actual} min={0} max={n} label={`${p.name} won`} /></label
+        >
       </div>
 
       <div class="bounty">
@@ -159,27 +170,57 @@
             <div class="counters">
               <label class="cf">
                 <span>🎴 14s <em>+{BONUS_VALUES.fourteen} ea</em></span>
-                <Stepper bind:value={b.fourteens} min={0} max={BOUNTY_LIMITS.fourteens} label={`${p.name} fourteens`} />
+                <Stepper
+                  bind:value={b.fourteens}
+                  min={0}
+                  max={BOUNTY_LIMITS.fourteens}
+                  label={`${p.name} fourteens`}
+                />
               </label>
               <label class="cf">
                 <span>⚔️ Pirates caught <em>+{BONUS_VALUES.pirate} ea</em></span>
-                <Stepper bind:value={b.pirates} min={0} max={BOUNTY_LIMITS.pirates} label={`${p.name} pirates`} />
+                <Stepper
+                  bind:value={b.pirates}
+                  min={0}
+                  max={BOUNTY_LIMITS.pirates}
+                  label={`${p.name} pirates`}
+                />
               </label>
             </div>
             <div class="chips">
-              <button type="button" class="chip" class:on={b.jollyRoger} onclick={() => flip(b, 'jollyRoger')}>
+              <button
+                type="button"
+                class="chip"
+                class:on={b.jollyRoger}
+                onclick={() => flip(b, 'jollyRoger')}
+              >
                 🏴‍☠️ Jolly Roger <span class="cv">+{BONUS_VALUES.jollyRoger}</span>
               </button>
-              <button type="button" class="chip" class:on={b.mermaidCatchesSK} onclick={() => flip(b, 'mermaidCatchesSK')}>
+              <button
+                type="button"
+                class="chip"
+                class:on={b.mermaidCatchesSK}
+                onclick={() => flip(b, 'mermaidCatchesSK')}
+              >
                 🧜‍♀️ Mermaid nabs Skull King <span class="cv">+{BONUS_VALUES.mermaidCatchesSK}</span>
               </button>
-              <button type="button" class="chip" class:on={b.skOverMermaid} onclick={() => flip(b, 'skOverMermaid')}>
+              <button
+                type="button"
+                class="chip"
+                class:on={b.skOverMermaid}
+                onclick={() => flip(b, 'skOverMermaid')}
+              >
                 👑 Skull King eats Mermaid <span class="cv">+{BONUS_VALUES.skOverMermaid}</span>
               </button>
             </div>
             <label class="manual">
               <span>🧰 Other (house rules)</span>
-              <input type="number" step="10" bind:value={b.manual} aria-label={`${p.name} other bounty`} />
+              <input
+                type="number"
+                step="10"
+                bind:value={b.manual}
+                aria-label={`${p.name} other bounty`}
+              />
             </label>
           </div>
         {/if}

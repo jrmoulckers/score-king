@@ -89,7 +89,9 @@
   <div class="empty unknown">
     <div class="unknown-emoji" aria-hidden="true">🔍</div>
     <h2>No such game</h2>
-    <p class="muted">There’s no scorer named “{type}”. It may have been renamed, removed, or mistyped.</p>
+    <p class="muted">
+      There’s no scorer named “{type}”. It may have been renamed, removed, or mistyped.
+    </p>
     <a class="btn primary" href="/" use:link>Back to games</a>
     <a class="btn small ghost browse-link" href="/browse" use:link>Browse all games</a>
   </div>
@@ -141,15 +143,24 @@
       <hr />
       <ConfigForm fields={module.configFields} bind:config />
     {/if}
-    <button class="btn primary block" onclick={start} disabled={selected.length < module.minPlayers}>
+    <button
+      class="btn primary block"
+      onclick={start}
+      disabled={selected.length < module.minPlayers}
+    >
       Start game
     </button>
     {#if selected.length < module.minPlayers}
       <p class="startneed muted sm" role="status">
         {#if $activePlayers.length === 0}
-          Add {module.minPlayers} player{module.minPlayers === 1 ? '' : 's'} above to start your first game.
+          Add {module.minPlayers} player{module.minPlayers === 1 ? '' : 's'} above to start your first
+          game.
         {:else}
-          Pick {module.minPlayers - selected.length} more player{module.minPlayers - selected.length === 1 ? '' : 's'} to start.
+          Pick {module.minPlayers - selected.length} more player{module.minPlayers -
+            selected.length ===
+          1
+            ? ''
+            : 's'} to start.
         {/if}
       </p>
     {/if}

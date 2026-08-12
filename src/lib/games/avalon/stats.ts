@@ -129,7 +129,12 @@ export function avalonStats({ games, rounds, canonical }: GameStatsInput): GameS
 
   const global: Metric[] = [];
   if (questsPlayed) {
-    global.push({ key: 'av_quests', label: 'Quests undertaken', value: `${questsPlayed}`, emoji: '🗺️' });
+    global.push({
+      key: 'av_quests',
+      label: 'Quests undertaken',
+      value: `${questsPlayed}`,
+      emoji: '🗺️',
+    });
     global.push({
       key: 'av_fails',
       label: 'Quests failed',

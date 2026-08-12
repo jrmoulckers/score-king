@@ -41,9 +41,7 @@
   );
 
   function toggleCat(id: GameCategory) {
-    activeCats = activeCats.includes(id)
-      ? activeCats.filter((c) => c !== id)
-      : [...activeCats, id];
+    activeCats = activeCats.includes(id) ? activeCats.filter((c) => c !== id) : [...activeCats, id];
   }
 
   function isFav(id: string): boolean {

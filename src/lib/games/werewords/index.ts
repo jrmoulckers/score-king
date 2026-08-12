@@ -1,12 +1,7 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
 import { werewordsStats } from './stats';
-import {
-  describeWerewords,
-  scoreWerewords,
-  validateWerewords,
-  type WerewordsInput,
-} from './logic';
+import { describeWerewords, scoreWerewords, validateWerewords, type WerewordsInput } from './logic';
 
 export type { WerewordsInput, WerewordsTeam, WerewordsOutcome } from './logic';
 export { resolveOutcome, teamOf, isWerewolf } from './logic';

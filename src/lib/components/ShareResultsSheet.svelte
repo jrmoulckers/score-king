@@ -26,9 +26,7 @@
     view.players.map((p) => ({ id: p.id, name: p.name, color: p.color, createdAt: 0 })),
   );
   const winnerNames = $derived(
-    view.winners
-      .map((id) => view.players.find((p) => p.id === id)?.name ?? '?')
-      .join(' & '),
+    view.winners.map((id) => view.players.find((p) => p.id === id)?.name ?? '?').join(' & '),
   );
 
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -117,7 +115,10 @@
         navigator.canShare({ files: [file] });
       if (canShareFiles) {
         try {
-          await navigator.share({ files: [file], text: winnerNames ? `🏆 ${winnerNames}` : undefined });
+          await navigator.share({
+            files: [file],
+            text: winnerNames ? `🏆 ${winnerNames}` : undefined,
+          });
         } catch {
           /* dismissed */
         }
@@ -156,7 +157,15 @@
   onkeydown={(e) => e.key === 'Enter' && onclose()}
 ></div>
 
-<div class="sheet" role="dialog" aria-modal="true" aria-label="Share results" tabindex="-1" bind:this={sheet} use:focusTrap>
+<div
+  class="sheet"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Share results"
+  tabindex="-1"
+  bind:this={sheet}
+  use:focusTrap
+>
   <div class="grabber" aria-hidden="true"></div>
 
   <div class="row spread">
@@ -169,12 +178,19 @@
   {/if}
 
   <div class="board">
-    <Scoreboard players={previewPlayers} totals={view.totals} lowerIsBetter={view.lowerIsBetter} winners={view.winners} />
+    <Scoreboard
+      players={previewPlayers}
+      totals={view.totals}
+      lowerIsBetter={view.lowerIsBetter}
+      winners={view.winners}
+    />
   </div>
 
   <div class="qrwrap">
     {#if qr}
-      <div class="qr"><img src={qr} alt="QR code linking to these results" width="200" height="200" /></div>
+      <div class="qr">
+        <img src={qr} alt="QR code linking to these results" width="200" height="200" />
+      </div>
       <span class="qrhint">Scan to view these results</span>
     {:else}
       <div class="qr placeholder" aria-hidden="true"></div>
@@ -195,7 +211,9 @@
     <button class="btn block" onclick={shareLink} disabled={!url}>Share link…</button>
   {/if}
 
-  <p class="note">Read-only — this shares just this game’s final scores, nothing else from your device.</p>
+  <p class="note">
+    Read-only — this shares just this game’s final scores, nothing else from your device.
+  </p>
 
   <button class="btn ghost block" onclick={onclose}>Done</button>
 </div>

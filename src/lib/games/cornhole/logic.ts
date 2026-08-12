@@ -372,30 +372,71 @@ export function tossFlavor(args: {
   const { gainerName, net, aRaw, bRaw, busted, fourBaggerName, bothFourBaggers, seed } = args;
 
   if (busted && gainerName) {
-    return { emoji: '💥', text: `${gainerName} overcooked it — bust back to ${BUST_TO}!`, tone: 'bad' };
+    return {
+      emoji: '💥',
+      text: `${gainerName} overcooked it — bust back to ${BUST_TO}!`,
+      tone: 'bad',
+    };
   }
   if (bothFourBaggers) {
     return { emoji: '🧺', text: 'Four-bagger each — the whole thing washes!', tone: 'muted' };
   }
   if (fourBaggerName && gainerName === fourBaggerName) {
-    return { emoji: '💣', text: `Four-bagger! ${fourBaggerName} sinks all four — +${net}`, tone: 'good' };
+    return {
+      emoji: '💣',
+      text: `Four-bagger! ${fourBaggerName} sinks all four — +${net}`,
+      tone: 'good',
+    };
   }
   if (!gainerName) {
     if (aRaw === 0 && bRaw === 0) {
-      return { emoji: '🌽', text: pick(['Nothing lands — corn in the dirt', 'Both sides whiff — no bags home'], seed), tone: 'muted' };
+      return {
+        emoji: '🌽',
+        text: pick(['Nothing lands — corn in the dirt', 'Both sides whiff — no bags home'], seed),
+        tone: 'muted',
+      };
     }
     return {
       emoji: '🧺',
-      text: pick(['Wash — bags cancel, nobody scores', 'All square — total wash', 'Even bags — it all cancels out'], seed),
+      text: pick(
+        [
+          'Wash — bags cancel, nobody scores',
+          'All square — total wash',
+          'Even bags — it all cancels out',
+        ],
+        seed,
+      ),
       tone: 'muted',
     };
   }
 
   // A normal scoring frame — flavor scales a little with how big the swing was.
-  const line = net >= 6
-    ? pick([`${gainerName} buries it — +${net}`, `Huge frame! ${gainerName} +${net}`, `${gainerName} runs the board — +${net}`], seed)
-    : net >= 3
-      ? pick([`Drano! ${gainerName} +${net}`, `${gainerName} sinks one — +${net}`, `${gainerName} takes the frame — +${net}`], seed)
-      : pick([`That's a woody — ${gainerName} +${net}`, `${gainerName} edges it — +${net}`, `${gainerName} nudges ahead — +${net}`], seed);
+  const line =
+    net >= 6
+      ? pick(
+          [
+            `${gainerName} buries it — +${net}`,
+            `Huge frame! ${gainerName} +${net}`,
+            `${gainerName} runs the board — +${net}`,
+          ],
+          seed,
+        )
+      : net >= 3
+        ? pick(
+            [
+              `Drano! ${gainerName} +${net}`,
+              `${gainerName} sinks one — +${net}`,
+              `${gainerName} takes the frame — +${net}`,
+            ],
+            seed,
+          )
+        : pick(
+            [
+              `That's a woody — ${gainerName} +${net}`,
+              `${gainerName} edges it — +${net}`,
+              `${gainerName} nudges ahead — +${net}`,
+            ],
+            seed,
+          );
   return { emoji: '🌽', text: line, tone: 'good' };
 }

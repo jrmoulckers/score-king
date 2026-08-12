@@ -75,7 +75,9 @@
 
   const dirty = $derived(serialize(def) !== snapshot);
 
-  const notFound = $derived(!!id && $customGamesLoaded && !$customGameDefs.some((d) => d.id === id));
+  const notFound = $derived(
+    !!id && $customGamesLoaded && !$customGameDefs.some((d) => d.id === id),
+  );
 
   // A plain-language recap of what the author has built — reinforces meaning without color.
   const summary = $derived.by(() => {
@@ -197,7 +199,10 @@
   </div>
 
   <div class="section-title">Preview</div>
-  <div class="preview gametile" aria-label={`Preview: ${def.name.trim() || 'Untitled game'}. ${def.tagline.trim() || summary}`}>
+  <div
+    class="preview gametile"
+    aria-label={`Preview: ${def.name.trim() || 'Untitled game'}. ${def.tagline.trim() || summary}`}
+  >
     <span class="emoji" aria-hidden="true">{firstEmoji(def.emoji) || DEFAULT_EMOJI}</span>
     <span class="name">{def.name.trim() || 'Untitled game'}</span>
     <span class="tag">{def.tagline.trim() || summary}</span>
@@ -437,7 +442,10 @@
     border-radius: var(--radius-sm);
     background: var(--surface-2);
     cursor: pointer;
-    transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+    transition:
+      transform 0.05s ease,
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   .emoji-opt:hover {
     background: var(--surface-3);

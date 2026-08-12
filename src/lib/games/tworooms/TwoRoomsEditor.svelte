@@ -212,7 +212,10 @@
 <div class="stack">
   <div class="hdr">
     <div class="rmeta">
-      <strong>Round <span class="tnum">{ctx.roundIndex + 1}</span> of <span class="tnum">{rounds}</span>{isFinal ? ' · final' : ''}</strong>
+      <strong
+        >Round <span class="tnum">{ctx.roundIndex + 1}</span> of
+        <span class="tnum">{rounds}</span>{isFinal ? ' · final' : ''}</strong
+      >
       <span class="rail" aria-label="Round lengths, in minutes">
         {#each rail as m, i (i)}
           <span class="rung" class:now={i === ctx.roundIndex} class:done={i < ctx.roundIndex}>
@@ -222,10 +225,20 @@
       </span>
     </div>
     <span class="toggles">
-      <button type="button" class="btn small ghost" aria-pressed={showRoles} onclick={() => (showRoles = !showRoles)}>
+      <button
+        type="button"
+        class="btn small ghost"
+        aria-pressed={showRoles}
+        onclick={() => (showRoles = !showRoles)}
+      >
         🎭 Roles
       </button>
-      <button type="button" class="btn small ghost" aria-pressed={showRules} onclick={() => (showRules = !showRules)}>
+      <button
+        type="button"
+        class="btn small ghost"
+        aria-pressed={showRules}
+        onclick={() => (showRules = !showRules)}
+      >
         Rules
       </button>
     </span>
@@ -238,16 +251,26 @@
         <span class="muted small">Blue {roles.blueTotal} · Red {roles.redTotal}</span>
       </div>
       <ul class="reflist">
-        <li>🏛️ President <span class="tnum">×{roles.president}</span> <span class="muted">(Blue)</span></li>
-        <li>💣 Bomber <span class="tnum">×{roles.bomber}</span> <span class="muted">(Red)</span></li>
+        <li>
+          🏛️ President <span class="tnum">×{roles.president}</span>
+          <span class="muted">(Blue)</span>
+        </li>
+        <li>
+          💣 Bomber <span class="tnum">×{roles.bomber}</span> <span class="muted">(Red)</span>
+        </li>
         <li>🔵 Blue Team card <span class="tnum">×{roles.blueTeam}</span></li>
         <li>🔴 Red Team card <span class="tnum">×{roles.redTeam}</span></li>
         {#if roles.gambler}
-          <li>🃏 Gambler <span class="tnum">×{roles.gambler}</span> <span class="muted">(odd table)</span></li>
+          <li>
+            🃏 Gambler <span class="tnum">×{roles.gambler}</span>
+            <span class="muted">(odd table)</span>
+          </li>
         {/if}
       </ul>
       {#if ctx.config.advancedRoles}
-        <div class="muted small">Advanced game: swap in colored roles for some Blue/Red cards as you like.</div>
+        <div class="muted small">
+          Advanced game: swap in colored roles for some Blue/Red cards as you like.
+        </div>
       {/if}
     </div>
   {/if}
@@ -262,17 +285,25 @@
       <span class="wick" aria-hidden="true">{timesUp ? '💥' : running ? '🧨' : '🕯️'}</span>
       <span class="time" aria-live="off">{formatClock(remaining)}</span>
       <span class="flabel">
-        {#if timesUp}Time! Trade hostages{:else if running}counting down…{:else}<span class="tnum">{minutes}</span>-minute round{/if}
+        {#if timesUp}Time! Trade hostages{:else if running}counting down…{:else}<span class="tnum"
+            >{minutes}</span
+          >-minute round{/if}
       </span>
     </div>
-    <div class="track" aria-hidden="true"><div class="burn" style="transform: scaleX({barPct / 100})"></div></div>
+    <div class="track" aria-hidden="true">
+      <div class="burn" style="transform: scaleX({barPct / 100})"></div>
+    </div>
     <div class="fusectl">
       {#if running}
         <button type="button" class="btn grow" onclick={pauseFuse}>⏸ Pause</button>
       {:else}
-        <button type="button" class="btn grow" onclick={startFuse}>{timesUp ? '↻ Re-arm' : '▶ Light the fuse'}</button>
+        <button type="button" class="btn grow" onclick={startFuse}
+          >{timesUp ? '↻ Re-arm' : '▶ Light the fuse'}</button
+        >
       {/if}
-      <button type="button" class="btn" onclick={resetFuse} aria-label="Reset the round timer">↺</button>
+      <button type="button" class="btn" onclick={resetFuse} aria-label="Reset the round timer"
+        >↺</button
+      >
     </div>
   </div>
 
@@ -280,7 +311,9 @@
   <div class="rooms">
     {#each rooms as room, ri (room)}
       {@const leadId = room === 1 ? input.leader1 : input.leader2}
-      {@const leadName = leadId ? (ctx.players.find((p) => p.id === leadId)?.name ?? 'Leader') : null}
+      {@const leadName = leadId
+        ? (ctx.players.find((p) => p.id === leadId)?.name ?? 'Leader')
+        : null}
       <div class="room">
         <div class="roomhead">
           <span class="door" aria-hidden="true">🚪</span>
@@ -294,7 +327,13 @@
         <div class="chips">
           {#each ctx.players as p (p.id)}
             {@const on = (room === 1 ? input.leader1 : input.leader2) === p.id}
-            <button type="button" class="chip" class:on aria-pressed={on} onclick={() => setLeader(room, p.id)}>
+            <button
+              type="button"
+              class="chip"
+              class:on
+              aria-pressed={on}
+              onclick={() => setLeader(room, p.id)}
+            >
               <Avatar name={p.name} color={p.color} size={22} />
               <span>{p.name}</span>
               {#if on}<span class="tag">📢 Leader</span>{/if}
@@ -310,14 +349,24 @@
           <div class="lane">
             <span class="rm">🚪<span class="tnum">1</span></span>
             <span class="flow send">➡️</span>
-            <Stepper bind:value={input.sent1} min={0} max={maxHostages} label="from Room 1 to Room 2" />
+            <Stepper
+              bind:value={input.sent1}
+              min={0}
+              max={maxHostages}
+              label="from Room 1 to Room 2"
+            />
             <span class="flow send">➡️</span>
             <span class="rm">🚪<span class="tnum">2</span></span>
           </div>
           <div class="lane">
             <span class="rm">🚪<span class="tnum">1</span></span>
             <span class="flow recv">⬅️</span>
-            <Stepper bind:value={input.sent2} min={0} max={maxHostages} label="from Room 2 to Room 1" />
+            <Stepper
+              bind:value={input.sent2}
+              min={0}
+              max={maxHostages}
+              label="from Room 2 to Room 1"
+            />
             <span class="flow recv">⬅️</span>
             <span class="rm">🚪<span class="tnum">2</span></span>
           </div>
@@ -329,14 +378,28 @@
   {#if isFinal}
     <div class="reveal">
       <div class="revhead">🎭 The Reveal</div>
-      <p class="muted revlede">Everyone flips their card. Did the Bomber end up in the President’s room?</p>
+      <p class="muted revlede">
+        Everyone flips their card. Did the Bomber end up in the President’s room?
+      </p>
 
       <div class="picks">
-        <button type="button" class="pick" class:on={winner === 'red'} aria-pressed={winner === 'red'} onclick={() => setWinner('red')}>
+        <button
+          type="button"
+          class="pick"
+          class:on={winner === 'red'}
+          aria-pressed={winner === 'red'}
+          onclick={() => setWinner('red')}
+        >
           <span class="pickmain">💥 Same room</span>
           <span class="picksub">🔴 Red Team wins</span>
         </button>
-        <button type="button" class="pick" class:on={winner === 'blue'} aria-pressed={winner === 'blue'} onclick={() => setWinner('blue')}>
+        <button
+          type="button"
+          class="pick"
+          class:on={winner === 'blue'}
+          aria-pressed={winner === 'blue'}
+          onclick={() => setWinner('blue')}
+        >
           <span class="pickmain">🕊️ Kept apart</span>
           <span class="picksub">🔵 Blue Team wins</span>
         </button>
@@ -346,17 +409,32 @@
         <div class="row spread winlabel">
           <span class="fieldlabel">
             Tap everyone on the winning {winner === 'red' ? '🔴 Red Team' : '🔵 Blue Team'}
-            <span class="muted">· <span class="tnum">{input.reveal.winners.length}</span> of ~<span class="tnum">{winner === 'red' ? roles.redTotal : roles.blueTotal}</span></span>
+            <span class="muted"
+              >· <span class="tnum">{input.reveal.winners.length}</span> of ~<span class="tnum"
+                >{winner === 'red' ? roles.redTotal : roles.blueTotal}</span
+              ></span
+            >
           </span>
           <span class="winbtns">
             <button type="button" class="btn small ghost" onclick={selectAllWinners}>All</button>
-            <button type="button" class="btn small ghost" onclick={clearWinners} disabled={input.reveal.winners.length === 0}>Clear</button>
+            <button
+              type="button"
+              class="btn small ghost"
+              onclick={clearWinners}
+              disabled={input.reveal.winners.length === 0}>Clear</button
+            >
           </span>
         </div>
         <div class="chips">
           {#each ctx.players as p (p.id)}
             {@const on = input.reveal.winners.includes(p.id)}
-            <button type="button" class="chip win" class:on aria-pressed={on} onclick={() => toggleWinnerMember(p.id)}>
+            <button
+              type="button"
+              class="chip win"
+              class:on
+              aria-pressed={on}
+              onclick={() => toggleWinnerMember(p.id)}
+            >
               <Avatar name={p.name} color={p.color} size={22} />
               <span>{p.name}</span>
               {#if on}<span class="tag">🏆</span>{/if}
@@ -370,7 +448,13 @@
           <div class="chips">
             {#each ctx.players as p (p.id)}
               {@const on = input.reveal.president === p.id}
-              <button type="button" class="chip" class:on aria-pressed={on} onclick={() => setPresident(p.id)}>
+              <button
+                type="button"
+                class="chip"
+                class:on
+                aria-pressed={on}
+                onclick={() => setPresident(p.id)}
+              >
                 <Avatar name={p.name} color={p.color} size={22} /><span>{p.name}</span>
               </button>
             {/each}
@@ -379,7 +463,13 @@
           <div class="chips">
             {#each ctx.players as p (p.id)}
               {@const on = input.reveal.bomber === p.id}
-              <button type="button" class="chip" class:on aria-pressed={on} onclick={() => setBomber(p.id)}>
+              <button
+                type="button"
+                class="chip"
+                class:on
+                aria-pressed={on}
+                onclick={() => setBomber(p.id)}
+              >
                 <Avatar name={p.name} color={p.color} size={22} /><span>{p.name}</span>
               </button>
             {/each}

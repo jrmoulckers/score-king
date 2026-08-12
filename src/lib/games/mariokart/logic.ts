@@ -154,7 +154,8 @@ export function validateRace(
   for (const p of players) {
     const pos = Math.floor(Number(positions[p.id]) || 0);
     if (pos < 1) return `Where did ${p.name} finish? 🏁`;
-    if (pos > racers) return `${p.name}: there are only ${racers} karts, so ${ordinal(pos)} isn't on the track.`;
+    if (pos > racers)
+      return `${p.name}: there are only ${racers} karts, so ${ordinal(pos)} isn't on the track.`;
     const clash = takenBy.get(pos);
     if (clash) return `${clash} and ${p.name} can't both finish ${ordinal(pos)}.`;
     takenBy.set(pos, p.name);

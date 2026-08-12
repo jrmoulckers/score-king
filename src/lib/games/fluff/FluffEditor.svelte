@@ -89,9 +89,7 @@
   const selName = $derived(ctx.players.find((p) => p.id === input.playerId)?.name ?? '');
   const before = $derived(input.playerId ? remaining[input.playerId] : 0);
   const after = $derived(
-    input.playerId
-      ? Math.max(0, Math.min(start, before + (input.result === 'gain' ? 1 : -1)))
-      : 0,
+    input.playerId ? Math.max(0, Math.min(start, before + (input.result === 'gain' ? 1 : -1))) : 0,
   );
   const othersAlive = $derived(aliveCount - (input.playerId ? 1 : 0));
 
@@ -173,7 +171,10 @@
         : { tone: 'bad', text: `${selName} is knocked out! 💀 (${before} → 0)` };
     }
     if (pendingPalificoId) {
-      return { tone: 'plain', text: `${selName} drops to one die — Palifico! 🎯 (${before} → ${after})` };
+      return {
+        tone: 'plain',
+        text: `${selName} drops to one die — Palifico! 🎯 (${before} → ${after})`,
+      };
     }
     return { tone: 'plain', text: `${selName} loses a die · ${before} → ${after}` };
   });
@@ -240,7 +241,10 @@
       {@const chosen = input.playerId === p.id}
       {@const brink = !out && left === 1}
       {@const isPali = palificoActiveId === p.id}
-      <div class="prow-wrap" use:reactOn={{ token: rowToken[p.id] ?? 0, kind: rowKind[p.id] ?? 'lose' }}>
+      <div
+        class="prow-wrap"
+        use:reactOn={{ token: rowToken[p.id] ?? 0, kind: rowKind[p.id] ?? 'lose' }}
+      >
         <button
           type="button"
           class="prow"
@@ -254,7 +258,9 @@
             <Avatar name={p.name} color={p.color} />
             <span class="name" class:struck={out}>{p.name}</span>
             {#if chosen}
-              <span class="tag">{input.result === 'gain' ? '✓ won one back' : '✓ lost the die'}</span>
+              <span class="tag"
+                >{input.result === 'gain' ? '✓ won one back' : '✓ lost the die'}</span
+              >
             {:else if isPali}
               <span class="tag pali">🎯 Palifico</span>
             {:else if brink}
@@ -279,7 +285,12 @@
     />
   {/if}
 
-  <p class="status" class:score-good={status.tone === 'good'} class:score-bad={status.tone === 'bad'} class:muted={status.tone === 'muted'}>
+  <p
+    class="status"
+    class:score-good={status.tone === 'good'}
+    class:score-bad={status.tone === 'bad'}
+    class:muted={status.tone === 'muted'}
+  >
     {status.text}
   </p>
 </div>
@@ -310,7 +321,10 @@
     color: var(--text);
     cursor: pointer;
     font: inherit;
-    transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.05s ease;
   }
   .prow:hover:not(:disabled) {
     background: var(--surface-3);

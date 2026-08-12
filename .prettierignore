@@ -1,0 +1,25 @@
+# Build output and dependencies
+dist
+dev-dist
+.svelte-kit
+coverage
+node_modules
+package-lock.json
+relay/package-lock.json
+
+# Generated, sealed, or upstream-owned content
+.github/agents
+.github/copilot-instructions.md
+.github/instructions
+.github/prompts
+.github/skills
+.gitattributes
+AGENTS.md
+agency.toml
+.impeccable
+.studio-sync.lock.json
+config/engineering
+engineering-configs.lock.json
+
+# The relay is a separate package with its own toolchain.
+relay

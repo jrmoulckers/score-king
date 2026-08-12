@@ -72,7 +72,8 @@
       answer = await controls.acceptInvite(text);
       phase = 'reply';
     } catch (e) {
-      err = e instanceof Error ? e.message : 'That invite didn’t work — ask the host for a fresh one.';
+      err =
+        e instanceof Error ? e.message : 'That invite didn’t work — ask the host for a fresh one.';
     } finally {
       busy = false;
     }
@@ -101,7 +102,9 @@
 {#if !supported}
   <div class="empty">
     <h2>Nearby play isn’t available here</h2>
-    <p class="muted">This browser can’t connect device-to-device. You can still keep score on your own.</p>
+    <p class="muted">
+      This browser can’t connect device-to-device. You can still keep score on your own.
+    </p>
     <a class="btn primary" href="/" use:link>Back to games</a>
   </div>
 {:else if $liveStatus === 'guest' && replica && gmodule}

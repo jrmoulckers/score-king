@@ -54,9 +54,7 @@
       : null,
   );
   const canAdd = $derived(
-    !!replica &&
-      replica.game.status === 'active' &&
-      (maxR == null || replica.rounds.length < maxR),
+    !!replica && replica.game.status === 'active' && (maxR == null || replica.rounds.length < maxR),
   );
   const winnerNames = $derived(
     !replica
@@ -238,7 +236,8 @@
 
   {#if replica.game.status === 'finished'}
     <div class="card center banner">
-      🏆 {winnerNames || 'Nobody'} {(replica.game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}
+      🏆 {winnerNames || 'Nobody'}
+      {(replica.game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}
     </div>
   {:else if canAdd && draft}
     {@const RoundEditor = gmodule.RoundEditor}
@@ -283,8 +282,8 @@
                   class:tone-bad={cell?.tone === 'bad'}
                   class:tone-good={cell?.tone === 'good'}
                   class:tone-warn={cell?.tone === 'warn'}
-                  title={cell?.label}
-                >{fmt(r.deltas[p.id])}</td>
+                  title={cell?.label}>{fmt(r.deltas[p.id])}</td
+                >
               {/each}
             </tr>
           {/each}

@@ -44,7 +44,12 @@ export function fluffStats({ games, rounds, canonical }: GameStatsInput): GameSp
       metrics.push({ key: 'fluff_lost', label: 'Dice lost', value: fmtInt(a.lost), emoji: '💀' });
     }
     if (a.gained) {
-      metrics.push({ key: 'fluff_won', label: 'Dice won back', value: fmtInt(a.gained), emoji: '🎲' });
+      metrics.push({
+        key: 'fluff_won',
+        label: 'Dice won back',
+        value: fmtInt(a.gained),
+        emoji: '🎲',
+      });
     }
     if (metrics.length) perPlayer[id] = metrics;
   }

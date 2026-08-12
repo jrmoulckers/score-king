@@ -147,12 +147,8 @@ export function rivalrySpotlight(
   const cards = rivalryCards(result).filter((c) => c.games >= minGames);
   if (cards.length === 0) return {};
 
-  const hottest = [...cards].sort(
-    (a, b) => b.games - a.games || b.closeness - a.closeness,
-  )[0];
-  const mismatch = [...cards].sort(
-    (a, b) => a.closeness - b.closeness || b.games - a.games,
-  )[0];
+  const hottest = [...cards].sort((a, b) => b.games - a.games || b.closeness - a.closeness)[0];
+  const mismatch = [...cards].sort((a, b) => a.closeness - b.closeness || b.games - a.games)[0];
   return { hottest, mismatch: mismatch.closeness < 1 ? mismatch : undefined };
 }
 

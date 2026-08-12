@@ -24,7 +24,12 @@ import {
 import { codenamesStats } from './stats';
 
 // ── fixtures ────────────────────────────────────────────────────────────────
-const player = (id: string): Player => ({ id, name: id.toUpperCase(), color: '#7c5cff', createdAt: 0 });
+const player = (id: string): Player => ({
+  id,
+  name: id.toUpperCase(),
+  color: '#7c5cff',
+  createdAt: 0,
+});
 const players = (...ids: string[]): Player[] => ids.map(player);
 
 const input = (
@@ -43,7 +48,11 @@ const round = (index: number, inp: CodenamesInput): Round => ({
   createdAt: index,
 });
 
-const ctx = (ps: Player[], rounds: Round[] = [], config: Record<string, unknown> = {}): RoundContext => {
+const ctx = (
+  ps: Player[],
+  rounds: Round[] = [],
+  config: Record<string, unknown> = {},
+): RoundContext => {
   const game: Game = {
     id: 'g',
     type: 'codenames',
@@ -59,7 +68,12 @@ const ctx = (ps: Player[], rounds: Round[] = [], config: Record<string, unknown>
 // ── team helpers ──────────────────────────────────────────────────────────────
 describe('defaultTeams', () => {
   it('alternates Red/Blue by seat order', () => {
-    expect(defaultTeams(['a', 'b', 'c', 'd'])).toEqual({ a: 'red', b: 'blue', c: 'red', d: 'blue' });
+    expect(defaultTeams(['a', 'b', 'c', 'd'])).toEqual({
+      a: 'red',
+      b: 'blue',
+      c: 'red',
+      d: 'blue',
+    });
   });
   it('handles a single player', () => {
     expect(defaultTeams(['solo'])).toEqual({ solo: 'red' });
@@ -71,7 +85,11 @@ describe('carryTeams', () => {
     expect(carryTeams(undefined, ['a', 'b', 'c'])).toEqual(defaultTeams(['a', 'b', 'c']));
   });
   it('keeps known players and defaults new ones', () => {
-    expect(carryTeams({ a: 'blue', b: 'red' }, ['a', 'b', 'c'])).toEqual({ a: 'blue', b: 'red', c: 'red' });
+    expect(carryTeams({ a: 'blue', b: 'red' }, ['a', 'b', 'c'])).toEqual({
+      a: 'blue',
+      b: 'red',
+      c: 'red',
+    });
   });
   it('drops players no longer in the game', () => {
     const out = carryTeams({ a: 'blue', gone: 'red' }, ['a', 'b']);
@@ -85,7 +103,10 @@ describe('carryTeams', () => {
 
 describe('teamCounts', () => {
   it('counts each side over the given roster only', () => {
-    expect(teamCounts({ a: 'red', b: 'blue', c: 'red' }, ['a', 'b', 'c'])).toEqual({ red: 2, blue: 1 });
+    expect(teamCounts({ a: 'red', b: 'blue', c: 'red' }, ['a', 'b', 'c'])).toEqual({
+      red: 2,
+      blue: 1,
+    });
   });
   it('only counts players in the roster', () => {
     expect(teamCounts({ a: 'red', b: 'blue' }, ['a'])).toEqual({ red: 1, blue: 0 });
@@ -103,9 +124,13 @@ describe('otherTeam', () => {
 describe('createInput', () => {
   it('starts a fresh match with balanced teams and no winner', () => {
     const out = createInput(ctx(players('a', 'b', 'c')));
-    expect(out).toEqual({ teams: { a: 'red', b: 'blue', c: 'red' }, winner: null, ending: 'agents' });
+    expect(out).toEqual({
+      teams: { a: 'red', b: 'blue', c: 'red' },
+      winner: null,
+      ending: 'agents',
+    });
   });
-  it('carries the previous game\'s teams forward and clears the winner', () => {
+  it("carries the previous game's teams forward and clears the winner", () => {
     const prev = round(0, input({ a: 'blue', b: 'blue', c: 'red' }, 'blue', 'assassin'));
     const out = createInput(ctx(players('a', 'b', 'c'), [prev]));
     expect(out.teams).toEqual({ a: 'blue', b: 'blue', c: 'red' });
@@ -223,14 +248,27 @@ describe('a full match', () => {
 describe('seriesState', () => {
   it('is an open head-to-head with no target', () => {
     const s = seriesState({ red: 3, blue: 1 }, 0);
-    expect(s).toMatchObject({ target: 0, leader: 'red', matchPoint: false, decider: false, over: false });
+    expect(s).toMatchObject({
+      target: 0,
+      leader: 'red',
+      matchPoint: false,
+      decider: false,
+      over: false,
+    });
   });
   it('reports a level series with no leader', () => {
     expect(seriesState({ red: 2, blue: 2 }, 4).leader).toBeNull();
   });
   it('flags match point one game from the target', () => {
     const s = seriesState({ red: 2, blue: 0 }, 3);
-    expect(s).toMatchObject({ leader: 'red', redNeeded: 1, blueNeeded: 3, matchPoint: true, decider: false, over: false });
+    expect(s).toMatchObject({
+      leader: 'red',
+      redNeeded: 1,
+      blueNeeded: 3,
+      matchPoint: true,
+      decider: false,
+      over: false,
+    });
   });
   it('flags a decider when both sides need one', () => {
     const s = seriesState({ red: 2, blue: 2 }, 3);
@@ -250,7 +288,10 @@ describe('seriesState', () => {
 describe('streak', () => {
   it('is empty with no resolved games', () => {
     expect(streak([])).toEqual({ team: null, length: 0 });
-    expect(streak([round(0, input({ a: 'red', b: 'blue' }, null))])).toEqual({ team: null, length: 0 });
+    expect(streak([round(0, input({ a: 'red', b: 'blue' }, null))])).toEqual({
+      team: null,
+      length: 0,
+    });
   });
   it('counts the current run and resets on a side change', () => {
     const rounds = [
@@ -279,7 +320,11 @@ describe('balanceTeams', () => {
 
 describe('swapTeams', () => {
   it('flips every side', () => {
-    expect(swapTeams({ a: 'red', b: 'blue', c: 'red' })).toEqual({ a: 'blue', b: 'red', c: 'blue' });
+    expect(swapTeams({ a: 'red', b: 'blue', c: 'red' })).toEqual({
+      a: 'blue',
+      b: 'red',
+      c: 'blue',
+    });
   });
   it('repairs a corrupt entry to a valid side', () => {
     expect(swapTeams({ a: 'green' as unknown as Team })).toEqual({ a: 'red' });
@@ -329,7 +374,12 @@ describe('optional spymasters', () => {
     expect(score(withSpies, ids)).toEqual(score(without, ids));
   });
   it('does not change validation', () => {
-    expect(validate(input({ a: 'red', b: 'blue' }, 'red', 'agents', { red: 'a', blue: 'b' }), ['a', 'b'])).toBeNull();
+    expect(
+      validate(input({ a: 'red', b: 'blue' }, 'red', 'agents', { red: 'a', blue: 'b' }), [
+        'a',
+        'b',
+      ]),
+    ).toBeNull();
   });
 });
 
@@ -384,7 +434,9 @@ describe('codenamesStats', () => {
   it('omits spymaster metrics when no desks were logged', () => {
     const rounds = [round(0, input({ a: 'red', b: 'blue' }, 'red'))];
     const { perPlayer } = codenamesStats(statsInput(rounds));
-    const hasSpy = Object.values(perPlayer ?? {}).some((ms) => ms.some((m) => m.key === 'cn_spymaster'));
+    const hasSpy = Object.values(perPlayer ?? {}).some((ms) =>
+      ms.some((m) => m.key === 'cn_spymaster'),
+    );
     expect(hasSpy).toBe(false);
   });
 });

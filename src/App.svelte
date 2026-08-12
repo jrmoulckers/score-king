@@ -103,10 +103,18 @@
 </script>
 
 {#snippet navLinks()}
-  <a href="/" use:link class:active={navActive.games}><span class="ico" aria-hidden="true">🏠</span><span class="lbl">Games</span></a>
-  <a href="/players" use:link class:active={navActive.players}><span class="ico" aria-hidden="true">👥</span><span class="lbl">Players</span></a>
-  <a href="/history" use:link class:active={navActive.history}><span class="ico" aria-hidden="true">📜</span><span class="lbl">History</span></a>
-  <a href="/stats" use:link class:active={navActive.stats}><span class="ico" aria-hidden="true">📊</span><span class="lbl">Stats</span></a>
+  <a href="/" use:link class:active={navActive.games}
+    ><span class="ico" aria-hidden="true">🏠</span><span class="lbl">Games</span></a
+  >
+  <a href="/players" use:link class:active={navActive.players}
+    ><span class="ico" aria-hidden="true">👥</span><span class="lbl">Players</span></a
+  >
+  <a href="/history" use:link class:active={navActive.history}
+    ><span class="ico" aria-hidden="true">📜</span><span class="lbl">History</span></a
+  >
+  <a href="/stats" use:link class:active={navActive.stats}
+    ><span class="ico" aria-hidden="true">📊</span><span class="lbl">Stats</span></a
+  >
 {/snippet}
 
 <a href="#main-content" class="skip-link">Skip to content</a>
@@ -146,55 +154,67 @@
       </div>
     {/if}
 
-<main class="app" id="main-content" tabindex="-1" bind:this={mainEl}>
-  {#if route.name === 'home'}
-    <Home />
-  {:else if route.name === 'players'}
-    <Players />
-  {:else if route.name === 'history'}
-    <History />
-  {:else if route.name === 'stats'}
-    <Lazy loader={() => import('./pages/Stats.svelte')} />
-  {:else if route.name === 'court'}
-    <Lazy loader={() => import('./pages/Court.svelte')} />
-  {:else if route.name === 'wrapped'}
-    <Lazy loader={() => import('./pages/Wrapped.svelte')} />
-  {:else if route.name === 'tonight'}
-    <Lazy loader={() => import('./pages/Wrapped.svelte')} props={{ initialPreset: 'tonight' }} />
-  {:else if route.name === 'settings'}
-    <Lazy loader={() => import('./pages/Settings.svelte')} />
-  {:else if route.name === 'accessibility'}
-    <Lazy loader={() => import('./pages/Accessibility.svelte')} />
-  {:else if route.name === 'gameplay'}
-    <Lazy loader={() => import('./pages/GameplaySettings.svelte')} />
-  {:else if route.name === 'managegames'}
-    <Lazy loader={() => import('./pages/ManageGames.svelte')} />
-  {:else if route.name === 'browse'}
-    <Lazy loader={() => import('./pages/Browse.svelte')} />
-  {:else if route.name === 'gametype'}
-    <Lazy loader={() => import('./pages/GameType.svelte')} props={{ type: route.params.type }} />
-  {:else if route.name === 'customedit'}
-    {#key route.params.id ?? 'new'}
-      <Lazy loader={() => import('./pages/CustomGameEdit.svelte')} props={{ id: route.params.id }} />
-    {/key}
-  {:else if route.name === 'play'}
-    {#key route.params.id}
-      <Lazy loader={() => import('./pages/GamePlay.svelte')} props={{ id: route.params.id }} />
-    {/key}
-  {:else if route.name === 'join'}
-    {#key route.params.code}
-      <Lazy loader={() => import('./pages/LiveJoin.svelte')} props={{ code: route.params.code }} />
-    {/key}
-  {:else if route.name === 'nearby'}
-    <Lazy loader={() => import('./pages/NearbyJoin.svelte')} />
-  {:else if route.name === 'recap'}
-    {#key current}
-      <Lazy loader={() => import('./pages/Recap.svelte')} />
-    {/key}
-  {:else}
-    <NotFound />
-  {/if}
-</main>
+    <main class="app" id="main-content" tabindex="-1" bind:this={mainEl}>
+      {#if route.name === 'home'}
+        <Home />
+      {:else if route.name === 'players'}
+        <Players />
+      {:else if route.name === 'history'}
+        <History />
+      {:else if route.name === 'stats'}
+        <Lazy loader={() => import('./pages/Stats.svelte')} />
+      {:else if route.name === 'court'}
+        <Lazy loader={() => import('./pages/Court.svelte')} />
+      {:else if route.name === 'wrapped'}
+        <Lazy loader={() => import('./pages/Wrapped.svelte')} />
+      {:else if route.name === 'tonight'}
+        <Lazy
+          loader={() => import('./pages/Wrapped.svelte')}
+          props={{ initialPreset: 'tonight' }}
+        />
+      {:else if route.name === 'settings'}
+        <Lazy loader={() => import('./pages/Settings.svelte')} />
+      {:else if route.name === 'accessibility'}
+        <Lazy loader={() => import('./pages/Accessibility.svelte')} />
+      {:else if route.name === 'gameplay'}
+        <Lazy loader={() => import('./pages/GameplaySettings.svelte')} />
+      {:else if route.name === 'managegames'}
+        <Lazy loader={() => import('./pages/ManageGames.svelte')} />
+      {:else if route.name === 'browse'}
+        <Lazy loader={() => import('./pages/Browse.svelte')} />
+      {:else if route.name === 'gametype'}
+        <Lazy
+          loader={() => import('./pages/GameType.svelte')}
+          props={{ type: route.params.type }}
+        />
+      {:else if route.name === 'customedit'}
+        {#key route.params.id ?? 'new'}
+          <Lazy
+            loader={() => import('./pages/CustomGameEdit.svelte')}
+            props={{ id: route.params.id }}
+          />
+        {/key}
+      {:else if route.name === 'play'}
+        {#key route.params.id}
+          <Lazy loader={() => import('./pages/GamePlay.svelte')} props={{ id: route.params.id }} />
+        {/key}
+      {:else if route.name === 'join'}
+        {#key route.params.code}
+          <Lazy
+            loader={() => import('./pages/LiveJoin.svelte')}
+            props={{ code: route.params.code }}
+          />
+        {/key}
+      {:else if route.name === 'nearby'}
+        <Lazy loader={() => import('./pages/NearbyJoin.svelte')} />
+      {:else if route.name === 'recap'}
+        {#key current}
+          <Lazy loader={() => import('./pages/Recap.svelte')} />
+        {/key}
+      {:else}
+        <NotFound />
+      {/if}
+    </main>
 
     <nav class="tabbar" aria-label="Primary">
       {@render navLinks()}
@@ -204,7 +224,14 @@
 
 {#if $toast}
   <div class="toast-host">
-    <div class="toast" role="status" aria-live="polite" aria-atomic="true" in:fly={toastFly} out:fly={toastFly}>
+    <div
+      class="toast"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      in:fly={toastFly}
+      out:fly={toastFly}
+    >
       <span>{$toast.message}</span>
       {#if $toast.action}
         <button class="toast-action" onclick={$toast.action.run}>{$toast.action.label}</button>
@@ -375,7 +402,11 @@
     font-size: 0.9rem;
   }
   @keyframes veil-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 </style>

@@ -58,12 +58,19 @@ export function mariokartStats({ games, rounds, canonical }: GameStatsInput): Ga
     if (a.wins) {
       metrics.push({ key: 'mk_wins', label: 'Race wins', value: fmtInt(a.wins), emoji: '🥇' });
     }
-    metrics.push({ key: 'mk_pod', label: 'Podium rate', value: fmtPct(a.podiums / a.races), emoji: '🏅' });
+    metrics.push({
+      key: 'mk_pod',
+      label: 'Podium rate',
+      value: fmtPct(a.podiums / a.races),
+      emoji: '🏅',
+    });
     perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
-  if (races) global.push({ key: 'mk_races', label: 'Races run', value: fmtInt(races), emoji: '🏁' });
-  if (totWins) global.push({ key: 'mk_wins_all', label: 'Race wins', value: fmtInt(totWins), emoji: '🥇' });
+  if (races)
+    global.push({ key: 'mk_races', label: 'Races run', value: fmtInt(races), emoji: '🏁' });
+  if (totWins)
+    global.push({ key: 'mk_wins_all', label: 'Race wins', value: fmtInt(totWins), emoji: '🥇' });
   return { perPlayer, global };
 }

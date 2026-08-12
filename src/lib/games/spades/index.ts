@@ -1,13 +1,7 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
 import { spadesStats } from './stats';
-import {
-  emptyRow,
-  readConfig,
-  scoreLatest,
-  validateHand,
-  type SpadesInput,
-} from './logic';
+import { emptyRow, readConfig, scoreLatest, validateHand, type SpadesInput } from './logic';
 
 export type { SpadesInput, SpadesRow, NilKind } from './logic';
 
@@ -59,7 +53,14 @@ export const spades: GameModule = {
       default: true,
       help: 'Overtricks are “bags”. Collect a threshold of them and they cost 100 points.',
     },
-    { key: 'bagThreshold', label: 'Bags before the −100 hit', type: 'number', default: 10, min: 2, max: 20 },
+    {
+      key: 'bagThreshold',
+      label: 'Bags before the −100 hit',
+      type: 'number',
+      default: 10,
+      min: 2,
+      max: 20,
+    },
   ],
 
   createRoundInput: (ctx: RoundContext): SpadesInput => ({

@@ -103,7 +103,10 @@
 <div class="card set-stack">
   <span class="meta">
     <span class="name">Theme</span>
-    <span class="muted sm">Auto follows your device’s day/night. Dark keeps things calm under low light; light suits bright rooms.</span>
+    <span class="muted sm"
+      >Auto follows your device’s day/night. Dark keeps things calm under low light; light suits
+      bright rooms.</span
+    >
   </span>
   <Segmented label="Theme" options={themeOptions} bind:value={theme} />
 </div>
@@ -128,7 +131,9 @@
   <span class="meta">
     <span class="name">True-black (OLED)</span>
     <span class="muted sm">
-      {oledDisabled ? 'Switch to the dark theme to use true black.' : 'Pure-black surfaces save power and deepen contrast.'}
+      {oledDisabled
+        ? 'Switch to the dark theme to use true black.'
+        : 'Pure-black surfaces save power and deepen contrast.'}
     </span>
   </span>
   <Switch checked={$settings.oled} disabled={oledDisabled} onchange={(v) => setBool('oled', v)} />
@@ -139,7 +144,9 @@
 <div class="card set-stack">
   <span class="meta">
     <span class="name">Motion</span>
-    <span class="muted sm">System follows your device. Reduced removes animation; Full always plays it.</span>
+    <span class="muted sm"
+      >System follows your device. Reduced removes animation; Full always plays it.</span
+    >
   </span>
   <Segmented label="Motion" options={motionOptions} bind:value={motion} />
 </div>
@@ -147,7 +154,9 @@
 <label class="card sw-row row spread">
   <span class="meta">
     <span class="name">Colour-blind palette</span>
-    <span class="muted sm">Swaps player colours for a set that stays distinct across colour vision types.</span>
+    <span class="muted sm"
+      >Swaps player colours for a set that stays distinct across colour vision types.</span
+    >
   </span>
   <Switch checked={$settings.colorBlind} onchange={(v) => setBool('colorBlind', v)} />
 </label>
@@ -156,8 +165,8 @@
   <span class="meta">
     <span class="name">Reset appearance</span>
     <span class="muted sm">
-      Put theme, text size, contrast, motion, and colour back to Score King’s defaults. Only
-      these display choices change — your games, players, and backup are untouched.
+      Put theme, text size, contrast, motion, and colour back to Score King’s defaults. Only these
+      display choices change — your games, players, and backup are untouched.
     </span>
   </span>
   <button class="btn ghost danger" onclick={resetAppearance} disabled={!canReset}>
@@ -190,9 +199,15 @@
     animation: pulse 1.8s ease-out infinite;
   }
   @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good, #34d399) 55%, transparent); }
-    70% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--good, #34d399) 0%, transparent); }
-    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good, #34d399) 0%, transparent); }
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--good, #34d399) 55%, transparent);
+    }
+    70% {
+      box-shadow: 0 0 0 8px color-mix(in srgb, var(--good, #34d399) 0%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--good, #34d399) 0%, transparent);
+    }
   }
   .mini {
     width: 100%;

@@ -25,7 +25,15 @@ export function spadesStats({ games, rounds, canonical }: GameStatsInput): GameS
   const get = (id: ID): SpadesAgg => {
     let a = per.get(id);
     if (!a) {
-      a = { hands: 0, contractsMade: 0, bags: 0, nilTries: 0, nilMade: 0, blindTries: 0, blindMade: 0 };
+      a = {
+        hands: 0,
+        contractsMade: 0,
+        bags: 0,
+        nilTries: 0,
+        nilMade: 0,
+        blindTries: 0,
+        blindMade: 0,
+      };
       per.set(id, a);
     }
     return a;
@@ -85,13 +93,28 @@ export function spadesStats({ games, rounds, canonical }: GameStatsInput): GameS
     totNilMade += a.nilMade + a.blindMade;
     const metrics: Metric[] = [];
     if (a.hands) {
-      metrics.push({ key: 'sp_acc', label: 'Contracts made', value: fmtPct(a.contractsMade / a.hands), emoji: '🎯' });
+      metrics.push({
+        key: 'sp_acc',
+        label: 'Contracts made',
+        value: fmtPct(a.contractsMade / a.hands),
+        emoji: '🎯',
+      });
     }
     if (a.nilTries) {
-      metrics.push({ key: 'sp_nil', label: 'Nils nailed', value: `${a.nilMade}/${a.nilTries}`, emoji: '🚫' });
+      metrics.push({
+        key: 'sp_nil',
+        label: 'Nils nailed',
+        value: `${a.nilMade}/${a.nilTries}`,
+        emoji: '🚫',
+      });
     }
     if (a.blindTries) {
-      metrics.push({ key: 'sp_blind', label: 'Blind nils', value: `${a.blindMade}/${a.blindTries}`, emoji: '🙈' });
+      metrics.push({
+        key: 'sp_blind',
+        label: 'Blind nils',
+        value: `${a.blindMade}/${a.blindTries}`,
+        emoji: '🙈',
+      });
     }
     if (a.bags) {
       metrics.push({ key: 'sp_bags', label: 'Bags collected', value: fmtInt(a.bags), emoji: '🛍️' });
@@ -101,10 +124,27 @@ export function spadesStats({ games, rounds, canonical }: GameStatsInput): GameS
 
   const global: Metric[] = [];
   if (unitHands) {
-    global.push({ key: 'sp_acc_all', label: 'Contracts made', value: fmtPct(unitMade / unitHands), emoji: '🎯' });
+    global.push({
+      key: 'sp_acc_all',
+      label: 'Contracts made',
+      value: fmtPct(unitMade / unitHands),
+      emoji: '🎯',
+    });
   }
-  if (totalBags) global.push({ key: 'sp_bags_all', label: 'Bags collected', value: fmtInt(totalBags), emoji: '🛍️' });
-  if (totNilTries) global.push({ key: 'sp_nil_all', label: 'Nils nailed', value: `${totNilMade}/${totNilTries}`, emoji: '🚫' });
+  if (totalBags)
+    global.push({
+      key: 'sp_bags_all',
+      label: 'Bags collected',
+      value: fmtInt(totalBags),
+      emoji: '🛍️',
+    });
+  if (totNilTries)
+    global.push({
+      key: 'sp_nil_all',
+      label: 'Nils nailed',
+      value: `${totNilMade}/${totNilTries}`,
+      emoji: '🚫',
+    });
 
   return { perPlayer, global };
 }

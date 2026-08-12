@@ -82,7 +82,9 @@
   // footer total and the leader announcement never crown a tied-at-zero table.
   const leaderIds = $derived(game ? leaders(totals, game.playerIds, lower) : new Set<string>());
   const maxR = $derived(
-    game && module && module.maxRounds ? module.maxRounds(game.config, game.playerIds.length) : null,
+    game && module && module.maxRounds
+      ? module.maxRounds(game.config, game.playerIds.length)
+      : null,
   );
   const canAddRound = $derived(maxR == null || rounds.length < maxR);
   // Validate the in-progress entry live so an invalid round is caught inline —
@@ -148,7 +150,9 @@
 
   function resetDraft() {
     if (game && module) {
-      draft = module.createRoundInput(buildCtx(rounds.length, computeTotals(rounds, game.playerIds)));
+      draft = module.createRoundInput(
+        buildCtx(rounds.length, computeTotals(rounds, game.playerIds)),
+      );
     } else {
       draft = null;
     }
@@ -298,7 +302,9 @@
       .join(' and ');
     if (names) {
       haptic('win');
-      announce(`Game finished. ${names} ${(game?.winnerIds?.length ?? 0) > 1 ? 'tie for the win' : 'wins'}.`);
+      announce(
+        `Game finished. ${names} ${(game?.winnerIds?.length ?? 0) > 1 ? 'tie for the win' : 'wins'}.`,
+      );
     }
   }
   async function doReopen() {
@@ -398,7 +404,11 @@
   }
 
   function hostHandlers(): HostHandlers {
-    return { self: currentSelf('leader'), buildState: buildLiveState, applyIntent: applyLiveIntent };
+    return {
+      self: currentSelf('leader'),
+      buildState: buildLiveState,
+      applyIntent: applyLiveIntent,
+    };
   }
 
   /** One entry point: "play together". Leads online, or nearby when the device is offline. */
@@ -474,7 +484,9 @@
   <div class="empty notfound">
     <div class="nf-emoji" aria-hidden="true">🃏</div>
     <h2>This game left the table</h2>
-    <p class="muted">We couldn’t find this game — it may have been deleted, or the link is out of date.</p>
+    <p class="muted">
+      We couldn’t find this game — it may have been deleted, or the link is out of date.
+    </p>
     <a class="btn primary" href="/" use:link>Back to games</a>
   </div>
 {:else}
@@ -489,13 +501,13 @@
             ? 'Finished'
             : game.status === 'abandoned'
               ? 'Abandoned'
-              : 'Started'} · {relativeTime(
-            game.finishedAt ?? game.createdAt,
-          )}
+              : 'Started'} · {relativeTime(game.finishedAt ?? game.createdAt)}
         </div>
       </span>
     </span>
-    <button class="iconbtn" onclick={deleteGame} aria-label="Delete game" title="Delete game">🗑</button>
+    <button class="iconbtn" onclick={deleteGame} aria-label="Delete game" title="Delete game"
+      >🗑</button
+    >
   </div>
 
   {#if liveSupported && game.status === 'active'}
@@ -516,7 +528,9 @@
               {:else if $liveConnection === 'offline'}
                 Offline · your game is safe
               {:else}
-                {$liveParticipants.length} here · tap to {liveKind === 'nearby' ? 'add players' : 'share'}
+                {$liveParticipants.length} here · tap to {liveKind === 'nearby'
+                  ? 'add players'
+                  : 'share'}
               {/if}
             </span>
           </span>
@@ -530,12 +544,20 @@
     {/if}
   {/if}
 
-  <Scoreboard players={orderedPlayers} {totals} lowerIsBetter={lower} winners={game.winnerIds ?? []} youId={$leadMember?.id} />
+  <Scoreboard
+    players={orderedPlayers}
+    {totals}
+    lowerIsBetter={lower}
+    winners={game.winnerIds ?? []}
+    youId={$leadMember?.id}
+  />
 
   {#if game.status === 'finished'}
     <div class="card center banner winner-banner">
       <WinnerCelebration />
-      <span class="banner-text">🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}</span>
+      <span class="banner-text"
+        >🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}</span
+      >
     </div>
     <button class="btn block" style="margin-top: 12px" onclick={() => (shareOpen = true)}>
       📤 Share results
@@ -563,7 +585,9 @@
       {/if}
       <div class="row" style="gap: 10px">
         <button class="btn grow" onclick={cancelEdit}>Cancel</button>
-        <button class="btn primary grow" onclick={saveEdit} disabled={!!editError}>Save changes</button>
+        <button class="btn primary grow" onclick={saveEdit} disabled={!!editError}
+          >Save changes</button
+        >
       </div>
       <button class="btn danger block" onclick={() => editing && del(editing)}>
         Delete round {editing.index + 1}
@@ -581,7 +605,9 @@
         {#if draftError}
           <p class="entry-error" role="alert">⚠️ {draftError}</p>
         {/if}
-        <button class="btn primary block save-round" onclick={saveRound} disabled={!!draftError}>Save round</button>
+        <button class="btn primary block save-round" onclick={saveRound} disabled={!!draftError}
+          >Save round</button
+        >
       </div>
     {:else}
       <div class="card center" style="margin-top: 12px">All {maxR} rounds played.</div>
@@ -590,19 +616,21 @@
     {#if finishedReady}
       <div class="card center stack" style="margin-top: 12px">
         <span>🏁 This game looks complete.</span>
-        <button class="btn {canAddRound ? '' : 'primary'}" onclick={doFinish}>Finish &amp; record winner</button>
+        <button class="btn {canAddRound ? '' : 'primary'}" onclick={doFinish}
+          >Finish &amp; record winner</button
+        >
       </div>
-    {:else}
-      {#if rounds.length}
-        <button class="btn ghost block" style="margin-top: 12px" onclick={doFinish}>Finish game now</button>
-      {/if}
+    {:else if rounds.length}
+      <button class="btn ghost block" style="margin-top: 12px" onclick={doFinish}
+        >Finish game now</button
+      >
     {/if}
     <button
       class="btn ghost block"
       style="margin-top: 8px; color: var(--muted)"
       onclick={doAbandon}
-      title="Stop this game without recording a winner"
-    >🪦 Abandon game</button>
+      title="Stop this game without recording a winner">🪦 Abandon game</button
+    >
   {/if}
 
   {#if rounds.length}
@@ -614,7 +642,8 @@
         onclick={() => (showRunning = !showRunning)}
         aria-pressed={showRunning}
         title="Toggle between each round’s points and the running total"
-      >{showRunning ? '∑ Running totals' : '± Per round'}</button>
+        >{showRunning ? '∑ Running totals' : '± Per round'}</button
+      >
     </div>
     <div class="scroll">
       <table class="matrix">
@@ -632,14 +661,16 @@
             <tr class:flash={r.id === justSavedId}>
               <td>{r.index + 1}</td>
               {#each orderedPlayers as p (p.id)}
-                {@const cell = !showRunning && module ? (module.roundCellTone?.(r, p.id) ?? null) : null}
+                {@const cell =
+                  !showRunning && module ? (module.roundCellTone?.(r, p.id) ?? null) : null}
                 <td
                   class="num"
                   class:tone-bad={cell?.tone === 'bad'}
                   class:tone-good={cell?.tone === 'good'}
                   class:tone-warn={cell?.tone === 'warn'}
                   title={cell?.label}
-                >{showRunning ? (runningTotals[r.id]?.[p.id] ?? 0) : fmt(r.deltas[p.id])}</td>
+                  >{showRunning ? (runningTotals[r.id]?.[p.id] ?? 0) : fmt(r.deltas[p.id])}</td
+                >
               {/each}
               <td class="acts">
                 {#if game.status === 'active'}
@@ -647,8 +678,8 @@
                     class="rowbtn"
                     onclick={() => startEdit(r)}
                     aria-label={`Edit round ${r.index + 1}`}
-                    title="Edit round"
-                  >✎</button>
+                    title="Edit round">✎</button
+                  >
                 {/if}
               </td>
             </tr>
@@ -658,7 +689,11 @@
           <tr>
             <th scope="row">Total</th>
             {#each orderedPlayers as p (p.id)}
-              <td class="num" class:lead={leaderIds.has(p.id) || (game.winnerIds ?? []).includes(p.id)}>{totals[p.id] ?? 0}</td>
+              <td
+                class="num"
+                class:lead={leaderIds.has(p.id) || (game.winnerIds ?? []).includes(p.id)}
+                >{totals[p.id] ?? 0}</td
+              >
             {/each}
             <td></td>
           </tr>
@@ -802,9 +837,18 @@
     z-index: 2;
   }
   @keyframes winner-pop {
-    0% { transform: scale(0.94); opacity: 0; }
-    55% { transform: scale(1.03); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+      transform: scale(0.94);
+      opacity: 0;
+    }
+    55% {
+      transform: scale(1.03);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .winner-banner {

@@ -154,7 +154,9 @@ export function runHostExclusive<T>(fn: () => Promise<T>): Promise<T> {
 export function currentSelf(asRole: 'leader' | 'guest'): Participant {
   const leadId = get(settings).leadMemberId;
   const roster = get(players);
-  const lead = leadId ? roster.find((p) => p.id === leadId && !p.archived && !p.deleted) : undefined;
+  const lead = leadId
+    ? roster.find((p) => p.id === leadId && !p.archived && !p.deleted)
+    : undefined;
   if (lead) return { id: lead.id, name: lead.name, color: lead.color, role: asRole };
   const taken = roster.map((p) => p.name);
   // Skip palette[0] (Royal Violet) — it's the reserved primary-action accent.

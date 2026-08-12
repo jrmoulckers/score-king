@@ -57,7 +57,10 @@
         </span>
       </div>
       <div class="track">
-        <div class="fill" style="transform: scaleX({pct(Math.min(l.total, projected)) / 100})"></div>
+        <div
+          class="fill"
+          style="transform: scaleX({pct(Math.min(l.total, projected)) / 100})"
+        ></div>
         {#if l.gain > 0}
           <div
             class="ghost gain"

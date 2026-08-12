@@ -10,10 +10,19 @@
 
 ## Guiding principle
 
-**An account, and the World it lives in, are local-first documents you _own_ — not a service
-you log into.** Backup, sharing, and live multiplayer are capabilities *layered onto* an owned
-document; none of them is ever a precondition for play. That single rule is what lets identity
-and networked play exist without taxing the local-first trust contract.
+Local durable ownership, an optional sync seam, and zero-config safe degradation are ratified
+engineering rules:
+[`ENG-LOCAL-001`](https://github.com/jrmoulckers/engineering/blob/v0.16.5/principles/platforms/local-first.md#eng-local-001),
+[`ENG-LOCAL-002`](https://github.com/jrmoulckers/engineering/blob/v0.16.5/principles/platforms/local-first.md#eng-local-002),
+and
+[`ENG-LOCAL-004`](https://github.com/jrmoulckers/engineering/blob/v0.16.5/principles/platforms/local-first.md#eng-local-004).
+They are cited rather than restated.
+
+**Score King's expression of them: an account, and the World it lives in, are local-first
+documents you _own_ — not a service you log into.** Backup, sharing, and live multiplayer are
+capabilities _layered onto_ an owned document; none of them is ever a precondition for play.
+That single rule is what lets identity and networked play exist without taxing the local-first
+trust contract.
 
 ```mermaid
 flowchart TB
@@ -34,8 +43,8 @@ flowchart TB
 
 The single unit of ownership, and the evolution of today's backup file. One versioned
 document holding **members, games, rounds, preferences, and stats**. "Single-device",
-"shared", and "remote" are not different data models — they are only *where the World is
-hosted and who may write to it.*
+"shared", and "remote" are not different data models — they are only _where the World is
+hosted and who may write to it._
 
 ### Member — unifies "player" and "account"
 
@@ -45,40 +54,45 @@ One entity for "a gamer", replacing the old player-vs-account split:
 - **Claimable handle** — a friendly auto-generated name (Xbox-style) the gamer can rename to
   claim. Display only; **never** an identity key.
 - **Optional profile** — preferences, accessibility, stats.
-- **Lifecycle** — a *guest* is `claimed: false, ephemeral: true`; *archive* soft-deletes and
-  frees the handle for reuse; *promote* makes a member the device/party lead.
+- **Lifecycle** — a _guest_ is `claimed: false, ephemeral: true`; _archive_ soft-deletes and
+  frees the handle for reuse; _promote_ makes a member the device/party lead.
 
 Rejoining matches on the `id` the joiner carries, never the mutable handle — so renaming or
 reusing a handle can never impersonate or collide.
 
 ### Hosting modes
 
-| Mode             | Where the World lives           | Writers                          |
-| ---------------- | ------------------------------- | -------------------------------- |
-| Local            | one device                      | that device                      |
-| Shared (async)   | each member's own cloud store   | one at a time, merged on sync    |
-| Live (real-time) | the leader's device is the truth | leader applies, others propose  |
+| Mode             | Where the World lives            | Writers                        |
+| ---------------- | -------------------------------- | ------------------------------ |
+| Local            | one device                       | that device                    |
+| Shared (async)   | each member's own cloud store    | one at a time, merged on sync  |
+| Live (real-time) | the leader's device is the truth | leader applies, others propose |
 
 ## Change & merge model
 
-**Per-entity last-writer-wins (LWW) with tombstones — deliberately _not_ event-sourcing.**
+The conflict model required by
+[`ENG-LOCAL-003`](https://github.com/jrmoulckers/engineering/blob/v0.16.5/principles/platforms/local-first.md#eng-local-003)
+is declared here and exercised by the merge tests.
 
-- Every record (member, game *including its settings*, round) carries `updatedAt` and a
+**Score King's declaration: per-entity last-writer-wins (LWW) with tombstones — deliberately
+_not_ event-sourcing.**
+
+- Every record (member, game _including its settings_, round) carries `updatedAt` and a
   soft-delete tombstone.
-- Sync = **union by `id`, newest wins per record.** Two members touching *different* things —
+- Sync = **union by `id`, newest wins per record.** Two members touching _different_ things —
   one visits their own profile, another tweaks a game's settings — merge cleanly with no
   conflict. This is the common case, and it just works.
 - Append-only rounds never conflict.
 
 Why not a global op-log / event sourcing? The domain is append-mostly and low-churn; ordered
 audit and undo are nice-to-haves, not the point of the app. Per-entity LWW delivers correct
-*union* merge at a fraction of the cost, and builds directly on the existing JSON + ETag
+_union_ merge at a fraction of the cost, and builds directly on the existing JSON + ETag
 backup: the **ETag stays as transport-level conflict _detection_**, and per-entity metadata
 upgrades that detection into a real **merge**.
 
 ### Known limitation — intentional, for now
 
-When two members edit **the same entity's** fields concurrently (both retune the *same* game),
+When two members edit **the same entity's** fields concurrently (both retune the _same_ game),
 LWW keeps one and silently drops the other. Accepted as the right 90/10 for a score app.
 
 > **Deferred enhancement:** field-level merge for same-entity edits, plus a "here's what changed
@@ -88,7 +102,7 @@ LWW keeps one and silently drops the other. Accepted as the right 90/10 for a sc
 ## Live play
 
 **Host-authoritative.** The party leader's World is the single source of truth for a live
-session; members hold a live replica and send *intents* ("bid 3", "record round"); the leader
+session; members hold a live replica and send _intents_ ("bid 3", "record round"); the leader
 applies them and rebroadcasts. One real writer ⇒ no CRDTs and no merge in the hot path.
 Leadership can transfer ("elect a new leader").
 
@@ -97,6 +111,8 @@ is ephemeral propagation, not a second source of truth.
 
 ### Transport — a seam, not a fork
 
+One narrow provider contract, per
+[`ENG-LOCAL-002`](https://github.com/jrmoulckers/engineering/blob/v0.16.5/principles/platforms/local-first.md#eng-local-002).
 A single `SessionTransport` interface (sibling to the storage `SyncProvider`):
 
 - **Relay first, peer-to-peer too** — the host-authoritative logic above it is unchanged as
@@ -118,7 +134,7 @@ message bus.
 
 Shipped as deploy-ready code in **`relay/`** — a Cloudflare Worker + Durable Object (one DO
 instance per join code) using Hibernatable WebSockets, so idle rooms cost nothing. It fans
-each frame out to the *other* sockets in the room and never echoes the sender, matching the
+each frame out to the _other_ sockets in the room and never echoes the sender, matching the
 `BroadcastChannel` semantics the engine relies on. Point the app at it with `VITE_RELAY_URL`
 at build time or a per-device override in **Settings → Advanced → Live play relay URL**
 (mirroring the OneDrive client-ID override). The hosted deployment + public URL is the
@@ -144,24 +160,26 @@ neither touches the core bundle.
 
 ## Guardrails — explicit non-goals
 
-- **Accounts are local & optional** — never a login, never a precondition to play.
+- **Accounts are local & optional** — never a login, never a precondition to play
+  (`ENG-LOCAL-002`, `ENG-LOCAL-004`).
 - **No global event log as the source of truth** — per-entity LWW is the right weight.
-- **The relay never holds game data** — storage stays self-owned.
+- **The relay never holds game data** — storage stays self-owned
+  ([`ENG-INT-005`](https://github.com/jrmoulckers/engineering/blob/v0.16.5/principles/platforms/integration-boundaries.md#eng-int-005)).
 - **Never key identity off the mutable handle** — always the stable `id`.
 - **No CRDTs for live concurrency** — host-authority removes the need.
 - **Build P2P last, not first** — it dropped in behind the transport seam with no engine changes.
 
 ## Roadmap — soul first, infrastructure last
 
-| Phase   | Adds                                                                                                       | Server?    |
-| ------- | ---------------------------------------------------------------------------------------------------------- | ---------- |
-| 0 ✅    | Faithful JSON World + ETag conflict *detection* + versioned envelope                                        | none       |
-| 1 ✅    | Identity & World: Member model, claim / archive / promote, multiple members per device, active-member prefs | none       |
-| 2 ✅    | Per-entity merge (`updatedAt` + tombstones, union-merge) → async shared Worlds, multi-device-you            | none       |
-| 3a ✅   | Live co-play engine: host-authoritative `SessionTransport` seam + same-origin (`BroadcastChannel`) transport; join by code / link; record-round intents | none       |
-| 3b ✅   | Cross-device live play: `RelayTransport` behind the same seam + a deploy-ready Cloudflare Worker/Durable Object relay (`relay/`) + join by QR — resolves a code, forwards messages, stores no game data | dumb relay |
-| 4 ✅    | Nearby serverless co-play: `WebRtcTransport` behind the same seam — WebRTC data channels over a hand-carried QR / copy-paste handshake (`signal.ts`), LAN-only (`iceServers: []`), no relay and no internet | none       |
-| later   | Field-level merge + a "what changed elsewhere" insight on async World sync                                  | none / relay |
+| Phase | Adds                                                                                                                                                                                                        | Server?      |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 0 ✅  | Faithful JSON World + ETag conflict _detection_ + versioned envelope                                                                                                                                        | none         |
+| 1 ✅  | Identity & World: Member model, claim / archive / promote, multiple members per device, active-member prefs                                                                                                 | none         |
+| 2 ✅  | Per-entity merge (`updatedAt` + tombstones, union-merge) → async shared Worlds, multi-device-you                                                                                                            | none         |
+| 3a ✅ | Live co-play engine: host-authoritative `SessionTransport` seam + same-origin (`BroadcastChannel`) transport; join by code / link; record-round intents                                                     | none         |
+| 3b ✅ | Cross-device live play: `RelayTransport` behind the same seam + a deploy-ready Cloudflare Worker/Durable Object relay (`relay/`) + join by QR — resolves a code, forwards messages, stores no game data     | dumb relay   |
+| 4 ✅  | Nearby serverless co-play: `WebRtcTransport` behind the same seam — WebRTC data channels over a hand-carried QR / copy-paste handshake (`signal.ts`), LAN-only (`iceServers: []`), no relay and no internet | none         |
+| later | Field-level merge + a "what changed elsewhere" insight on async World sync                                                                                                                                  | none / relay |
 
 Identity and merge — the self-owned, local-first core — land **before** the relay, so the
 product's soul is real before any backend exists.

@@ -29,7 +29,11 @@ function player(id: string): Player {
   return { id, name: id.toUpperCase(), color: '#7c5cff', createdAt: 0 };
 }
 const P2 = ['a', 'b'].map(player);
-function ctxFor(players: Player[], config: Record<string, unknown>, roundIndex: number): RoundContext {
+function ctxFor(
+  players: Player[],
+  config: Record<string, unknown>,
+  roundIndex: number,
+): RoundContext {
   return { game: { id: 'g' } as never, players, config, roundIndex, totals: {}, rounds: [] };
 }
 
@@ -65,7 +69,13 @@ describe('bountyTotal', () => {
     expect(bountyTotal(bounty({ manual: 15 }))).toBe(15);
   });
   it('adds captures together', () => {
-    const b = bounty({ fourteens: 2, jollyRoger: true, pirates: 1, skOverMermaid: true, manual: 5 });
+    const b = bounty({
+      fourteens: 2,
+      jollyRoger: true,
+      pirates: 1,
+      skOverMermaid: true,
+      manual: 5,
+    });
     expect(bountyTotal(b)).toBe(20 + 20 + 30 + 50 + 5);
   });
   it('clamps negative/fractional counts', () => {

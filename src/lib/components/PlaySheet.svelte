@@ -170,7 +170,15 @@
   onkeydown={(e) => e.key === 'Enter' && onclose()}
 ></div>
 
-<div class="sheet" role="dialog" aria-modal="true" aria-label="Play together" tabindex="-1" bind:this={sheet} use:focusTrap>
+<div
+  class="sheet"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Play together"
+  tabindex="-1"
+  bind:this={sheet}
+  use:focusTrap
+>
   <div class="grabber" aria-hidden="true"></div>
 
   <div class="row spread">
@@ -204,7 +212,10 @@
     {/if}
 
     {#if remote}
-      <button class="btn {canNativeShare ? '' : 'primary'} block" onclick={() => copy(link, 'Link')}>
+      <button
+        class="btn {canNativeShare ? '' : 'primary'} block"
+        onclick={() => copy(link, 'Link')}
+      >
         🔗 Copy link
       </button>
       {#if canNativeShare}
@@ -213,7 +224,9 @@
     {/if}
     <div class="row" style="gap: 10px">
       <button class="btn grow" onclick={() => copy(code, 'Code')}>Copy code</button>
-      <button class="btn {remote ? '' : 'primary'} grow" onclick={openPlayerTab}>Open a player tab</button>
+      <button class="btn {remote ? '' : 'primary'} grow" onclick={openPlayerTab}
+        >Open a player tab</button
+      >
     </div>
 
     {#if remote}
@@ -226,34 +239,34 @@
         invite other devices, set a relay URL in Settings → Advanced, or switch to nearby below.
       </p>
     {/if}
+  {:else if phase === 'idle'}
+    <p class="note">
+      No internet needed — everyone’s on this network. Add each player by trading codes.
+    </p>
+    <button class="btn primary block" onclick={addPlayer}>➕ Add a player</button>
+  {:else if phase === 'preparing'}
+    <div class="prep">
+      <div class="spinner" aria-hidden="true"></div>
+      <span class="note">Preparing an invite…</span>
+    </div>
+    <button class="btn ghost block" onclick={cancelInvite}>Cancel</button>
   {:else}
-    {#if phase === 'idle'}
-      <p class="note">No internet needed — everyone’s on this network. Add each player by trading codes.</p>
-      <button class="btn primary block" onclick={addPlayer}>➕ Add a player</button>
-    {:else if phase === 'preparing'}
-      <div class="prep">
-        <div class="spinner" aria-hidden="true"></div>
-        <span class="note">Preparing an invite…</span>
-      </div>
-      <button class="btn ghost block" onclick={cancelInvite}>Cancel</button>
-    {:else}
-      <div class="step">
-        <span class="stepnum" aria-hidden="true">1</span>
-        <span>Show this to the player joining:</span>
-      </div>
-      <SignalShare text={offer} caption="They scan or paste this on their device" />
+    <div class="step">
+      <span class="stepnum" aria-hidden="true">1</span>
+      <span>Show this to the player joining:</span>
+    </div>
+    <SignalShare text={offer} caption="They scan or paste this on their device" />
 
-      <div class="step">
-        <span class="stepnum" aria-hidden="true">2</span>
-        <span>Then read the reply they show back:</span>
-      </div>
-      <QrScanner label="their reply" onresult={onReply} />
+    <div class="step">
+      <span class="stepnum" aria-hidden="true">2</span>
+      <span>Then read the reply they show back:</span>
+    </div>
+    <QrScanner label="their reply" onresult={onReply} />
 
-      {#if err}
-        <p class="err" role="alert">{err}</p>
-      {/if}
-      <button class="btn ghost block" onclick={cancelInvite} disabled={busy}>Cancel</button>
+    {#if err}
+      <p class="err" role="alert">{err}</p>
     {/if}
+    <button class="btn ghost block" onclick={cancelInvite} disabled={busy}>Cancel</button>
   {/if}
 
   {#if confirmSwitch}
@@ -261,7 +274,8 @@
       <p class="note">
         Switching to {confirmSwitch === 'nearby' ? 'nearby' : 'online'} disconnects the
         {roster.length - 1}
-        {roster.length - 1 === 1 ? 'player' : 'players'} who already joined — they’ll need a fresh invite. Continue?
+        {roster.length - 1 === 1 ? 'player' : 'players'} who already joined — they’ll need a fresh invite.
+        Continue?
       </p>
       <div class="row" style="gap: 10px">
         <button class="btn grow" onclick={() => (confirmSwitch = null)}>Keep this game</button>
@@ -278,14 +292,20 @@
       </div>
     </div>
   {:else if mode === 'online' && canGoNearby}
-    <button class="switch" onclick={() => requestSwitch('nearby')}>📡 No internet? Switch to nearby</button>
+    <button class="switch" onclick={() => requestSwitch('nearby')}
+      >📡 No internet? Switch to nearby</button
+    >
   {:else if mode === 'nearby' && canGoOnline}
-    <button class="switch" onclick={() => requestSwitch('online')}>🌐 Switch to online — share a link</button>
+    <button class="switch" onclick={() => requestSwitch('online')}
+      >🌐 Switch to online — share a link</button
+    >
   {/if}
 
   {#if confirmEnd}
     <div class="endconfirm">
-      <p class="note">End the game for everyone? Guests drop out — your scoreboard stays safe on this device.</p>
+      <p class="note">
+        End the game for everyone? Guests drop out — your scoreboard stays safe on this device.
+      </p>
       <div class="row" style="gap: 10px">
         <button class="btn grow" onclick={() => (confirmEnd = false)}>Keep playing</button>
         <button class="btn danger grow" onclick={onend}>End for everyone</button>

@@ -60,24 +60,54 @@ export function skullkingStats({ games, rounds, canonical }: GameStatsInput): Ga
     totMade += a.made;
     const metrics: Metric[] = [];
     if (a.bids) {
-      metrics.push({ key: 'sk_acc', label: 'Bid accuracy', value: fmtPct(a.made / a.bids), emoji: '🎯' });
-      metrics.push({ key: 'sk_bold', label: 'Avg bid', value: (a.bidSum / a.bids).toFixed(1), emoji: '🦜' });
+      metrics.push({
+        key: 'sk_acc',
+        label: 'Bid accuracy',
+        value: fmtPct(a.made / a.bids),
+        emoji: '🎯',
+      });
+      metrics.push({
+        key: 'sk_bold',
+        label: 'Avg bid',
+        value: (a.bidSum / a.bids).toFixed(1),
+        emoji: '🦜',
+      });
     }
     if (a.zero) {
-      metrics.push({ key: 'sk_zero', label: 'Zero-bid success', value: `${a.zeroMade}/${a.zero}`, emoji: '🥚' });
+      metrics.push({
+        key: 'sk_zero',
+        label: 'Zero-bid success',
+        value: `${a.zeroMade}/${a.zero}`,
+        emoji: '🥚',
+      });
     }
     if (a.bonus) {
-      metrics.push({ key: 'sk_bonus', label: 'Bounty hunted', value: fmtInt(a.bonus), emoji: '💰' });
+      metrics.push({
+        key: 'sk_bonus',
+        label: 'Bounty hunted',
+        value: fmtInt(a.bonus),
+        emoji: '💰',
+      });
     }
     if (a.bestHaul) {
-      metrics.push({ key: 'sk_haul', label: 'Biggest haul', value: fmtInt(a.bestHaul), emoji: '🪙' });
+      metrics.push({
+        key: 'sk_haul',
+        label: 'Biggest haul',
+        value: fmtInt(a.bestHaul),
+        emoji: '🪙',
+      });
     }
     if (metrics.length) perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
   if (totBids) {
-    global.push({ key: 'sk_acc_all', label: 'Bid accuracy', value: fmtPct(totMade / totBids), emoji: '🎯' });
+    global.push({
+      key: 'sk_acc_all',
+      label: 'Bid accuracy',
+      value: fmtPct(totMade / totBids),
+      emoji: '🎯',
+    });
   }
   return { perPlayer, global };
 }

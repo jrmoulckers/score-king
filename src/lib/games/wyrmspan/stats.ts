@@ -56,11 +56,23 @@ export function wyrmspanStats({ games, rounds, canonical }: GameStatsInput): Gam
     totGames += a.games;
     if (a.best > topScore) topScore = a.best;
     const metrics: Metric[] = [
-      { key: 'wy_dragons', label: 'Dragon VP / game', value: fmtAvg(a.dragonVP / a.games), emoji: '🐉' },
+      {
+        key: 'wy_dragons',
+        label: 'Dragon VP / game',
+        value: fmtAvg(a.dragonVP / a.games),
+        emoji: '🐉',
+      },
       { key: 'wy_best', label: 'Best hoard', value: fmtInt(a.best), emoji: '🏆' },
     ];
-    if (a.eggs) metrics.push({ key: 'wy_eggs', label: 'Eggs laid', value: fmtInt(a.eggs), emoji: '🥚' });
-    if (a.tucked) metrics.push({ key: 'wy_tucked', label: 'Cards tucked', value: fmtInt(a.tucked), emoji: '🗂️' });
+    if (a.eggs)
+      metrics.push({ key: 'wy_eggs', label: 'Eggs laid', value: fmtInt(a.eggs), emoji: '🥚' });
+    if (a.tucked)
+      metrics.push({
+        key: 'wy_tucked',
+        label: 'Cards tucked',
+        value: fmtInt(a.tucked),
+        emoji: '🗂️',
+      });
     perPlayer[id] = metrics;
   }
 
@@ -69,7 +81,12 @@ export function wyrmspanStats({ games, rounds, canonical }: GameStatsInput): Gam
     global.push({ key: 'wy_top', label: 'Biggest hoard', value: fmtInt(topScore), emoji: '🐲' });
   }
   if (totGames > 0) {
-    global.push({ key: 'wy_games', label: 'Scoresheets tallied', value: fmtInt(totGames), emoji: '📜' });
+    global.push({
+      key: 'wy_games',
+      label: 'Scoresheets tallied',
+      value: fmtInt(totGames),
+      emoji: '📜',
+    });
   }
   return { perPlayer, global };
 }

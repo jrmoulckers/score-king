@@ -93,7 +93,9 @@
         class:set={code != null}
         class:canceled
         aria-pressed={picking === i}
-        aria-label={code ? `Card ${cardLabel(code)}${canceled ? ', cancelled' : ''} — change` : `Empty cell — add a card`}
+        aria-label={code
+          ? `Card ${cardLabel(code)}${canceled ? ', cancelled' : ''} — change`
+          : `Empty cell — add a card`}
         onclick={() => openCell(i)}
       >
         {#if code}
@@ -135,7 +137,9 @@
       <span class="tlbl">hole</span>
       <span class="tnum">{breakdown.total}</span>
       {#if filled}
-        <button type="button" class="clr" onclick={clearAll} aria-label="Clear the grid">clear</button>
+        <button type="button" class="clr" onclick={clearAll} aria-label="Clear the grid"
+          >clear</button
+        >
       {/if}
     </span>
   </div>
@@ -173,7 +177,8 @@
     font-weight: 800;
     font-size: 1.15rem;
     font-variant-numeric: tabular-nums;
-    transition: transform var(--dur-press, 90ms) var(--ease-standard, ease),
+    transition:
+      transform var(--dur-press, 90ms) var(--ease-standard, ease),
       border-color var(--dur-base, 180ms) var(--ease-standard, ease);
   }
   .cell:active {

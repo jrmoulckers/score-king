@@ -78,7 +78,9 @@ export async function decodeSignal(text: string): Promise<Signal> {
     typeof sig.i !== 'string' ||
     typeof sig.s !== 'string'
   ) {
-    throw new Error('That nearby-play code is from a different app version — refresh both devices.');
+    throw new Error(
+      'That nearby-play code is from a different app version — refresh both devices.',
+    );
   }
   return sig as Signal;
 }

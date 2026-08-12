@@ -118,10 +118,15 @@
 <div class="stack">
   <div class="row spread wrap">
     <span class="pill" class:score-bad={totalTricks > table}>
-      ♠ {totalTricks} of {table} laid{#if left > 0} · {left} to go{:else if left === 0} · full table ✓{:else} · {-left} over!{/if}
+      ♠ {totalTricks} of {table} laid{#if left > 0}
+        · {left} to go{:else if left === 0}
+        · full table ✓{:else}
+        · {-left} over!{/if}
     </span>
     <span class="row wrap" style="gap: 8px">
-      <span class="pill">{partners ? '👥 Partners' : '🙋 Solo'}{soloFallback ? ' · need 4 for teams' : ''}</span>
+      <span class="pill"
+        >{partners ? '👥 Partners' : '🙋 Solo'}{soloFallback ? ' · need 4 for teams' : ''}</span
+      >
       <button type="button" class="btn small ghost" onclick={() => (showHelp = !showHelp)}>
         How to score
       </button>
@@ -139,16 +144,23 @@
       <div class="uhead row spread">
         <span class="uleft row wrap">
           {#if partners}<span class="team">Team {u.index + 1}</span>{/if}
-          <span class="contract">🤝 <strong>{res?.contract ?? 0}</strong> · won <strong>{res?.tricks ?? 0}</strong></span>
+          <span class="contract"
+            >🤝 <strong>{res?.contract ?? 0}</strong> · won
+            <strong>{res?.tricks ?? 0}</strong></span
+          >
           <span
             class="stamp"
             class:score-good={tag.kind === 'made'}
             class:score-bad={tag.kind === 'set'}
             class:muted={tag.kind === 'needs'}
-            use:bumpOnChange={tag.kind}
-          >{tag.label}</span>
+            use:bumpOnChange={tag.kind}>{tag.label}</span
+          >
         </span>
-        <span class="proj" class:score-good={(res?.score ?? 0) >= 0} class:score-bad={(res?.score ?? 0) < 0}>
+        <span
+          class="proj"
+          class:score-good={(res?.score ?? 0) >= 0}
+          class:score-bad={(res?.score ?? 0) < 0}
+        >
           {signed(res?.score ?? 0)}
         </span>
       </div>

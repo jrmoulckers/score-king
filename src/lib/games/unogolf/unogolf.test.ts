@@ -75,7 +75,13 @@ describe('resolveConfig', () => {
 
   it('accepts a target format and custom card values', () => {
     const cfg = resolveConfig({ format: 'target', holes: 12, actionValue: 10, wildValue: 25 });
-    expect(cfg).toEqual({ holes: 12, format: 'target', target: 100, actionValue: 10, wildValue: 25 });
+    expect(cfg).toEqual({
+      holes: 12,
+      format: 'target',
+      target: 100,
+      actionValue: 10,
+      wildValue: 25,
+    });
   });
 });
 
@@ -94,15 +100,13 @@ describe('handStrokes', () => {
 
   it('clamps negatives and coerces junk to zero', () => {
     expect(handStrokes({ numbers: -5, actions: -1, wilds: -2 }, vals)).toBe(0);
-    expect(
-      handStrokes({ numbers: NaN as unknown as number, actions: 1, wilds: 0 }, vals),
-    ).toBe(20);
+    expect(handStrokes({ numbers: NaN as unknown as number, actions: 1, wilds: 0 }, vals)).toBe(20);
   });
 
   it('honours custom card values', () => {
-    expect(handStrokes({ numbers: 5, actions: 2, wilds: 1 }, { actionValue: 10, wildValue: 25 })).toBe(
-      5 + 20 + 25,
-    );
+    expect(
+      handStrokes({ numbers: 5, actions: 2, wilds: 1 }, { actionValue: 10, wildValue: 25 }),
+    ).toBe(5 + 20 + 25);
   });
 });
 
@@ -191,11 +195,16 @@ describe('validateHole', () => {
   });
 
   it('rejects an out player who is not in the game', () => {
-    expect(validateHole({ ...good, out: 'z' }, ['a', 'b', 'c'], nameOf)).toMatch(/isn’t in this game/i);
+    expect(validateHole({ ...good, out: 'z' }, ['a', 'b', 'c'], nameOf)).toMatch(
+      /isn’t in this game/i,
+    );
   });
 
   it('rejects negative card counts', () => {
-    const bad: UnoGolfInput = { hands: { ...good.hands, a: { numbers: -1, actions: 0, wilds: 0 } }, out: 'b' };
+    const bad: UnoGolfInput = {
+      hands: { ...good.hands, a: { numbers: -1, actions: 0, wilds: 0 } },
+      out: 'b',
+    };
     expect(validateHole(bad, ['a', 'b', 'c'], nameOf)).toMatch(/can’t be negative/i);
   });
 });
@@ -225,7 +234,11 @@ describe('unogolf round lifecycle', () => {
 
   it('validates and scores a round through the module using ctx config', () => {
     const input: UnoGolfInput = {
-      hands: { a: { numbers: 5, actions: 1, wilds: 0 }, b: emptyHand(), c: { numbers: 0, actions: 0, wilds: 1 } },
+      hands: {
+        a: { numbers: 5, actions: 1, wilds: 0 },
+        b: emptyHand(),
+        c: { numbers: 0, actions: 0, wilds: 1 },
+      },
       out: 'b',
     };
     const ctx = ctxOf({ actionValue: 10, wildValue: 25 });
@@ -235,7 +248,11 @@ describe('unogolf round lifecycle', () => {
 
   it('describes a round with the sinker and everyone’s strokes', () => {
     const input: UnoGolfInput = {
-      hands: { a: { numbers: 5, actions: 1, wilds: 0 }, b: emptyHand(), c: { numbers: 12, actions: 2, wilds: 1 } },
+      hands: {
+        a: { numbers: 5, actions: 1, wilds: 0 },
+        b: emptyHand(),
+        c: { numbers: 12, actions: 2, wilds: 1 },
+      },
       out: 'b',
     };
     const round = mkRound(input, { a: 25, b: 0, c: 102 });
@@ -287,7 +304,11 @@ describe('unogolfStats', () => {
       gameId: 'g1',
       index: 0,
       input: {
-        hands: { a: { numbers: 5, actions: 1, wilds: 0 }, b: emptyHand(), c: { numbers: 0, actions: 0, wilds: 1 } },
+        hands: {
+          a: { numbers: 5, actions: 1, wilds: 0 },
+          b: emptyHand(),
+          c: { numbers: 0, actions: 0, wilds: 1 },
+        },
         out: 'b',
       },
       deltas: { a: 25, b: 0, c: 50 },
@@ -298,7 +319,11 @@ describe('unogolfStats', () => {
       gameId: 'g1',
       index: 1,
       input: {
-        hands: { a: emptyHand(), b: { numbers: 3, actions: 0, wilds: 0 }, c: { numbers: 0, actions: 0, wilds: 1 } },
+        hands: {
+          a: emptyHand(),
+          b: { numbers: 3, actions: 0, wilds: 0 },
+          c: { numbers: 0, actions: 0, wilds: 1 },
+        },
         out: 'a',
       },
       deltas: { a: 0, b: 3, c: 50 },

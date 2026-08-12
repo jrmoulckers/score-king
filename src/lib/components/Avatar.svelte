@@ -14,7 +14,9 @@
 
 <span
   class="avatar"
-  style="--c:{resolved}; --ink:{ink}; width:{size}px; height:{size}px; font-size:{Math.round(size * 0.38)}px"
+  style="--c:{resolved}; --ink:{ink}; width:{size}px; height:{size}px; font-size:{Math.round(
+    size * 0.38,
+  )}px"
   title={decorative ? undefined : name}
   aria-hidden={decorative ? 'true' : undefined}
 >

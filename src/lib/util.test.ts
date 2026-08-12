@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clamp, cleanName, sameName, rosterFor, MAX_NAME_LEN } from './util';
+import {
+  clamp,
+  cleanName,
+  sameName,
+  rosterFor,
+  MAX_NAME_LEN,
+  CVD_PALETTE,
+  PALETTE,
+  resolvePlayerColor,
+} from './util';
 import type { Player } from './types';
 
 // The Stepper's − / + buttons and its typed-value guard both route through
@@ -79,5 +88,17 @@ describe('rosterFor', () => {
     expect(out).toHaveLength(2);
     expect(out[1].id).toBe('ghost');
     expect(out[1].name).toBe('Removed player');
+  });
+});
+
+describe('resolvePlayerColor', () => {
+  it('falls back to the original color if the aligned palette entry is missing', () => {
+    const removed = CVD_PALETTE.pop();
+
+    try {
+      expect(resolvePlayerColor(PALETTE.at(-1)!, true)).toBe(PALETTE.at(-1));
+    } finally {
+      if (removed) CVD_PALETTE.push(removed);
+    }
   });
 });

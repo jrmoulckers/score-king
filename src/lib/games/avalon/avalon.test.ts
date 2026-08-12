@@ -336,7 +336,10 @@ describe('describeAvalon', () => {
   });
 
   it('narrates a Good victory finale', () => {
-    const r = mkRound(2, inp({ fails: 0, assassinFoundMerlin: false, winners: ['p1', 'p2', 'p3'] }));
+    const r = mkRound(
+      2,
+      inp({ fails: 0, assassinFoundMerlin: false, winners: ['p1', 'p2', 'p3'] }),
+    );
     expect(describeAvalon(r, 5)).toContain('🛡️ Good prevails');
   });
 
@@ -461,10 +464,12 @@ describe('validateAvalon — council (leader & team)', () => {
 
   it('accepts a logged team and lets it drive the fail bound', () => {
     // Two aboard → fails may not exceed 2 even though the stepper size says 5.
-    expect(validateAvalon(inp({ team: ['p1', 'p2'], teamSize: 5, fails: 3 }), [], 0, seats(5))).toMatch(
-      /fails must be between 0 and the team size \(2\)/,
-    );
-    expect(validateAvalon(inp({ team: ['p1', 'p2'], teamSize: 5, fails: 1 }), [], 0, seats(5))).toBeNull();
+    expect(
+      validateAvalon(inp({ team: ['p1', 'p2'], teamSize: 5, fails: 3 }), [], 0, seats(5)),
+    ).toMatch(/fails must be between 0 and the team size \(2\)/);
+    expect(
+      validateAvalon(inp({ team: ['p1', 'p2'], teamSize: 5, fails: 1 }), [], 0, seats(5)),
+    ).toBeNull();
   });
 });
 
@@ -486,13 +491,15 @@ describe('knowledgeHints', () => {
     expect(knowledgeHints({ ...noRoles, percival: true }).some((h) => h.includes('Percival'))).toBe(
       true,
     );
-    expect(
-      knowledgeHints({ ...noRoles, percival: true, morgana: true }).join('\n'),
-    ).toContain('can’t tell');
+    expect(knowledgeHints({ ...noRoles, percival: true, morgana: true }).join('\n')).toContain(
+      'can’t tell',
+    );
   });
 
   it('adds a lone-Oberon line only when Oberon is on', () => {
     expect(knowledgeHints(noRoles).some((h) => h.includes('Oberon'))).toBe(false);
-    expect(knowledgeHints({ ...noRoles, oberon: true }).some((h) => h.includes('Oberon'))).toBe(true);
+    expect(knowledgeHints({ ...noRoles, oberon: true }).some((h) => h.includes('Oberon'))).toBe(
+      true,
+    );
   });
 });

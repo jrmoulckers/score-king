@@ -23,16 +23,40 @@ function mkGame(p: Partial<Game> & { id: string; playerIds: ID[] }): Game {
   } as Game;
 }
 
-function mkRound(gameId: string, index: number, deltas: Record<ID, number>, input: unknown = {}): Round {
+function mkRound(
+  gameId: string,
+  index: number,
+  deltas: Record<ID, number>,
+  input: unknown = {},
+): Round {
   return { id: `${gameId}-r${index}`, gameId, index, input, deltas, createdAt: BASE };
 }
 
 /** Three games: A wins wire-to-wire (g1), B wins from behind (g2), A wins a lower-is-better game (g3). */
 function trio() {
   const players = [player('A'), player('B'), player('C')];
-  const g1 = mkGame({ id: 'g1', playerIds: ['A', 'B', 'C'], winnerIds: ['A'], roundCount: 3, finishedAt: BASE });
-  const g2 = mkGame({ id: 'g2', playerIds: ['A', 'B', 'C'], winnerIds: ['B'], roundCount: 3, finishedAt: BASE + 2 * DAY });
-  const g3 = mkGame({ id: 'g3', type: 'hearts', playerIds: ['A', 'B', 'C'], winnerIds: ['A'], roundCount: 1, finishedAt: BASE + 4 * DAY });
+  const g1 = mkGame({
+    id: 'g1',
+    playerIds: ['A', 'B', 'C'],
+    winnerIds: ['A'],
+    roundCount: 3,
+    finishedAt: BASE,
+  });
+  const g2 = mkGame({
+    id: 'g2',
+    playerIds: ['A', 'B', 'C'],
+    winnerIds: ['B'],
+    roundCount: 3,
+    finishedAt: BASE + 2 * DAY,
+  });
+  const g3 = mkGame({
+    id: 'g3',
+    type: 'hearts',
+    playerIds: ['A', 'B', 'C'],
+    winnerIds: ['A'],
+    roundCount: 1,
+    finishedAt: BASE + 4 * DAY,
+  });
   const games = [g1, g2, g3];
   const rounds = [
     mkRound('g1', 0, { A: 10, B: 5, C: 5 }),
@@ -125,7 +149,12 @@ describe('computeStats — head to head', () => {
   const res = computeStats({ players, games, rounds });
 
   it('records co-finished results and never self-pairs', () => {
-    expect(res.perPlayer['A'].headToHead['B']).toMatchObject({ games: 3, wins: 2, losses: 1, ties: 0 });
+    expect(res.perPlayer['A'].headToHead['B']).toMatchObject({
+      games: 3,
+      wins: 2,
+      losses: 1,
+      ties: 0,
+    });
     expect(res.perPlayer['A'].headToHead['C']).toMatchObject({ games: 3, wins: 2, losses: 1 });
     expect(res.perPlayer['A'].headToHead['A']).toBeUndefined();
   });
@@ -160,7 +189,9 @@ describe('computeStats — deleted (tombstoned) members are hidden everywhere', 
 describe('computeStats — lower-is-better direction inference', () => {
   it('infers from winnerIds vs totals (no game module needed)', () => {
     const players = [player('A'), player('B')];
-    const games = [mkGame({ id: 'h', type: 'hearts', playerIds: ['A', 'B'], winnerIds: ['A'], roundCount: 1 })];
+    const games = [
+      mkGame({ id: 'h', type: 'hearts', playerIds: ['A', 'B'], winnerIds: ['A'], roundCount: 1 }),
+    ];
     const rounds = [mkRound('h', 0, { A: 5, B: 20 })]; // A has fewer points and wins -> lower is better
     const res = computeStats({ players, games, rounds });
     expect(res.perPlayer['A'].wins).toBe(1);
@@ -211,9 +242,17 @@ describe('computeStats — merge-aware identity (forward compatible)', () => {
     const players = [
       player('X'),
       player('Y'),
-      { id: 'Y2', name: 'Y (old)', color: '#7c5cff', createdAt: 0, mergedInto: 'Y' } as unknown as Player,
+      {
+        id: 'Y2',
+        name: 'Y (old)',
+        color: '#7c5cff',
+        createdAt: 0,
+        mergedInto: 'Y',
+      } as unknown as Player,
     ];
-    const games = [mkGame({ id: 'gm', playerIds: ['X', 'Y', 'Y2'], winnerIds: ['Y2'], roundCount: 1 })];
+    const games = [
+      mkGame({ id: 'gm', playerIds: ['X', 'Y', 'Y2'], winnerIds: ['Y2'], roundCount: 1 }),
+    ];
     const rounds = [mkRound('gm', 0, { X: 5, Y: 3, Y2: 7 })];
     const res = computeStats({ players, games, rounds });
 
@@ -241,8 +280,20 @@ describe('computeStats — injected game-specific hook', () => {
 
 describe('computeStats — abandoned games', () => {
   const players = [player('A'), player('B')];
-  const finished = mkGame({ id: 'f', playerIds: ['A', 'B'], winnerIds: ['A'], roundCount: 1, finishedAt: BASE });
-  const dead = mkGame({ id: 'x', playerIds: ['A', 'B'], status: 'abandoned', roundCount: 1, finishedAt: BASE + DAY });
+  const finished = mkGame({
+    id: 'f',
+    playerIds: ['A', 'B'],
+    winnerIds: ['A'],
+    roundCount: 1,
+    finishedAt: BASE,
+  });
+  const dead = mkGame({
+    id: 'x',
+    playerIds: ['A', 'B'],
+    status: 'abandoned',
+    roundCount: 1,
+    finishedAt: BASE + DAY,
+  });
   const data = {
     players,
     games: [finished, dead],
@@ -272,11 +323,7 @@ describe('computeStats — abandoned games', () => {
 describe('buildAliasMap', () => {
   it('resolves merge chains transitively', () => {
     const canonical = canonicalizer(
-      buildAliasMap([
-        { id: 'a', mergedInto: 'b' },
-        { id: 'b', mergedInto: 'c' },
-        { id: 'c' },
-      ]),
+      buildAliasMap([{ id: 'a', mergedInto: 'b' }, { id: 'b', mergedInto: 'c' }, { id: 'c' }]),
     );
     expect(canonical('a')).toBe('c');
     expect(canonical('b')).toBe('c');
@@ -321,7 +368,12 @@ describe('skullkingStats', () => {
   it('computes bid accuracy, zero-bid success and bonus', () => {
     const games = [mkGame({ id: 'sk', type: 'skullking', playerIds: ['A', 'B'], roundCount: 1 })];
     const rounds = [
-      mkRound('sk', 0, {}, { rows: { A: { bid: 2, actual: 2, bonus: 10 }, B: { bid: 0, actual: 1, bonus: 0 } } }),
+      mkRound(
+        'sk',
+        0,
+        {},
+        { rows: { A: { bid: 2, actual: 2, bonus: 10 }, B: { bid: 0, actual: 1, bonus: 0 } } },
+      ),
     ];
     const out = skullkingStats({ games, rounds, players: [], canonical: (id) => id });
     expect(out.perPlayer?.['A'].find((m) => m.key === 'sk_acc')?.value).toBe('100%');

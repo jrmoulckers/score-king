@@ -68,7 +68,14 @@ function ctxFor(
 }
 
 function mkRound(index: number, inp: BotcInput, playerIds: string[]): Round {
-  return { id: `g-r${index}`, gameId: 'g', index, input: inp, deltas: scoreRound(inp, playerIds), createdAt: 0 };
+  return {
+    id: `g-r${index}`,
+    gameId: 'g',
+    index,
+    input: inp,
+    deltas: scoreRound(inp, playerIds),
+    createdAt: 0,
+  };
 }
 
 // ── Phase math ──────────────────────────────────────────────────────────────
@@ -109,14 +116,25 @@ describe('initialRoster — everyone alive, unassigned, presumed good', () => {
 
 describe('carryRoster — persists role/team/alive/ghost between phases', () => {
   it('carries each seat forward', () => {
-    const prev = { A: state({ role: 'Imp', team: 'evil', alive: false, ghostUsed: true }), B: state() };
+    const prev = {
+      A: state({ role: 'Imp', team: 'evil', alive: false, ghostUsed: true }),
+      B: state(),
+    };
     const next = carryRoster(prev, ['A', 'B']);
     expect(next.A).toEqual({ role: 'Imp', team: 'evil', alive: false, ghostUsed: true });
     expect(next.B).toEqual(state());
   });
 
   it('carries the Grimoire notes (demon, reminder, suspect) forward', () => {
-    const prev = { A: state({ role: 'Imp', team: 'evil', isDemon: true, reminder: 'red herring', suspect: 'Fortune Teller' }) };
+    const prev = {
+      A: state({
+        role: 'Imp',
+        team: 'evil',
+        isDemon: true,
+        reminder: 'red herring',
+        suspect: 'Fortune Teller',
+      }),
+    };
     const next = carryRoster(prev, ['A']);
     expect(next.A.isDemon).toBe(true);
     expect(next.A.reminder).toBe('red herring');
@@ -193,7 +211,9 @@ describe('demonStatus — the Demon’s fate for the Good-wins nudge', () => {
   });
 
   it('is fallen once every flagged Demon is dead', () => {
-    expect(demonStatus({ A: state({ team: 'evil', isDemon: true, alive: false }), B: state() })).toBe('fallen');
+    expect(
+      demonStatus({ A: state({ team: 'evil', isDemon: true, alive: false }), B: state() }),
+    ).toBe('fallen');
   });
 });
 
@@ -231,19 +251,34 @@ describe('evilKnowledge — the first-night reveal for an evil seat', () => {
 // ── Scoring / winners ───────────────────────────────────────────────────────
 
 describe('scoreRound — scoreless until a winner is recorded', () => {
-  const states = { A: state({ team: 'good' }), B: state({ team: 'evil' }), C: state({ team: 'evil' }) };
+  const states = {
+    A: state({ team: 'good' }),
+    B: state({ team: 'evil' }),
+    C: state({ team: 'evil' }),
+  };
 
   it('scores every seat 0 while tracking', () => {
     expect(scoreRound(input({ states }), ['A', 'B', 'C'])).toEqual({ A: 0, B: 0, C: 0 });
   });
 
   it('awards +1 to the whole winning team on the resolving phase', () => {
-    expect(scoreRound(input({ states, result: 'evil' }), ['A', 'B', 'C'])).toEqual({ A: 0, B: 1, C: 1 });
-    expect(scoreRound(input({ states, result: 'good' }), ['A', 'B', 'C'])).toEqual({ A: 1, B: 0, C: 0 });
+    expect(scoreRound(input({ states, result: 'evil' }), ['A', 'B', 'C'])).toEqual({
+      A: 0,
+      B: 1,
+      C: 1,
+    });
+    expect(scoreRound(input({ states, result: 'good' }), ['A', 'B', 'C'])).toEqual({
+      A: 1,
+      B: 0,
+      C: 0,
+    });
   });
 
   it('keys every seat, even one missing from the roster snapshot', () => {
-    const out = scoreRound(input({ states: { A: state({ team: 'evil' }) }, result: 'evil' }), ['A', 'B']);
+    const out = scoreRound(input({ states: { A: state({ team: 'evil' }) }, result: 'evil' }), [
+      'A',
+      'B',
+    ]);
     expect(out).toEqual({ A: 1, B: 0 });
   });
 });
@@ -275,12 +310,16 @@ describe('validate — light guardrails for a tracker', () => {
   });
 
   it('nudges an empty nomination', () => {
-    const bad = input({ nominations: [{ nominatorId: 'A', nomineeId: null, votes: 0, executed: false }] });
+    const bad = input({
+      nominations: [{ nominatorId: 'A', nomineeId: null, votes: 0, executed: false }],
+    });
     expect(validate(bad, ['A'])).toMatch(/who was nominated/i);
   });
 
   it('rejects negative votes', () => {
-    const bad = input({ nominations: [{ nominatorId: null, nomineeId: 'A', votes: -1, executed: false }] });
+    const bad = input({
+      nominations: [{ nominatorId: null, nomineeId: 'A', votes: -1, executed: false }],
+    });
     expect(validate(bad, ['A'])).toMatch(/negative/i);
   });
 
@@ -302,12 +341,16 @@ describe('describe — a glanceable one-line phase summary', () => {
   });
 
   it('names the executed player on a day', () => {
-    const inp = input({ nominations: [{ nominatorId: 'A', nomineeId: 'B', votes: 4, executed: true }] });
+    const inp = input({
+      nominations: [{ nominatorId: 'A', nomineeId: 'B', votes: 4, executed: true }],
+    });
     expect(describePhase(inp, 1, nameOf)).toBe('☀️ Day 1 · Bo executed');
   });
 
   it('reports nominations with no execution', () => {
-    const inp = input({ nominations: [{ nominatorId: 'A', nomineeId: 'B', votes: 1, executed: false }] });
+    const inp = input({
+      nominations: [{ nominatorId: 'A', nomineeId: 'B', votes: 1, executed: false }],
+    });
     expect(describePhase(inp, 1, nameOf)).toBe('☀️ Day 1 · 1 nomination, no execution');
   });
 
@@ -387,10 +430,15 @@ describe('botc module', () => {
   it('carries the roster forward into later phases but resets phase events', () => {
     const night1 = mkRound(
       0,
-      input({ states: { A: state({ role: 'Imp', team: 'evil' }), B: state({ alive: false }) }, note: 'kept me busy' }),
+      input({
+        states: { A: state({ role: 'Imp', team: 'evil' }), B: state({ alive: false }) },
+        note: 'kept me busy',
+      }),
       ['A', 'B'],
     );
-    const next = botc.createRoundInput(ctxFor(['A', 'B'], { roundIndex: 1, rounds: [night1] })) as BotcInput;
+    const next = botc.createRoundInput(
+      ctxFor(['A', 'B'], { roundIndex: 1, rounds: [night1] }),
+    ) as BotcInput;
     expect(next.states.A).toEqual({ role: 'Imp', team: 'evil', alive: true, ghostUsed: false });
     expect(next.states.B.alive).toBe(false);
     expect(next.nominations).toEqual([]);
@@ -423,7 +471,11 @@ describe('botc module', () => {
 
   it('describes a recorded round for the history table', () => {
     const players = [player('A', 'Ana'), player('B', 'Bo')];
-    const round = mkRound(1, input({ nominations: [{ nominatorId: 'A', nomineeId: 'B', votes: 3, executed: true }] }), ['A', 'B']);
+    const round = mkRound(
+      1,
+      input({ nominations: [{ nominatorId: 'A', nomineeId: 'B', votes: 3, executed: true }] }),
+      ['A', 'B'],
+    );
     expect(botc.describeRound!(round, players)).toBe('☀️ Day 1 · Bo executed');
   });
 });
@@ -432,13 +484,39 @@ describe('botc module', () => {
 
 describe('botcStats', () => {
   const games: Game[] = [
-    { id: 'g', type: 'botc', config: {}, playerIds: ['A', 'B', 'C'], status: 'finished', createdAt: 0, roundCount: 3 } as Game,
+    {
+      id: 'g',
+      type: 'botc',
+      config: {},
+      playerIds: ['A', 'B', 'C'],
+      status: 'finished',
+      createdAt: 0,
+      roundCount: 3,
+    } as Game,
   ];
   // Night 1, Day 1 (B executed), Night 2 → Evil wins. A evil & alive; B good & dead; C good & alive.
   const rounds: Round[] = [
-    mkRound(0, input({ states: { A: state({ team: 'evil' }), B: state(), C: state() } }), ['A', 'B', 'C']),
-    mkRound(1, input({ states: { A: state({ team: 'evil' }), B: state({ alive: false }), C: state() }, nominations: [{ nominatorId: 'C', nomineeId: 'B', votes: 2, executed: true }] }), ['A', 'B', 'C']),
-    mkRound(2, input({ states: { A: state({ team: 'evil' }), B: state({ alive: false }), C: state() }, result: 'evil' }), ['A', 'B', 'C']),
+    mkRound(0, input({ states: { A: state({ team: 'evil' }), B: state(), C: state() } }), [
+      'A',
+      'B',
+      'C',
+    ]),
+    mkRound(
+      1,
+      input({
+        states: { A: state({ team: 'evil' }), B: state({ alive: false }), C: state() },
+        nominations: [{ nominatorId: 'C', nomineeId: 'B', votes: 2, executed: true }],
+      }),
+      ['A', 'B', 'C'],
+    ),
+    mkRound(
+      2,
+      input({
+        states: { A: state({ team: 'evil' }), B: state({ alive: false }), C: state() },
+        result: 'evil',
+      }),
+      ['A', 'B', 'C'],
+    ),
   ];
   const out = botcStats({ games, rounds, players: [], canonical: (id: ID) => id });
 
@@ -465,7 +543,14 @@ describe('botcStats', () => {
     const merged = botcStats({
       games,
       rounds: [
-        mkRound(1, input({ nominations: [{ nominatorId: 'A', nomineeId: 'B2', votes: 2, executed: true }], states: { A: state(), B2: state({ alive: false }), C: state() } }), ['A', 'B2', 'C']),
+        mkRound(
+          1,
+          input({
+            nominations: [{ nominatorId: 'A', nomineeId: 'B2', votes: 2, executed: true }],
+            states: { A: state(), B2: state({ alive: false }), C: state() },
+          }),
+          ['A', 'B2', 'C'],
+        ),
       ],
       players: [],
       canonical: (id: ID) => (id === 'B2' ? 'B' : id),
@@ -504,4 +589,3 @@ describe('BotcEditor render smoke test', () => {
     expect(() => mountPhase(1)).not.toThrow();
   });
 });
-

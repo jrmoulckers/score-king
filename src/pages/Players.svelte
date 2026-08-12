@@ -26,7 +26,9 @@
 
   const archived = $derived($players.filter((p) => p.archived));
   // Live hint while typing so a duplicate is caught before it lands on the board.
-  const dupWarning = $derived(nameExists(newName) ? `Already a player named “${newName.trim()}”.` : '');
+  const dupWarning = $derived(
+    nameExists(newName) ? `Already a player named “${newName.trim()}”.` : '',
+  );
 
   async function add() {
     const n = newName.trim();
@@ -63,21 +65,45 @@
 
 <h1>Players</h1>
 
-<form class="row" onsubmit={(e) => { e.preventDefault(); add(); }} style="margin-bottom: 6px">
-  <input class="grow" type="text" placeholder="New player name…" aria-label="New player name" maxlength={MAX_NAME_LEN} bind:value={newName} />
-  <button class="iconbtn" type="button" onclick={generatePlayer} aria-label="Generate a player" title="Surprise me with a name">🎲</button>
+<form
+  class="row"
+  onsubmit={(e) => {
+    e.preventDefault();
+    add();
+  }}
+  style="margin-bottom: 6px"
+>
+  <input
+    class="grow"
+    type="text"
+    placeholder="New player name…"
+    aria-label="New player name"
+    maxlength={MAX_NAME_LEN}
+    bind:value={newName}
+  />
+  <button
+    class="iconbtn"
+    type="button"
+    onclick={generatePlayer}
+    aria-label="Generate a player"
+    title="Surprise me with a name">🎲</button
+  >
   <button class="btn primary" type="submit" disabled={!newName.trim()}>Add</button>
 </form>
 {#if dupWarning}
-  <p class="dup-hint" role="status">↳ {dupWarning} Adding again is fine — give them different names to tell them apart.</p>
+  <p class="dup-hint" role="status">
+    ↳ {dupWarning} Adding again is fine — give them different names to tell them apart.
+  </p>
 {/if}
 
 {#if $activePlayers.length === 0 && archived.length === 0}
   <div class="empty firstrun">
     <div class="firstrun-emoji" aria-hidden="true">👥</div>
     <p><strong>Add your regulars once.</strong></p>
-    <p class="muted">Players are shared across every game and leaderboard — add them here and
-    they’ll be ready to pick whenever you start a game. Tap 🎲 for a surprise name.</p>
+    <p class="muted">
+      Players are shared across every game and leaderboard — add them here and they’ll be ready to
+      pick whenever you start a game. Tap 🎲 for a surprise name.
+    </p>
   </div>
 {:else if $activePlayers.length > 0}
   <div class="player-grid">
@@ -87,13 +113,20 @@
           <span class="row grow" style="gap: 10px; min-width: 0">
             <Avatar name={p.name} color={p.color} size={34} />
             {#if editingId === p.id}
-              <input class="grow" type="text" bind:value={editName} aria-label="Player name" maxlength={MAX_NAME_LEN} />
+              <input
+                class="grow"
+                type="text"
+                bind:value={editName}
+                aria-label="Player name"
+                maxlength={MAX_NAME_LEN}
+              />
             {:else}
               <span class="who">
                 <strong>{p.name}</strong>
                 {#if $leadMember?.id === p.id || !p.claimed}
                   <span class="tags">
-                    {#if $leadMember?.id === p.id}<span class="tag lead-tag">👑 On this device</span>{/if}
+                    {#if $leadMember?.id === p.id}<span class="tag lead-tag">👑 On this device</span
+                      >{/if}
                     {#if !p.claimed}<span class="tag muted-tag">Unclaimed</span>{/if}
                   </span>
                 {/if}
@@ -107,10 +140,17 @@
                 class:on={$leadMember?.id === p.id}
                 onclick={() => toggleLead(p)}
                 aria-pressed={$leadMember?.id === p.id}
-                aria-label={$leadMember?.id === p.id ? 'Stop playing on this device' : 'Play as this member on this device'}
-                title="Play on this device"
-              >👑</button>
-              <button class="iconbtn" onclick={() => startEdit(p)} aria-label="Edit player" title="Rename & recolour">✎</button>
+                aria-label={$leadMember?.id === p.id
+                  ? 'Stop playing on this device'
+                  : 'Play as this member on this device'}
+                title="Play on this device">👑</button
+              >
+              <button
+                class="iconbtn"
+                onclick={() => startEdit(p)}
+                aria-label="Edit player"
+                title="Rename & recolour">✎</button
+              >
             </span>
           {/if}
         </div>
@@ -146,8 +186,8 @@
   <button
     class="archtoggle"
     onclick={() => (showArchived = !showArchived)}
-    aria-expanded={showArchived}
-  >{showArchived ? '▾' : '▸'} Archived ({archived.length})</button>
+    aria-expanded={showArchived}>{showArchived ? '▾' : '▸'} Archived ({archived.length})</button
+  >
   {#if showArchived}
     <div class="stack">
       {#each archived as p (p.id)}
@@ -160,13 +200,19 @@
             {#if confirmDeleteId === p.id}
               <span class="row" style="gap: 6px">
                 <span class="confirm-q">Delete for good?</span>
-                <button class="btn small ghost" onclick={() => (confirmDeleteId = null)}>Cancel</button>
+                <button class="btn small ghost" onclick={() => (confirmDeleteId = null)}
+                  >Cancel</button
+                >
                 <button class="btn small danger" onclick={() => remove(p)}>Delete</button>
               </span>
             {:else}
               <span class="row" style="gap: 6px">
                 <button class="btn small ghost" onclick={() => restorePlayer(p)}>Restore</button>
-                <button class="iconbtn" onclick={() => (confirmDeleteId = p.id)} aria-label={`Delete ${p.name} for good`}>🗑</button>
+                <button
+                  class="iconbtn"
+                  onclick={() => (confirmDeleteId = p.id)}
+                  aria-label={`Delete ${p.name} for good`}>🗑</button
+                >
               </span>
             {/if}
           </div>

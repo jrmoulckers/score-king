@@ -61,7 +61,8 @@ export function computeBadges(m: MemberStats, input: BadgeInput = {}): Badge[] {
     [50, ['Fixture', 'rare']],
     [10, ['Anchor', 'uncommon']],
   ]);
-  if (nights) add('nights_tier', nights[0], '🪑', nights[1], `Showed up for ${m.gameNights} game nights.`);
+  if (nights)
+    add('nights_tier', nights[0], '🪑', nights[1], `Showed up for ${m.gameNights} game nights.`);
 
   // ── Streaks ───────────────────────────────────────────────────────────────
   const streak = tier<[string, Rarity]>(m.longestStreak, [
@@ -72,8 +73,10 @@ export function computeBadges(m: MemberStats, input: BadgeInput = {}): Badge[] {
   if (streak) add('streak_tier', streak[0], '🔥', streak[1], `${m.longestStreak}-win streak.`);
 
   // ── Drama ─────────────────────────────────────────────────────────────────
-  if (m.comebackWins >= 1) add('comeback', 'Comeback Kid', '🪦', 'rare', 'Won a game after trailing.');
-  if (m.wireToWireWins >= 1) add('wire', 'Wire-to-Wire', '🏁', 'uncommon', 'Led a win from start to finish.');
+  if (m.comebackWins >= 1)
+    add('comeback', 'Comeback Kid', '🪦', 'rare', 'Won a game after trailing.');
+  if (m.wireToWireWins >= 1)
+    add('wire', 'Wire-to-Wire', '🏁', 'uncommon', 'Led a win from start to finish.');
 
   // ── Records held right now ────────────────────────────────────────────────
   const RECORD_BADGE: Record<string, { name: string; emoji: string }> = {
@@ -87,7 +90,14 @@ export function computeBadges(m: MemberStats, input: BadgeInput = {}): Badge[] {
   for (const rec of input.records ?? []) {
     if (rec.holderId !== mine) continue;
     const meta = RECORD_BADGE[rec.key];
-    if (meta) add(`record_${rec.key}`, meta.name, meta.emoji, 'rare', `Holds the ${rec.label.toLowerCase()} record.`);
+    if (meta)
+      add(
+        `record_${rec.key}`,
+        meta.name,
+        meta.emoji,
+        'rare',
+        `Holds the ${rec.label.toLowerCase()} record.`,
+      );
   }
 
   return out.sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity]);

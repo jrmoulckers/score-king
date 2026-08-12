@@ -50,7 +50,12 @@
   // Live totals + the app's shared "who's pulled ahead" rule, so the biggest flock wears the
   // crown (and only the crown's Gold) — and nobody is crowned at an all-tied-at-zero table.
   const totals = $derived(Object.fromEntries(ctx.players.map((p) => [p.id, total(p.id)])));
-  const leaderSet = $derived(leaders(totals, ctx.players.map((p) => p.id)));
+  const leaderSet = $derived(
+    leaders(
+      totals,
+      ctx.players.map((p) => p.id),
+    ),
+  );
   // A genuine dead heat: two or more players share the lead. Time to settle it with food.
   const deadHeat = $derived(leaderSet.size > 1);
 
@@ -72,7 +77,10 @@
           node.appendChild(b);
           animateMotion(
             b,
-            { opacity: [0, 1, 0], transform: ['translateY(2px)', 'translateY(-14px)', 'translateY(-28px)'] },
+            {
+              opacity: [0, 1, 0],
+              transform: ['translateY(2px)', 'translateY(-14px)', 'translateY(-28px)'],
+            },
             { duration: 0.7, ease: 'easeOut' },
           ).finished.finally(() => b.remove());
         }
@@ -114,8 +122,8 @@
             {/if}
           </span>
           <span class="total" class:lead={isLeader}>
-            <span class="totnum" use:bumpOnChange={total(p.id)}>{total(p.id)}</span><span class="totlbl"
-              >pts</span
+            <span class="totnum" use:bumpOnChange={total(p.id)}>{total(p.id)}</span><span
+              class="totlbl">pts</span
             >
           </span>
         </div>
@@ -125,7 +133,9 @@
         <div class="grid">
           {#each pointCats as c (c.key)}
             <label class="cell">
-              <span class="clabel"><span class="cemoji" aria-hidden="true">{c.emoji}</span>{c.short}</span>
+              <span class="clabel"
+                ><span class="cemoji" aria-hidden="true">{c.emoji}</span>{c.short}</span
+              >
               <input
                 class="pts"
                 type="number"
@@ -142,7 +152,9 @@
         <div class="grid tokens">
           {#each countCats as c (c.key)}
             <div class="cell" use:eggHatch={c.key === 'eggs' ? row.eggs : undefined}>
-              <span class="clabel"><span class="cemoji" aria-hidden="true">{c.emoji}</span>{c.short}</span>
+              <span class="clabel"
+                ><span class="cemoji" aria-hidden="true">{c.emoji}</span>{c.short}</span
+              >
               <Stepper bind:value={row[c.key]} min={0} max={999} label={`${p.name} ${c.label}`} />
             </div>
           {/each}
@@ -152,9 +164,15 @@
           <div class="tiebreak" class:heat={deadHeat && isLeader}>
             <div class="cell">
               <span class="clabel">
-                <span class="cemoji" aria-hidden="true">{LEFTOVER_CATEGORY.emoji}</span>{LEFTOVER_CATEGORY.label}
+                <span class="cemoji" aria-hidden="true">{LEFTOVER_CATEGORY.emoji}</span
+                >{LEFTOVER_CATEGORY.label}
               </span>
-              <Stepper bind:value={row.leftover} min={0} max={999} label={`${p.name} ${LEFTOVER_CATEGORY.label}`} />
+              <Stepper
+                bind:value={row.leftover}
+                min={0}
+                max={999}
+                label={`${p.name} ${LEFTOVER_CATEGORY.label}`}
+              />
             </div>
             <span class="tienote">
               {#if deadHeat && isLeader}

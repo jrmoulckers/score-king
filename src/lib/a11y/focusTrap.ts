@@ -19,7 +19,8 @@ const FOCUSABLE = [
 /** Visible, tabbable descendants of `container`, in DOM order. */
 export function getFocusable(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-    (el) => !el.hasAttribute('inert') && (el.offsetParent !== null || el === document.activeElement),
+    (el) =>
+      !el.hasAttribute('inert') && (el.offsetParent !== null || el === document.activeElement),
   );
 }
 

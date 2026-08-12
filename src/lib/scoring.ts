@@ -59,10 +59,7 @@ export function leaders(
   return ids;
 }
 
-export function standings(
-  totals: Record<ID, number>,
-  lowerIsBetter = false,
-): Standing[] {
+export function standings(totals: Record<ID, number>, lowerIsBetter = false): Standing[] {
   const entries = Object.entries(totals).map(([playerId, total]) => ({ playerId, total }));
   entries.sort((a, b) => (lowerIsBetter ? a.total - b.total : b.total - a.total));
   const out: Standing[] = [];

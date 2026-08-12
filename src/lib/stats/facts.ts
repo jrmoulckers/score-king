@@ -121,5 +121,18 @@ export function computeGameFacts(
   const margin = marginOf(totals, winners, playerIds, dir);
   const { comeback, wireToWire, topRound } = replay(rounds, playerIds, winners, dir, canonical);
 
-  return { game, rounds, playerIds, totals, dir, order, rankOf, winners, margin, comeback, wireToWire, topRound };
+  return {
+    game,
+    rounds,
+    playerIds,
+    totals,
+    dir,
+    order,
+    rankOf,
+    winners,
+    margin,
+    comeback,
+    wireToWire,
+    topRound,
+  };
 }

@@ -10,7 +10,9 @@ describe('titleForRoute', () => {
 
   it('prefixes the page label for interior routes', () => {
     expect(titleForRoute(parseRoute('/players'))).toBe('Players · Score King');
-    expect(titleForRoute(parseRoute('/accessibility'))).toBe('Accessibility & display · Score King');
+    expect(titleForRoute(parseRoute('/accessibility'))).toBe(
+      'Accessibility & display · Score King',
+    );
   });
 
   it('labels dynamic game and play routes generically', () => {

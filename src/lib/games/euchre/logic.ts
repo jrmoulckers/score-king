@@ -46,15 +46,10 @@ export interface HandPoints {
 }
 
 /** Split picked players into two partnerships by pick order. */
-export function resolveTeams<T extends { id: ID }>(
-  players: T[],
-  pairing: Pairing,
-): [ID[], ID[]] {
+export function resolveTeams<T extends { id: ID }>(players: T[], pairing: Pairing): [ID[], ID[]] {
   const ids = players.map((p) => p.id);
   const pick = (...idx: number[]): ID[] => idx.map((i) => ids[i]).filter((x): x is ID => x != null);
-  return pairing === 'across'
-    ? [pick(0, 2), pick(1, 3)]
-    : [pick(0, 1), pick(2, 3)];
+  return pairing === 'across' ? [pick(0, 2), pick(1, 3)] : [pick(0, 1), pick(2, 3)];
 }
 
 /**
@@ -183,9 +178,7 @@ export function celebrationFor(
       big: true,
       emoji: '🚫',
       headline: 'Euchred!',
-      cheer: alone
-        ? `Set a loner — defenders take +${pts}!`
-        : `Set them — defenders take +${pts}.`,
+      cheer: alone ? `Set a loner — defenders take +${pts}!` : `Set them — defenders take +${pts}.`,
       points: pts,
     };
   }
@@ -229,10 +222,7 @@ export function celebrationFor(
  * Each team's running score. Both partners mirror the team total (see {@link scoreEuchre}),
  * so the max across a team's members is the team score and is robust to a missing id.
  */
-export function teamTotals(
-  teams: [ID[], ID[]],
-  totals: Record<ID, number>,
-): [number, number] {
+export function teamTotals(teams: [ID[], ID[]], totals: Record<ID, number>): [number, number] {
   const score = (team: ID[]): number =>
     team.length ? Math.max(...team.map((id) => totals[id] ?? 0)) : 0;
   return [score(teams[0] ?? []), score(teams[1] ?? [])];

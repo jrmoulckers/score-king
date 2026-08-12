@@ -88,10 +88,20 @@ export function unoStats({ games, rounds, canonical }: GameStatsInput): GameSpec
 
   const global: Metric[] = [];
   if (totalOuts) {
-    global.push({ key: 'u_out_all', label: 'Hands played out', value: fmtInt(totalOuts), emoji: '🎉' });
+    global.push({
+      key: 'u_out_all',
+      label: 'Hands played out',
+      value: fmtInt(totalOuts),
+      emoji: '🎉',
+    });
   }
   if (biggest) {
-    global.push({ key: 'u_scoop', label: 'Biggest hand counted', value: fmtInt(biggest), emoji: '💰' });
+    global.push({
+      key: 'u_scoop',
+      label: 'Biggest hand counted',
+      value: fmtInt(biggest),
+      emoji: '💰',
+    });
   }
   return { perPlayer, global };
 }

@@ -35,8 +35,7 @@ async function pipeThrough(
   stream: 'CompressionStream' | 'DecompressionStream',
 ): Promise<Uint8Array> {
   const Ctor = (globalThis as Record<string, unknown>)[stream] as
-    | (new (format: string) => ReadableWritablePair<Uint8Array, Uint8Array>)
-    | undefined;
+    (new (format: string) => ReadableWritablePair<Uint8Array, Uint8Array>) | undefined;
   if (!Ctor) throw new Error('no-stream');
   const transform = new Ctor('deflate-raw');
   const piped = new Blob([bytes as BlobPart])

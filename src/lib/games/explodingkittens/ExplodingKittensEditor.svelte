@@ -21,7 +21,9 @@
   const alive = $derived(ctx.players.filter((p) => !input.order.includes(p.id)));
   // In elimination-order mode the survivor is whoever's left once everyone else has
   // exploded — crowned automatically so entry is a string of single taps.
-  const survivorId = $derived(trackOrder ? (alive.length === 1 ? alive[0].id : null) : input.winner);
+  const survivorId = $derived(
+    trackOrder ? (alive.length === 1 ? alive[0].id : null) : input.winner,
+  );
 
   // Live ribbing: the first to blow (💥) and — once a match is decided — the runner-up
   // who was one draw from surviving (😾). Personality that lands at the table, not just
@@ -125,7 +127,9 @@
 
   {#if imploding}
     <div class="reminder menace">
-      ☠️ <span><strong>Imploding Kitten in play.</strong> No defuse for this one — flip it and you’re gone.</span>
+      ☠️ <span
+        ><strong>Imploding Kitten in play.</strong> No defuse for this one — flip it and you’re gone.</span
+      >
     </div>
   {/if}
 
@@ -168,7 +172,9 @@
                 <span class="rib close">so close 😾</span>
               {/if}
             </span>
-            <span class="badge boom">💥 <span class="num">{ordinal(outIndex(p.id) + 1)}</span> out</span>
+            <span class="badge boom"
+              >💥 <span class="num">{ordinal(outIndex(p.id) + 1)}</span> out</span
+            >
           </button>
           <KaboomBurst token={boomToken[p.id] ?? 0} />
         {:else if trackOrder}
@@ -207,16 +213,16 @@
                 type="button"
                 class="dbtn minus"
                 onclick={() => undefuse(p.id)}
-                aria-label="Undo a defuse for {p.name}"
-              >−</button>
+                aria-label="Undo a defuse for {p.name}">−</button
+              >
             {/if}
             <button
               type="button"
               class="dbtn add"
               onclick={() => defuse(p.id)}
               aria-label="{p.name} defused a kitten — {dc} so far"
-              title="Cheated death — logged a Defuse"
-            >🛡 <span class="num">{dc}</span></button>
+              title="Cheated death — logged a Defuse">🛡 <span class="num">{dc}</span></button
+            >
           </div>
         {/if}
       </div>
@@ -224,7 +230,9 @@
   </div>
 
   {#if trackDefuses}
-    <span class="hint muted">🛡 Tap when someone Defuses an Exploding Kitten — it feeds the “deaths cheated” stat.</span>
+    <span class="hint muted"
+      >🛡 Tap when someone Defuses an Exploding Kitten — it feeds the “deaths cheated” stat.</span
+    >
   {/if}
 </div>
 
@@ -259,7 +267,9 @@
     color: var(--text);
     font: inherit;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   button.krow:hover {
     background: var(--surface-3);

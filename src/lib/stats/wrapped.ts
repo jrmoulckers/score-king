@@ -70,15 +70,21 @@ function favoriteGame(me: MemberStats): { type: string; played: number; wins: nu
   return best;
 }
 
-function favoriteRival(me: MemberStats): { id: ID; games: number; wins: number; losses: number } | undefined {
+function favoriteRival(
+  me: MemberStats,
+): { id: ID; games: number; wins: number; losses: number } | undefined {
   let best: { id: ID; games: number; wins: number; losses: number } | undefined;
   for (const h of Object.values(me.headToHead)) {
-    if (!best || h.games > best.games) best = { id: h.opponentId, games: h.games, wins: h.wins, losses: h.losses };
+    if (!best || h.games > best.games)
+      best = { id: h.opponentId, games: h.games, wins: h.wins, losses: h.losses };
   }
   return best;
 }
 
-function nemesis(me: MemberStats, minGames = 3): { id: ID; wins: number; losses: number } | undefined {
+function nemesis(
+  me: MemberStats,
+  minGames = 3,
+): { id: ID; wins: number; losses: number } | undefined {
   let worst: { id: ID; wins: number; losses: number; diff: number } | undefined;
   for (const h of Object.values(me.headToHead)) {
     if (h.games < minGames) continue;
@@ -172,7 +178,9 @@ function momentCard(input: WrappedInput): WrappedCard | undefined {
       kind: 'moment',
       emoji: '🪦',
       headline: 'Signature moment',
-      lines: [`${fmtInt(me.comebackWins)} comeback ${me.comebackWins === 1 ? 'win' : 'wins'} from behind.`],
+      lines: [
+        `${fmtInt(me.comebackWins)} comeback ${me.comebackWins === 1 ? 'win' : 'wins'} from behind.`,
+      ],
     };
   }
   if (me.wireToWireWins > 0) {
@@ -181,7 +189,9 @@ function momentCard(input: WrappedInput): WrappedCard | undefined {
       kind: 'moment',
       emoji: '🐎',
       headline: 'Wire to wire',
-      lines: [`${fmtInt(me.wireToWireWins)} ${me.wireToWireWins === 1 ? 'game' : 'games'} led start to finish.`],
+      lines: [
+        `${fmtInt(me.wireToWireWins)} ${me.wireToWireWins === 1 ? 'game' : 'games'} led start to finish.`,
+      ],
     };
   }
   if (me.closeWins > 0) {
@@ -228,7 +238,9 @@ function rivalryCard(input: WrappedInput): WrappedCard | undefined {
 function badgesCard(input: WrappedInput): WrappedCard | undefined {
   const badges = input.earnedBadges ?? [];
   if (badges.length === 0) return undefined;
-  const rarest = [...badges].sort((a, b) => (RARITY_RANK[b.rarity] ?? 0) - (RARITY_RANK[a.rarity] ?? 0))[0];
+  const rarest = [...badges].sort(
+    (a, b) => (RARITY_RANK[b.rarity] ?? 0) - (RARITY_RANK[a.rarity] ?? 0),
+  )[0];
   const fresh = input.newBadges?.length ?? 0;
   const lines = [`${fmtInt(badges.length)} earned${fresh ? ` · ${fmtInt(fresh)} new` : ''}.`];
   if (rarest) lines.push(`Rarest: ${rarest.emoji} ${rarest.name}.`);
@@ -272,7 +284,9 @@ function toastCard(input: WrappedInput): WrappedCard {
     kind: 'toast',
     emoji: '🥂',
     headline: 'Group toast',
-    lines: [`The crew logged ${fmtInt(t.finishedGames)} games across ${fmtInt(t.gameNights)} nights.`],
+    lines: [
+      `The crew logged ${fmtInt(t.finishedGames)} games across ${fmtInt(t.gameNights)} nights.`,
+    ],
   };
 }
 
@@ -299,7 +313,9 @@ function lowDataCards(input: WrappedInput): WrappedCard[] {
         kind: 'lowdata',
         emoji: '🎲',
         headline: 'Your legend begins',
-        lines: [`No finished games ${input.label === 'tonight' ? 'tonight' : `in ${input.label}`} yet — play one and come back.`],
+        lines: [
+          `No finished games ${input.label === 'tonight' ? 'tonight' : `in ${input.label}`} yet — play one and come back.`,
+        ],
       },
     ];
   }

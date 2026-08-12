@@ -46,12 +46,19 @@
       firstRun = false;
       return;
     }
-    if (inputEl) animateMotion(inputEl, { scale: [1, 1.12, 1] }, { duration: 0.14, ease: 'easeOut' });
+    if (inputEl)
+      animateMotion(inputEl, { scale: [1, 1.12, 1] }, { duration: 0.14, ease: 'easeOut' });
   });
 </script>
 
 <div class="stepper">
-  <button type="button" class="iconbtn step-btn" onclick={dec} disabled={value <= min} aria-label={decLabel}>
+  <button
+    type="button"
+    class="iconbtn step-btn"
+    onclick={dec}
+    disabled={value <= min}
+    aria-label={decLabel}
+  >
     −
   </button>
   <input
@@ -65,7 +72,13 @@
     aria-label={fieldLabel}
     onchange={clampTyped}
   />
-  <button type="button" class="iconbtn step-btn" onclick={inc} disabled={value >= max} aria-label={incLabel}>
+  <button
+    type="button"
+    class="iconbtn step-btn"
+    onclick={inc}
+    disabled={value >= max}
+    aria-label={incLabel}
+  >
     +
   </button>
 </div>
@@ -94,7 +107,9 @@
   /* Press feedback on the ± buttons: a subtle scale-in so the signature control
      feels physical under the thumb (hover doesn't exist on the target phone). */
   .step-btn {
-    transition: transform var(--dur-press) var(--ease-standard), background var(--dur-base) var(--ease-standard);
+    transition:
+      transform var(--dur-press) var(--ease-standard),
+      background var(--dur-base) var(--ease-standard);
   }
   .step-btn:active {
     transform: scale(0.92);

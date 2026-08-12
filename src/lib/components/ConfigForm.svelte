@@ -1,10 +1,8 @@
 <script lang="ts">
   import type { ConfigField } from '../types';
 
-  let {
-    fields,
-    config = $bindable(),
-  }: { fields: ConfigField[]; config: Record<string, any> } = $props();
+  let { fields, config = $bindable() }: { fields: ConfigField[]; config: Record<string, any> } =
+    $props();
 
   // Only fields whose condition holds for the current draft show at all — irrelevant
   // knobs (e.g. blinds when we're only tracking buy-ins) simply aren't there.

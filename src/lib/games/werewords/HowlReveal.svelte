@@ -23,8 +23,7 @@
     team = 'village',
     twist = false,
     word = '',
-  }: { token?: number; team?: 'village' | 'werewolf'; twist?: boolean; word?: string } =
-    $props();
+  }: { token?: number; team?: 'village' | 'werewolf'; twist?: boolean; word?: string } = $props();
 
   const reduced = prefersReducedMotion();
   const SPARK_COUNT = 12;
@@ -80,7 +79,8 @@
               animation-duration: {s.duration}s;
               --spread: {s.spread}px;
               --rise: {s.rise}px;
-            ">{s.glyph}</span>
+            ">{s.glyph}</span
+          >
         {/each}
       </div>
     </div>
@@ -102,15 +102,27 @@
     opacity: 0;
     /* Village → a warm dawn/green break of day. Never Crown Gold. */
     background:
-      radial-gradient(120% 90% at 50% 62%, color-mix(in srgb, var(--good) 32%, transparent), transparent 70%),
+      radial-gradient(
+        120% 90% at 50% 62%,
+        color-mix(in srgb, var(--good) 32%, transparent),
+        transparent 70%
+      ),
       linear-gradient(to top, color-mix(in srgb, var(--good) 14%, transparent), transparent 55%);
     animation: howl-wash 1.6s ease-out both;
   }
   .howl.wolves .wash {
     /* Wolves → a cold violet night with a coral bite of danger. */
     background:
-      radial-gradient(120% 90% at 50% 26%, color-mix(in srgb, var(--bad) 30%, transparent), transparent 68%),
-      linear-gradient(to bottom, color-mix(in srgb, var(--primary) 24%, transparent), transparent 62%);
+      radial-gradient(
+        120% 90% at 50% 26%,
+        color-mix(in srgb, var(--bad) 30%, transparent),
+        transparent 68%
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--primary) 24%, transparent),
+        transparent 62%
+      );
     animation-duration: 1.8s;
   }
   .stage {
@@ -186,43 +198,119 @@
   }
 
   @keyframes howl-wash {
-    0% { opacity: 0; }
-    30% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
   @keyframes orb-rise {
-    0% { opacity: 0; transform: translateY(30px) scale(0.7); }
-    35% { opacity: 1; transform: translateY(-8px) scale(1.06); }
-    72% { opacity: 0.95; transform: translateY(-12px) scale(1); }
-    100% { opacity: 0; transform: translateY(-16px) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translateY(30px) scale(0.7);
+    }
+    35% {
+      opacity: 1;
+      transform: translateY(-8px) scale(1.06);
+    }
+    72% {
+      opacity: 0.95;
+      transform: translateY(-12px) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-16px) scale(1);
+    }
   }
   @keyframes moon-climb {
-    0% { opacity: 0; transform: translateY(34px) scale(0.6); }
-    38% { opacity: 1; transform: translateY(-10px) scale(1.08); }
-    75% { opacity: 0.9; transform: translateY(-16px) scale(1); }
-    100% { opacity: 0; transform: translateY(-22px) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translateY(34px) scale(0.6);
+    }
+    38% {
+      opacity: 1;
+      transform: translateY(-10px) scale(1.08);
+    }
+    75% {
+      opacity: 0.9;
+      transform: translateY(-16px) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-22px) scale(1);
+    }
   }
   @keyframes wolf-howl {
-    0% { opacity: 0; transform: translateY(8px) rotate(-6deg) scale(0.8); }
-    30% { opacity: 1; transform: translateY(0) rotate(-14deg) scale(1.1); }
-    60% { opacity: 1; transform: translateY(-2px) rotate(-14deg) scale(1.05); }
-    100% { opacity: 0; transform: translateY(-4px) rotate(-8deg) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translateY(8px) rotate(-6deg) scale(0.8);
+    }
+    30% {
+      opacity: 1;
+      transform: translateY(0) rotate(-14deg) scale(1.1);
+    }
+    60% {
+      opacity: 1;
+      transform: translateY(-2px) rotate(-14deg) scale(1.05);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-4px) rotate(-8deg) scale(1);
+    }
   }
   @keyframes word-flash {
-    0% { opacity: 0; transform: translateY(14px) scale(0.9); letter-spacing: 0.02em; }
-    36% { opacity: 1; transform: translateY(0) scale(1.05); letter-spacing: 0.22em; }
-    72% { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(-6px) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translateY(14px) scale(0.9);
+      letter-spacing: 0.02em;
+    }
+    36% {
+      opacity: 1;
+      transform: translateY(0) scale(1.05);
+      letter-spacing: 0.22em;
+    }
+    72% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-6px) scale(1);
+    }
   }
   @keyframes stolen-stamp {
-    0% { opacity: 0; transform: rotate(-8deg) scale(1.8); }
-    26% { opacity: 1; transform: rotate(-8deg) scale(1); }
-    78% { opacity: 1; transform: rotate(-8deg) scale(1); }
-    100% { opacity: 0; transform: rotate(-8deg) scale(1.05); }
+    0% {
+      opacity: 0;
+      transform: rotate(-8deg) scale(1.8);
+    }
+    26% {
+      opacity: 1;
+      transform: rotate(-8deg) scale(1);
+    }
+    78% {
+      opacity: 1;
+      transform: rotate(-8deg) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(-8deg) scale(1.05);
+    }
   }
   @keyframes spark-fly {
-    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
-    30% { opacity: 1; }
-    100% { opacity: 0; transform: translate(var(--spread), calc(var(--rise) * -1)) scale(1); }
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0.5);
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--spread), calc(var(--rise) * -1)) scale(1);
+    }
   }
 </style>

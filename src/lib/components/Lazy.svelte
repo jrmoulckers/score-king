@@ -12,7 +12,10 @@
    * page. Keyed routes (`{#key ...}`) remount this wrapper, which reloads the already-cached
    * chunk near-instantly.
    */
-  let { loader, props = {} }: { loader: () => Promise<{ default: Component<any> }>; props?: Record<string, unknown> } =
+  let {
+    loader,
+    props = {},
+  }: { loader: () => Promise<{ default: Component<any> }>; props?: Record<string, unknown> } =
     $props();
 
   let Page = $state<Component<any> | null>(null);

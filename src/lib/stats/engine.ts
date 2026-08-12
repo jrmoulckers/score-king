@@ -150,7 +150,8 @@ export function computeStats(
     const night = dayKey(t);
 
     // Records (global, per game).
-    if (f.topRound) records.consider('topRound', f.topRound.value, f.topRound.playerId, f.game.id, t);
+    if (f.topRound)
+      records.consider('topRound', f.topRound.value, f.topRound.playerId, f.game.id, t);
     if (f.margin !== undefined && f.winners.length) {
       records.consider('blowout', f.margin, f.winners[0], f.game.id, t);
       if (f.margin > 0) records.considerMin('closest', f.margin, f.winners[0], f.game.id, t);
@@ -204,7 +205,8 @@ export function computeStats(
         if (f.comeback.has(id)) a.comebackWins += 1;
         if (f.wireToWire.has(id)) a.wireToWireWins += 1;
         if (f.margin !== undefined) {
-          a.bestWinMargin = a.bestWinMargin === undefined ? f.margin : Math.max(a.bestWinMargin, f.margin);
+          a.bestWinMargin =
+            a.bestWinMargin === undefined ? f.margin : Math.max(a.bestWinMargin, f.margin);
           a.closestWinMargin =
             a.closestWinMargin === undefined ? f.margin : Math.min(a.closestWinMargin, f.margin);
         }
@@ -260,7 +262,14 @@ export function computeStats(
     perPlayer,
     records: records.list(),
     global: globalMetrics(facts, leaderboard.length, allNights.size),
-    gameSpecific: gameSpecific(finished, roundsByGame, players, query.range, canonical, options.gameStats),
+    gameSpecific: gameSpecific(
+      finished,
+      roundsByGame,
+      players,
+      query.range,
+      canonical,
+      options.gameStats,
+    ),
     totals: {
       games: inWindow.length,
       finishedGames: finished.length,
@@ -318,7 +327,14 @@ interface RecordSlot {
 
 function newRecords() {
   const slots: Record<string, RecordSlot> = {};
-  const put = (key: string, value: number, holderId?: ID, gameId?: ID, at?: number, min = false) => {
+  const put = (
+    key: string,
+    value: number,
+    holderId?: ID,
+    gameId?: ID,
+    at?: number,
+    min = false,
+  ) => {
     const cur = slots[key];
     if (!cur || (min ? value < cur.value : value > cur.value)) {
       slots[key] = { value, holderId, gameId, at };
@@ -331,7 +347,16 @@ function newRecords() {
       const out: GameRecord[] = [];
       const add = (key: string, label: string, emoji: string, fmt: (v: number) => string) => {
         const s = slots[key];
-        if (s) out.push({ key, label, emoji, value: fmt(s.value), holderId: s.holderId, gameId: s.gameId, at: s.at });
+        if (s)
+          out.push({
+            key,
+            label,
+            emoji,
+            value: fmt(s.value),
+            holderId: s.holderId,
+            gameId: s.gameId,
+            at: s.at,
+          });
       };
       add('topRound', 'Highest single round', '💥', (v) => `${Math.round(v)}`);
       add('highTotal', 'Highest game total', '📈', (v) => `${Math.round(v)}`);
@@ -357,7 +382,14 @@ function globalMetrics(facts: GameFacts[], playerCount: number, nights: number):
     { key: 'g_nights', label: 'Game nights', value: `${nights}`, emoji: '🌙' },
     { key: 'g_players', label: 'Players', value: `${playerCount}`, emoji: '👥' },
   ];
-  if (topType) out.push({ key: 'g_toptype', label: 'Most played', value: topType, sub: `${topCount} games`, emoji: '🏆' });
+  if (topType)
+    out.push({
+      key: 'g_toptype',
+      label: 'Most played',
+      value: topType,
+      sub: `${topCount} games`,
+      emoji: '🏆',
+    });
   return out;
 }
 

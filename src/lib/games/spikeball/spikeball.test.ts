@@ -239,12 +239,26 @@ describe('currentRun', () => {
 
 describe('scoreDeltas', () => {
   it('gives every winner +1 game and everyone else 0 (2v2)', () => {
-    const input: SpikeballInput = { teams: [['a', 'b'], ['c', 'd']], a: 21, b: 15 };
+    const input: SpikeballInput = {
+      teams: [
+        ['a', 'b'],
+        ['c', 'd'],
+      ],
+      a: 21,
+      b: 15,
+    };
     expect(scoreDeltas(input, ['a', 'b', 'c', 'd'], cfg())).toEqual({ a: 1, b: 1, c: 0, d: 0 });
   });
 
   it('awards the trailing team when they win the deuce', () => {
-    const input: SpikeballInput = { teams: [['a', 'b'], ['c', 'd']], a: 20, b: 22 };
+    const input: SpikeballInput = {
+      teams: [
+        ['a', 'b'],
+        ['c', 'd'],
+      ],
+      a: 20,
+      b: 22,
+    };
     expect(scoreDeltas(input, ['a', 'b', 'c', 'd'], cfg())).toEqual({ a: 0, b: 0, c: 1, d: 1 });
   });
 
@@ -256,7 +270,14 @@ describe('scoreDeltas', () => {
 
 describe('validate', () => {
   it('accepts a well-formed, finished 2v2 game', () => {
-    const input: SpikeballInput = { teams: [['a', 'b'], ['c', 'd']], a: 21, b: 18 };
+    const input: SpikeballInput = {
+      teams: [
+        ['a', 'b'],
+        ['c', 'd'],
+      ],
+      a: 21,
+      b: 18,
+    };
     expect(validate(input, ['a', 'b', 'c', 'd'], cfg())).toBeNull();
   });
 
@@ -267,7 +288,14 @@ describe('validate', () => {
   });
 
   it('rejects a game that is not over yet', () => {
-    const input: SpikeballInput = { teams: [['a', 'b'], ['c', 'd']], a: 21, b: 20 };
+    const input: SpikeballInput = {
+      teams: [
+        ['a', 'b'],
+        ['c', 'd'],
+      ],
+      a: 21,
+      b: 20,
+    };
     expect(validate(input, ['a', 'b', 'c', 'd'], cfg())).toContain('isn’t over');
   });
 
@@ -282,7 +310,14 @@ describe('summarize', () => {
   const nameOf = (id: string) => names[id] ?? '?';
 
   it('names the winners and orders the score high–low', () => {
-    const input: SpikeballInput = { teams: [['a', 'b'], ['c', 'd']], a: 18, b: 21 };
+    const input: SpikeballInput = {
+      teams: [
+        ['a', 'b'],
+        ['c', 'd'],
+      ],
+      a: 18,
+      b: 21,
+    };
     expect(summarize(input, nameOf)).toBe('🏐 Cy & Dot def. Ada & Bo 21–18');
   });
 
@@ -293,11 +328,28 @@ describe('summarize', () => {
 });
 
 // --- Module wiring: the real GameModule exercised end-to-end (no editor UI). -----------
-const player = (id: string): Player => ({ id, name: id.toUpperCase(), color: '#7c5cff', createdAt: 0 });
+const player = (id: string): Player => ({
+  id,
+  name: id.toUpperCase(),
+  color: '#7c5cff',
+  createdAt: 0,
+});
 
-function ctx(ids: string[], config: Record<string, unknown>, totals: Record<string, number> = {}): RoundContext {
+function ctx(
+  ids: string[],
+  config: Record<string, unknown>,
+  totals: Record<string, number> = {},
+): RoundContext {
   return {
-    game: { id: 'g', type: 'spikeball', config, playerIds: ids, status: 'active', createdAt: 0, roundCount: 0 },
+    game: {
+      id: 'g',
+      type: 'spikeball',
+      config,
+      playerIds: ids,
+      status: 'active',
+      createdAt: 0,
+      roundCount: 0,
+    },
     players: ids.map(player),
     config,
     roundIndex: Object.keys(totals).length ? 1 : 0,
@@ -315,13 +367,30 @@ describe('spikeball GameModule', () => {
   });
 
   it('seeds a round with teams split from the roster and 0–0', () => {
-    const input = spikeball.createRoundInput(ctx(['a', 'b', 'c', 'd'], { format: '2v2' })) as SpikeballInput;
-    expect(input).toEqual({ teams: [['a', 'b'], ['c', 'd']], a: 0, b: 0, rallies: [] });
+    const input = spikeball.createRoundInput(
+      ctx(['a', 'b', 'c', 'd'], { format: '2v2' }),
+    ) as SpikeballInput;
+    expect(input).toEqual({
+      teams: [
+        ['a', 'b'],
+        ['c', 'd'],
+      ],
+      a: 0,
+      b: 0,
+      rallies: [],
+    });
   });
 
   it('scores a finished game into per-player game wins', () => {
     const c = ctx(['a', 'b', 'c', 'd'], { format: '2v2', target: '21' });
-    const input: SpikeballInput = { teams: [['a', 'b'], ['c', 'd']], a: 21, b: 17 };
+    const input: SpikeballInput = {
+      teams: [
+        ['a', 'b'],
+        ['c', 'd'],
+      ],
+      a: 21,
+      b: 17,
+    };
     expect(spikeball.scoreRound(input, c)).toEqual({ a: 1, b: 1, c: 0, d: 0 });
   });
 
@@ -341,7 +410,14 @@ describe('spikeball GameModule', () => {
       id: 'r',
       gameId: 'g',
       index: 0,
-      input: { teams: [['a', 'b'], ['c', 'd']], a: 21, b: 15 } satisfies SpikeballInput,
+      input: {
+        teams: [
+          ['a', 'b'],
+          ['c', 'd'],
+        ],
+        a: 21,
+        b: 15,
+      } satisfies SpikeballInput,
       deltas: {},
       createdAt: 0,
     };

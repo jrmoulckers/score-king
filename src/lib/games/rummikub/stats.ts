@@ -56,20 +56,40 @@ export function rummikubStats({ games, rounds, canonical }: GameStatsInput): Gam
       metrics.push({ key: 'rk_out', label: 'Went out', value: fmtInt(a.wentOut), emoji: '🏆' });
     }
     if (a.bestHaul) {
-      metrics.push({ key: 'rk_haul', label: 'Best haul', value: `+${fmtInt(a.bestHaul)}`, emoji: '💰' });
+      metrics.push({
+        key: 'rk_haul',
+        label: 'Best haul',
+        value: `+${fmtInt(a.bestHaul)}`,
+        emoji: '💰',
+      });
     }
     if (a.jokersStranded) {
-      metrics.push({ key: 'rk_joker', label: 'Jokers stranded', value: fmtInt(a.jokersStranded), emoji: '🃏' });
+      metrics.push({
+        key: 'rk_joker',
+        label: 'Jokers stranded',
+        value: fmtInt(a.jokersStranded),
+        emoji: '🃏',
+      });
     }
     if (metrics.length) perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
   if (biggestHaul) {
-    global.push({ key: 'rk_haul_all', label: 'Biggest haul', value: `+${fmtInt(biggestHaul)}`, emoji: '💰' });
+    global.push({
+      key: 'rk_haul_all',
+      label: 'Biggest haul',
+      value: `+${fmtInt(biggestHaul)}`,
+      emoji: '💰',
+    });
   }
   if (totalJokers) {
-    global.push({ key: 'rk_joker_all', label: 'Jokers stranded', value: fmtInt(totalJokers), emoji: '🃏' });
+    global.push({
+      key: 'rk_joker_all',
+      label: 'Jokers stranded',
+      value: fmtInt(totalJokers),
+      emoji: '🃏',
+    });
   }
   return { perPlayer, global };
 }

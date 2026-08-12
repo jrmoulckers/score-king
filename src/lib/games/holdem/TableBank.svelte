@@ -28,7 +28,9 @@
   }
   function fmtSigned(amount: number): string {
     const v = Math.round(toMoney(amount, cfg) * 100) / 100;
-    const body = Number.isInteger(Math.abs(v)) ? Math.abs(v).toLocaleString() : Math.abs(v).toFixed(2);
+    const body = Number.isInteger(Math.abs(v))
+      ? Math.abs(v).toLocaleString()
+      : Math.abs(v).toFixed(2);
     const money = cfg.unit === 'chips' ? body : `$${body}`;
     if (v > 0) return `+${money}`;
     if (v < 0) return `−${money}`;
@@ -65,7 +67,11 @@
       {@const net = netNow(p.id)}
       <li class="brow" class:leader={leaderId === p.id}>
         <Avatar name={p.name} color={p.color} size={26} />
-        <span class="name">{p.name}{#if leaderId === p.id}<span class="crown" title="Chip leader"> 👑</span>{/if}</span>
+        <span class="name"
+          >{p.name}{#if leaderId === p.id}<span class="crown" title="Chip leader">
+              👑</span
+            >{/if}</span
+        >
         <span class="stat">
           <span class="lbl">in</span>
           <span class="val">{fmtMoney(invested[p.id] ?? 0)}</span>
@@ -74,8 +80,8 @@
           class="net"
           class:up={net > 0}
           class:down={net < 0}
-          title={net > 0 ? 'Up' : net < 0 ? 'Down' : 'Even'}
-        >{fmtSigned(net)}</span>
+          title={net > 0 ? 'Up' : net < 0 ? 'Down' : 'Even'}>{fmtSigned(net)}</span
+        >
       </li>
     {/each}
   </ul>

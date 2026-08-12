@@ -24,9 +24,7 @@
   const toHit = $derived(bagsToPenalty(bags, threshold));
   // Pips shown: a compact row capped so a huge house-rule threshold never sprawls.
   const pipCount = $derived(Math.min(Math.max(threshold, 1), 12));
-  const filled = $derived(
-    threshold > 0 ? Math.round((bags / threshold) * pipCount) : 0,
-  );
+  const filled = $derived(threshold > 0 ? Math.round((bags / threshold) * pipCount) : 0);
 
   const caption = $derived(
     penalties > 0

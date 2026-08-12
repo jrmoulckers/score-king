@@ -201,7 +201,11 @@ describe('foldStandings — sets won per team across a session', () => {
     const two = [makeTeam(0, ['p1']), makeTeam(1, ['p2'])];
     const [a, b] = two;
     // a wins 25-10; b wins 25-23 — both 1 set, but a scored more points overall.
-    const table = foldStandings(two, [set(a.id, b.id, 25, 10, two), set(a.id, b.id, 23, 25, two)], cfg);
+    const table = foldStandings(
+      two,
+      [set(a.id, b.id, 25, 10, two), set(a.id, b.id, 23, 25, two)],
+      cfg,
+    );
     expect(table[0].team.id).toBe(a.id);
   });
 });

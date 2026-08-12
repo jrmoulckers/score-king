@@ -66,11 +66,22 @@ export function twoRoomsStats({ games, rounds, canonical }: GameStatsInput): Gam
   for (const [id, a] of per) {
     const metrics: Metric[] = [];
     if (a.presidencies) {
-      metrics.push({ key: 'tr_pres', label: 'President', value: fmtInt(a.presidencies), emoji: '🏛️' });
+      metrics.push({
+        key: 'tr_pres',
+        label: 'President',
+        value: fmtInt(a.presidencies),
+        emoji: '🏛️',
+      });
     }
     if (a.bombings) {
       const sub = a.bombsLanded ? `${fmtInt(a.bombsLanded)} landed` : undefined;
-      metrics.push({ key: 'tr_bomb', label: 'Bomber', value: fmtInt(a.bombings), sub, emoji: '💣' });
+      metrics.push({
+        key: 'tr_bomb',
+        label: 'Bomber',
+        value: fmtInt(a.bombings),
+        sub,
+        emoji: '💣',
+      });
     }
     if (a.roomsLed) {
       metrics.push({ key: 'tr_led', label: 'Rooms led', value: fmtInt(a.roomsLed), emoji: '📢' });
@@ -84,7 +95,12 @@ export function twoRoomsStats({ games, rounds, canonical }: GameStatsInput): Gam
     global.push({ key: 'tr_blue', label: 'Blue Team wins', value: fmtInt(blueWins), emoji: '🕊️' });
   }
   if (hostages) {
-    global.push({ key: 'tr_hostages', label: 'Hostages traded', value: fmtInt(hostages), emoji: '🔁' });
+    global.push({
+      key: 'tr_hostages',
+      label: 'Hostages traded',
+      value: fmtInt(hostages),
+      emoji: '🔁',
+    });
   }
 
   return { perPlayer, global };

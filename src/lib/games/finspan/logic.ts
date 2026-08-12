@@ -223,10 +223,7 @@ export function scoreFinspan(
 }
 
 /** Validate the sheet: every entry a whole, non-negative number. Null when valid. */
-export function validateFinspan(
-  input: FinspanInput | undefined,
-  players: Player[],
-): string | null {
+export function validateFinspan(input: FinspanInput | undefined, players: Player[]): string | null {
   if (!input?.values) return null;
   for (const p of players) {
     const row = input.values[p.id];

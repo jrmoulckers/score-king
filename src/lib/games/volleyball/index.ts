@@ -26,7 +26,10 @@ function carryTeams(ctx: RoundContext): Team[] {
   const sets = recordedSets(ctx);
   const last = sets[sets.length - 1];
   if (last?.teams?.length) return cloneTeams(last.teams);
-  return defaultTeams(readConfig(ctx.config), ctx.players.map((p) => p.id));
+  return defaultTeams(
+    readConfig(ctx.config),
+    ctx.players.map((p) => p.id),
+  );
 }
 
 export const volleyball: GameModule = {
@@ -34,7 +37,18 @@ export const volleyball: GameModule = {
   name: 'Volleyball',
   tagline: 'Build teams, rally to the set, climb the standings',
   emoji: '🏐',
-  keywords: ['volleyball', 'sets', 'rally', 'net', 'sport', 'beach', 'indoor', 'spike', 'teams', 'match'],
+  keywords: [
+    'volleyball',
+    'sets',
+    'rally',
+    'net',
+    'sport',
+    'beach',
+    'indoor',
+    'spike',
+    'teams',
+    'match',
+  ],
   // A shared pool of players you split into teams — from a 2s beach duel up to several
   // indoor sixes rotating through the court.
   minPlayers: 2,
@@ -54,8 +68,23 @@ export const volleyball: GameModule = {
       ],
       help: 'Sets the suggested roster size per team. You can still put anyone anywhere.',
     },
-    { key: 'numberOfTeams', label: 'Teams to start with', type: 'number', default: 2, min: 2, max: 8, help: 'Seed this many teams from your player pool. Add, remove or rebrand them any time during play.' },
-    { key: 'pointsPerSet', label: 'Points to win a set', type: 'number', default: 25, min: 1, help: 'Rally scoring. Beach is usually 21, indoor 25.' },
+    {
+      key: 'numberOfTeams',
+      label: 'Teams to start with',
+      type: 'number',
+      default: 2,
+      min: 2,
+      max: 8,
+      help: 'Seed this many teams from your player pool. Add, remove or rebrand them any time during play.',
+    },
+    {
+      key: 'pointsPerSet',
+      label: 'Points to win a set',
+      type: 'number',
+      default: 25,
+      min: 1,
+      help: 'Rally scoring. Beach is usually 21, indoor 25.',
+    },
     { key: 'winBy2', label: 'Win a set by two', type: 'boolean', default: true },
     {
       key: 'hardCap',
@@ -72,11 +101,11 @@ export const volleyball: GameModule = {
     const ids = teams.map((t) => t.id);
     const sets = recordedSets(ctx);
     const last = sets[sets.length - 1];
-    const home = last?.home && ids.includes(last.home) ? last.home : ids[0] ?? '';
+    const home = last?.home && ids.includes(last.home) ? last.home : (ids[0] ?? '');
     const away =
       last?.away && ids.includes(last.away) && last.away !== home
         ? last.away
-        : ids.find((id) => id !== home) ?? '';
+        : (ids.find((id) => id !== home) ?? '');
     return { teams, home, away, points: { home: 0, away: 0 }, rallies: [] };
   },
 

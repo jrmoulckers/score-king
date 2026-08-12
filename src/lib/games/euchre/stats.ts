@@ -32,7 +32,15 @@ export function euchreStats({ games, rounds, canonical }: GameStatsInput): GameS
   const get = (id: ID): EuAgg => {
     let a = per.get(id);
     if (!a) {
-      a = { called: 0, makes: 0, marches: 0, euchresLanded: 0, setAgainst: 0, loneCalls: 0, loneSweeps: 0 };
+      a = {
+        called: 0,
+        makes: 0,
+        marches: 0,
+        euchresLanded: 0,
+        setAgainst: 0,
+        loneCalls: 0,
+        loneSweeps: 0,
+      };
       per.set(id, a);
     }
     return a;
@@ -96,7 +104,12 @@ export function euchreStats({ games, rounds, canonical }: GameStatsInput): GameS
       });
     }
     if (a.euchresLanded) {
-      metrics.push({ key: 'eu_euchre', label: 'Euchres landed', value: fmtInt(a.euchresLanded), emoji: '🚫' });
+      metrics.push({
+        key: 'eu_euchre',
+        label: 'Euchres landed',
+        value: fmtInt(a.euchresLanded),
+        emoji: '🚫',
+      });
     }
     if (a.setAgainst) {
       metrics.push({
@@ -121,7 +134,12 @@ export function euchreStats({ games, rounds, canonical }: GameStatsInput): GameS
 
   const global: Metric[] = [];
   if (hands) {
-    global.push({ key: 'eu_make_all', label: 'Make rate', value: fmtPct(makes / hands), emoji: '🎯' });
+    global.push({
+      key: 'eu_make_all',
+      label: 'Make rate',
+      value: fmtPct(makes / hands),
+      emoji: '🎯',
+    });
     if (marches)
       global.push({
         key: 'eu_march_all',
@@ -130,7 +148,8 @@ export function euchreStats({ games, rounds, canonical }: GameStatsInput): GameS
         sub: `${marches} sweep${marches === 1 ? '' : 's'}`,
         emoji: '🧹',
       });
-    if (euchres) global.push({ key: 'eu_euchre_all', label: 'Euchres', value: fmtInt(euchres), emoji: '🚫' });
+    if (euchres)
+      global.push({ key: 'eu_euchre_all', label: 'Euchres', value: fmtInt(euchres), emoji: '🚫' });
   }
 
   return { perPlayer, global };
