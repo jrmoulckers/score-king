@@ -9,7 +9,7 @@
    * signal. `pointer-events: none`, replays whenever `token` changes, and renders
    * nothing under reduced motion.
    */
-  let { token = 0 }: { token?: number } = $props();
+  const { token = 0 }: { token?: number } = $props();
 
   const reduced = prefersReducedMotion();
   // Every glyph animates for 1.1s; unmount just after so no `will-change`

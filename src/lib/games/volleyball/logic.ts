@@ -300,7 +300,10 @@ export function winningTeamId(input: VolleyballInput, cfg: VolleyConfig): string
 export function scoreFromRallies(rallies: Side[]): { home: number; away: number } {
   let home = 0;
   let away = 0;
-  for (const s of rallies) s === 'a' ? (home += 1) : (away += 1);
+  for (const s of rallies) {
+    if (s === 'a') home += 1;
+    else away += 1;
+  }
   return { home, away };
 }
 

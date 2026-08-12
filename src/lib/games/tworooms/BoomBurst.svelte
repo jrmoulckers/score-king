@@ -16,7 +16,7 @@
    * instant alternative). Modeled on the app's existing burst components
    * (KaboomBurst / CoinBurst / PhaseSky).
    */
-  let { token = 0, kind = 'boom' }: { token?: number; kind?: 'boom' | 'dove' } = $props();
+  const { token = 0, kind = 'boom' }: { token?: number; kind?: 'boom' | 'dove' } = $props();
 
   const reduced = prefersReducedMotion();
 

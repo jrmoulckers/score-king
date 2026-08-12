@@ -11,7 +11,7 @@
    * Gold (which belongs to the leader/winner alone). Lives entirely inside the
    * Spades editor and never touches the shared chrome.
    */
-  let {
+  const {
     /** Bags the unit carries after this hand — the 0..threshold-1 remainder. */
     bags,
     /** Bags that trip the flat −100 (the config's bag threshold). */

@@ -9,7 +9,7 @@
    * actions underneath. Gold leads the mix — a win is the one place Crown Gold
    * gets to celebrate.
    */
-  let {
+  const {
     /** How many pieces to scatter. Kept modest so it reads as a flourish, not a screen-filler. */
     count = 16,
   }: { count?: number } = $props();

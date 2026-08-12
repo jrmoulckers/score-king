@@ -10,7 +10,7 @@
    * name carry the meaning in text, so the sailing animation is decoration only
    * and is fully skipped under reduced motion (the ship simply appears at its leg).
    */
-  let { round, total }: { round: number; total: number } = $props();
+  const { round, total }: { round: number; total: number } = $props();
 
   const legs = $derived(Array.from({ length: total }, (_, i) => i + 1));
   const name = $derived(legName(round, total));

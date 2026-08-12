@@ -13,7 +13,7 @@
    */
   import { prefersReducedMotion } from '../../motion';
 
-  let { total = 0, winnerName = null }: { total?: number; winnerName?: string | null } = $props();
+  const { total = 0, winnerName = null }: { total?: number; winnerName?: string | null } = $props();
 
   const reduced = prefersReducedMotion();
   // A soft, capped scale so the bar reads as "small / building / fat pot" without pretending

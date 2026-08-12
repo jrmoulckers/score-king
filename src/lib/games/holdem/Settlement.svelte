@@ -4,7 +4,7 @@
   import { haptic } from '../../haptics';
   import { settle, toMoney, type HoldemConfig, type Transfer } from './logic';
 
-  let {
+  const {
     net,
     players,
     cfg,
@@ -20,7 +20,7 @@
   const playerOf = (id: ID) => players.find((p) => p.id === id);
 
   // Locally-tracked "handed over the cash" state — a table nicety, not persisted.
-  let paid = $state<Record<string, boolean>>({});
+  const paid = $state<Record<string, boolean>>({});
   const key = (t: Transfer) => `${t.from}>${t.to}`;
   function togglePaid(t: Transfer) {
     const k = key(t);

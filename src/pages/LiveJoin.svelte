@@ -18,7 +18,7 @@
   } from '../lib/live/session';
   import ReplicaBoard from '../lib/components/ReplicaBoard.svelte';
 
-  let { code }: { code: string } = $props();
+  const { code }: { code: string } = $props();
   const joinCode = $derived(normalizeJoinCode(code));
   const supported = isLiveSupported();
 

@@ -10,7 +10,7 @@
    * renders nothing at all under reduced motion — the banner and preview swing are
    * the calm, instant alternative shown by the editor either way.
    */
-  let { token = 0 }: { token?: number } = $props();
+  const { token = 0 }: { token?: number } = $props();
 
   const reduced = prefersReducedMotion();
   const STAR_COUNT = 16;

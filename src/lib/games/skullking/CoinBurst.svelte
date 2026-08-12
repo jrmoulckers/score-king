@@ -8,7 +8,7 @@
    * `pointer-events: none`, and replays whenever `token` changes (a new capture)
    * — a small cascade for a big haul, a couple of coins for a modest one.
    */
-  let {
+  const {
     /** Bump this to replay the burst (e.g. the running bounty total). */
     token = 0,
     /** Bigger, more coins for a significant capture. */

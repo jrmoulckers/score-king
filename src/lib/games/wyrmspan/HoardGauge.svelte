@@ -13,7 +13,7 @@
   import { hoardTier, hoardFill } from './logic';
   import { prefersReducedMotion } from '../../motion';
 
-  let { total = 0 }: { total?: number } = $props();
+  const { total = 0 }: { total?: number } = $props();
 
   const tier = $derived(hoardTier(total));
   const fill = $derived(hoardFill(total));

@@ -10,7 +10,7 @@
    * motion — the verdict chip is the calm, instant alternative shown either way.
    * `eagle` deepens the burst a touch for the rarer, deeper-red hole.
    */
-  let { token = 0, eagle = false }: { token?: number; eagle?: boolean } = $props();
+  const { token = 0, eagle = false }: { token?: number; eagle?: boolean } = $props();
 
   const reduced = prefersReducedMotion();
   const COUNT = $derived(eagle ? 12 : 8);

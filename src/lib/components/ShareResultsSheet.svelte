@@ -19,7 +19,7 @@
   import Scoreboard from './Scoreboard.svelte';
   import { focusTrap } from '../a11y/focusTrap';
 
-  let { payload, onclose }: { payload: RecapPayload; onclose: () => void } = $props();
+  const { payload, onclose }: { payload: RecapPayload; onclose: () => void } = $props();
 
   const view: RecapView = $derived(recapView(payload));
   const previewPlayers: Player[] = $derived(

@@ -12,7 +12,7 @@
    * A bigger `crown` blast is used for the last-kitten-standing moment: same engine,
    * more pieces and a gold-and-sparkle glyph set for the win.
    */
-  let { token = 0, crown = false }: { token?: number; crown?: boolean } = $props();
+  const { token = 0, crown = false }: { token?: number; crown?: boolean } = $props();
 
   const reduced = prefersReducedMotion();
 

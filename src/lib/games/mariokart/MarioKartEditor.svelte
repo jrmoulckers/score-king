@@ -1,5 +1,6 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
+  import { SvelteMap } from 'svelte/reactivity';
   import type { RoundContext } from '../../types';
   import Avatar from '../../components/Avatar.svelte';
   import Stepper from '../../components/Stepper.svelte';
@@ -78,7 +79,7 @@
 
   // Two racers can't share a spot — flag any clash so it's fixable at a glance.
   const clashes = $derived.by(() => {
-    const seen = new Map<number, number>();
+    const seen = new SvelteMap<number, number>();
     for (const p of ctx.players) {
       const v = pos(p.id);
       if (v > 0) seen.set(v, (seen.get(v) ?? 0) + 1);

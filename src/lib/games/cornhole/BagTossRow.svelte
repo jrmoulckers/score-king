@@ -27,7 +27,7 @@
   // re-synced only when the counts change from the outside (a new round, or an
   // edited round loading) — never when our own taps write them back.
   let slots = $state<BagState[]>(slotsFromThrow(bag, BAGS_PER_SIDE));
-  let chips = $state<(HTMLButtonElement | undefined)[]>([]);
+  const chips = $state<(HTMLButtonElement | undefined)[]>([]);
 
   $effect(() => {
     const wantHole = Math.max(0, Math.trunc(Number(bag.inHole) || 0));

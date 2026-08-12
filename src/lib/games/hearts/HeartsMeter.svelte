@@ -11,7 +11,7 @@
    * shot" state. Pure flavor — it lives entirely inside the editor and never
    * touches the shared chrome. No animation, so nothing to gate for reduced motion.
    */
-  let { points = 0, moonReady = false }: { points?: number; moonReady?: boolean } = $props();
+  const { points = 0, moonReady = false }: { points?: number; moonReady?: boolean } = $props();
 
   // 26 penalty points ride on every hand: 13 hearts + the 13-point Queen.
   const TOTAL = HEARTS_TOTAL + QUEEN_POINTS;

@@ -11,7 +11,7 @@
    * changes, and renders nothing at all under reduced motion — the toggle and
    * banner are the calm, instant alternative.
    */
-  let { token = 0 }: { token?: number } = $props();
+  const { token = 0 }: { token?: number } = $props();
 
   const reduced = prefersReducedMotion();
   const SHARD_COUNT = 12;

@@ -12,7 +12,7 @@
   import { depthZone, tankFill } from './logic';
   import { prefersReducedMotion } from '../../motion';
 
-  let { total = 0 }: { total?: number } = $props();
+  const { total = 0 }: { total?: number } = $props();
 
   const zone = $derived(depthZone(total));
   const fill = $derived(tankFill(total));

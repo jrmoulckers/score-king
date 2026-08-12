@@ -12,7 +12,7 @@
    * The double-blank is the dreaded "goose egg": two empty halves rendered as a
    * hollow, muted ghost so the 0–0 reads as ominous, not broken.
    */
-  let {
+  const {
     a,
     b = a,
     size = 'lg',

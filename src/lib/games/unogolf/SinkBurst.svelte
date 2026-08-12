@@ -9,7 +9,7 @@
    * overlay is `pointer-events: none`, replays whenever `token` changes, and renders
    * nothing at all under reduced motion — matching the app's UnoBurst / BirdieBurst.
    */
-  let { token = 0 }: { token?: number } = $props();
+  const { token = 0 }: { token?: number } = $props();
 
   const reduced = prefersReducedMotion();
 

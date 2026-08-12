@@ -9,7 +9,7 @@
    * fine for color-blind players and screen readers alike. Static (no animation),
    * so there's nothing to gate for reduced motion.
    */
-  let { info, hand }: { info: PassInfo; hand: number } = $props();
+  const { info, hand }: { info: PassInfo; hand: number } = $props();
 </script>
 
 <div class="pass" class:hold={info.direction === 'hold'}>

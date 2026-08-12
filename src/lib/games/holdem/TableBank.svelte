@@ -3,7 +3,7 @@
   import Avatar from '../../components/Avatar.svelte';
   import { investedByPlayer, toMoney, type HoldemConfig } from './logic';
 
-  let {
+  const {
     ctx,
     cfg,
     projection = {},

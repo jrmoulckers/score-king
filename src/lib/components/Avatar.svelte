@@ -1,7 +1,7 @@
 <script lang="ts">
   import { initials, resolvePlayerColor, textOn } from '../util';
   import { settings } from '../stores/settings';
-  let {
+  const {
     name,
     color,
     size = 28,

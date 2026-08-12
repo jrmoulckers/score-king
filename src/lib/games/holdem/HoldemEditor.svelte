@@ -23,7 +23,6 @@
   const invested = $derived(investedByPlayer(ctx.rounds));
 
   // The chosen event kind, seeded from the incoming draft (a buy-in by default).
-  // svelte-ignore state_referenced_locally
   let kind = $state<HoldemEvent['kind']>(input?.kind ?? 'buyin');
   // For a hand: quick per-hand ('2') vs full street betting ('3'); string for Segmented.
   // svelte-ignore state_referenced_locally
@@ -33,10 +32,10 @@
   let buyinPlayer = $state<ID>('');
   let buyinAmount = $state(0);
   // Per-hand (level 2) draft state.
-  let committed = $state<Record<ID, number>>({});
+  const committed = $state<Record<ID, number>>({});
   let winners = $state<ID[]>([]);
   // Cash-out draft state.
-  let counts = $state<Record<ID, number>>({});
+  const counts = $state<Record<ID, number>>({});
 
   let ready = false;
   $effect(() => {

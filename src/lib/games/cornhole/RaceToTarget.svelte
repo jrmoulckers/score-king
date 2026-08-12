@@ -25,7 +25,7 @@
     danger: boolean;
   }
 
-  let { lanes, target }: { lanes: Lane[]; target: number } = $props();
+  const { lanes, target }: { lanes: Lane[]; target: number } = $props();
 
   const pct = (v: number) => Math.max(0, Math.min(100, (v / Math.max(1, target)) * 100));
 

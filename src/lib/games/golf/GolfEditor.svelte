@@ -29,9 +29,9 @@
 
   // Per-player: is the tap-the-grid helper open, and a token that fires the birdie
   // burst each time that player crosses (down) into the red on this hole.
-  let openGrid = $state<Record<string, boolean>>({});
-  let birdieToken = $state<Record<string, number>>({});
-  let eagleFlag = $state<Record<string, boolean>>({});
+  const openGrid = $state<Record<string, boolean>>({});
+  const birdieToken = $state<Record<string, number>>({});
+  const eagleFlag = $state<Record<string, boolean>>({});
   const wasUnder: Record<string, boolean> = {};
   let ready = false;
 
@@ -107,7 +107,7 @@
 
   {#if showRules}
     <div class="help">
-      {#each rulesetLines(cfg) as line}<div>{line}</div>{/each}
+      {#each rulesetLines(cfg) as line (line)}<div>{line}</div>{/each}
     </div>
   {/if}
 

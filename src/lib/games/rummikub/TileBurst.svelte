@@ -10,7 +10,7 @@
    * replays whenever `token` changes (a fresh go-out), and renders nothing under reduced motion
    * (mirrors CoinBurst / FeatherBurst).
    */
-  let { token = 0 }: { token?: number } = $props();
+  const { token = 0 }: { token?: number } = $props();
 
   const reduced = prefersReducedMotion();
   const COUNT = 10;
