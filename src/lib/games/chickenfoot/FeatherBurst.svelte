@@ -9,7 +9,7 @@
    * whenever `token` changes (a fresh go-out), and renders nothing at all under
    * reduced motion.
    */
-  let { token = 0 }: { token?: number } = $props();
+  const { token = 0 }: { token?: number } = $props();
 
   const reduced = prefersReducedMotion();
   const COUNT = 9;

@@ -4,7 +4,7 @@
   // accessible name comes from the surrounding <label> row (or the `label` prop
   // when used without one). Controlled: the parent owns the value via `checked`
   // and reacts to `onchange`.
-  let {
+  const {
     checked = false,
     disabled = false,
     label = '',

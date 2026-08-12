@@ -13,7 +13,7 @@
   import { habitatTier, flockFill } from './logic';
   import { prefersReducedMotion } from '../../motion';
 
-  let { total = 0 }: { total?: number } = $props();
+  const { total = 0 }: { total?: number } = $props();
 
   const tier = $derived(habitatTier(total));
   const fill = $derived(flockFill(total));

@@ -32,7 +32,7 @@
     if (!input.rows) input.rows = {};
     const base = emptyRow();
     for (const p of ctx.players) {
-      let row = input.rows[p.id];
+      const row = input.rows[p.id];
       if (!row) {
         input.rows[p.id] = emptyRow();
         continue;

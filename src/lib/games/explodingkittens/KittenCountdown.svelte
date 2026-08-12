@@ -23,7 +23,7 @@
     outRank: number; // 1-based explosion order, 0 for alive/survivor
   };
 
-  let {
+  const {
     seats,
     aliveCount,
     survivorName = null,

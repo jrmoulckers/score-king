@@ -4,7 +4,7 @@
   import { bumpOnChange, popIn } from '../motion';
   import Avatar from './Avatar.svelte';
 
-  let {
+  const {
     players,
     totals,
     lowerIsBetter = false,

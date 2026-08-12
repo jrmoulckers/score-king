@@ -86,6 +86,10 @@ npm run check      # type-check (svelte-check + tsc)
 
 Requires Node 20.19+ or 22.12+ (Vite 8).
 
+Contributor installs fetch the shared ESLint policy from GitHub Packages. Before `npm install`,
+configure a classic personal access token with `read:packages` in your user-level npm configuration.
+The committed [`.npmrc`](.npmrc) only routes the `@jrmoulckers` scope and contains no credential.
+
 ---
 
 ## 📦 Architecture

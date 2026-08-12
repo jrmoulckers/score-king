@@ -38,8 +38,8 @@
   // Per-row burst tokens + flavor so the DiceBurst overlay replays on the right row when a
   // die is lost (🎲/💀), won back (🎲✨) or a game is decided (👑🎲🎉). Bumped imperatively
   // on tap for an immediate, tactile payoff — motion-only, so reduced motion just skips it.
-  let rowToken = $state<Record<ID, number>>({});
-  let rowKind = $state<Record<ID, 'lose' | 'gain' | 'crown'>>({});
+  const rowToken = $state<Record<ID, number>>({});
+  const rowKind = $state<Record<ID, 'lose' | 'gain' | 'crown'>>({});
   function fire(id: ID, kind: 'lose' | 'gain' | 'crown') {
     rowKind[id] = kind;
     rowToken[id] = (rowToken[id] ?? 0) + 1;

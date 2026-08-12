@@ -9,7 +9,7 @@
    * the meaning; the fill uses neutral/primary only. Crown Gold is reserved for the
    * leader/winner — so a 👑 shows solely when this unit already leads the table.
    */
-  let {
+  const {
     /** The unit's cumulative total before this hand. */
     before,
     /** This hand's projected delta for the unit. */

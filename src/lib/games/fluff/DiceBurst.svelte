@@ -14,7 +14,8 @@
    *   • `gain`  — a bright 🎲✨ pop for a spot-on "win a die back".
    *   • `crown` — a bigger gold 👑🎲🎉 blast for the last cup standing.
    */
-  let { token = 0, kind = 'lose' }: { token?: number; kind?: 'lose' | 'gain' | 'crown' } = $props();
+  const { token = 0, kind = 'lose' }: { token?: number; kind?: 'lose' | 'gain' | 'crown' } =
+    $props();
 
   const reduced = prefersReducedMotion();
 

@@ -7,7 +7,7 @@
    * M" text and the current-flag marker carry the meaning, so the fill is only
    * reinforcement and there's nothing essential to animate under reduced motion.
    */
-  let { hole, holes }: { hole: number; holes: number } = $props();
+  const { hole, holes }: { hole: number; holes: number } = $props();
 
   const flags = $derived(Array.from({ length: holes }, (_, i) => i + 1));
   // Only split into nines when there's a back nine to speak of.

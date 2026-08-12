@@ -18,7 +18,7 @@
    * whenever `token` changes, and renders nothing at all under reduced motion (the banner
    * is the calm, instant alternative).
    */
-  let {
+  const {
     token = 0,
     team = 'village',
     twist = false,

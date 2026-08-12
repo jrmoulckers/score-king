@@ -40,7 +40,7 @@
 
   let showKey = $state(false);
   // Per-player token that replays the "sank it" burst each time they drop the ball.
-  let sinkToken = $state<Record<string, number>>({});
+  const sinkToken = $state<Record<string, number>>({});
 
   function strokes(id: string): number {
     return input.out === id ? 0 : handStrokes(input.hands[id], cfg);

@@ -44,8 +44,10 @@ jobs:
     with:
       node-version: '22'
       package-manager: npm
-      lint-command: ''
+      lint-command: npm run lint
       format-check-command: npm run format:check
+      registry-url: https://npm.pkg.github.com
+      registry-scope: '@jrmoulckers'
 
   web:
     name: Web
@@ -62,6 +64,8 @@ jobs:
       artifact-name: score-king-web
       artifact-path: dist
       artifact-retention-days: 1
+      registry-url: https://npm.pkg.github.com
+      registry-scope: '@jrmoulckers'
 
   relay-typecheck:
     name: Relay typecheck
@@ -110,3 +114,5 @@ jobs:
       artifact-name: score-king-web
       output-dir: dist
       bundle-budget-kb: 2048
+      registry-url: https://npm.pkg.github.com
+      registry-scope: '@jrmoulckers'

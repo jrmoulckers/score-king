@@ -7,7 +7,7 @@
    */
   import { showToast } from '../stores/toast';
 
-  let {
+  const {
     text,
     caption = 'Show this to the other device',
   }: {

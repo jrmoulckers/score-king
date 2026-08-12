@@ -54,7 +54,7 @@
   import type { HostHandlers, NearbyHostControls } from '../lib/live/session';
   import type { LiveState, LiveIntent } from '../lib/live/protocol';
 
-  let { id }: { id: string } = $props();
+  const { id }: { id: string } = $props();
 
   let game = $state<Game | null>(null);
   let rounds = $state<Round[]>([]);

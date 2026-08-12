@@ -14,7 +14,7 @@
    * "Hole N of M" / leader text carries the meaning, so the fill is reinforcement only
    * and there's nothing essential to animate under reduced motion.
    */
-  let {
+  const {
     format,
     hole,
     holes,

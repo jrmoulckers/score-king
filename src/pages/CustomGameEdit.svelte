@@ -20,7 +20,7 @@
   } from '../lib/games/custom/types';
   import { customGameDefs, customGamesLoaded, saveCustomGame } from '../lib/stores/customGames';
 
-  let { id }: { id?: string } = $props();
+  const { id }: { id?: string } = $props();
 
   const editing = $derived(!!id);
 

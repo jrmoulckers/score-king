@@ -9,7 +9,7 @@
    * jump), so motion is never the only signal. `pointer-events: none`, replays whenever
    * `token` changes, and renders nothing under reduced motion (mirrors DreadStamp).
    */
-  let { token = 0, value = 0 }: { token?: number; value?: number } = $props();
+  const { token = 0, value = 0 }: { token?: number; value?: number } = $props();
 
   const reduced = prefersReducedMotion();
 </script>

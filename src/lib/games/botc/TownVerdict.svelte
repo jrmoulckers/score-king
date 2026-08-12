@@ -10,7 +10,7 @@
    * which belongs to the leader/winner tally alone. `pointer-events: none`,
    * replays on `token`, silent under reduced motion.
    */
-  let { token = 0, team = 'good' }: { token?: number; team?: 'good' | 'evil' } = $props();
+  const { token = 0, team = 'good' }: { token?: number; team?: 'good' | 'evil' } = $props();
 
   const reduced = prefersReducedMotion();
   const COUNT = 12;

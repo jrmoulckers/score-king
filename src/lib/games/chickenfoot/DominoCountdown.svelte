@@ -16,7 +16,7 @@
    * flavor name carry the meaning in text, so the walking chicken is decoration
    * only and is skipped under reduced motion (it simply appears on the current tile).
    */
-  let {
+  const {
     start,
     current,
     round,

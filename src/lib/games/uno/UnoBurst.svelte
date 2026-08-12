@@ -12,7 +12,7 @@
    * `scoop` makes it a bigger, coin-flecked blast for standard mode — the going-out player
    * literally scoops the pot — while golf uses the plain (no-scoop) confetti pop.
    */
-  let { token = 0, scoop = false }: { token?: number; scoop?: boolean } = $props();
+  const { token = 0, scoop = false }: { token?: number; scoop?: boolean } = $props();
 
   const reduced = prefersReducedMotion();
 

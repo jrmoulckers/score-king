@@ -10,7 +10,7 @@
    * only signal. The overlay is `pointer-events: none`, replays whenever `token` changes, and
    * renders nothing at all under reduced motion — the banner is the calm, instant alternative.
    */
-  let { token = 0, found = false }: { token?: number; found?: boolean } = $props();
+  const { token = 0, found = false }: { token?: number; found?: boolean } = $props();
 
   const reduced = prefersReducedMotion();
   const SPARK_COUNT = 10;

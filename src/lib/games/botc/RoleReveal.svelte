@@ -26,14 +26,14 @@
     demonName: string | null;
   }
 
-  let { reveal, onclose }: { reveal: RevealData | null; onclose: () => void } = $props();
+  const { reveal, onclose }: { reveal: RevealData | null; onclose: () => void } = $props();
 
   const reduced = prefersReducedMotion();
   let shown = $state(false);
 
   // A fresh reveal always starts hidden behind the "pass the phone" cover.
   $effect(() => {
-    reveal;
+    void reveal;
     shown = false;
   });
 

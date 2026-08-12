@@ -18,7 +18,7 @@
   import BackLink from '../lib/components/BackLink.svelte';
   import GamePresets from '../lib/components/GamePresets.svelte';
 
-  let { type }: { type: string } = $props();
+  const { type }: { type: string } = $props();
   // Re-resolve when custom defs load so a deep-link to /def_… lands once IndexedDB answers.
   const module = $derived.by(() => {
     void $customGameDefs;

@@ -24,7 +24,7 @@
     state: 'alive' | 'brink' | 'out' | 'winner';
   };
 
-  let {
+  const {
     seats,
     cupsLeft,
     diceInPlay,

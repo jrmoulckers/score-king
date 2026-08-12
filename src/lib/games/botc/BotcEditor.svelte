@@ -45,7 +45,7 @@
   const evilIn = $derived(evilWinsIn(input.states));
 
   let showGuide = $state(false);
-  let expanded = $state<Record<string, boolean>>({});
+  const expanded = $state<Record<string, boolean>>({});
   let reveal = $state<RevealData | null>(null);
 
   // Animation tokens — bumping one replays its overlay (each is reduced-motion-safe).

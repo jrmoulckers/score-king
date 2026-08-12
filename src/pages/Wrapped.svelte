@@ -30,7 +30,7 @@
   });
 
   type Preset = 'year' | 'rolling' | 'tonight';
-  let { initialPreset = 'year' }: { initialPreset?: Preset } = $props();
+  const { initialPreset = 'year' }: { initialPreset?: Preset } = $props();
   let preset = $state<Preset>(untrack(() => initialPreset));
   let index = $state(0);
 

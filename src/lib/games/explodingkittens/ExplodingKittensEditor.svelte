@@ -49,7 +49,7 @@
 
   // Per-row explosion tokens (bump → the 💥 burst replays on that row) and a single
   // token for the last-kitten-standing win blast.
-  let boomToken = $state<Record<ID, number>>({});
+  const boomToken = $state<Record<ID, number>>({});
   let crownToken = $state(0);
 
   // Don't fire the win beat for a survivor that was already crowned when this editor

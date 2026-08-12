@@ -71,7 +71,7 @@
   // badge pops in on mount via use:popIn; the haptic is the tactile half. Tracked per id so
   // stepping back below and over again re-celebrates, and an already-won player (before ≥
   // target when the editor opens) never fake-celebrates.
-  let celebrated: Record<string, boolean> = $state({});
+  const celebrated: Record<string, boolean> = $state({});
   $effect(() => {
     for (const p of ctx.players) {
       const reached = reachedTarget(projected(p.id), cfg.target);

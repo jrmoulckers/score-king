@@ -14,7 +14,7 @@
   import QrScanner from './QrScanner.svelte';
   import { focusTrap } from '../a11y/focusTrap';
 
-  let {
+  const {
     mode,
     code,
     link,

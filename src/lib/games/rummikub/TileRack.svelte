@@ -10,7 +10,7 @@
    */
   import { tileInk, TILE_FACE } from './tiles';
 
-  let {
+  const {
     round,
     total = null,
     target = null,

@@ -4,7 +4,7 @@
   // A quiet breadcrumb-style "back" affordance for drill-in pages. Sits above the
   // page title and points at the section hub (e.g. Games or Settings). Muted, never
   // violet — Royal Violet stays reserved for the single primary action per screen.
-  let { href, label }: { href: string; label: string } = $props();
+  const { href, label }: { href: string; label: string } = $props();
 </script>
 
 <a class="backlink" {href} use:link aria-label={`Back to ${label}`}>

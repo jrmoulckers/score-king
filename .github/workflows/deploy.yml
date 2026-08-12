@@ -32,3 +32,5 @@ jobs:
       package-manager: npm
       build-command: npm run build
       output-dir: dist
+      registry-url: https://npm.pkg.github.com
+      registry-scope: '@jrmoulckers'

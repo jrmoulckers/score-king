@@ -13,7 +13,7 @@
    * by ★/☆ + `aria-pressed` + a visually-hidden label — never colour alone — and the star is
    * never Crown Gold (reserved for the leader/winner) nor a second Royal Violet fill.
    */
-  let {
+  const {
     type,
     favorite = false,
     showFavorite = true,
