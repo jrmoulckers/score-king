@@ -40,7 +40,7 @@ jobs:
       contents: read
       packages: read
       pull-requests: read
-    uses: jrmoulckers/.github/.github/workflows/reusable-ci-lint.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
+    uses: jrmoulckers/.github/.github/workflows/reusable-ci-lint.yml@5f6ff9e22d82be576e01d0b094315a202ccbd186
     with:
       node-version: '22'
       package-manager: npm
@@ -54,7 +54,7 @@ jobs:
     permissions:
       contents: read
       packages: read
-    uses: jrmoulckers/.github/.github/workflows/reusable-ci-web.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
+    uses: jrmoulckers/.github/.github/workflows/reusable-ci-web.yml@5f6ff9e22d82be576e01d0b094315a202ccbd186
     with:
       node-version: '22'
       package-manager: npm
@@ -96,7 +96,7 @@ jobs:
     name: Security
     permissions:
       contents: read
-    uses: jrmoulckers/.github/.github/workflows/reusable-security-ci.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
+    uses: jrmoulckers/.github/.github/workflows/reusable-security-ci.yml@5f6ff9e22d82be576e01d0b094315a202ccbd186
     with:
       node-version: '22'
       package-manager: npm
@@ -109,7 +109,7 @@ jobs:
     permissions:
       contents: read
       packages: read
-    uses: jrmoulckers/.github/.github/workflows/reusable-perf-budget.yml@4162bad33b949a7cf5f2d0b1b88b33fd71324128
+    uses: jrmoulckers/.github/.github/workflows/reusable-perf-budget.yml@5f6ff9e22d82be576e01d0b094315a202ccbd186
     with:
       artifact-name: score-king-web
       output-dir: dist
