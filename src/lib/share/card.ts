@@ -96,10 +96,13 @@ export async function renderRecapCard(view: RecapView): Promise<Blob> {
   // Winner hero.
   const byId = new Map(view.players.map((p) => [p.id, p]));
   const winnerNames = view.winners.map((id) => byId.get(id)?.name ?? '?').join(' & ');
-  const heroText = winnerNames
-    ? `🏆 ${winnerNames} ${view.winners.length > 1 ? 'tie!' : 'wins!'}`
-    : '🏁 Final standings';
-  ctx.fillStyle = winnerNames ? C.accentInk : C.text;
+  const won = view.winners.length > 0;
+  const heroText = !won
+    ? '🏁 Final standings'
+    : view.coop
+      ? '🏆 Won together!'
+      : `🏆 ${winnerNames} ${view.winners.length > 1 ? 'tie!' : 'wins!'}`;
+  ctx.fillStyle = won ? C.accentInk : C.text;
   ctx.font = `700 56px ${FONT}`;
   fillCentered(ctx, heroText, W / 2, y + 44, W - PAD * 2);
   y += 96 + 28;

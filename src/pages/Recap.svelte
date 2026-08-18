@@ -79,10 +79,14 @@
     </span>
   </div>
 
-  {#if winnerNames}
+  {#if view.winners.length}
     <div class="card center banner">
-      🏆 {winnerNames}
-      {view.winners.length > 1 ? 'tie!' : 'wins!'}
+      {#if view.coop}
+        🏆 The whole table won together!
+      {:else}
+        🏆 {winnerNames}
+        {view.winners.length > 1 ? 'tie!' : 'wins!'}
+      {/if}
     </div>
   {/if}
 

@@ -186,6 +186,15 @@ export interface GameModule {
   resolveLowerIsBetter?(config: Record<string, unknown>): boolean;
   /** Whether this game uses fixed teams/partnerships. */
   teams?: boolean;
+  /**
+   * True when the whole table plays as one side against the game, so every seat
+   * carries the *same* total by design and the outcome is shared: everybody wins
+   * or nobody does. The shell uses this to narrate a shared victory ("you all win
+   * together") rather than a tie, and to keep the permanent all-seats equality
+   * from reading as a competitive deadlock. It never changes scoring — a co-op
+   * module still hands each player their delta through {@link scoreRound}.
+   */
+  coop?: boolean;
   configFields?: ConfigField[];
 
   /** Build a fresh, editable input object for the next round. */

@@ -235,9 +235,16 @@
   />
 
   {#if replica.game.status === 'finished'}
+    {@const wins = replica.game.winnerIds?.length ?? 0}
     <div class="card center banner">
-      🏆 {winnerNames || 'Nobody'}
-      {(replica.game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}
+      {#if wins === 0}
+        {gmodule?.coop ? '🌙 The game held this time — no win recorded.' : '🤝 No winner recorded.'}
+      {:else if gmodule?.coop}
+        🏆 You all win together!
+      {:else}
+        🏆 {winnerNames || 'Nobody'}
+        {wins > 1 ? 'tie!' : 'wins!'}
+      {/if}
     </div>
   {:else if canAdd && draft}
     {@const RoundEditor = gmodule.RoundEditor}

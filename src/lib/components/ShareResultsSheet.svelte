@@ -28,6 +28,14 @@
   const winnerNames = $derived(
     view.winners.map((id) => view.players.find((p) => p.id === id)?.name ?? '?').join(' & '),
   );
+  /** The one-line result headline, shared by the preview hero and the native share text. */
+  const heroLine = $derived(
+    !view.winners.length
+      ? ''
+      : view.coop
+        ? '🏆 Won together!'
+        : `🏆 ${winnerNames} ${view.winners.length > 1 ? 'tie!' : 'wins!'}`,
+  );
 
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
@@ -117,7 +125,7 @@
         try {
           await navigator.share({
             files: [file],
-            text: winnerNames ? `🏆 ${winnerNames}` : undefined,
+            text: heroLine || undefined,
           });
         } catch {
           /* dismissed */
@@ -173,8 +181,8 @@
     <span class="pill">{view.emoji} {view.title}</span>
   </div>
 
-  {#if winnerNames}
-    <div class="hero">🏆 {winnerNames} {view.winners.length > 1 ? 'tie!' : 'wins!'}</div>
+  {#if heroLine}
+    <div class="hero">{heroLine}</div>
   {/if}
 
   <div class="board">
