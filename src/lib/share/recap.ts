@@ -144,6 +144,12 @@ export interface RecapView {
   players: { id: string; name: string; color: string }[];
   totals: Record<string, number>;
   winners: string[];
+  /**
+   * The shared game was cooperative — every seat carries the same total and the
+   * outcome is collective, so the recap says "you all win together" instead of
+   * reading an equal table as a tie. False when the module is unknown locally.
+   */
+  coop: boolean;
   lowerIsBetter: boolean;
   standings: Standing[];
   /** Round-by-round per-player deltas, aligned to {@link players} order. */
@@ -152,8 +158,12 @@ export interface RecapView {
 
 /**
  * Expand a payload into a ready-to-render view: synthesized players (positional ids),
- * derived totals + standings, resolved win direction, and winner ids. Falls back to the
- * rank-1 finishers when a payload carries no explicit winners.
+ * derived totals + standings, resolved win direction, and winner ids.
+ *
+ * A payload's `w` is the *exact recorded outcome*, so an empty list means "nobody
+ * won" — a real result for a cooperative game the table lost — and is preserved as
+ * such. Only a malformed payload missing `w` altogether falls back to the rank-1
+ * finishers.
  */
 export function recapView(payload: RecapPayload): RecapView {
   const module = getModule(payload.t);
@@ -168,9 +178,8 @@ export function recapView(payload: RecapPayload): RecapView {
   }
   const lowerIsBetter = module ? resolveLower(module, payload.cfg ?? {}) : false;
   const ranked = standings(totals, lowerIsBetter);
-  const explicit = payload.w.map((i) => String(i)).filter((id) => id in totals);
-  const winners = explicit.length
-    ? explicit
+  const winners = payload.w
+    ? payload.w.map((i) => String(i)).filter((id) => id in totals)
     : ranked.filter((s) => s.rank === 1).map((s) => s.playerId);
   return {
     type: payload.t,
@@ -181,6 +190,7 @@ export function recapView(payload: RecapPayload): RecapView {
     players,
     totals,
     winners,
+    coop: !!module?.coop,
     lowerIsBetter,
     standings: ranked,
     rounds: payload.r,
@@ -202,9 +212,11 @@ export function recapText(view: RecapView, url: string): string {
   });
   const winnerNames = view.winners.map((id) => byId.get(id)?.name ?? '?').join(' & ');
   const header = `${view.emoji} ${view.title} — ${date}`;
-  const crownLine = winnerNames
-    ? `🏆 ${winnerNames} ${view.winners.length > 1 ? 'tie!' : 'wins!'}`
-    : '';
+  const crownLine = !view.winners.length
+    ? ''
+    : view.coop
+      ? '🏆 The whole table won together!'
+      : `🏆 ${winnerNames} ${view.winners.length > 1 ? 'tie!' : 'wins!'}`;
   return [header, crownLine, '', ...lines, '', `Scored with Score King 👑 ${url}`]
     .filter((l) => l !== null)
     .join('\n');

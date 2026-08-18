@@ -300,11 +300,21 @@
     const names = (game?.winnerIds ?? [])
       .map((wid) => plist.find((p) => p.id === wid)?.name ?? '?')
       .join(' and ');
-    if (names) {
-      haptic('win');
+    const count = game?.winnerIds?.length ?? 0;
+    if (module?.coop) {
+      // A co-op table shares one outcome: everybody won, or the game beat you.
+      // Never announce a "tie" — nobody was playing against anybody.
+      haptic(count ? 'win' : 'tick');
       announce(
-        `Game finished. ${names} ${(game?.winnerIds?.length ?? 0) > 1 ? 'tie for the win' : 'wins'}.`,
+        count
+          ? 'Game finished. You all win together.'
+          : 'Game finished. The farm holds — no win this time.',
       );
+    } else if (names) {
+      haptic('win');
+      announce(`Game finished. ${names} ${count > 1 ? 'tie for the win' : 'wins'}.`);
+    } else {
+      announce('Game finished. No winner recorded.');
     }
   }
   async function doReopen() {
@@ -553,12 +563,25 @@
   />
 
   {#if game.status === 'finished'}
-    <div class="card center banner winner-banner">
-      <WinnerCelebration />
-      <span class="banner-text"
-        >🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}</span
-      >
-    </div>
+    {#if (game.winnerIds?.length ?? 0) === 0}
+      <!-- Finished with no winner: a co-op table the game beat, or any module that
+           records "nobody won". No confetti and no 🏆 — the result is real either
+           way, but celebrating a loss reads as a bug. -->
+      <div class="card center banner">
+        {module?.coop ? '🌙 The game held this time — no win recorded.' : '🤝 No winner recorded.'}
+      </div>
+    {:else}
+      <div class="card center banner winner-banner">
+        <WinnerCelebration />
+        <span class="banner-text">
+          {#if module?.coop}
+            🏆 You all win together!
+          {:else}
+            🏆 {winnerNames || 'Nobody'} {(game.winnerIds?.length ?? 0) > 1 ? 'tie!' : 'wins!'}
+          {/if}
+        </span>
+      </div>
+    {/if}
     <button class="btn block" style="margin-top: 12px" onclick={() => (shareOpen = true)}>
       📤 Share results
     </button>
