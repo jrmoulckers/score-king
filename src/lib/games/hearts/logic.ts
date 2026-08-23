@@ -105,7 +105,6 @@ export function passCycle(playerCount: number): PassDirection[] {
 
 /** Which way cards pass on a given (0-based) hand, for a given table size. */
 export function passingFor(handIndex: number, playerCount: number, cardCount = 3): PassInfo {
-  const count = Math.max(2, Math.floor(playerCount));
   const cycle = passCycle(playerCount);
   const i = ((handIndex % cycle.length) + cycle.length) % cycle.length || 0;
   const direction = cycle[i];
