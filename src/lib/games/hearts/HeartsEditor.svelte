@@ -28,7 +28,9 @@
   const variantJack = $derived(cfg.variantJack);
   const ids = $derived(ctx.players.map((p) => p.id));
 
-  const pass = $derived(cfg.passing ? passingFor(ctx.roundIndex, ids.length) : null);
+  const pass = $derived(
+    cfg.passing ? passingFor(ctx.roundIndex, ids.length, cfg.passCardCount) : null,
+  );
 
   // How close the game is to ending, from the standings going into this hand. The
   // strip stays hidden early and only surfaces as the finish nears (or a single
@@ -45,12 +47,15 @@
   const points = $derived(placed + (input.queen ? QUEEN_POINTS : 0));
   const moon = $derived(shooter(input));
   const moonName = $derived(ctx.players.find((p) => p.id === moon)?.name ?? '');
-  // The shooter's live pick for this round, falling back to the game default.
-  const effMoon = $derived<MoonRule>(
-    input.moonRule === 'subtract' || input.moonRule === 'add26' ? input.moonRule : cfg.moonRule,
+  const moonChoicePending = $derived(
+    !!moon && input.moonRule !== 'subtract' && input.moonRule !== 'add26',
   );
   const swing = $derived(
-    effMoon === 'subtract' ? `${moonName} takes −26` : 'everyone else takes +26',
+    input.moonRule === 'subtract'
+      ? `${moonName} takes −26`
+      : input.moonRule === 'add26'
+        ? 'everyone else takes +26'
+        : 'choose how it scores below',
   );
 
   const previews = $derived(
@@ -66,7 +71,8 @@
   let ready = false;
 
   // Prime the moon baseline on first render so re-opening a round that already
-  // holds a moon doesn't fire the celebration on mount — only a fresh sweep does.
+  // holds a moon preserves its choice and doesn't celebrate on mount. After that,
+  // any newly detected shooter must make their own scoring choice.
   $effect(() => {
     if (!ready) {
       prevMoon = moon;
@@ -74,6 +80,7 @@
       return;
     }
     if (moon && moon !== prevMoon) {
+      input.moonRule = undefined;
       moonToken += 1;
       haptic('win');
     }
@@ -101,8 +108,6 @@
   function shootMoon(id: string) {
     for (const p of ctx.players) input.hearts[p.id] = p.id === id ? HEARTS_TOTAL : 0;
     input.queen = id;
-    // Seed the per-round choice from the game default the first time a moon lands.
-    if (input.moonRule !== 'add26' && input.moonRule !== 'subtract') input.moonRule = cfg.moonRule;
   }
   function setMoonRule(rule: MoonRule) {
     input.moonRule = rule;
@@ -167,7 +172,7 @@
   {/if}
 
   {#if moon}
-    <div class="moon-banner" role="status">
+    <div class="moon-banner" role="region" aria-label="Shooting the moon">
       <span class="ic" aria-hidden="true">🌙</span>
       <div class="moon-body">
         <span><strong>{moonName} is shooting the moon!</strong> — {swing}.</span>
@@ -175,13 +180,13 @@
           <button
             type="button"
             class="btn small ghost"
-            aria-pressed={effMoon === 'add26'}
+            aria-pressed={input.moonRule === 'add26'}
             onclick={() => setMoonRule('add26')}>Everyone else +26</button
           >
           <button
             type="button"
             class="btn small ghost"
-            aria-pressed={effMoon === 'subtract'}
+            aria-pressed={input.moonRule === 'subtract'}
             onclick={() => setMoonRule('subtract')}>{moonName} takes −26</button
           >
         </div>
@@ -201,15 +206,22 @@
           <strong class="pname">{p.name}</strong>
         </span>
         <span class="preview-wrap">
-          <span class="preview" class:score-good={pts <= 0} class:score-bad={pts > 0}
-            >{signed(pts)}</span
-          >
           <span
-            class="outcome"
-            class:score-good={oc.kind === 'clean' || oc.kind === 'moon'}
-            class:score-bad={oc.kind === 'lady' || (oc.kind === 'points' && pts > 0)}
-            >{oc.emoji} {oc.label}</span
+            class="preview"
+            class:score-good={!moonChoicePending && pts <= 0}
+            class:score-bad={!moonChoicePending && pts > 0}
+            >{moonChoicePending ? '—' : signed(pts)}</span
           >
+          {#if moonChoicePending}
+            <span class="outcome">🌙 awaiting choice</span>
+          {:else}
+            <span
+              class="outcome"
+              class:score-good={oc.kind === 'clean' || oc.kind === 'moon'}
+              class:score-bad={oc.kind === 'lady' || (oc.kind === 'points' && pts > 0)}
+              >{oc.emoji} {oc.label}</span
+            >
+          {/if}
         </span>
       </div>
 
@@ -253,6 +265,7 @@
           type="button"
           class="toggle moon-btn"
           class:on={isShooter}
+          aria-pressed={isShooter}
           onclick={() => shootMoon(p.id)}
           title="{p.name} took all 13 hearts and the ♠Q"
         >
@@ -304,6 +317,9 @@
     color: var(--primary);
     background: color-mix(in srgb, var(--primary) 14%, transparent);
     font-weight: 700;
+  }
+  .moon-choice .btn {
+    min-height: 46px;
   }
   /* Endgame tension: a quiet "the finish is near" line that escalates to caution
      amber when a single hand could end it. Co-signalled by the 🎯/⚠️/🏁 icon and
