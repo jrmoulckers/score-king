@@ -20,9 +20,8 @@ export interface HeartsInput {
   /** Who took the Jack of Diamonds (♦J, −10) — Omnibus variant only. */
   jack: ID | null;
   /**
-   * The shooter's pick for how a moon scores *this* round, overriding the game's
-   * default `moonRule`. Only meaningful when someone shot the moon; absent on
-   * ordinary rounds and on games saved before per-round choice existed.
+   * The shooter's pick for how a moon scores *this* round. Only meaningful when
+   * someone shot the moon; absent on ordinary rounds and legacy saved rounds.
    */
   moonRule?: MoonRule;
 }
@@ -32,15 +31,16 @@ export type MoonRule = 'add26' | 'subtract';
 export interface HeartsConfig {
   endScore: number;
   variantJack: boolean;
-  moonRule: MoonRule;
-  /** Show the rotating pass direction each hand (left → right → across → hold). */
+  /** Number of cards each player passes before a deal. */
+  passCardCount: number;
+  /** Show the rotating pass target each hand. */
   passing: boolean;
 }
 
 export const DEFAULT_CONFIG: HeartsConfig = {
   endScore: 100,
   variantJack: false,
-  moonRule: 'add26',
+  passCardCount: 3,
   passing: true,
 };
 
@@ -56,11 +56,11 @@ function numOr(v: unknown, fallback: number): number {
 }
 
 export function readConfig(config: Record<string, unknown> = {}): HeartsConfig {
-  const moon = config.moonRule === 'subtract' ? 'subtract' : 'add26';
+  const passCardCount = Math.floor(numOr(config.passCardCount, DEFAULT_CONFIG.passCardCount));
   return {
     endScore: numOr(config.endScore, DEFAULT_CONFIG.endScore),
     variantJack: !!config.variantJack,
-    moonRule: moon,
+    passCardCount: Math.min(HEARTS_TOTAL, Math.max(1, passCardCount)),
     // Default on (standard Hearts passes); only an explicit `false` turns it off,
     // so games saved before this option existed still show the ritual.
     passing: config.passing !== false,
@@ -68,44 +68,97 @@ export function readConfig(config: Record<string, unknown> = {}): HeartsConfig {
 }
 
 // ── Passing ritual ───────────────────────────────────────────────────────────
-// Hearts' signature rhythm: before each deal you pass 3 cards, and the direction
-// rotates hand to hand. Purely informational (it never touches scoring) — the app
-// just reminds the table which way the cards go this deal, because everyone forgets.
+// Before each deal, the target advances around every other seat, followed by a hold.
+// Purely informational (it never touches scoring).
 
-export type PassDirection = 'left' | 'right' | 'across' | 'hold';
+export type PassDirection = 'left' | 'right' | 'across' | 'offset' | 'hold';
 
 export interface PassInfo {
   direction: PassDirection;
+  /** Around-table seat offset from the passing player; null for a hold hand. */
+  seatOffset: number | null;
   /** A co-signal glyph (never color alone) — an arrow, or a raised hand for a hold. */
   glyph: string;
   /** Short label, e.g. "Pass left" / "Hold — no pass". */
   label: string;
-  /** One-line reminder of who receives your three cards this deal. */
+  /** One-line reminder of who receives your cards this deal. */
   hint: string;
 }
 
-const PASS_META: Record<PassDirection, Omit<PassInfo, 'direction'>> = {
-  left: { glyph: '←', label: 'Pass left', hint: 'Pass 3 cards to the player on your left' },
-  right: { glyph: '→', label: 'Pass right', hint: 'Pass 3 cards to the player on your right' },
-  across: { glyph: '↔', label: 'Pass across', hint: 'Pass 3 cards to the player across from you' },
-  hold: { glyph: '✋', label: 'Hold — no pass', hint: 'Keep your hand — no passing this deal' },
-};
-
 /**
- * The passing cycle for a table of `playerCount`. Four-handed Hearts is the
- * canonical left → right → across → hold; with any other count "across" has no
- * clean seat, so we honestly drop it to left → right → hold.
+ * Visit each other seat in order around the circle, then hold. This makes the
+ * cycle complete and deterministic for every supported table size.
  */
 export function passCycle(playerCount: number): PassDirection[] {
-  return playerCount === 4 ? ['left', 'right', 'across', 'hold'] : ['left', 'right', 'hold'];
+  const count = Math.max(2, Math.floor(playerCount));
+  return [
+    ...Array.from({ length: count - 1 }, (_, i) => {
+      const offset = i + 1;
+      if (offset === 1) return 'left';
+      if (offset === count - 1) return 'right';
+      if (count % 2 === 0 && offset === count / 2) return 'across';
+      return 'offset';
+    }),
+    'hold',
+  ];
 }
 
 /** Which way cards pass on a given (0-based) hand, for a given table size. */
-export function passingFor(handIndex: number, playerCount: number): PassInfo {
+export function passingFor(handIndex: number, playerCount: number, cardCount = 3): PassInfo {
+  const count = Math.max(2, Math.floor(playerCount));
   const cycle = passCycle(playerCount);
   const i = ((handIndex % cycle.length) + cycle.length) % cycle.length || 0;
   const direction = cycle[i];
-  return { direction, ...PASS_META[direction] };
+  if (direction === 'hold') {
+    return {
+      direction,
+      seatOffset: null,
+      glyph: '✋',
+      label: 'Hold — no pass',
+      hint: 'Keep your hand — no passing this deal',
+    };
+  }
+
+  const offset = i + 1;
+  const safeCardCount = Math.min(
+    HEARTS_TOTAL,
+    Math.max(1, Math.floor(numOr(cardCount, DEFAULT_CONFIG.passCardCount))),
+  );
+  const cards = `${safeCardCount} card${safeCardCount === 1 ? '' : 's'}`;
+  if (direction === 'left') {
+    return {
+      direction,
+      seatOffset: offset,
+      glyph: '←',
+      label: 'Pass left',
+      hint: `Pass ${cards} to the player on your left`,
+    };
+  }
+  if (direction === 'right') {
+    return {
+      direction,
+      seatOffset: offset,
+      glyph: '→',
+      label: 'Pass right',
+      hint: `Pass ${cards} to the player on your right`,
+    };
+  }
+  if (direction === 'across') {
+    return {
+      direction,
+      seatOffset: offset,
+      glyph: '↔',
+      label: 'Pass across',
+      hint: `Pass ${cards} to the player across from you`,
+    };
+  }
+  return {
+    direction,
+    seatOffset: offset,
+    glyph: '↷',
+    label: `Pass ${offset} seats left`,
+    hint: `Pass ${cards} to the player ${offset} seats to your left`,
+  };
 }
 
 /** A fresh, empty round with every player on zero hearts and no cards claimed. */
@@ -167,10 +220,14 @@ export function scoreRound(
   const moon = shooter(input);
   if (!moon) return base;
 
-  // The shooter may flip how the moon scores this round; fall back to the game
-  // default when the round carries no explicit choice.
+  // Old rounds did not carry a per-round choice. Honor their old game-level rule
+  // when present, otherwise retain the historical add-26 behavior.
   const rule: MoonRule =
-    input.moonRule === 'subtract' || input.moonRule === 'add26' ? input.moonRule : cfg.moonRule;
+    input.moonRule === 'subtract' || input.moonRule === 'add26'
+      ? input.moonRule
+      : config.moonRule === 'subtract'
+        ? 'subtract'
+        : 'add26';
 
   const out: Record<ID, number> = {};
   for (const id of playerIds) {
@@ -213,6 +270,9 @@ export function validateRound(
   if (!input.queen) return 'Assign the Queen of Spades (♠Q) to whoever took her.';
   if (cfg.variantJack && !input.jack) {
     return 'Assign the Jack of Diamonds (♦J) to whoever took it.';
+  }
+  if (shooter(input) && input.moonRule !== 'add26' && input.moonRule !== 'subtract') {
+    return 'Choose how to score this moon before saving the round.';
   }
   return null;
 }

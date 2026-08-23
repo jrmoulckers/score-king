@@ -41,18 +41,20 @@ describe('readConfig', () => {
     expect(readConfig({})).toEqual({
       endScore: 100,
       variantJack: false,
-      moonRule: 'add26',
+      passCardCount: 3,
       passing: true,
     });
   });
-  it('reads overrides and clamps moonRule to a known value', () => {
-    expect(readConfig({ endScore: 50, variantJack: true, moonRule: 'subtract' })).toEqual({
+  it('reads overrides and safely constrains the pass-card count', () => {
+    expect(readConfig({ endScore: 50, variantJack: true, passCardCount: 2 })).toEqual({
       endScore: 50,
       variantJack: true,
-      moonRule: 'subtract',
+      passCardCount: 2,
       passing: true,
     });
-    expect(readConfig({ moonRule: 'nonsense' }).moonRule).toBe('add26');
+    expect(readConfig({ passCardCount: 0 }).passCardCount).toBe(1);
+    expect(readConfig({ passCardCount: 99 }).passCardCount).toBe(13);
+    expect(readConfig({ passCardCount: 2.8 }).passCardCount).toBe(2);
   });
   it('treats passing as on unless explicitly disabled', () => {
     expect(readConfig({}).passing).toBe(true);
@@ -63,27 +65,35 @@ describe('readConfig', () => {
 
 // ── passing ritual ─────────────────────────────────────────────────────────
 describe('passing', () => {
-  it('rotates left → right → across → hold for a four-handed table', () => {
-    expect(passCycle(4)).toEqual(['left', 'right', 'across', 'hold']);
+  it('visits every other seat around a four-handed table before holding', () => {
+    expect(passCycle(4)).toEqual(['left', 'across', 'right', 'hold']);
     expect(passingFor(0, 4).direction).toBe('left');
-    expect(passingFor(1, 4).direction).toBe('right');
-    expect(passingFor(2, 4).direction).toBe('across');
+    expect(passingFor(1, 4).direction).toBe('across');
+    expect(passingFor(2, 4).direction).toBe('right');
     expect(passingFor(3, 4).direction).toBe('hold');
     expect(passingFor(4, 4).direction).toBe('left'); // wraps every 4 hands
   });
-  it('drops "across" when the table is not four-handed', () => {
+  it('completes six-player and odd-player seat loops before holding', () => {
     expect(passCycle(3)).toEqual(['left', 'right', 'hold']);
-    expect(passCycle(5)).toEqual(['left', 'right', 'hold']);
-    expect(passingFor(2, 3).direction).toBe('hold');
-    expect(passingFor(3, 3).direction).toBe('left'); // wraps every 3 hands
-    expect(passingFor(0, 6).direction).toBe('left');
+    expect(passCycle(5)).toEqual(['left', 'offset', 'offset', 'right', 'hold']);
+    expect(passCycle(6)).toEqual(['left', 'offset', 'across', 'offset', 'right', 'hold']);
+    expect(passingFor(3, 6)).toMatchObject({ direction: 'offset', seatOffset: 4 });
+    expect(passingFor(4, 6).direction).toBe('right');
+    expect(passingFor(5, 6).direction).toBe('hold');
+    expect(passingFor(6, 6).direction).toBe('left');
   });
-  it('carries a glyph, label and a 3-card hint that co-signal the direction', () => {
-    const left = passingFor(0, 4);
+  it('describes familiar and intermediate targets with the configured card count', () => {
+    const left = passingFor(0, 6, 1);
     expect(left.glyph).toBeTruthy();
     expect(left.label).toMatch(/left/i);
-    expect(left.hint).toMatch(/3 cards/i);
-    expect(passingFor(3, 4).label).toMatch(/hold/i);
+    expect(left.hint).toMatch(/1 card\b/i);
+    expect(passingFor(1, 6, 2)).toMatchObject({
+      seatOffset: 2,
+      label: 'Pass 2 seats left',
+    });
+    expect(passingFor(1, 6, 2).hint).toMatch(/2 cards.*2 seats/i);
+    expect(passingFor(2, 6).label).toMatch(/across/i);
+    expect(passingFor(5, 6).label).toMatch(/hold/i);
   });
 });
 
@@ -125,9 +135,20 @@ describe('validateRound', () => {
     expect(msg).toMatch(/Queen of Spades/);
   });
   it('requires the Jack under the Omnibus variant', () => {
-    const i = input({ a: 13, b: 0, c: 0, d: 0 }, 'a', null);
+    const i = {
+      ...input({ a: 13, b: 0, c: 0, d: 0 }, 'a', null),
+      moonRule: 'add26' as const,
+    };
     expect(validateRound(i, P4, { variantJack: true })).toMatch(/Jack of Diamonds/);
     expect(validateRound(i, P4, { variantJack: false })).toBeNull();
+  });
+  it('requires an explicit per-round rule when a player shoots the moon', () => {
+    const moon = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
+    expect(validateRound(moon, P4, { moonRule: 'subtract' })).toMatch(
+      /Choose how to score this moon/,
+    );
+    expect(validateRound({ ...moon, moonRule: 'add26' }, P4, {})).toBeNull();
+    expect(validateRound({ ...moon, moonRule: 'subtract' }, P4, {})).toBeNull();
   });
   it('passes a well-formed round', () => {
     expect(validateRound(input({ a: 4, b: 4, c: 4, d: 1 }, 'd'), P4, {})).toBeNull();
@@ -157,14 +178,14 @@ describe('scoreRound', () => {
   });
 
   it('shoots the moon: everyone else +26 (add26)', () => {
-    const i = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
+    const i = { ...input({ a: 13, b: 0, c: 0, d: 0 }, 'a'), moonRule: 'add26' as const };
     expect(shooter(i)).toBe('a');
-    expect(scoreRound(i, IDS, { moonRule: 'add26' })).toEqual({ a: 0, b: 26, c: 26, d: 26 });
+    expect(scoreRound(i, IDS, {})).toEqual({ a: 0, b: 26, c: 26, d: 26 });
   });
 
   it('shoots the moon: shooter −26 (subtract)', () => {
-    const i = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
-    expect(scoreRound(i, IDS, { moonRule: 'subtract' })).toEqual({ a: -26, b: 0, c: 0, d: 0 });
+    const i = { ...input({ a: 13, b: 0, c: 0, d: 0 }, 'a'), moonRule: 'subtract' as const };
+    expect(scoreRound(i, IDS, {})).toEqual({ a: -26, b: 0, c: 0, d: 0 });
   });
 
   it('a moon ignores the Jack for the shooter under add26', () => {
@@ -177,9 +198,15 @@ describe('scoreRound', () => {
     });
   });
 
-  it("a per-round moon pick overrides the game's default rule", () => {
+  it('preserves legacy moon scoring while per-round picks take precedence', () => {
     const base = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
-    // Round says "shooter −26" even though the game default is add26.
+    expect(scoreRound(base, IDS, { moonRule: 'subtract' })).toEqual({
+      a: -26,
+      b: 0,
+      c: 0,
+      d: 0,
+    });
+    expect(scoreRound(base, IDS, {})).toEqual({ a: 0, b: 26, c: 26, d: 26 });
     expect(scoreRound({ ...base, moonRule: 'subtract' }, IDS, { moonRule: 'add26' })).toEqual({
       a: -26,
       b: 0,
@@ -263,6 +290,17 @@ describe('endgameInfo', () => {
 
 // ── module wiring ──────────────────────────────────────────────────────────
 describe('hearts module', () => {
+  it('offers pass-card setup but no game-wide moon setup', () => {
+    const fields = hearts.configFields ?? [];
+    expect(fields.find((field) => field.key === 'passCardCount')).toMatchObject({
+      type: 'number',
+      default: 3,
+      min: 1,
+      max: 13,
+    });
+    expect(fields.some((field) => field.key === 'moonRule')).toBe(false);
+  });
+
   it('delegates validate/score/finish to the shared logic', () => {
     const ctx = {
       game: {} as never,
@@ -272,7 +310,10 @@ describe('hearts module', () => {
       totals: {},
       rounds: [],
     };
-    const i = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
+    const i = {
+      ...input({ a: 13, b: 0, c: 0, d: 0 }, 'a'),
+      moonRule: 'add26' as const,
+    };
     expect(hearts.validateRound(i, ctx)).toBeNull();
     expect(hearts.scoreRound(i, ctx)).toEqual({ a: 0, b: 26, c: 26, d: 26 });
     expect(hearts.isFinished!({ a: 100 }, { config: {}, roundCount: 3, playerCount: 4 })).toBe(

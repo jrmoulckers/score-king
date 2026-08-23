@@ -3,8 +3,8 @@
 
   /**
    * Hearts' pre-deal ritual, worn as a slim costume strip above the round editor:
-   * a reminder of which way the three cards pass this hand (left → right → across →
-   * hold, rotating). Pure flavor + table aid — it never touches scoring. The glyph
+   * a reminder of where the configured cards pass this hand. Pure flavor + table
+   * aid — it never touches scoring. The glyph
    * co-signals the arrow, but the label and hint carry the real meaning, so it reads
    * fine for color-blind players and screen readers alike. Static (no animation),
    * so there's nothing to gate for reduced motion.
