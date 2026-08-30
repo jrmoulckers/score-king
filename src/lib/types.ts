@@ -206,13 +206,29 @@ export interface GameModule {
 
   /** Fixed number of rounds (e.g. Skull King = 10); null/undefined = open-ended. */
   maxRounds?(config: Record<string, unknown>, playerCount: number): number | null;
-  /** Score-threshold end condition (e.g. Hearts reaches 100). */
+  /**
+   * Score-threshold end condition (e.g. Hearts reaches 100). `totals` alone is
+   * enough for most games; `rounds` (recorded so far, oldest first) is included
+   * for the rare game whose end condition isn't a pure function of cumulative
+   * points — e.g. Phase 10, which needs each hand's own per-phase progress.
+   */
   isFinished?(
     totals: Record<ID, number>,
-    info: { config: Record<string, unknown>; roundCount: number; playerCount: number },
+    info: {
+      config: Record<string, unknown>;
+      roundCount: number;
+      playerCount: number;
+      rounds?: Round[];
+    },
   ): boolean;
-  /** Final winner(s) given totals. Defaults to highest (or lowest) total. */
-  pickWinners?(totals: Record<ID, number>, config: Record<string, unknown>): ID[];
+  /**
+   * Final winner(s) given totals. Defaults to highest (or lowest) total.
+   * `rounds` (recorded so far, oldest first) is passed alongside `totals` for a
+   * game whose win condition isn't reducible to cumulative points alone — e.g.
+   * Phase 10, where the primary criterion is "first to complete Phase 10" and
+   * `totals` (points) only breaks a tie between simultaneous finishers.
+   */
+  pickWinners?(totals: Record<ID, number>, config: Record<string, unknown>, rounds?: Round[]): ID[];
 
   /**
    * Svelte component used to edit a single round (props: RoundEditorProps). Points at the shared
