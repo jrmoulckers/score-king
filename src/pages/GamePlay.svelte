@@ -129,6 +129,7 @@
         config: game.config,
         roundCount: rounds.length,
         playerCount: game.playerIds.length,
+        rounds,
       });
     }
     return false;

@@ -103,7 +103,7 @@ export async function finishGame(game: Game): Promise<Game> {
   if (module) {
     lower = resolveLower(module, game.config);
     winners = module.pickWinners
-      ? module.pickWinners(totals, game.config)
+      ? module.pickWinners(totals, game.config, rounds)
       : defaultWinners(module, totals, game.config);
   }
   const updated: Game = {
