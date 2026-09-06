@@ -2,6 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Game, ID, Player, Round } from '../types';
 import type { CustomGameDef } from '../games/custom/types';
 import { uid, cleanName } from '../util';
+import { sanitizePlayerAppearance } from '../profile';
 import { markDataChanged } from './changes';
 import { reportStorageError } from '../stores/storage';
 
@@ -59,7 +60,12 @@ function db(): Promise<IDBPDatabase<ScoreKingDB>> {
 // ---- Players ----
 /** Default identity fields that legacy records (pre-Member) won't have on disk. */
 function normalizePlayer(p: Player): Player {
-  return { ...p, claimed: p.claimed ?? true, archived: p.archived ?? false };
+  return {
+    ...p,
+    appearance: sanitizePlayerAppearance(p.appearance),
+    claimed: p.claimed ?? true,
+    archived: p.archived ?? false,
+  };
 }
 
 export async function getAllPlayers(): Promise<Player[]> {

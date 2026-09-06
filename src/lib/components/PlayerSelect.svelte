@@ -41,7 +41,14 @@
         aria-pressed={selected.includes(p.id)}
         onclick={() => toggle(p.id)}
       >
-        <Avatar name={p.name} color={p.color} size={22} decorative />
+        <Avatar
+          name={p.name}
+          color={p.color}
+          playerId={p.id}
+          appearance={p.appearance}
+          size={22}
+          decorative
+        />
         {p.name}
         {#if selected.includes(p.id)}<span class="ord" aria-hidden="true"
             >{selected.indexOf(p.id) + 1}</span

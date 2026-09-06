@@ -1,8 +1,9 @@
 import { writable, derived, get } from 'svelte/store';
-import type { Player, ID } from '../types';
+import type { Player, ID, PlayerAppearance } from '../types';
 import type { BackupSettings } from './settings';
 import * as db from '../storage/db';
 import { pickColor, generateHandle, cleanName, sameName } from '../util';
+import { isProfileColor, sanitizePlayerAppearance } from '../profile';
 import { pruneDeletedPlayers } from './presets';
 import { reportStorageError } from './storage';
 
@@ -54,8 +55,18 @@ export async function renamePlayer(player: Player, name: string): Promise<void> 
   await refreshPlayers();
 }
 
-export async function recolorPlayer(player: Player, color: string): Promise<void> {
-  await db.updatePlayer({ ...player, color });
+export async function updatePlayerProfile(
+  player: Player,
+  profile: { name: string; color: string; appearance?: PlayerAppearance },
+): Promise<void> {
+  const color = isProfileColor(profile.color) ? profile.color.toLowerCase() : player.color;
+  await db.updatePlayer({
+    ...player,
+    name: cleanName(profile.name),
+    color,
+    appearance: sanitizePlayerAppearance(profile.appearance),
+    claimed: true,
+  });
   await refreshPlayers();
 }
 

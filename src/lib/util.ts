@@ -42,20 +42,22 @@ export function rosterFor(playerIds: ID[], roster: Player[]): Player[] {
   );
 }
 
-export const PALETTE = [
-  '#7c5cff',
-  '#34d399',
-  '#f87171',
-  '#fbbf24',
-  '#38bdf8',
-  '#fb7185',
-  '#a78bfa',
-  '#4ade80',
-  '#f59e0b',
-  '#22d3ee',
-  '#e879f9',
-  '#facc15',
+export const PLAYER_COLOR_CHOICES: ReadonlyArray<{ name: string; value: string }> = [
+  { name: 'Royal Violet', value: '#7c5cff' },
+  { name: 'Emerald', value: '#34d399' },
+  { name: 'Coral', value: '#f87171' },
+  { name: 'Marigold', value: '#fbbf24' },
+  { name: 'Sky', value: '#38bdf8' },
+  { name: 'Watermelon', value: '#fb7185' },
+  { name: 'Lavender', value: '#a78bfa' },
+  { name: 'Meadow', value: '#4ade80' },
+  { name: 'Tangerine', value: '#f59e0b' },
+  { name: 'Lagoon', value: '#22d3ee' },
+  { name: 'Orchid', value: '#e879f9' },
+  { name: 'Sunbeam', value: '#facc15' },
 ];
+
+export const PALETTE = PLAYER_COLOR_CHOICES.map(({ value }) => value);
 
 /**
  * Color-blind-friendly counterparts to PALETTE, index-for-index, drawn from the
