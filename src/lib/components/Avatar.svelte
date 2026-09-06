@@ -33,6 +33,7 @@
   const resolved2 = $derived(resolvePlayerColor(profile?.color2 ?? color, $settings.colorBlind));
   const imageSource = $derived(style === 'image' ? profile?.image : undefined);
   const ink = $derived(textOn(resolved));
+  const inkOutline = $derived(textOn(ink));
   let imageFailed = $state(false);
 
   function resetImageFailure(_source: string | undefined) {
@@ -48,7 +49,7 @@
   class="avatar"
   class:gradient={style === 'gradient'}
   class:photo={Boolean(imageSource && !imageFailed)}
-  style="--c:{resolved}; --c2:{resolved2}; --ink:{ink}; width:{size}px; height:{size}px; font-size:{Math.round(
+  style="--c:{resolved}; --c2:{resolved2}; --ink:{ink}; --ink-outline:{inkOutline}; width:{size}px; height:{size}px; font-size:{Math.round(
     size * 0.38,
   )}px"
   title={decorative ? undefined : name}
@@ -90,14 +91,12 @@
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bg) 55%, transparent);
   }
   .initials {
-    display: grid;
-    place-items: center;
-    width: 72%;
-    height: 72%;
-    border-radius: 50%;
-    background: var(--c);
     line-height: 1;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 16%, transparent);
+  }
+  .avatar.gradient .initials {
+    -webkit-text-stroke: max(0.5px, 0.04em) color-mix(in srgb, var(--ink-outline) 72%, transparent);
+    paint-order: stroke fill;
+    text-shadow: 0 1px 2px color-mix(in srgb, var(--ink-outline) 55%, transparent);
   }
   .emoji-badge {
     position: absolute;
