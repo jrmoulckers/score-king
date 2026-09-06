@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Player, RoundContext } from '../../types';
 import {
   FLOOR_PENALTIES,
   MAX_FLOOR_TILES,
@@ -22,7 +23,7 @@ const players = [
   { id: 'b', name: 'Blake' },
 ];
 
-const fullPlayers = [
+const fullPlayers: Player[] = [
   { id: 'a', name: 'Ada', color: '#111', createdAt: 0 },
   { id: 'b', name: 'Blake', color: '#222', createdAt: 0 },
 ];
@@ -30,6 +31,25 @@ const fullPlayers = [
 function input(overrides: Partial<AzulInput> = {}): AzulInput {
   const base = emptyInput(players);
   return { ...base, ...overrides };
+}
+
+function context(): RoundContext {
+  return {
+    game: {
+      id: 'game',
+      type: 'azul',
+      config: {},
+      playerIds: fullPlayers.map((player) => player.id),
+      status: 'active',
+      createdAt: 0,
+      roundCount: 0,
+    },
+    players: fullPlayers,
+    config: {},
+    roundIndex: 0,
+    totals: { a: 0, b: 0 },
+    rounds: [],
+  };
 }
 
 // ── floorPenalty ─────────────────────────────────────────────────────────────
@@ -186,7 +206,7 @@ describe('validateRound', () => {
   });
 
   it('rejects a missing entry', () => {
-    const i = input({ entries: { a: { scored: 5, floorTiles: 0 } } as any });
+    const i = input({ entries: { a: { scored: 5, floorTiles: 0 } } });
     expect(validateRound(i, players)).toMatch(/Blake/);
   });
 
@@ -244,7 +264,7 @@ describe('describeRound', () => {
     expect(describeRound(undefined, players)).toBe('Round not recorded');
   });
 
-  it('summarizes each player\'s delta', () => {
+  it("summarizes each player's delta", () => {
     const i = input();
     const text = describeRound(i, players, { a: 5, b: -2 });
     expect(text).toContain('Ada +5');
@@ -267,14 +287,7 @@ describe('azul module', () => {
   });
 
   it('createRoundInput seeds an entry and bonus for every player', () => {
-    const ctx = {
-      game: {} as any,
-      players: fullPlayers,
-      config: {},
-      roundIndex: 0,
-      totals: { a: 0, b: 0 },
-      rounds: [],
-    };
+    const ctx = context();
     const created = azul.createRoundInput(ctx) as AzulInput;
     expect(Object.keys(created.entries).sort()).toEqual(['a', 'b']);
     expect(Object.keys(created.bonuses).sort()).toEqual(['a', 'b']);
@@ -282,14 +295,7 @@ describe('azul module', () => {
   });
 
   it('wires validateRound and scoreRound through the module', () => {
-    const ctx = {
-      game: {} as any,
-      players: fullPlayers,
-      config: {},
-      roundIndex: 0,
-      totals: { a: 0, b: 0 },
-      rounds: [],
-    };
+    const ctx = context();
     const i = input({ entries: { a: { scored: 4, floorTiles: 1 }, b: emptyEntry() } });
     expect(azul.validateRound(i, ctx)).toBeNull();
     expect(azul.scoreRound(i, ctx)).toEqual({ a: 3, b: 0 });

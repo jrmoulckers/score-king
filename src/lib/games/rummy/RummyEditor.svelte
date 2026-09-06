@@ -63,9 +63,6 @@
     }
   });
 
-  // Bump a token so the go-out burst replays on the row that just went out.
-  let outToken = $state(0);
-
   function handValueOf(id: string): number {
     return input.out === id ? 0 : handValue(input.hands?.[id], cfg);
   }
@@ -77,7 +74,6 @@
     } else {
       input.out = id;
       if (input.hands?.[id]) input.hands[id] = { pips: 0, faces: 0, aces: 0 };
-      outToken += 1;
       haptic('win');
     }
   }
