@@ -35,9 +35,12 @@
   const ink = $derived(textOn(resolved));
   let imageFailed = $state(false);
 
-  $effect(() => {
-    imageSource;
+  function resetImageFailure(_source: string | undefined) {
     imageFailed = false;
+  }
+
+  $effect(() => {
+    resetImageFailure(imageSource);
   });
 </script>
 

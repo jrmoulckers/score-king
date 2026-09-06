@@ -184,9 +184,13 @@ export async function prepareRemoteProfileImage(
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('The image took too long to download. Try uploading it instead.');
+      throw new Error('The image took too long to download. Try uploading it instead.', {
+        cause: error,
+      });
     }
-    throw new Error("That site wouldn't let Score King download the image. Try uploading it.");
+    throw new Error("That site wouldn't let Score King download the image. Try uploading it.", {
+      cause: error,
+    });
   }
   if (!response.ok) throw new Error(`The image server returned ${response.status}.`);
 
