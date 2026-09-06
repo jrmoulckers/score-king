@@ -80,7 +80,12 @@ export function presidentsStats({ games, rounds, canonical }: GameStatsInput): G
 
   const global: Metric[] = [];
   if (roundsPlayed) {
-    global.push({ key: 'p_rounds', label: 'Rounds played', value: fmtInt(roundsPlayed), emoji: '🃏' });
+    global.push({
+      key: 'p_rounds',
+      label: 'Rounds played',
+      value: fmtInt(roundsPlayed),
+      emoji: '🃏',
+    });
   }
   if (totPresidencies) {
     global.push({

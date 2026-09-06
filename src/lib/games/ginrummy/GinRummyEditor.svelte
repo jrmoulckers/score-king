@@ -33,7 +33,9 @@
     ),
   );
   /** Whether recording this hand ends the whole game (crosses the target). */
-  const gameEnds = $derived(cfg.target > 0 && Object.values(rawTotals).some((t) => t >= cfg.target));
+  const gameEnds = $derived(
+    cfg.target > 0 && Object.values(rawTotals).some((t) => t >= cfg.target),
+  );
   const settlementAdded = $derived(
     gameEnds
       ? Object.fromEntries(
@@ -153,15 +155,20 @@
       </div>
       {#if !input.gin}
         <p class="hint">
-          Knocking is only legal with {cfg.maxKnockDeadwood} or fewer deadwood — mark Gin instead
-          if {byId.get(input.knockerId)?.name ?? 'the knocker'} melded everything.
+          Knocking is only legal with {cfg.maxKnockDeadwood} or fewer deadwood — mark Gin instead if {byId.get(
+            input.knockerId,
+          )?.name ?? 'the knocker'} melded everything.
         </p>
       {/if}
     </section>
   {/if}
 
   {#if hand && outcomeLabel}
-    <section class="result" class:gin={hand.outcome === 'gin'} class:cut={hand.outcome === 'undercut'}>
+    <section
+      class="result"
+      class:gin={hand.outcome === 'gin'}
+      class:cut={hand.outcome === 'undercut'}
+    >
       <p class="rline" use:bumpOnChange={hand.margin}>
         <span aria-hidden="true">{outcomeLabel.emoji}</span>
         <strong>{outcomeLabel.text}</strong>
@@ -187,7 +194,8 @@
       <p class="totals">
         {#each ctx.players as p (p.id)}
           <span class="tline">
-            {p.name}: {ctx.totals[p.id] ?? 0} → <strong>{(ctx.totals[p.id] ?? 0) + (deltas[p.id] ?? 0)}</strong>
+            {p.name}: {ctx.totals[p.id] ?? 0} →
+            <strong>{(ctx.totals[p.id] ?? 0) + (deltas[p.id] ?? 0)}</strong>
           </span>
         {/each}
       </p>

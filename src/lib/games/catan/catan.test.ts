@@ -218,7 +218,15 @@ describe('catan module', () => {
 
   it('scores a round through the module contract', () => {
     const ctx = {
-      game: { id: 'g', type: 'catan', config: {}, playerIds: IDS, status: 'active' as const, createdAt: 0, roundCount: 0 },
+      game: {
+        id: 'g',
+        type: 'catan',
+        config: {},
+        playerIds: IDS,
+        status: 'active' as const,
+        createdAt: 0,
+        roundCount: 0,
+      },
       players: P4,
       config: {},
       roundIndex: 0,
@@ -228,8 +236,8 @@ describe('catan module', () => {
     const input = catan.createRoundInput(ctx) as CatanInput;
     input.settlements.a = 2;
     expect(catan.scoreRound(input, ctx)).toEqual({ a: 2, b: 0, c: 0, d: 0 });
-    expect(catan.isFinished?.({ a: 2, b: 0, c: 0, d: 0 }, { config: {}, roundCount: 1, playerCount: 4 })).toBe(
-      false,
-    );
+    expect(
+      catan.isFinished?.({ a: 2, b: 0, c: 0, d: 0 }, { config: {}, roundCount: 1, playerCount: 4 }),
+    ).toBe(false);
   });
 });

@@ -17,16 +17,7 @@ export const ers: GameModule = {
   name: 'Egyptian Rat Screw',
   tagline: 'Slap fast, win the deck',
   emoji: '🐀',
-  keywords: [
-    'ers',
-    'rat screw',
-    'ratscrew',
-    'slapjack',
-    'slap jack',
-    'cards',
-    'reflexes',
-    'slap',
-  ],
+  keywords: ['ers', 'rat screw', 'ratscrew', 'slapjack', 'slap jack', 'cards', 'reflexes', 'slap'],
   minPlayers: 2,
   maxPlayers: 8,
   configFields: [
@@ -43,10 +34,16 @@ export const ers: GameModule = {
   createRoundInput: (): ErsInput => createErsInput(),
 
   validateRound: (input: ErsInput, ctx: RoundContext): string | null =>
-    validateErs(input, ctx.players.map((p) => p.id)),
+    validateErs(
+      input,
+      ctx.players.map((p) => p.id),
+    ),
 
   scoreRound: (input: ErsInput, ctx: RoundContext): Record<ID, number> =>
-    scoreErs(input, ctx.players.map((p) => p.id)),
+    scoreErs(
+      input,
+      ctx.players.map((p) => p.id),
+    ),
 
   isFinished: (totals, { config }) => isErsFinished(totals, config),
 

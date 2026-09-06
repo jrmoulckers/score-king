@@ -50,8 +50,11 @@ export const phase10: GameModule = {
     const cleared = players.filter((p) => input.completed[p.id]);
     const points = players.reduce((sum, p) => sum + (Number(input.penalty?.[p.id]) || 0), 0);
     const names = cleared.map((p) => p.name).join(', ');
-    if (!cleared.length) return points > 0 ? `nobody advanced · ${points} pts on the table` : 'nobody advanced';
-    return points > 0 ? `✅ ${names} advanced · ${points} pts on the table` : `✅ ${names} advanced · clean hand`;
+    if (!cleared.length)
+      return points > 0 ? `nobody advanced · ${points} pts on the table` : 'nobody advanced';
+    return points > 0
+      ? `✅ ${names} advanced · ${points} pts on the table`
+      : `✅ ${names} advanced · clean hand`;
   },
 
   help: PHASE10_HELP,

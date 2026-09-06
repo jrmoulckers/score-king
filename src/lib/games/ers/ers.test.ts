@@ -166,18 +166,22 @@ describe('ers module', () => {
   });
 
   it('validateRound and scoreRound route through the pure logic', () => {
-    expect(ers.validateRound(input(), ctx())).toBe(
-      'Tap the player who collected the whole deck.',
-    );
+    expect(ers.validateRound(input(), ctx())).toBe('Tap the player who collected the whole deck.');
     expect(ers.scoreRound(input({ winnerId: 'C' }), ctx())).toEqual({ A: 0, B: 0, C: 1 });
   });
 
   it('isFinished routes through the target config', () => {
     expect(
-      ers.isFinished?.({ A: 3, B: 1, C: 0 }, { config: { target: 3 }, roundCount: 4, playerCount: 3 }),
+      ers.isFinished?.(
+        { A: 3, B: 1, C: 0 },
+        { config: { target: 3 }, roundCount: 4, playerCount: 3 },
+      ),
     ).toBe(true);
     expect(
-      ers.isFinished?.({ A: 2, B: 1, C: 0 }, { config: { target: 3 }, roundCount: 3, playerCount: 3 }),
+      ers.isFinished?.(
+        { A: 2, B: 1, C: 0 },
+        { config: { target: 3 }, roundCount: 3, playerCount: 3 },
+      ),
     ).toBe(false);
   });
 

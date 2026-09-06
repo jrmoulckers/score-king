@@ -105,7 +105,9 @@ export function vpFor(input: CatanInput, id: ID): number {
   const devVP = numOr(input.devVP?.[id]);
   const road = input.longestRoad === id ? AWARD_POINTS : 0;
   const army = input.largestArmy === id ? AWARD_POINTS : 0;
-  return settlements * SETTLEMENT_POINTS + cities * CITY_POINTS + devVP * DEV_VP_POINTS + road + army;
+  return (
+    settlements * SETTLEMENT_POINTS + cities * CITY_POINTS + devVP * DEV_VP_POINTS + road + army
+  );
 }
 
 /** Every player's absolute VP total for this checkpoint, keyed by player id. */

@@ -72,7 +72,7 @@ export const kingscorners: GameModule = {
     'Everyone else counts what is stuck in their hand: 👑 Kings cost 10 points each, every',
     'other card costs 1. Lower is better, so the player who went out banks a clean 0.',
     '',
-    'Play continues, round after round, until someone\'s running total reaches the end',
+    "Play continues, round after round, until someone's running total reaches the end",
     'score (25 by default, or 50 for a longer game). Whoever has the LOWEST total at that',
     'point wins the crown.',
   ].join('\n'),

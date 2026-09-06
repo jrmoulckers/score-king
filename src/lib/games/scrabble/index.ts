@@ -23,7 +23,11 @@ export const scrabble: GameModule = {
   minPlayers: 2,
   maxPlayers: 4,
 
-  createRoundInput: (ctx: RoundContext): ScrabbleInput => emptyInput(ctx.players.map((p) => p.id), ctx.roundIndex),
+  createRoundInput: (ctx: RoundContext): ScrabbleInput =>
+    emptyInput(
+      ctx.players.map((p) => p.id),
+      ctx.roundIndex,
+    ),
 
   validateRound: (input: ScrabbleInput, ctx: RoundContext): string | null =>
     validateScrabble(input, ctx.players),
@@ -59,7 +63,7 @@ export const scrabble: GameModule = {
     '🏁 Final tally: when the bag is empty and a player empties their rack, the game',
     'ends. Record one last "final tally" round: everyone else subtracts the value of',
     'the tiles left on their rack from their score, and the player who went out adds',
-    'the sum of everyone else\'s leftover tiles to theirs.',
+    "the sum of everyone else's leftover tiles to theirs.",
   ].join('\n'),
 
   stats: scrabbleStats,

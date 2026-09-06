@@ -38,7 +38,8 @@ export const rummy: GameModule = {
     },
   ],
 
-  createRoundInput: (ctx: RoundContext): RummyInput => createRummyInput(ctx.players.map((p) => p.id)),
+  createRoundInput: (ctx: RoundContext): RummyInput =>
+    createRummyInput(ctx.players.map((p) => p.id)),
 
   validateRound: (input: RummyInput, ctx: RoundContext): string | null =>
     validateRummy(input, ctx.players),

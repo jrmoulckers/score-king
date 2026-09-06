@@ -52,7 +52,7 @@
 
   function toggleFixed(id: string, hit: boolean) {
     if (!cat?.fixedScore) return;
-    if ((scoreFor(id) >= cat.fixedScore) === hit) return;
+    if (scoreFor(id) >= cat.fixedScore === hit) return;
     input.scores[id] = hit ? cat.fixedScore : 0;
     haptic(hit ? 'save' : 'tick');
   }
@@ -78,14 +78,14 @@
       </p>
       {#if isSixes}
         <p class="callout">
-          ⬆️ Score {UPPER_BONUS_THRESHOLD}+ across Ones–Sixes and the +{UPPER_BONUS} bonus lands
-          automatically below.
+          ⬆️ Score {UPPER_BONUS_THRESHOLD}+ across Ones–Sixes and the +{UPPER_BONUS} bonus lands automatically
+          below.
         </p>
       {/if}
       {#if bonusRound}
         <p class="callout">
-          🎉 Rolled an extra Yahtzee after your box was already filled (Joker rule)? Add it here —
-          +{YAHTZEE_BONUS} each.
+          🎉 Rolled an extra Yahtzee after your box was already filled (Joker rule)? Add it here — +{YAHTZEE_BONUS}
+          each.
         </p>
       {/if}
     </div>

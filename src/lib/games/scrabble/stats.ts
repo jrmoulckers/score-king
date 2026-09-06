@@ -131,7 +131,12 @@ export function scrabbleStats({ games, rounds, canonical }: GameStatsInput): Gam
     });
   }
   if (totalBingos) {
-    global.push({ key: 'sc_bingo_all', label: 'Bingos played', value: fmtInt(totalBingos), emoji: '🎉' });
+    global.push({
+      key: 'sc_bingo_all',
+      label: 'Bingos played',
+      value: fmtInt(totalBingos),
+      emoji: '🎉',
+    });
   }
 
   return { perPlayer, global };

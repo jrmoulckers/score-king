@@ -65,12 +65,20 @@ describe('scoreHand', () => {
   });
 
   it('scores gin as opponent deadwood plus the gin bonus', () => {
-    const hand = scoreHand(mk({ knockerId: 'a', gin: true, deadwood: { a: 0, b: 18 } }), players, {});
+    const hand = scoreHand(
+      mk({ knockerId: 'a', gin: true, deadwood: { a: 0, b: 18 } }),
+      players,
+      {},
+    );
     expect(hand).toMatchObject({ outcome: 'gin', margin: 18 + 25, deltas: { a: 43, b: 0 } });
   });
 
   it('ignores a nonzero knocker deadwood entry when gin is marked', () => {
-    const hand = scoreHand(mk({ knockerId: 'a', gin: true, deadwood: { a: 7, b: 18 } }), players, {});
+    const hand = scoreHand(
+      mk({ knockerId: 'a', gin: true, deadwood: { a: 7, b: 18 } }),
+      players,
+      {},
+    );
     expect(hand?.knockerDeadwood).toBe(0);
     expect(hand?.margin).toBe(18 + 25);
   });
@@ -82,15 +90,17 @@ describe('scoreHand', () => {
 
   it('flips to an undercut when the opponent beats the knocker', () => {
     const hand = scoreHand(mk({ knockerId: 'a', deadwood: { a: 9, b: 3 } }), players, {});
-    expect(hand).toMatchObject({ outcome: 'undercut', margin: 9 - 3 + 20, deltas: { a: 0, b: 26 } });
+    expect(hand).toMatchObject({
+      outcome: 'undercut',
+      margin: 9 - 3 + 20,
+      deltas: { a: 0, b: 26 },
+    });
   });
 
   it('honors custom gin/undercut bonuses from config', () => {
-    const gin = scoreHand(
-      mk({ knockerId: 'a', gin: true, deadwood: { a: 0, b: 10 } }),
-      players,
-      { ginBonus: 40 },
-    );
+    const gin = scoreHand(mk({ knockerId: 'a', gin: true, deadwood: { a: 0, b: 10 } }), players, {
+      ginBonus: 40,
+    });
     expect(gin?.margin).toBe(50);
 
     const cut = scoreHand(mk({ knockerId: 'a', deadwood: { a: 5, b: 5 } }), players, {
@@ -110,15 +120,15 @@ describe('validateRound', () => {
   });
 
   it('rejects negative deadwood', () => {
-    expect(
-      validateRound(mk({ knockerId: 'a', deadwood: { a: -1, b: 4 } }), players, {}),
-    ).toMatch(/negative/);
+    expect(validateRound(mk({ knockerId: 'a', deadwood: { a: -1, b: 4 } }), players, {})).toMatch(
+      /negative/,
+    );
   });
 
   it('rejects a knock with too much deadwood', () => {
-    expect(
-      validateRound(mk({ knockerId: 'a', deadwood: { a: 15, b: 20 } }), players, {}),
-    ).toMatch(/too much to knock/);
+    expect(validateRound(mk({ knockerId: 'a', deadwood: { a: 15, b: 20 } }), players, {})).toMatch(
+      /too much to knock/,
+    );
   });
 
   it('allows any knocker deadwood when gin is marked', () => {
@@ -213,9 +223,9 @@ describe('isFinished', () => {
 
 describe('describeHand', () => {
   it('describes gin, knock and undercut hands', () => {
-    expect(
-      describeHand(mk({ knockerId: 'a', gin: true }), players, { a: 43, b: 0 }),
-    ).toMatch(/gin/i);
+    expect(describeHand(mk({ knockerId: 'a', gin: true }), players, { a: 43, b: 0 })).toMatch(
+      /gin/i,
+    );
     expect(
       describeHand(mk({ knockerId: 'a', deadwood: { a: 2, b: 10 } }), players, { a: 8, b: 0 }),
     ).toMatch(/knocked/i);
@@ -260,12 +270,12 @@ describe('ginRummy module', () => {
   });
 
   it('reports finished once a total reaches the target', () => {
-    expect(ginRummy.isFinished?.({ a: 100, b: 0 }, { config: {}, roundCount: 1, playerCount: 2 })).toBe(
-      true,
-    );
-    expect(ginRummy.isFinished?.({ a: 40, b: 0 }, { config: {}, roundCount: 1, playerCount: 2 })).toBe(
-      false,
-    );
+    expect(
+      ginRummy.isFinished?.({ a: 100, b: 0 }, { config: {}, roundCount: 1, playerCount: 2 }),
+    ).toBe(true);
+    expect(
+      ginRummy.isFinished?.({ a: 40, b: 0 }, { config: {}, roundCount: 1, playerCount: 2 }),
+    ).toBe(false);
   });
 
   it('picks the higher-total player as the default winner', () => {
@@ -302,11 +312,7 @@ describe('ginRummyStats', () => {
     };
     const rounds: Round[] = [
       round(0, mk({ knockerId: 'a', deadwood: { a: 2, b: 20 } }), { a: 18, b: 0 }),
-      round(
-        1,
-        mk({ knockerId: 'a', gin: true, deadwood: { a: 0, b: 30 } }),
-        { a: 55 + 100, b: 0 },
-      ),
+      round(1, mk({ knockerId: 'a', gin: true, deadwood: { a: 0, b: 30 } }), { a: 55 + 100, b: 0 }),
     ];
     const result = ginRummyStats({
       games: [game],

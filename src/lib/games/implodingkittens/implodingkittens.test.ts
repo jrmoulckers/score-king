@@ -34,7 +34,12 @@ function ctxFor(playerIds: string[], config: Record<string, unknown> = {}): Roun
   };
 }
 
-function mkRound(gameId: string, index: number, input: ImplodingKittensInput, players: string[]): Round {
+function mkRound(
+  gameId: string,
+  index: number,
+  input: ImplodingKittensInput,
+  players: string[],
+): Round {
   return {
     id: `${gameId}-r${index}`,
     gameId,
@@ -199,13 +204,22 @@ describe('implodingkittens module', () => {
 
   it('finishes the game once the configured target win count is reached', () => {
     expect(
-      implodingkittens.isFinished!({ A: 2, B: 1 }, { config: { targetWins: 3 }, roundCount: 3, playerCount: 2 }),
+      implodingkittens.isFinished!(
+        { A: 2, B: 1 },
+        { config: { targetWins: 3 }, roundCount: 3, playerCount: 2 },
+      ),
     ).toBe(false);
     expect(
-      implodingkittens.isFinished!({ A: 3, B: 1 }, { config: { targetWins: 3 }, roundCount: 4, playerCount: 2 }),
+      implodingkittens.isFinished!(
+        { A: 3, B: 1 },
+        { config: { targetWins: 3 }, roundCount: 4, playerCount: 2 },
+      ),
     ).toBe(true);
     expect(
-      implodingkittens.isFinished!({ A: 10, B: 1 }, { config: { targetWins: 0 }, roundCount: 11, playerCount: 2 }),
+      implodingkittens.isFinished!(
+        { A: 10, B: 1 },
+        { config: { targetWins: 0 }, roundCount: 11, playerCount: 2 },
+      ),
     ).toBe(false);
   });
 

@@ -35,10 +35,7 @@
   );
   const projected = $derived(
     Object.fromEntries(
-      ctx.players.map((p) => [
-        p.id,
-        Math.max(0, (ctx.totals[p.id] ?? 0) + (previews[p.id] ?? 0)),
-      ]),
+      ctx.players.map((p) => [p.id, Math.max(0, (ctx.totals[p.id] ?? 0) + (previews[p.id] ?? 0))]),
     ),
   );
 
@@ -82,8 +79,7 @@
       <span class="fmark" aria-hidden="true">{input.final ? '✓' : '🏁'}</span>
       <span class="ftext">
         <strong>Final round</strong>
-        <span class="fsub">Someone completed a horizontal row — count end-game bonuses below</span
-        >
+        <span class="fsub">Someone completed a horizontal row — count end-game bonuses below</span>
       </span>
     </button>
 
@@ -102,9 +98,7 @@
           <Avatar name={p.name} color={p.color} />
           <strong class="pname">{p.name}</strong>
         </span>
-        <span class="proj" use:bumpOnChange={previews[p.id]}
-          >{signed(previews[p.id] ?? 0)}</span
-        >
+        <span class="proj" use:bumpOnChange={previews[p.id]}>{signed(previews[p.id] ?? 0)}</span>
       </div>
 
       <div class="pile">

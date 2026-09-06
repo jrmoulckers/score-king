@@ -134,7 +134,9 @@
         input.pointsCaptured = Number.isFinite(v) ? Math.max(0, Math.min(pool, v)) : null;
       }}
     />
-    <span class="muted hint">Pool this deal: {pool} points ({deckCount} deck{deckCount === 1 ? '' : 's'}).</span>
+    <span class="muted hint"
+      >Pool this deal: {pool} points ({deckCount} deck{deckCount === 1 ? '' : 's'}).</span
+    >
   </div>
 
   <div class="preview" class:ready={!!preview}>

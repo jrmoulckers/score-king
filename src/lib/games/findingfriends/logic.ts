@@ -19,21 +19,7 @@ import type { ID } from '../../types';
  */
 
 /** The 13 rungs of the level ladder: 2 through Ace. Index 0 = level "2", index 12 = "A". */
-export const LEVELS = [
-  '2',
-  '3',
-  '4',
-  '5',
-  '6',
-  '7',
-  '8',
-  '9',
-  '10',
-  'J',
-  'Q',
-  'K',
-  'A',
-] as const;
+export const LEVELS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'] as const;
 export type Level = (typeof LEVELS)[number];
 
 /** Reaching (or passing) this level index — Ace — wins the game. */
@@ -169,7 +155,8 @@ export function describeDeal(
   const winner: Side = declarerPts > 0 ? 'declarers' : 'challengers';
   const pts = winner === 'declarers' ? declarerPts : challengerPts;
   const side = winner === 'declarers' ? input.declarers : input.challengers;
-  const label = side.map(name).join(' & ') || (winner === 'declarers' ? 'Declarers' : 'Challengers');
+  const label =
+    side.map(name).join(' & ') || (winner === 'declarers' ? 'Declarers' : 'Challengers');
   const verb = winner === 'declarers' ? 'holds the bank' : 'breaks through';
   return `${winner === 'declarers' ? '🛡️' : '⚔️'} ${label} ${verb} — +${pts} level${pts === 1 ? '' : 's'}`;
 }

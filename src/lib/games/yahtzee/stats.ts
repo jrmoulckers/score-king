@@ -1,5 +1,11 @@
 import type { ID } from '../../types';
-import { CATEGORIES, UPPER_BONUS_THRESHOLD, YAHTZEE_BONUS, categoryForRound, type YahtzeeInput } from './logic';
+import {
+  CATEGORIES,
+  UPPER_BONUS_THRESHOLD,
+  YAHTZEE_BONUS,
+  categoryForRound,
+  type YahtzeeInput,
+} from './logic';
 import type { GameSpecificStats, GameStatsInput, Metric } from '../../stats/types';
 import { fmtInt, fmtPct } from '../../stats/format';
 
@@ -101,7 +107,12 @@ export function yahtzeeStats({ games, rounds, canonical }: GameStatsInput): Game
       });
     }
     if (a.yahtzees) {
-      metrics.push({ key: 'yz_yahtzees', label: 'Yahtzees rolled', value: fmtInt(a.yahtzees), emoji: '🎉' });
+      metrics.push({
+        key: 'yz_yahtzees',
+        label: 'Yahtzees rolled',
+        value: fmtInt(a.yahtzees),
+        emoji: '🎉',
+      });
     }
     if (a.extraYahtzees) {
       metrics.push({
@@ -112,13 +123,28 @@ export function yahtzeeStats({ games, rounds, canonical }: GameStatsInput): Game
       });
     }
     if (a.fullHouses) {
-      metrics.push({ key: 'yz_fh', label: 'Full Houses', value: fmtInt(a.fullHouses), emoji: '🏠' });
+      metrics.push({
+        key: 'yz_fh',
+        label: 'Full Houses',
+        value: fmtInt(a.fullHouses),
+        emoji: '🏠',
+      });
     }
     if (a.largeStraights) {
-      metrics.push({ key: 'yz_ls', label: 'Large Straights', value: fmtInt(a.largeStraights), emoji: '➰' });
+      metrics.push({
+        key: 'yz_ls',
+        label: 'Large Straights',
+        value: fmtInt(a.largeStraights),
+        emoji: '➰',
+      });
     }
     if (a.bestChance) {
-      metrics.push({ key: 'yz_chance', label: 'Best Chance roll', value: fmtInt(a.bestChance), emoji: '🍀' });
+      metrics.push({
+        key: 'yz_chance',
+        label: 'Best Chance roll',
+        value: fmtInt(a.bestChance),
+        emoji: '🍀',
+      });
     }
     if (metrics.length) perPlayer[id] = metrics;
   }
@@ -126,7 +152,12 @@ export function yahtzeeStats({ games, rounds, canonical }: GameStatsInput): Game
   const global: Metric[] = [];
   const totalYahtzees = [...per.values()].reduce((sum, a) => sum + a.yahtzees, 0);
   if (totalYahtzees) {
-    global.push({ key: 'yz_total', label: 'Yahtzees rolled', value: fmtInt(totalYahtzees), emoji: '🎉' });
+    global.push({
+      key: 'yz_total',
+      label: 'Yahtzees rolled',
+      value: fmtInt(totalYahtzees),
+      emoji: '🎉',
+    });
   }
   return { perPlayer, global };
 }

@@ -181,9 +181,7 @@ describe('validateCanasta', () => {
   });
 
   it('rejects out-of-range red threes', () => {
-    expect(validateCanasta(mk({ hands: [hand({ redThrees: 5 }), hand()] }))).toMatch(
-      /red threes/i,
-    );
+    expect(validateCanasta(mk({ hands: [hand({ redThrees: 5 }), hand()] }))).toMatch(/red threes/i);
     expect(validateCanasta(mk({ hands: [hand({ redThrees: -1 }), hand()] }))).toMatch(
       /red threes/i,
     );
@@ -298,9 +296,9 @@ describe('canasta module', () => {
 
   it('validates through the module', () => {
     expect(canasta.validateRound(mk(), ctx())).toBeNull();
-    expect(
-      canasta.validateRound(mk({ hands: [hand({ redThrees: 9 }), hand()] }), ctx()),
-    ).toMatch(/red threes/i);
+    expect(canasta.validateRound(mk({ hands: [hand({ redThrees: 9 }), hand()] }), ctx())).toMatch(
+      /red threes/i,
+    );
   });
 
   it('finishes once a team reaches the configured target', () => {
@@ -323,7 +321,12 @@ describe('canasta module', () => {
   it('plays a full 2-player game to the target', () => {
     const p2ctx = ctx({}, players2);
     const input1 = canasta.createRoundInput(p2ctx) as CanastaInput;
-    input1.hands[0] = hand({ naturalCanastas: 3, meldPoints: 200, wentOut: true, concealedOut: true });
+    input1.hands[0] = hand({
+      naturalCanastas: 3,
+      meldPoints: 200,
+      wentOut: true,
+      concealedOut: true,
+    });
     input1.hands[1] = hand({ handPoints: 50 });
     const totals: Record<ID, number> = { a: 0, b: 0 };
     const d1 = canasta.scoreRound(input1, p2ctx);
@@ -358,7 +361,15 @@ describe('canastaStats', () => {
         ],
       }),
     ),
-    mkRound(1, mk({ hands: [hand({ mixedCanastas: 1 }), hand({ mixedCanastas: 1, concealedOut: true, wentOut: true })] })),
+    mkRound(
+      1,
+      mk({
+        hands: [
+          hand({ mixedCanastas: 1 }),
+          hand({ mixedCanastas: 1, concealedOut: true, wentOut: true }),
+        ],
+      }),
+    ),
   ];
   const out = canastaStats({ games, rounds, players: [], canonical: (id: ID) => id });
 

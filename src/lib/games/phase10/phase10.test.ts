@@ -32,7 +32,11 @@ const C = player('C', 'Cy');
 const players = [A, B, C];
 const ids = players.map((p) => p.id);
 
-function ctx(config: Record<string, unknown> = {}, rounds: Round[] = [], roundIndex = 0): RoundContext {
+function ctx(
+  config: Record<string, unknown> = {},
+  rounds: Round[] = [],
+  roundIndex = 0,
+): RoundContext {
   return {
     game: {} as Game,
     players,
@@ -43,7 +47,11 @@ function ctx(config: Record<string, unknown> = {}, rounds: Round[] = [], roundIn
   };
 }
 
-function round(index: number, completed: Record<string, boolean>, penalty: Record<string, number> = {}): Round {
+function round(
+  index: number,
+  completed: Record<string, boolean>,
+  penalty: Record<string, number> = {},
+): Round {
   const input: Phase10Input = {
     completed,
     penalty: { A: 0, B: 0, C: 0, ...penalty },
@@ -227,9 +235,7 @@ describe('pickPhase10Winners', () => {
 
   it('breaks a simultaneous-finish tie by lowest total points', () => {
     // A and B both clear Phase 10 on the same, final hand.
-    const rounds = Array.from({ length: 9 }, (_, i) =>
-      round(i, { A: true, B: true, C: false }),
-    );
+    const rounds = Array.from({ length: 9 }, (_, i) => round(i, { A: true, B: true, C: false }));
     rounds.push(round(9, { A: true, B: true, C: false }));
     expect(pickPhase10Winners({ A: 40, B: 25, C: 200 }, rounds)).toEqual(['B']);
   });

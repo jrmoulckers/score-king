@@ -62,9 +62,7 @@
           <strong class="pname">{p.name}</strong>
         </span>
         <span class="preview-wrap">
-          <span class="preview" class:score-good={pts === 0} class:score-bad={pts > 0}
-            >{pts}</span
-          >
+          <span class="preview" class:score-good={pts === 0} class:score-bad={pts > 0}>{pts}</span>
           {#if went}
             <span class="outcome score-good">👑 went out</span>
           {:else if pts > 0}
