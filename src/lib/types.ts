@@ -4,12 +4,12 @@ import type { BackupSettings } from './stores/settings';
 
 export type ID = string;
 
-export type PlayerAvatarStyle = 'solid' | 'gradient' | 'tie-dye' | 'image';
+export type PlayerAvatarStyle = 'solid' | 'gradient' | 'image';
 
 /** Optional visual treatment layered over a player's durable identifying color. */
 export interface PlayerAppearance {
   style: PlayerAvatarStyle;
-  /** Second color used by gradient and tie-dye treatments. */
+  /** Second color used by gradient treatments. */
   color2?: string;
   /** Locally cached, resized raster image data. */
   image?: string;

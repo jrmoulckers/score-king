@@ -39,7 +39,36 @@
   let imageRequestId = 0;
   let showArchived = $state(false);
   let confirmDeleteId = $state<string | null>(null);
-  const emojiChoices = ['👑', '🎲', '🐉', '🦊', '🌈', '⭐', '🔥', '🦄'];
+  const emojiChoices = [
+    { emoji: '👑', name: 'Crown' },
+    { emoji: '🎲', name: 'Dice' },
+    { emoji: '🃏', name: 'Playing card' },
+    { emoji: '🏆', name: 'Trophy' },
+    { emoji: '⭐', name: 'Star' },
+    { emoji: '🔥', name: 'Fire' },
+    { emoji: '🌈', name: 'Rainbow' },
+    { emoji: '✨', name: 'Sparkles' },
+    { emoji: '⚡', name: 'Lightning' },
+    { emoji: '🎯', name: 'Bullseye' },
+    { emoji: '💎', name: 'Gem' },
+    { emoji: '🚀', name: 'Rocket' },
+    { emoji: '🐉', name: 'Dragon' },
+    { emoji: '🦊', name: 'Fox' },
+    { emoji: '🐸', name: 'Frog' },
+    { emoji: '🐙', name: 'Octopus' },
+    { emoji: '🦄', name: 'Unicorn' },
+    { emoji: '🐧', name: 'Penguin' },
+    { emoji: '🦖', name: 'Dinosaur' },
+    { emoji: '🐝', name: 'Bee' },
+    { emoji: '👻', name: 'Ghost' },
+    { emoji: '👽', name: 'Alien' },
+    { emoji: '🍕', name: 'Pizza' },
+    { emoji: '🍄', name: 'Mushroom' },
+    { emoji: '🌵', name: 'Cactus' },
+    { emoji: '🍒', name: 'Cherries' },
+    { emoji: '⚽', name: 'Soccer ball' },
+    { emoji: '🎮', name: 'Game controller' },
+  ] as const;
 
   const archived = $derived($players.filter((p) => p.archived));
   // Live hint while typing so a duplicate is caught before it lands on the board.
@@ -65,7 +94,7 @@
     editColor2 =
       p.appearance?.color2 ??
       PLAYER_COLOR_CHOICES.find(({ value }) => value !== p.color)?.value ??
-      '#22d3ee';
+      '#0284c7';
     editStyle = p.appearance?.style ?? 'solid';
     editImage = p.appearance?.image;
     editEmoji = p.appearance?.emoji ?? '';
@@ -95,7 +124,7 @@
   function draftAppearance(): PlayerAppearance {
     return {
       style: editStyle === 'image' && !editImage ? 'solid' : editStyle,
-      ...(['gradient', 'tie-dye'].includes(editStyle) ? { color2: editColor2 } : {}),
+      ...(editStyle === 'gradient' ? { color2: editColor2 } : {}),
       ...(editStyle === 'image' && editImage ? { image: editImage } : {}),
       ...(firstGrapheme(editEmoji) ? { emoji: firstGrapheme(editEmoji) } : {}),
     };
@@ -301,17 +330,6 @@
                 <button
                   type="button"
                   class="style-choice"
-                  class:sel={editStyle === 'tie-dye'}
-                  aria-pressed={editStyle === 'tie-dye'}
-                  onclick={() => (editStyle = 'tie-dye')}
-                >
-                  <span class="style-sample tie-dye" style="--c:{editColor}; --c2:{editColor2}"
-                  ></span>
-                  Tie-dye
-                </button>
-                <button
-                  type="button"
-                  class="style-choice"
                   class:sel={editStyle === 'image'}
                   aria-pressed={editStyle === 'image'}
                   onclick={() => (editStyle = 'image')}
@@ -348,7 +366,7 @@
               </div>
             </fieldset>
 
-            {#if editStyle === 'gradient' || editStyle === 'tie-dye'}
+            {#if editStyle === 'gradient'}
               <fieldset class="profile-section">
                 <legend>Second color</legend>
                 <div class="swatches" role="group" aria-label="Second player color">
@@ -441,14 +459,15 @@
                   aria-pressed={!editEmoji}
                   onclick={() => (editEmoji = '')}>None</button
                 >
-                {#each emojiChoices as emoji (emoji)}
+                {#each emojiChoices as choice (choice.emoji)}
                   <button
                     type="button"
                     class="emoji-choice"
-                    class:sel={firstGrapheme(editEmoji) === emoji}
-                    aria-label={`Use ${emoji} badge`}
-                    aria-pressed={firstGrapheme(editEmoji) === emoji}
-                    onclick={() => (editEmoji = emoji)}>{emoji}</button
+                    class:sel={firstGrapheme(editEmoji) === choice.emoji}
+                    aria-label={`Use ${choice.name} badge`}
+                    aria-pressed={firstGrapheme(editEmoji) === choice.emoji}
+                    title={choice.name}
+                    onclick={() => (editEmoji = choice.emoji)}>{choice.emoji}</button
                   >
                 {/each}
                 <input
@@ -570,7 +589,7 @@
   }
   @media (min-width: 440px) {
     .style-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   .style-choice {
@@ -601,11 +620,6 @@
   }
   .style-sample.gradient {
     background: linear-gradient(135deg, var(--c), var(--c2));
-  }
-  .style-sample.tie-dye {
-    background:
-      radial-gradient(circle at 20% 25%, var(--c2) 0 14%, transparent 15% 34%),
-      radial-gradient(circle at 75% 70%, var(--c2) 0 16%, transparent 17% 36%), var(--c);
   }
   .style-sample.photo {
     display: grid;

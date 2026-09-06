@@ -32,6 +32,13 @@ describe('player profile appearance', () => {
     expect(safeProfileImageSource('data:image/webp;base64,AAAA')).toBeTruthy();
     expect(safeProfileImageSource('data:image/svg+xml;base64,AAAA')).toBeUndefined();
   });
+
+  it('migrates the removed tie-dye style to a two-color gradient', () => {
+    expect(sanitizePlayerAppearance({ style: 'tie-dye', color2: '#0284c7' })).toEqual({
+      style: 'gradient',
+      color2: '#0284c7',
+    });
+  });
 });
 
 describe('profile image URL validation', () => {

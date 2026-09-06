@@ -47,7 +47,6 @@
 <span
   class="avatar"
   class:gradient={style === 'gradient'}
-  class:tie-dye={style === 'tie-dye'}
   class:photo={Boolean(imageSource && !imageFailed)}
   style="--c:{resolved}; --c2:{resolved2}; --ink:{ink}; width:{size}px; height:{size}px; font-size:{Math.round(
     size * 0.38,
@@ -82,22 +81,6 @@
   }
   .avatar.gradient {
     background: linear-gradient(135deg, var(--c) 8%, var(--c2) 92%);
-  }
-  .avatar.tie-dye {
-    background:
-      radial-gradient(circle at 18% 22%, var(--c2) 0 12%, transparent 13% 30%),
-      radial-gradient(
-        circle at 78% 20%,
-        color-mix(in srgb, var(--c) 48%, var(--c2)) 0 14%,
-        transparent 15% 34%
-      ),
-      radial-gradient(circle at 72% 82%, var(--c2) 0 13%, transparent 14% 34%),
-      radial-gradient(
-        circle at 20% 78%,
-        color-mix(in srgb, var(--c) 70%, white) 0 10%,
-        transparent 11% 30%
-      ),
-      var(--c);
   }
   .avatar img {
     width: 100%;

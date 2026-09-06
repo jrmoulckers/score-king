@@ -4,7 +4,7 @@ export const PROFILE_IMAGE_MAX_INPUT_BYTES = 8 * 1024 * 1024;
 const PROFILE_IMAGE_MAX_STORED_BYTES = 512 * 1024;
 const PROFILE_IMAGE_SIZE = 320;
 const RASTER_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const STYLES = new Set<PlayerAvatarStyle>(['solid', 'gradient', 'tie-dye', 'image']);
+const STYLES = new Set<PlayerAvatarStyle>(['solid', 'gradient', 'image']);
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const SAFE_IMAGE_DATA = /^data:image\/(?:jpeg|png|webp);base64,/i;
 
@@ -33,9 +33,11 @@ export function sanitizePlayerAppearance(value: unknown): PlayerAppearance | und
   if (!value || typeof value !== 'object') return undefined;
   const raw = value as Record<string, unknown>;
   const style =
-    typeof raw.style === 'string' && STYLES.has(raw.style as PlayerAvatarStyle)
-      ? (raw.style as PlayerAvatarStyle)
-      : 'solid';
+    raw.style === 'tie-dye'
+      ? 'gradient'
+      : typeof raw.style === 'string' && STYLES.has(raw.style as PlayerAvatarStyle)
+        ? (raw.style as PlayerAvatarStyle)
+        : 'solid';
   const color2 = isProfileColor(raw.color2) ? raw.color2.toLowerCase() : undefined;
   const image = safeProfileImageSource(raw.image);
   const emoji = typeof raw.emoji === 'string' ? firstGrapheme(raw.emoji) || undefined : undefined;

@@ -44,17 +44,17 @@ export function rosterFor(playerIds: ID[], roster: Player[]): Player[] {
 
 export const PLAYER_COLOR_CHOICES: ReadonlyArray<{ name: string; value: string }> = [
   { name: 'Royal Violet', value: '#7c5cff' },
-  { name: 'Emerald', value: '#34d399' },
-  { name: 'Coral', value: '#f87171' },
-  { name: 'Marigold', value: '#fbbf24' },
-  { name: 'Sky', value: '#38bdf8' },
-  { name: 'Watermelon', value: '#fb7185' },
-  { name: 'Lavender', value: '#a78bfa' },
-  { name: 'Meadow', value: '#4ade80' },
-  { name: 'Tangerine', value: '#f59e0b' },
-  { name: 'Lagoon', value: '#22d3ee' },
-  { name: 'Orchid', value: '#e879f9' },
-  { name: 'Sunbeam', value: '#facc15' },
+  { name: 'Cobalt', value: '#1d4ed8' },
+  { name: 'Ocean', value: '#0284c7' },
+  { name: 'Teal', value: '#0f766e' },
+  { name: 'Forest', value: '#15803d' },
+  { name: 'Lime', value: '#65a30d' },
+  { name: 'Ochre', value: '#b7791f' },
+  { name: 'Tangerine', value: '#ea580c' },
+  { name: 'Scarlet', value: '#dc2626' },
+  { name: 'Raspberry', value: '#db2777' },
+  { name: 'Orchid', value: '#c026d3' },
+  { name: 'Cocoa', value: '#8b5e3c' },
 ];
 
 export const PALETTE = PLAYER_COLOR_CHOICES.map(({ value }) => value);
@@ -66,17 +66,17 @@ export const PALETTE = PLAYER_COLOR_CHOICES.map(({ value }) => value);
  */
 export const CVD_PALETTE = [
   '#332288',
+  '#0077bb',
+  '#66ccee',
   '#44aa99',
+  '#117733',
+  '#999933',
+  '#ddcc77',
+  '#d55e00',
   '#cc6677',
-  '#e69f00',
-  '#56b4e9',
   '#882255',
   '#aa4499',
-  '#117733',
-  '#d55e00',
-  '#88ccee',
-  '#ddcc77',
-  '#999933',
+  '#8c613c',
 ];
 
 export function pickColor(used: string[]): string {
