@@ -255,7 +255,7 @@ export interface GameModule {
   roundCellTone?(
     round: Round,
     playerId: ID,
-  ): { tone: 'good' | 'bad' | 'warn'; label?: string } | null;
+  ): { tone?: 'good' | 'bad' | 'warn'; label?: string; marker?: string } | null;
   /**
    * Optional game-specific stats over this game's finished games. Pure, no I/O —
    * mirrors {@link describeRound}: a new game contributes stats the same way it

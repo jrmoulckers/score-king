@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Player } from '../../types';
 import { hearts } from './index';
+import { heartsStats } from './stats';
 import {
   HEARTS_TOTAL,
   baseDelta,
@@ -17,6 +18,7 @@ import {
   scoreRound,
   shooter,
   validateRound,
+  wrongWayPlayers,
   type HeartsInput,
 } from './logic';
 
@@ -104,6 +106,7 @@ describe('heart tallies', () => {
       hearts: { a: 0, b: 0, c: 0, d: 0 },
       queen: null,
       jack: null,
+      wrongWayPlayerIds: [],
     });
   });
   it('totals and remaining hearts', () => {
@@ -113,6 +116,15 @@ describe('heart tallies', () => {
   });
   it('remaining never goes negative', () => {
     expect(heartsRemaining(input({ a: 20 }))).toBe(0);
+  });
+  it('reads unique wrong-way players while preserving legacy rounds', () => {
+    expect(wrongWayPlayers(input({ a: 13 }))).toEqual([]);
+    expect(
+      wrongWayPlayers({
+        ...input({ a: 13 }),
+        wrongWayPlayerIds: ['a', 'b', 'a'],
+      }),
+    ).toEqual(['a', 'b']);
   });
 });
 
@@ -342,14 +354,96 @@ describe('hearts module', () => {
     expect(hearts.describeRound!(crashed, P4)).toMatch(/☄️ A crashed a moon — 25/);
     const ordinary = { input: input({ a: 4, b: 4, c: 4, d: 1 }, 'd', 'a') } as never;
     expect(hearts.describeRound!(ordinary, P4)).toMatch(/💔 D \+14 · ♦J A/);
+    const wrongWay = {
+      input: {
+        ...input({ a: 4, b: 4, c: 4, d: 1 }, 'd'),
+        wrongWayPlayerIds: ['a', 'b'],
+      },
+    } as never;
+    expect(hearts.describeRound!(wrongWay, P4)).toMatch(/↩ A & B went the wrong way/);
   });
 
-  it('roundCellTone marks the Queen-taker, but not a moon shooter', () => {
+  it('roundCellTone marks Queen and wrong-way moments without changing scoring', () => {
     const ordinary = { input: input({ a: 4, b: 4, c: 4, d: 1 }, 'a') } as never;
     expect(hearts.roundCellTone!(ordinary, 'a')).toMatchObject({ tone: 'bad' });
     expect(hearts.roundCellTone!(ordinary, 'b')).toBeNull();
     // A moon flips scoring, so the Queen-taker (the shooter) isn't flagged.
     const moon = { input: input({ a: 13, b: 0, c: 0, d: 0 }, 'a') } as never;
     expect(hearts.roundCellTone!(moon, 'a')).toBeNull();
+
+    const markedInput = {
+      ...input({ a: 4, b: 4, c: 4, d: 1 }, 'a'),
+      wrongWayPlayerIds: ['a', 'b'],
+    };
+    const marked = { input: markedInput } as never;
+    expect(hearts.roundCellTone!(marked, 'a')).toMatchObject({
+      tone: 'bad',
+      marker: '↩',
+    });
+    expect(hearts.roundCellTone!(marked, 'b')).toMatchObject({
+      label: 'Went the wrong way',
+      marker: '↩',
+    });
+    expect(
+      hearts.scoreRound(markedInput, {
+        game: {} as never,
+        players: P4,
+        config: {},
+        roundIndex: 0,
+        totals: {},
+        rounds: [],
+      }),
+    ).toEqual({ a: 17, b: 4, c: 4, d: 1 });
+  });
+
+  it('aggregates wrong-way moments with player and round details', () => {
+    const game = {
+      id: 'g1',
+      type: 'hearts',
+      playerIds: IDS,
+      status: 'finished',
+      config: {},
+      createdAt: 1,
+      roundCount: 3,
+    } as never;
+    const rounds = [
+      {
+        id: 'r1',
+        gameId: 'g1',
+        index: 0,
+        input: { ...input({ a: 4, b: 4, c: 4, d: 1 }, 'd'), wrongWayPlayerIds: ['a'] },
+        deltas: {},
+        createdAt: 2,
+      },
+      {
+        id: 'r3',
+        gameId: 'g1',
+        index: 2,
+        input: {
+          ...input({ a: 4, b: 4, c: 4, d: 1 }, 'd'),
+          wrongWayPlayerIds: ['a', 'b'],
+        },
+        deltas: {},
+        createdAt: 3,
+      },
+    ] as never;
+
+    const stats = heartsStats({
+      games: [game],
+      rounds,
+      players: P4,
+      canonical: (id) => id,
+    });
+    expect(stats.perPlayer?.a.find((metric) => metric.key === 'h_wrong_way')).toMatchObject({
+      value: '2',
+      sub: 'Rounds 1, 3',
+    });
+    expect(stats.perPlayer?.b.find((metric) => metric.key === 'h_wrong_way')).toMatchObject({
+      value: '1',
+      sub: 'Round 3',
+    });
+    expect(stats.global?.find((metric) => metric.key === 'h_wrong_way_all')).toMatchObject({
+      value: '3',
+    });
   });
 });

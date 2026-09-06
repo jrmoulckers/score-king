@@ -18,15 +18,31 @@
     previewDelta,
     readConfig,
     shooter,
+    wrongWayPlayers,
     type HeartsInput,
     type MoonRule,
   } from './logic';
 
   let { input = $bindable(), ctx }: { input: HeartsInput; ctx: RoundContext } = $props();
 
+  if (input.wrongWayPlayerIds == null) input.wrongWayPlayerIds = [];
+
   const cfg = $derived(readConfig(ctx.config));
   const variantJack = $derived(cfg.variantJack);
   const ids = $derived(ctx.players.map((p) => p.id));
+  const wrongWay = $derived(new Set(wrongWayPlayers(input)));
+  const priorWrongWay = $derived.by(() =>
+    ctx.players
+      .map((player) => ({
+        player,
+        rounds: ctx.rounds
+          .filter((round) => round.index !== ctx.roundIndex)
+          .filter((round) => wrongWayPlayers(round.input as HeartsInput).includes(player.id))
+          .map((round) => round.index + 1)
+          .sort((a, b) => a - b),
+      }))
+      .filter((entry) => entry.rounds.length > 0),
+  );
 
   const pass = $derived(
     cfg.passing ? passingFor(ctx.roundIndex, ids.length, cfg.passCardCount) : null,
@@ -66,6 +82,7 @@
   );
 
   let showHelp = $state(false);
+  let showOtherStats = $state(wrongWayPlayers(input).length > 0);
   let moonToken = $state(0);
   let prevMoon: string | null = null;
   let ready = false;
@@ -113,14 +130,24 @@
     input.moonRule = rule;
     haptic('tick');
   }
+  function toggleWrongWay(id: string) {
+    const current = wrongWayPlayers(input);
+    input.wrongWayPlayerIds = current.includes(id)
+      ? current.filter((playerId) => playerId !== id)
+      : [...current, id];
+    haptic('tick');
+  }
   // Whether the draft holds anything worth clearing — gates the "Clear hand" reset
   // so it only appears once you've started entering, never on an untouched round.
-  const dirty = $derived(placed > 0 || input.queen !== null || input.jack !== null);
+  const dirty = $derived(
+    placed > 0 || input.queen !== null || input.jack !== null || wrongWay.size > 0,
+  );
   function clearHand() {
     for (const id of ids) input.hearts[id] = 0;
     input.queen = null;
     input.jack = null;
     input.moonRule = undefined; // drop any per-round moon pick with the rest of the hand
+    input.wrongWayPlayerIds = [];
     haptic('undo'); // a gentle reversal beat — the whole hand goes back to zero
   }
 </script>
@@ -275,6 +302,48 @@
       </div>
     </div>
   {/each}
+
+  <details class="other-stats" bind:open={showOtherStats}>
+    <summary>
+      <span>↩ Other stats</span>
+      <span class="summary-meta">
+        {wrongWay.size > 0 ? `${wrongWay.size} marked` : 'optional'}
+      </span>
+    </summary>
+    <div class="other-stats-body">
+      <p class="muted small">Who tried to keep play moving the wrong way this hand?</p>
+      <div class="wrong-way-players">
+        {#each ctx.players as p (p.id)}
+          <button
+            type="button"
+            class="wrong-way-player"
+            class:on={wrongWay.has(p.id)}
+            aria-pressed={wrongWay.has(p.id)}
+            aria-label={`Mark ${p.name} for a wrong-way moment`}
+            onclick={() => toggleWrongWay(p.id)}
+          >
+            <Avatar name={p.name} color={p.color} size={24} />
+            <span>{p.name}</span>
+            {#if wrongWay.has(p.id)}<span class="check" aria-hidden="true">↩</span>{/if}
+          </button>
+        {/each}
+      </div>
+      {#if priorWrongWay.length > 0}
+        <div class="wrong-way-history">
+          <span class="muted small">Earlier this game</span>
+          {#each priorWrongWay as entry (entry.player.id)}
+            <div class="history-row">
+              <span>{entry.player.name}</span>
+              <span class="muted rounds">
+                {entry.rounds.length === 1 ? 'Round' : 'Rounds'}
+                {entry.rounds.join(', ')}
+              </span>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  </details>
 </div>
 
 <style>
@@ -464,5 +533,95 @@
     margin: 0;
     font-family: inherit;
     color: var(--muted);
+  }
+  .other-stats {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    padding: 0 12px;
+  }
+  .other-stats summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 46px;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 700;
+  }
+  .other-stats summary::-webkit-details-marker {
+    display: none;
+  }
+  .summary-meta {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .other-stats[open] summary {
+    border-bottom: 1px solid var(--border);
+  }
+  .other-stats-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 0 12px;
+  }
+  .other-stats-body p {
+    margin: 0;
+  }
+  .wrong-way-players {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+  }
+  .wrong-way-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+  }
+  .wrong-way-player.on {
+    border-color: var(--warn);
+    background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+  }
+  .wrong-way-player:hover {
+    background: var(--surface-3);
+  }
+  .other-stats summary:focus-visible,
+  .wrong-way-player:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  .wrong-way-player .check {
+    margin-left: auto;
+    color: var(--warn);
+    font-weight: 800;
+  }
+  .wrong-way-history {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 2px;
+  }
+  .history-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.9rem;
+  }
+  .rounds {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
   }
 </style>

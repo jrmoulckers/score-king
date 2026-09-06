@@ -24,6 +24,8 @@ export interface HeartsInput {
    * someone shot the moon; absent on ordinary rounds and legacy saved rounds.
    */
   moonRule?: MoonRule;
+  /** Players who tried to continue play in the wrong direction this round. */
+  wrongWayPlayerIds?: ID[];
 }
 
 export type MoonRule = 'add26' | 'subtract';
@@ -166,7 +168,14 @@ export function emptyInput(playerIds: readonly ID[]): HeartsInput {
     hearts: Object.fromEntries(playerIds.map((id) => [id, 0])),
     queen: null,
     jack: null,
+    wrongWayPlayerIds: [],
   };
+}
+
+/** Valid, unique wrong-way player ids from optional round metadata. */
+export function wrongWayPlayers(input: HeartsInput | undefined): ID[] {
+  if (!Array.isArray(input?.wrongWayPlayerIds)) return [];
+  return [...new Set(input.wrongWayPlayerIds.filter((id): id is ID => typeof id === 'string'))];
 }
 
 /** Hearts placed so far this round. */
@@ -323,9 +332,16 @@ export function describeRound(
 ): string {
   const name = (id: ID | null) => players.find((p) => p.id === id)?.name ?? '?';
   if (!input?.hearts) return 'no cards';
+  const wrongWayNames = wrongWayPlayers(input).map((id) => name(id));
+  const wrongWayNote =
+    wrongWayNames.length === 0
+      ? ''
+      : `↩ ${wrongWayNames.length === 1 ? wrongWayNames[0] : wrongWayNames.join(' & ')} went the wrong way`;
+  const withWrongWay = (summary: string) =>
+    wrongWayNote ? `${summary} · ${wrongWayNote}` : summary;
 
   const moon = shooter(input);
-  if (moon) return `🌙 ${name(moon)} shot the moon`;
+  if (moon) return withWrongWay(`🌙 ${name(moon)} shot the moon`);
 
   const heartsOf = (id: ID) => numOr(input.hearts[id], 0) || 0;
   const jackOn = input.jack != null;
@@ -338,7 +354,7 @@ export function describeRound(
   // Crashed a moon: took the Queen and all but one heart (25 points) — the whole
   // load bar a single card. The most-retold story at any Hearts table.
   if (input.queen && heartsOf(input.queen) >= HEARTS_TOTAL - 1) {
-    return `☄️ ${name(input.queen)} crashed a moon — ${pointsFor(input.queen)}`;
+    return withWrongWay(`☄️ ${name(input.queen)} crashed a moon — ${pointsFor(input.queen)}`);
   }
 
   const parts: string[] = [];
@@ -347,11 +363,11 @@ export function describeRound(
   } else {
     // No Queen on record (legacy/partial round): fall back to the heaviest pile.
     const top = [...players].sort((a, b) => heartsOf(b.id) - heartsOf(a.id))[0];
-    if (top && heartsOf(top.id) > 0) return `♥️ ${name(top.id)} +${heartsOf(top.id)}`;
-    return 'no points';
+    if (top && heartsOf(top.id) > 0) return withWrongWay(`♥️ ${name(top.id)} +${heartsOf(top.id)}`);
+    return withWrongWay('no points');
   }
   if (jackOn) parts.push(`♦J ${name(input.jack)}`);
-  return parts.join(' · ');
+  return withWrongWay(parts.join(' · '));
 }
 
 /** True when any player has reached the end score and the game can wrap. */

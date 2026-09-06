@@ -1,5 +1,5 @@
 import type { ID } from '../../types';
-import { shooter, type HeartsInput } from './logic';
+import { shooter, wrongWayPlayers, type HeartsInput } from './logic';
 import type { GameSpecificStats, GameStatsInput, Metric } from '../../stats/types';
 import { fmtAvg, fmtInt, fmtPct } from '../../stats/format';
 
@@ -14,6 +14,10 @@ interface HeartsAgg {
   points: number;
   /** Most points taken in a single (non-moon) hand. */
   worst: number;
+  wrongWays: number;
+  wrongWayRounds: number[];
+  wrongWayGameIds: Set<ID>;
+  latestWrongWay?: { round: number; createdAt: number };
 }
 
 /**
@@ -28,7 +32,18 @@ export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameS
   const get = (id: ID): HeartsAgg => {
     let a = per.get(id);
     if (!a) {
-      a = { moons: 0, queens: 0, clean: 0, rounds: 0, scored: 0, points: 0, worst: 0 };
+      a = {
+        moons: 0,
+        queens: 0,
+        clean: 0,
+        rounds: 0,
+        scored: 0,
+        points: 0,
+        worst: 0,
+        wrongWays: 0,
+        wrongWayRounds: [],
+        wrongWayGameIds: new Set(),
+      };
       per.set(id, a);
     }
     return a;
@@ -57,12 +72,23 @@ export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameS
       }
     }
     if (moon) get(canonical(moon)).moons += 1;
+    for (const id of new Set(wrongWayPlayers(input).map(canonical))) {
+      const a = get(id);
+      a.wrongWays += 1;
+      a.wrongWayRounds.push(r.index + 1);
+      a.wrongWayGameIds.add(r.gameId);
+      if (!a.latestWrongWay || r.createdAt >= a.latestWrongWay.createdAt) {
+        a.latestWrongWay = { round: r.index + 1, createdAt: r.createdAt };
+      }
+    }
   }
 
   const perPlayer: Record<ID, Metric[]> = {};
   let totMoons = 0;
+  let totWrongWays = 0;
   for (const [id, a] of per) {
     totMoons += a.moons;
+    totWrongWays += a.wrongWays;
     const metrics: Metric[] = [];
     if (a.moons)
       metrics.push({ key: 'h_moon', label: 'Moons shot', value: `${a.moons}`, emoji: '🌙' });
@@ -85,11 +111,33 @@ export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameS
       });
       metrics.push({ key: 'h_worst', label: 'Worst hand', value: fmtInt(a.worst), emoji: '😱' });
     }
+    if (a.wrongWays) {
+      const rounds = [...new Set(a.wrongWayRounds)].sort((x, y) => x - y);
+      const sub =
+        a.wrongWayGameIds.size === 1
+          ? `${rounds.length === 1 ? 'Round' : 'Rounds'} ${rounds.join(', ')}`
+          : `${fmtInt(a.wrongWayGameIds.size)} games · latest in round ${a.latestWrongWay?.round ?? '?'}`;
+      metrics.push({
+        key: 'h_wrong_way',
+        label: 'Wrong-way moments',
+        value: fmtInt(a.wrongWays),
+        sub,
+        emoji: '↩️',
+      });
+    }
     if (metrics.length) perPlayer[id] = metrics;
   }
 
   const global: Metric[] = [];
   if (totMoons)
     global.push({ key: 'h_moon_all', label: 'Moons shot', value: `${totMoons}`, emoji: '🌙' });
+  if (totWrongWays) {
+    global.push({
+      key: 'h_wrong_way_all',
+      label: 'Wrong-way moments',
+      value: fmtInt(totWrongWays),
+      emoji: '↩️',
+    });
+  }
   return { perPlayer, global };
 }
