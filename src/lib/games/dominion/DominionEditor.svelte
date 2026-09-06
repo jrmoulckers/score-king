@@ -4,13 +4,7 @@
   import Stepper from '../../components/Stepper.svelte';
   import { leaders } from '../../scoring';
   import { bumpOnChange, popIn } from '../../motion';
-  import {
-    DOMINION_HELP,
-    emptyRow,
-    gardensValue,
-    scoreRow,
-    type DominionInput,
-  } from './logic';
+  import { DOMINION_HELP, emptyRow, gardensValue, scoreRow, type DominionInput } from './logic';
 
   let { input = $bindable(), ctx }: { input: DominionInput; ctx: RoundContext } = $props();
 
@@ -79,30 +73,26 @@
 
         <div class="grid">
           <div class="f">
-            <span class="flabel"><span aria-hidden="true">🟩</span> Estates <span class="mult"
-                >×1</span
-              ></span
+            <span class="flabel"
+              ><span aria-hidden="true">🟩</span> Estates <span class="mult">×1</span></span
             >
             <Stepper bind:value={row.estates} min={0} label={`${p.name} Estates`} />
           </div>
           <div class="f">
-            <span class="flabel"><span aria-hidden="true">🏠</span> Duchies <span class="mult"
-                >×3</span
-              ></span
+            <span class="flabel"
+              ><span aria-hidden="true">🏠</span> Duchies <span class="mult">×3</span></span
             >
             <Stepper bind:value={row.duchies} min={0} label={`${p.name} Duchies`} />
           </div>
           <div class="f">
-            <span class="flabel"><span aria-hidden="true">⭐</span> Provinces <span class="mult"
-                >×6</span
-              ></span
+            <span class="flabel"
+              ><span aria-hidden="true">⭐</span> Provinces <span class="mult">×6</span></span
             >
             <Stepper bind:value={row.provinces} min={0} label={`${p.name} Provinces`} />
           </div>
           <div class="f">
-            <span class="flabel"><span aria-hidden="true">💀</span> Curses <span class="mult"
-                >×-1</span
-              ></span
+            <span class="flabel"
+              ><span aria-hidden="true">💀</span> Curses <span class="mult">×-1</span></span
             >
             <Stepper bind:value={row.curses} min={0} label={`${p.name} Curses`} />
           </div>

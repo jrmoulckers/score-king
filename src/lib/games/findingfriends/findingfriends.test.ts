@@ -292,7 +292,11 @@ describe('findingFriends module', () => {
       deltas: {},
       createdAt: 0,
     } as unknown as Round;
-    const c2 = { players: smallerPlayers, config: {}, rounds: [prevRound] } as unknown as RoundContext;
+    const c2 = {
+      players: smallerPlayers,
+      config: {},
+      rounds: [prevRound],
+    } as unknown as RoundContext;
     const input = findingFriends.createRoundInput(c2) as FindingFriendsInput;
     expect(input.declarers).toEqual(['d']);
   });

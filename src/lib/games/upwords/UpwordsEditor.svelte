@@ -22,9 +22,7 @@
 
   const isTurn = $derived(input.mode === 'turn');
   const total = $derived(isTurn ? turnScore(input) : 0);
-  const activeName = $derived(
-    ctx.players.find((p) => p.id === input.activePlayerId)?.name ?? null,
-  );
+  const activeName = $derived(ctx.players.find((p) => p.id === input.activePlayerId)?.name ?? null);
 
   function setMode(mode: 'turn' | 'endgame') {
     if (input.mode === mode) return;

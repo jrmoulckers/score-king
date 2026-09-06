@@ -52,7 +52,10 @@ function play(
   const rounds: Round[] = [];
   let totals = computeTotals(rounds, ids);
   roundScores.forEach((scores, i) => {
-    const input: YahtzeeInput = { scores, bonusYahtzees: i === LAST_INDEX ? bonusYahtzees : undefined };
+    const input: YahtzeeInput = {
+      scores,
+      bonusYahtzees: i === LAST_INDEX ? bonusYahtzees : undefined,
+    };
     const c = ctx(players, totals, i, rounds);
     const deltas = scoreRound(input, c);
     rounds.push({ id: `r${i}`, gameId: 'g1', index: i, input, deltas, createdAt: 0 });

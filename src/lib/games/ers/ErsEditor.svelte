@@ -41,13 +41,7 @@
       {@const wins = winsBefore(p.id)}
       {@const on = input.winnerId === p.id}
       {@const togo = handsRemaining(wins, cfg.target)}
-      <button
-        type="button"
-        class="ptile"
-        class:on
-        aria-pressed={on}
-        onclick={() => pick(p.id)}
-      >
+      <button type="button" class="ptile" class:on aria-pressed={on} onclick={() => pick(p.id)}>
         <span class="row" style="gap: 8px; min-width: 0">
           <Avatar name={p.name} color={p.color} />
           <strong class="ellipsis">{p.name}</strong>
@@ -55,7 +49,8 @@
         <span class="row" style="gap: 6px">
           <span class="wins tabnum" class:leading={isLeader(p.id)}>
             {#if isLeader(p.id)}<span aria-hidden="true">👑</span>{/if}
-            {wins} {wins === 1 ? 'win' : 'wins'}
+            {wins}
+            {wins === 1 ? 'win' : 'wins'}
           </span>
           {#if togo != null}
             <span class="togo tabnum">{togo} to go</span>

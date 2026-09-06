@@ -68,10 +68,7 @@ describe('scoreRow', () => {
 
 describe('scoreRound', () => {
   it('scores every player independently from their own row', () => {
-    const deltas = scoreRound(
-      hand({ a: row(2, 2), b: row(1, 0), c: row(0, 3) }),
-      P3,
-    );
+    const deltas = scoreRound(hand({ a: row(2, 2), b: row(1, 0), c: row(0, 3) }), P3);
     expect(deltas).toEqual({ a: 40, b: -10, c: -30 });
   });
 });

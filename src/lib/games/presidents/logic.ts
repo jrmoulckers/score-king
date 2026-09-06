@@ -125,7 +125,8 @@ export const SCHEME_META: Record<SchemeId, SchemeMeta> = {
   winsOnly: {
     id: 'winsOnly',
     label: 'Presidencies only',
-    blurb: 'Only the President scores: +1 per round won, everyone else 0. Tracks who rules the table most.',
+    blurb:
+      'Only the President scores: +1 per round won, everyone else 0. Tracks who rules the table most.',
   },
 };
 
@@ -142,11 +143,7 @@ const TIERED_POINTS: Record<TitleTier, number> = {
  * `rankPoints` (which scales with the table) and for resolving the title used by
  * `tieredTitles`.
  */
-export function pointsForPosition(
-  scheme: SchemeId,
-  position: number,
-  playerCount: number,
-): number {
+export function pointsForPosition(scheme: SchemeId, position: number, playerCount: number): number {
   const n = Math.max(1, Math.floor(playerCount));
   const pos = Math.floor(Number(position));
   if (!Number.isFinite(pos) || pos < 1 || pos > n) return 0;

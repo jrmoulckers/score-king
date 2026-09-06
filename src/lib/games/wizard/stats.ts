@@ -23,7 +23,14 @@ export function wizardStats({ games, rounds, canonical }: GameStatsInput): GameS
   const get = (id: ID): WizardAgg => {
     let a = per.get(id);
     if (!a) {
-      a = { bids: 0, hits: 0, zeroBids: 0, zeroHits: 0, bestRound: -Infinity, worstRound: Infinity };
+      a = {
+        bids: 0,
+        hits: 0,
+        zeroBids: 0,
+        zeroHits: 0,
+        bestRound: -Infinity,
+        worstRound: Infinity,
+      };
       per.set(id, a);
     }
     return a;

@@ -208,8 +208,8 @@
 
       {#if fin.finisherId}
         <p class="finisher-note">
-          <strong>{nameOf(fin.finisherId)}</strong> gets the sum of everyone else's leftover
-          tiles. Enter what's left on each other rack below.
+          <strong>{nameOf(fin.finisherId)}</strong> gets the sum of everyone else's leftover tiles. Enter
+          what's left on each other rack below.
         </p>
         <div class="racks">
           {#each ctx.players.filter((p) => p.id !== fin.finisherId) as p (p.id)}

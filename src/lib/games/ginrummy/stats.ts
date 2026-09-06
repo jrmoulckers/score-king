@@ -61,8 +61,7 @@ export function ginRummyStats({ games, rounds, canonical }: GameStatsInput): Gam
       if (!hand) continue;
 
       rawTotals[hand.knockerId] = (rawTotals[hand.knockerId] ?? 0) + hand.deltas[hand.knockerId];
-      rawTotals[hand.opponentId] =
-        (rawTotals[hand.opponentId] ?? 0) + hand.deltas[hand.opponentId];
+      rawTotals[hand.opponentId] = (rawTotals[hand.opponentId] ?? 0) + hand.deltas[hand.opponentId];
 
       const winner = hand.deltas[hand.knockerId] > 0 ? hand.knockerId : hand.opponentId;
       const loser = winner === hand.knockerId ? hand.opponentId : hand.knockerId;
@@ -99,7 +98,12 @@ export function ginRummyStats({ games, rounds, canonical }: GameStatsInput): Gam
   for (const [id, a] of per) {
     const metrics: Metric[] = [];
     if (a.gamesWon) {
-      metrics.push({ key: 'gr_games', label: 'Games won', value: fmtInt(a.gamesWon), emoji: '\u{1F3C6}' });
+      metrics.push({
+        key: 'gr_games',
+        label: 'Games won',
+        value: fmtInt(a.gamesWon),
+        emoji: '\u{1F3C6}',
+      });
     }
     if (a.gins) {
       metrics.push({
@@ -111,7 +115,12 @@ export function ginRummyStats({ games, rounds, canonical }: GameStatsInput): Gam
       });
     }
     if (a.knocksWon) {
-      metrics.push({ key: 'gr_knocks', label: 'Knocks won', value: fmtInt(a.knocksWon), emoji: '\u{1F6AA}' });
+      metrics.push({
+        key: 'gr_knocks',
+        label: 'Knocks won',
+        value: fmtInt(a.knocksWon),
+        emoji: '\u{1F6AA}',
+      });
     }
     if (a.undercutsPulled) {
       metrics.push({
@@ -130,7 +139,12 @@ export function ginRummyStats({ games, rounds, canonical }: GameStatsInput): Gam
       });
     }
     if (a.bestMargin) {
-      metrics.push({ key: 'gr_best', label: 'Best hand margin', value: fmtInt(a.bestMargin), emoji: '\u2728' });
+      metrics.push({
+        key: 'gr_best',
+        label: 'Best hand margin',
+        value: fmtInt(a.bestMargin),
+        emoji: '\u2728',
+      });
     }
     if (a.shutoutsDealt) {
       metrics.push({
@@ -153,7 +167,12 @@ export function ginRummyStats({ games, rounds, canonical }: GameStatsInput): Gam
     });
   }
   if (totalGins) {
-    global.push({ key: 'gr_gins_all', label: 'Gins', value: fmtInt(totalGins), emoji: '\u{1F485}' });
+    global.push({
+      key: 'gr_gins_all',
+      label: 'Gins',
+      value: fmtInt(totalGins),
+      emoji: '\u{1F485}',
+    });
   }
 
   return { perPlayer, global };

@@ -109,10 +109,7 @@ export function emptyHand(): RummyHand {
 }
 
 /** Points a per-kind hand is worth given the card values in play. Clamps to ≥ 0. */
-export function handValue(
-  hand: RummyHand | undefined,
-  cfg: Pick<RummyConfig, 'aceHigh'>,
-): number {
+export function handValue(hand: RummyHand | undefined, cfg: Pick<RummyConfig, 'aceHigh'>): number {
   if (!hand) return 0;
   const pips = Math.max(0, Number(hand.pips) || 0);
   const faces = Math.max(0, Number(hand.faces) || 0);

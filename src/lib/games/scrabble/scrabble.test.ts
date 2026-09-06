@@ -97,7 +97,12 @@ describe('letterValue / rackValue', () => {
 
 describe('emptyTurnInput / emptyInput', () => {
   it('rotates the active player by round index', () => {
-    expect(emptyTurnInput(ids, 0)).toEqual({ kind: 'turn', playerId: 'A', points: 0, bingo: false });
+    expect(emptyTurnInput(ids, 0)).toEqual({
+      kind: 'turn',
+      playerId: 'A',
+      points: 0,
+      bingo: false,
+    });
     expect(emptyTurnInput(ids, 1).playerId).toBe('B');
     expect(emptyTurnInput(ids, 2).playerId).toBe('C');
     expect(emptyTurnInput(ids, 3).playerId).toBe('A');
@@ -168,11 +173,11 @@ describe('emptyFinalInput', () => {
 });
 
 describe('finalTallySwing', () => {
-  it('sums every other player\'s remaining tile value', () => {
+  it("sums every other player's remaining tile value", () => {
     const input = final('A', { A: 0, B: 6, C: 4 });
     expect(finalTallySwing(input, ids)).toBe(10);
   });
-  it('ignores the finisher\'s own remaining entry', () => {
+  it("ignores the finisher's own remaining entry", () => {
     const input = final('A', { A: 99, B: 6, C: 4 });
     expect(finalTallySwing(input, ids)).toBe(10);
   });

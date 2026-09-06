@@ -52,12 +52,7 @@ describe('titleFor', () => {
   });
 
   it('introduces Vice President and Vice Scum at 4 players (no Citizen)', () => {
-    expect([1, 2, 3, 4].map((p) => titleFor(p, 4).tier)).toEqual([
-      'president',
-      'vp',
-      'vs',
-      'scum',
-    ]);
+    expect([1, 2, 3, 4].map((p) => titleFor(p, 4).tier)).toEqual(['president', 'vp', 'vs', 'scum']);
   });
 
   it('fills the middle with Citizens at 5+ players', () => {

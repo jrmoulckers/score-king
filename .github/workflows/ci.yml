@@ -113,6 +113,8 @@ jobs:
     with:
       artifact-name: score-king-web
       output-dir: dist
-      bundle-budget-kb: 2048
+      # The reusable gate uses `du -sk`, including 4 KB block rounding for 200+ lazy chunks.
+      # Raw artifact bytes remain below 2 MB; 2,400 KB bounds the allocated directory size. #184
+      bundle-budget-kb: 2400
       registry-url: https://npm.pkg.github.com
       registry-scope: '@jrmoulckers'

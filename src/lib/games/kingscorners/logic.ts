@@ -70,10 +70,7 @@ export function wentOutIds(input: KingsCornersInput, playerIds: readonly ID[]): 
 }
 
 /** Per-player point deltas for a round — a direct pass-through of each seat's penalty. */
-export function scoreRound(
-  input: KingsCornersInput,
-  playerIds: readonly ID[],
-): Record<ID, number> {
+export function scoreRound(input: KingsCornersInput, playerIds: readonly ID[]): Record<ID, number> {
   const out: Record<ID, number> = {};
   for (const id of playerIds) out[id] = penaltyFor(input, id);
   return out;

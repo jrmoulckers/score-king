@@ -86,7 +86,9 @@ export function handValue(hand: Phase10Hand | undefined): number {
   const high = Math.max(0, Number(hand.high) || 0);
   const skip = Math.max(0, Number(hand.skip) || 0);
   const wild = Math.max(0, Number(hand.wild) || 0);
-  return low * CARD_VALUE.low + high * CARD_VALUE.high + skip * CARD_VALUE.skip + wild * CARD_VALUE.wild;
+  return (
+    low * CARD_VALUE.low + high * CARD_VALUE.high + skip * CARD_VALUE.skip + wild * CARD_VALUE.wild
+  );
 }
 
 /** A fresh, zeroed round input for the current roster: nobody completed, no cards tallied. */
@@ -132,7 +134,10 @@ export function scorePhase10(input: Phase10Input, playerIds: ID[]): Record<ID, n
  * `priorCategoryTotals` — the running, non-additive state a game needs beyond
  * the plain point sum the shell already tracks in `totals`.
  */
-export function phasesAfter(rounds: readonly Round[], playerIds: readonly ID[]): Record<ID, number> {
+export function phasesAfter(
+  rounds: readonly Round[],
+  playerIds: readonly ID[],
+): Record<ID, number> {
   const phase: Record<ID, number> = {};
   for (const id of playerIds) phase[id] = 1;
   const sorted = [...rounds].sort((a, b) => a.index - b.index);
@@ -171,7 +176,10 @@ export function phaseLabel(phase: number): string {
 }
 
 /** Game ends the instant any player's phase (after all recorded hands) clears Phase 10. */
-export function isPhase10Finished(rounds: readonly Round[] | undefined, playerIds: readonly ID[]): boolean {
+export function isPhase10Finished(
+  rounds: readonly Round[] | undefined,
+  playerIds: readonly ID[],
+): boolean {
   const phases = phasesAfter(rounds ?? [], playerIds);
   return playerIds.some((id) => hasWon(phases[id]));
 }

@@ -83,7 +83,12 @@ export function dominionStats({
       });
     }
     if (a.curses) {
-      metrics.push({ key: 'dm_curses', label: 'Curses taken', value: fmtInt(a.curses), emoji: '💀' });
+      metrics.push({
+        key: 'dm_curses',
+        label: 'Curses taken',
+        value: fmtInt(a.curses),
+        emoji: '💀',
+      });
     }
     perPlayer[id] = metrics;
   }

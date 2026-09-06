@@ -69,10 +69,7 @@ export function scoreRow(row: WizardRow | undefined): number {
 }
 
 /** Per-player point deltas for one round. */
-export function scoreRound(
-  input: WizardInput,
-  players: readonly { id: ID }[],
-): Record<ID, number> {
+export function scoreRound(input: WizardInput, players: readonly { id: ID }[]): Record<ID, number> {
   const out: Record<ID, number> = {};
   for (const p of players) out[p.id] = scoreRow(input?.rows?.[p.id]);
   return out;

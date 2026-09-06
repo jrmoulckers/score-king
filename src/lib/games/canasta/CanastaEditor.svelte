@@ -86,10 +86,7 @@
           <span class="racescore" class:lead={ahead}>{s}</span>
         </div>
         <div class="bar" aria-hidden="true">
-          <span
-            class="fill"
-            class:gold={ahead}
-            style="width: {Math.min(100, (s / target) * 100)}%"
+          <span class="fill" class:gold={ahead} style="width: {Math.min(100, (s / target) * 100)}%"
           ></span>
         </div>
         <span class="tobarn">
@@ -110,7 +107,11 @@
           {/each}
         </span>
         <strong class="teamname">{teamLabel(ti)}</strong>
-        <span class="teamscore" class:score-good={handScores[ti] > 0} class:score-bad={handScores[ti] < 0}>
+        <span
+          class="teamscore"
+          class:score-good={handScores[ti] > 0}
+          class:score-bad={handScores[ti] < 0}
+        >
           {handScores[ti] > 0 ? '+' : ''}{handScores[ti]}
         </span>
       </div>
@@ -137,7 +138,12 @@
         </label>
         <label class="f">
           Red threes
-          <Stepper bind:value={hand.redThrees} min={0} max={4} label={`${teamLabel(ti)} red threes`} />
+          <Stepper
+            bind:value={hand.redThrees}
+            min={0}
+            max={4}
+            label={`${teamLabel(ti)} red threes`}
+          />
         </label>
         <label class="f">
           Melded points

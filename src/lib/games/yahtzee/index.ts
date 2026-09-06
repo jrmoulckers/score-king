@@ -41,8 +41,7 @@ export const yahtzee: GameModule = {
 
   maxRounds,
 
-  createRoundInput: (ctx: RoundContext): YahtzeeInput =>
-    emptyInput(ctx.players.map((p) => p.id)),
+  createRoundInput: (ctx: RoundContext): YahtzeeInput => emptyInput(ctx.players.map((p) => p.id)),
 
   validateRound: (input: YahtzeeInput, ctx: RoundContext): string | null =>
     validateYahtzee(input, ctx),

@@ -69,6 +69,11 @@ export function kingsCornersStats({ games, rounds, canonical }: GameStatsInput):
 
   const global: Metric[] = [];
   if (totWentOut)
-    global.push({ key: 'kc_out_all', label: 'Times gone out', value: `${totWentOut}`, emoji: '👑' });
+    global.push({
+      key: 'kc_out_all',
+      label: 'Times gone out',
+      value: `${totWentOut}`,
+      emoji: '👑',
+    });
   return { perPlayer, global };
 }

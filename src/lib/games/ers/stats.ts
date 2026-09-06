@@ -29,7 +29,12 @@ export function ersStats({ games, rounds, canonical }: GameStatsInput): GameSpec
 
   const global: Metric[] = [];
   if (handsPlayed) {
-    global.push({ key: 'ers_hands_total', label: 'Hands played', value: `${handsPlayed}`, emoji: '🃏' });
+    global.push({
+      key: 'ers_hands_total',
+      label: 'Hands played',
+      value: `${handsPlayed}`,
+      emoji: '🃏',
+    });
   }
 
   return { perPlayer, global };
