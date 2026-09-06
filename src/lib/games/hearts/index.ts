@@ -8,6 +8,7 @@ import {
   scoreRound as scoreHearts,
   shooter,
   validateRound as validateHearts,
+  wrongWayPlayers,
   type HeartsInput,
 } from './logic';
 
@@ -73,14 +74,22 @@ export const hearts: GameModule = {
   describeRound: (round: Round, players): string =>
     describeHeartsRound(round.input as HeartsInput, players),
 
-  // Per-round scorecard emphasis: mark whoever ate the Queen in coral (a heavy
-  // hand), but not when they shot the moon — a moon flips the round, so the Queen
-  // is a triumph there, not a penalty. Co-signalled by a title/AT label, and only
-  // the per-round view (deltas) asks for it, never the running totals.
+  // Per-round scorecard emphasis: mark whoever ate the Queen in coral, and add a
+  // compact arrow for optional wrong-way metadata. Only the per-round view asks
+  // for these details, never the running totals.
   roundCellTone: (round: Round, playerId: ID) => {
     const input = round.input as HeartsInput | undefined;
-    if (!input || shooter(input)) return null;
-    return input.queen === playerId ? { tone: 'bad', label: 'Took the ♠Q (+13)' } : null;
+    if (!input) return null;
+    const wentWrongWay = wrongWayPlayers(input).includes(playerId);
+    const tookQueen = !shooter(input) && input.queen === playerId;
+    if (tookQueen) {
+      return {
+        tone: 'bad',
+        label: wentWrongWay ? 'Took the ♠Q (+13) and went the wrong way' : 'Took the ♠Q (+13)',
+        marker: wentWrongWay ? '↩' : undefined,
+      };
+    }
+    return wentWrongWay ? { label: 'Went the wrong way', marker: '↩' } : null;
   },
 
   help: [

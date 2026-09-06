@@ -693,8 +693,15 @@
                   class:tone-good={cell?.tone === 'good'}
                   class:tone-warn={cell?.tone === 'warn'}
                   title={cell?.label}
-                  >{showRunning ? (runningTotals[r.id]?.[p.id] ?? 0) : fmt(r.deltas[p.id])}</td
                 >
+                  <span
+                    >{showRunning ? (runningTotals[r.id]?.[p.id] ?? 0) : fmt(r.deltas[p.id])}</span
+                  >
+                  {#if cell?.marker}
+                    <span class="cell-marker" aria-hidden="true">{cell.marker}</span>
+                    {#if cell.label}<span class="sr-only"> — {cell.label}</span>{/if}
+                  {/if}
+                </td>
               {/each}
               <td class="acts">
                 {#if game.status === 'active'}
@@ -894,9 +901,8 @@
   .matrix .num {
     font-variant-numeric: tabular-nums;
   }
-  /* Per-round emphasis a game module can request (Hearts flags the Queen-taker).
-     The value itself is the primary signal; the hue reinforces it, and a title
-     on the cell carries the reason for pointer + assistive tech. */
+  /* Per-round emphasis a game module can request. The optional marker makes
+     event metadata visible without relying on the tone alone. */
   .matrix .num.tone-bad {
     color: var(--bad);
   }
@@ -905,6 +911,12 @@
   }
   .matrix .num.tone-warn {
     color: var(--warn);
+  }
+  .cell-marker {
+    margin-left: 3px;
+    color: var(--warn);
+    font-size: 0.8rem;
+    font-weight: 800;
   }
   .matrix tfoot td,
   .matrix tfoot th {
