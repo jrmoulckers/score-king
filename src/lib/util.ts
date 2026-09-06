@@ -42,20 +42,22 @@ export function rosterFor(playerIds: ID[], roster: Player[]): Player[] {
   );
 }
 
-export const PALETTE = [
-  '#7c5cff',
-  '#34d399',
-  '#f87171',
-  '#fbbf24',
-  '#38bdf8',
-  '#fb7185',
-  '#a78bfa',
-  '#4ade80',
-  '#f59e0b',
-  '#22d3ee',
-  '#e879f9',
-  '#facc15',
+export const PLAYER_COLOR_CHOICES: ReadonlyArray<{ name: string; value: string }> = [
+  { name: 'Royal Violet', value: '#7c5cff' },
+  { name: 'Cobalt', value: '#1d4ed8' },
+  { name: 'Ocean', value: '#0284c7' },
+  { name: 'Teal', value: '#0f766e' },
+  { name: 'Forest', value: '#15803d' },
+  { name: 'Lime', value: '#65a30d' },
+  { name: 'Ochre', value: '#b7791f' },
+  { name: 'Tangerine', value: '#ea580c' },
+  { name: 'Scarlet', value: '#dc2626' },
+  { name: 'Raspberry', value: '#db2777' },
+  { name: 'Orchid', value: '#c026d3' },
+  { name: 'Cocoa', value: '#8b5e3c' },
 ];
+
+export const PALETTE = PLAYER_COLOR_CHOICES.map(({ value }) => value);
 
 /**
  * Color-blind-friendly counterparts to PALETTE, index-for-index, drawn from the
@@ -64,17 +66,17 @@ export const PALETTE = [
  */
 export const CVD_PALETTE = [
   '#332288',
+  '#0077bb',
+  '#66ccee',
   '#44aa99',
+  '#117733',
+  '#999933',
+  '#ddcc77',
+  '#d55e00',
   '#cc6677',
-  '#e69f00',
-  '#56b4e9',
   '#882255',
   '#aa4499',
-  '#117733',
-  '#d55e00',
-  '#88ccee',
-  '#ddcc77',
-  '#999933',
+  '#8c613c',
 ];
 
 export function pickColor(used: string[]): string {

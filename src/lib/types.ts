@@ -4,6 +4,19 @@ import type { BackupSettings } from './stores/settings';
 
 export type ID = string;
 
+export type PlayerAvatarStyle = 'solid' | 'gradient' | 'image';
+
+/** Optional visual treatment layered over a player's durable identifying color. */
+export interface PlayerAppearance {
+  style: PlayerAvatarStyle;
+  /** Second color used by gradient treatments. */
+  color2?: string;
+  /** Locally cached, resized raster image data. */
+  image?: string;
+  /** Optional single-grapheme badge layered over the avatar. */
+  emoji?: string;
+}
+
 /**
  * A gamer — the unified "Member" entity from ARCHITECTURE.md (one record for a
  * person: their seat in a game *and* their identity). Named `Player` because that's
@@ -14,6 +27,8 @@ export interface Player {
   /** Display handle. Auto-generated and whimsical until the gamer claims it. */
   name: string;
   color: string;
+  /** Expressive avatar styling. Absent records render as the legacy solid-color avatar. */
+  appearance?: PlayerAppearance;
   createdAt: number;
   /** True once the gamer renames the auto-generated handle to claim this identity. */
   claimed?: boolean;
