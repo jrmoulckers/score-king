@@ -32,12 +32,12 @@
 
   if (input.wrongWayPlayerIds == null) input.wrongWayPlayerIds = [];
   if (input.queens == null) {
-    input.queens = Object.fromEntries(ctx.players.map((player) => [player.id, 0]));
+    input.queens = Object.fromEntries(Object.keys(input.hearts).map((id) => [id, 0]));
     if (input.queen) input.queens[input.queen] = 1;
     input.queen = null;
   }
   if (input.jacks == null) {
-    input.jacks = Object.fromEntries(ctx.players.map((player) => [player.id, 0]));
+    input.jacks = Object.fromEntries(Object.keys(input.hearts).map((id) => [id, 0]));
     if (input.jack) input.jacks[input.jack] = 1;
     input.jack = null;
   }
