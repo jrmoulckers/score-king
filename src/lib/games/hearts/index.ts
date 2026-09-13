@@ -5,7 +5,9 @@ import {
   describeRound as describeHeartsRound,
   emptyInput,
   isFinished as heartsFinished,
+  readConfig,
   scoreRound as scoreHearts,
+  queenCount,
   shooter,
   validateRound as validateHearts,
   wrongWayPlayers,
@@ -19,11 +21,23 @@ export const hearts: GameModule = {
   name: 'Hearts',
   tagline: 'Avoid hearts & the Queen of Spades',
   emoji: '♥️',
-  keywords: ['trick taking', 'shooting the moon', 'queen of spades', 'cards'],
+  keywords: ['trick taking', 'shooting the moon', 'queen of spades', 'double deck', 'cards'],
   minPlayers: 3,
-  maxPlayers: 6,
+  maxPlayers: 11,
+  maxPlayersForConfig: (config) => (readConfig(config).deckCount === 2 ? 11 : 6),
   lowerIsBetter: true,
   configFields: [
+    {
+      key: 'deckCount',
+      label: 'Decks',
+      type: 'select',
+      default: '1',
+      options: [
+        { value: '1', label: 'Single deck (26 points)' },
+        { value: '2', label: 'Double deck (52 points)' },
+      ],
+      help: 'Double deck uses 26 hearts, two Queens, and a 52-point moon.',
+    },
     {
       key: 'endScore',
       label: 'End the game when a player reaches',
@@ -36,6 +50,7 @@ export const hearts: GameModule = {
       label: 'Jack of Diamonds = −10 (Omnibus variant)',
       type: 'boolean',
       default: false,
+      advanced: true,
       help: 'Adds one good card worth grabbing: whoever takes the ♦J shaves 10 off their round.',
     },
     {
@@ -81,11 +96,11 @@ export const hearts: GameModule = {
     const input = round.input as HeartsInput | undefined;
     if (!input) return null;
     const wentWrongWay = wrongWayPlayers(input).includes(playerId);
-    const tookQueen = !shooter(input) && input.queen === playerId;
+    const tookQueen = !shooter(input) && queenCount(input, playerId) > 0;
     if (tookQueen) {
       return {
         tone: 'bad',
-        label: wentWrongWay ? 'Took the ♠Q (+13) and went the wrong way' : 'Took the ♠Q (+13)',
+        label: wentWrongWay ? 'Took a ♠Q (+13) and went the wrong way' : 'Took a ♠Q (+13)',
         marker: wentWrongWay ? '↩' : undefined,
       };
     }
@@ -93,19 +108,20 @@ export const hearts: GameModule = {
   },
 
   help: [
-    'Hearts is a dodging game: lowest score wins. Every round hands out 26 penalty',
-    'points — 13 hearts (♥ = 1 each) and the Queen of Spades (♠Q = 13). Take as few',
+    'Hearts is a dodging game: lowest score wins. A single-deck round hands out 26',
+    'penalty points — 13 hearts (♥ = 1 each) and one Queen of Spades (♠Q = 13).',
+    'Double deck doubles the pool: 26 hearts, two Queens, and 52 points. Take as few',
     'as you can.',
     '',
-    'Each round: give every heart to whoever took it (they must total 13), then tap',
-    'the ♠Q onto whoever got stuck with her.',
+    'Each round: give every heart to whoever took it (13 per deck), then assign each',
+    '♠Q to whoever got stuck with it.',
     '',
-    '🌙 Shoot the moon: take ALL 13 hearts AND the ♠Q in one round. Instead of eating',
-    '26, you flip it. For each moon, the shooter chooses: everyone else takes +26,',
-    'or the shooter takes −26.',
+    '🌙 Shoot the moon: take every heart AND every ♠Q in one round. Instead of eating',
+    '26 (or 52 with two decks), you flip it. The shooter chooses: everyone else takes',
+    '+26/+52, or the shooter takes −26/−52.',
     'A huge, risky swing: miss it by one heart and you just took the whole load.',
     '',
-    '♦J Omnibus (optional): the Jack of Diamonds is a good card — whoever takes it',
+    '♦J Omnibus (optional): each Jack of Diamonds is a good card — whoever takes one',
     'shaves 10 points off their round.',
     '',
     'The game ends when someone reaches the end score (100 by default). Lowest total',

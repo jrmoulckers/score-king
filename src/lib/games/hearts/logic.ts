@@ -4,21 +4,23 @@ import type { ID } from '../../types';
  * Hearts scoring — pure, Svelte-free. Everything the module, its editor, and its
  * tests need to turn a recorded round into per-player point deltas lives here.
  *
- * Each round distributes the 13 hearts (♥ = 1 pt each) plus the Queen of Spades
- * (♠Q = 13 pts) — 26 penalty points in all. Lower is better: you're dodging
- * points, not chasing them. "Shooting the moon" is the reversal — take *all* 26
- * (every heart and the Queen) and, instead of eating 26, you either hand everyone
- * else 26 or subtract 26 from yourself. The optional Omnibus variant adds the
- * Jack of Diamonds (♦J = −10), a good card worth grabbing.
+ * Each deck contributes 13 hearts (♥ = 1 pt each) plus a Queen of Spades
+ * (♠Q = 13 pts): 26 penalty points per deck. Lower is better. "Shooting the moon"
+ * reverses all 26 or 52 points. The optional Omnibus variant adds one Jack of
+ * Diamonds (♦J = −10) per deck.
  */
 
 export interface HeartsInput {
-  /** Hearts taken this round, by player id. Must sum to 13 for a valid round. */
+  /** Hearts taken this round, by player id. Must sum to 13 per deck. */
   hearts: Record<ID, number>;
-  /** Who took the Queen of Spades (♠Q, +13). */
+  /** Legacy single-deck Queen holder. New rounds use `queens`. */
   queen: ID | null;
-  /** Who took the Jack of Diamonds (♦J, −10) — Omnibus variant only. */
+  /** Legacy single-deck Jack holder. New rounds use `jacks`. */
   jack: ID | null;
+  /** Queens of Spades taken by each player (one per deck, +13 each). */
+  queens?: Record<ID, number>;
+  /** Jacks of Diamonds taken by each player (one per deck, −10 each). */
+  jacks?: Record<ID, number>;
   /**
    * The shooter's pick for how a moon scores *this* round. Only meaningful when
    * someone shot the moon; absent on ordinary rounds and legacy saved rounds.
@@ -32,6 +34,7 @@ export type MoonRule = 'add26' | 'subtract';
 
 export interface HeartsConfig {
   endScore: number;
+  deckCount: 1 | 2;
   variantJack: boolean;
   /** Number of cards each player passes before a deal. */
   passCardCount: number;
@@ -41,12 +44,13 @@ export interface HeartsConfig {
 
 export const DEFAULT_CONFIG: HeartsConfig = {
   endScore: 100,
+  deckCount: 1,
   variantJack: false,
   passCardCount: 3,
   passing: true,
 };
 
-/** Points in play each round: 13 hearts + the ♠Q. */
+/** Single-deck values; configured totals multiply these by the deck count. */
 export const HEARTS_TOTAL = 13;
 export const QUEEN_POINTS = 13;
 export const JACK_POINTS = 10;
@@ -61,6 +65,7 @@ export function readConfig(config: Record<string, unknown> = {}): HeartsConfig {
   const passCardCount = Math.floor(numOr(config.passCardCount, DEFAULT_CONFIG.passCardCount));
   return {
     endScore: numOr(config.endScore, DEFAULT_CONFIG.endScore),
+    deckCount: numOr(config.deckCount, DEFAULT_CONFIG.deckCount) === 2 ? 2 : 1,
     variantJack: !!config.variantJack,
     passCardCount: Math.min(HEARTS_TOTAL, Math.max(1, passCardCount)),
     // Default on (standard Hearts passes); only an explicit `false` turns it off,
@@ -168,6 +173,8 @@ export function emptyInput(playerIds: readonly ID[]): HeartsInput {
     hearts: Object.fromEntries(playerIds.map((id) => [id, 0])),
     queen: null,
     jack: null,
+    queens: Object.fromEntries(playerIds.map((id) => [id, 0])),
+    jacks: Object.fromEntries(playerIds.map((id) => [id, 0])),
     wrongWayPlayerIds: [],
   };
 }
@@ -183,32 +190,86 @@ export function heartsTotal(input: HeartsInput): number {
   return Object.values(input.hearts).reduce((a, b) => a + (numOr(b, 0) || 0), 0);
 }
 
+/** Number of scoring-card copies a player took, including legacy single-card rounds. */
+function scoringCardCount(
+  counts: Record<ID, number> | undefined,
+  legacyHolder: ID | null,
+  id: ID,
+): number {
+  if (counts) return Math.max(0, Math.floor(numOr(counts[id], 0)));
+  return legacyHolder === id ? 1 : 0;
+}
+
+export function queenCount(input: HeartsInput, id: ID): number {
+  return scoringCardCount(input.queens, input.queen, id);
+}
+
+export function jackCount(input: HeartsInput, id: ID): number {
+  return scoringCardCount(input.jacks, input.jack, id);
+}
+
+export function queensTotal(input: HeartsInput): number {
+  if (input.queens) {
+    return Object.values(input.queens).reduce(
+      (total, count) => total + Math.max(0, Math.floor(numOr(count, 0))),
+      0,
+    );
+  }
+  return input.queen ? 1 : 0;
+}
+
+export function jacksTotal(input: HeartsInput): number {
+  if (input.jacks) {
+    return Object.values(input.jacks).reduce(
+      (total, count) => total + Math.max(0, Math.floor(numOr(count, 0))),
+      0,
+    );
+  }
+  return input.jack ? 1 : 0;
+}
+
+/** Infer old saved rounds as single-deck and completed 52-point rounds as double-deck. */
+export function deckCountForInput(input: HeartsInput, config?: Record<string, unknown>): 1 | 2 {
+  if (config) return readConfig(config).deckCount;
+  return heartsTotal(input) > HEARTS_TOTAL || queensTotal(input) > 1 ? 2 : 1;
+}
+
+export function heartsInPlay(config: Record<string, unknown> = {}): number {
+  return HEARTS_TOTAL * readConfig(config).deckCount;
+}
+
+export function moonPoints(config: Record<string, unknown> = {}): number {
+  return MOON_POINTS * readConfig(config).deckCount;
+}
+
 /** Hearts still waiting to be assigned (never negative). */
-export function heartsRemaining(input: HeartsInput): number {
-  return Math.max(0, HEARTS_TOTAL - heartsTotal(input));
+export function heartsRemaining(input: HeartsInput, config: Record<string, unknown> = {}): number {
+  return Math.max(0, HEARTS_TOTAL * deckCountForInput(input, config) - heartsTotal(input));
 }
 
 /**
- * Who shot the moon this round: took every heart (all 13) *and* the Queen.
+ * Who shot the moon this round: took every heart and every Queen.
  * Returns their id, or null when nobody swept the board.
  */
-export function shooter(input: HeartsInput): ID | null {
+export function shooter(input: HeartsInput, config?: Record<string, unknown>): ID | null {
+  const deckCount = deckCountForInput(input, config);
+  const requiredHearts = HEARTS_TOTAL * deckCount;
   for (const [id, h] of Object.entries(input.hearts)) {
-    if ((numOr(h, 0) || 0) === HEARTS_TOTAL && input.queen === id) return id;
+    if ((numOr(h, 0) || 0) === requiredHearts && queenCount(input, id) === deckCount) return id;
   }
   return null;
 }
 
 /**
  * The raw penalty a single player takes this round *before* any moon reversal:
- * their hearts, plus 13 if they hold the Queen, minus 10 if they hold the Jack
+ * their hearts, plus 13 per Queen, minus 10 per Jack
  * (Omnibus only). This is the number to preview per row while entering.
  */
 export function baseDelta(input: HeartsInput, id: ID, cfg: HeartsConfig): number {
   return (
     (numOr(input.hearts[id], 0) || 0) +
-    (input.queen === id ? QUEEN_POINTS : 0) -
-    (cfg.variantJack && input.jack === id ? JACK_POINTS : 0)
+    queenCount(input, id) * QUEEN_POINTS -
+    (cfg.variantJack ? jackCount(input, id) * JACK_POINTS : 0)
   );
 }
 
@@ -225,8 +286,9 @@ export function scoreRound(
   const base: Record<ID, number> = {};
   for (const id of playerIds) base[id] = baseDelta(input, id, cfg);
 
-  const moon = shooter(input);
+  const moon = shooter(input, config);
   if (!moon) return base;
+  const moonValue = moonPoints(config);
 
   // Old rounds did not carry a per-round choice. Honor their old game-level rule
   // when present, otherwise retain the historical add-26 behavior.
@@ -240,9 +302,9 @@ export function scoreRound(
   const out: Record<ID, number> = {};
   for (const id of playerIds) {
     if (rule === 'subtract') {
-      out[id] = id === moon ? -MOON_POINTS : base[id];
+      out[id] = id === moon ? -moonValue : base[id];
     } else {
-      out[id] = id === moon ? 0 : base[id] + MOON_POINTS;
+      out[id] = id === moon ? 0 : base[id] + moonValue;
     }
   }
   return out;
@@ -269,17 +331,28 @@ export function validateRound(
 ): string | null {
   const cfg = readConfig(config);
   const total = heartsTotal(input);
-  if (total !== HEARTS_TOTAL) {
-    const left = HEARTS_TOTAL - total;
+  const requiredHearts = HEARTS_TOTAL * cfg.deckCount;
+  if (total !== requiredHearts) {
+    const left = requiredHearts - total;
     return left > 0
-      ? `${left} more heart${left === 1 ? '' : 's'} to assign. Must total 26.`
-      : `That's ${-left} too many heart${-left === 1 ? '' : 's'}. Must total 26.`;
+      ? `${left} more heart${left === 1 ? '' : 's'} to assign. Must total ${requiredHearts}.`
+      : `That's ${-left} too many heart${-left === 1 ? '' : 's'}. Must total ${requiredHearts}.`;
   }
-  if (!input.queen) return 'Assign the Queen of Spades (♠Q) to whoever took her.';
-  if (cfg.variantJack && !input.jack) {
-    return 'Assign the Jack of Diamonds (♦J) to whoever took it.';
+  const queenShortfall = cfg.deckCount - queensTotal(input);
+  if (queenShortfall !== 0) {
+    return queenShortfall > 0
+      ? `Assign ${queenShortfall} more Queen${queenShortfall === 1 ? '' : 's'} of Spades (♠Q).`
+      : `That's ${-queenShortfall} too many Queens of Spades.`;
   }
-  if (shooter(input) && input.moonRule !== 'add26' && input.moonRule !== 'subtract') {
+  if (cfg.variantJack) {
+    const jackShortfall = cfg.deckCount - jacksTotal(input);
+    if (jackShortfall !== 0) {
+      return jackShortfall > 0
+        ? `Assign ${jackShortfall} more Jack${jackShortfall === 1 ? '' : 's'} of Diamonds (♦J).`
+        : `That's ${-jackShortfall} too many Jacks of Diamonds.`;
+    }
+  }
+  if (shooter(input, config) && input.moonRule !== 'add26' && input.moonRule !== 'subtract') {
     return 'Choose how to score this moon before saving the round.';
   }
   return null;
@@ -304,23 +377,30 @@ export function outcomeFor(
   playerIds: readonly ID[],
   config: Record<string, unknown>,
 ): Outcome {
-  const moon = shooter(input);
+  const moon = shooter(input, config);
   if (moon) {
     return id === moon
       ? { kind: 'moon', emoji: '🌙', label: 'shot the moon' }
       : { kind: 'points', emoji: '☄️', label: 'mooned' };
   }
   const delta = previewDelta(input, id, playerIds, config);
-  if (input.queen === id) return { kind: 'lady', emoji: '💔', label: 'took the Queen' };
+  const queens = queenCount(input, id);
+  if (queens > 0) {
+    return {
+      kind: 'lady',
+      emoji: '💔',
+      label: queens === 1 ? 'took a Queen' : `took ${queens} Queens`,
+    };
+  }
   if (delta <= 0) return { kind: 'clean', emoji: '😇', label: 'clean' };
   return { kind: 'points', emoji: '♥️', label: `+${delta}` };
 }
 
 // ── Round storytelling ───────────────────────────────────────────────────────
 // The history table remembers each hand as a single, evocative line. Lead with
-// the drama — a moon, or the gut-punch "crashed moon" (went for all 26 and missed
-// by one heart, eating 25) — otherwise name who took the Queen and how heavy their
-// hand landed, with the ♦J noted when the Omnibus variant is in play.
+// the drama — a moon, or the gut-punch "crashed moon" (missed by one heart) —
+// otherwise name who took the Queens and how heavy their hand landed, with the
+// ♦J noted when the Omnibus variant is in play.
 
 /**
  * A compact one-liner summarizing a saved round, for the round history. Pure; the
@@ -340,33 +420,54 @@ export function describeRound(
   const withWrongWay = (summary: string) =>
     wrongWayNote ? `${summary} · ${wrongWayNote}` : summary;
 
+  const deckCount = deckCountForInput(input);
+  const requiredHearts = HEARTS_TOTAL * deckCount;
   const moon = shooter(input);
   if (moon) return withWrongWay(`🌙 ${name(moon)} shot the moon`);
 
   const heartsOf = (id: ID) => numOr(input.hearts[id], 0) || 0;
-  const jackOn = input.jack != null;
+  const jackOn = jacksTotal(input) > 0;
   const pointsFor = (id: ID) =>
     heartsOf(id) +
-    (input.queen === id ? QUEEN_POINTS : 0) -
-    (jackOn && input.jack === id ? JACK_POINTS : 0);
+    queenCount(input, id) * QUEEN_POINTS -
+    (jackOn ? jackCount(input, id) * JACK_POINTS : 0);
   const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+  const queenHolders = players.filter((player) => queenCount(input, player.id) > 0);
+  const jackHolders = players.filter((player) => jackCount(input, player.id) > 0);
+  const holdersSummary = (
+    holders: readonly { id: ID; name: string }[],
+    count: (id: ID) => number,
+  ) =>
+    holders
+      .map((player) => {
+        const copies = count(player.id);
+        return copies > 1 ? `${player.name} ×${copies}` : player.name;
+      })
+      .join(' & ');
 
-  // Crashed a moon: took the Queen and all but one heart (25 points) — the whole
-  // load bar a single card. The most-retold story at any Hearts table.
-  if (input.queen && heartsOf(input.queen) >= HEARTS_TOTAL - 1) {
-    return withWrongWay(`☄️ ${name(input.queen)} crashed a moon — ${pointsFor(input.queen)}`);
+  // Crashed a moon: took every Queen and all but one heart.
+  const crashed = players.find(
+    (player) =>
+      queenCount(input, player.id) === deckCount && heartsOf(player.id) >= requiredHearts - 1,
+  );
+  if (crashed) {
+    return withWrongWay(`☄️ ${crashed.name} crashed a moon — ${pointsFor(crashed.id)}`);
   }
 
   const parts: string[] = [];
-  if (input.queen) {
-    parts.push(`💔 ${name(input.queen)} ${signed(pointsFor(input.queen))}`);
+  if (queenHolders.length) {
+    parts.push(
+      `💔 ${queenHolders
+        .map((player) => `${player.name} ${signed(pointsFor(player.id))}`)
+        .join(' · ')}`,
+    );
   } else {
     // No Queen on record (legacy/partial round): fall back to the heaviest pile.
     const top = [...players].sort((a, b) => heartsOf(b.id) - heartsOf(a.id))[0];
     if (top && heartsOf(top.id) > 0) return withWrongWay(`♥️ ${name(top.id)} +${heartsOf(top.id)}`);
     return withWrongWay('no points');
   }
-  if (jackOn) parts.push(`♦J ${name(input.jack)}`);
+  if (jackOn) parts.push(`♦J ${holdersSummary(jackHolders, (id) => jackCount(input, id))}`);
   return withWrongWay(parts.join(' · '));
 }
 
@@ -424,7 +525,7 @@ export function endgameInfo(
     atRiskId,
     atRiskTotal,
     toEnd,
-    imminent: toEnd > 0 && toEnd <= MOON_POINTS,
+    imminent: toEnd > 0 && toEnd <= moonPoints(config),
     reached: seen && atRiskTotal >= end,
   };
 }

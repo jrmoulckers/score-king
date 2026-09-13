@@ -1,40 +1,39 @@
 <script lang="ts">
-  import { HEARTS_TOTAL, QUEEN_POINTS } from './logic';
-
   /**
    * Hearts' per-game "costume": a slim ribbon at the top of the round editor that
-   * reads the hand's 26 penalty points as a waxing moon — the 13 hearts (1 pt each)
-   * plus the Queen of Spades (13 pts). As points get handed out the moon fills
+   * reads the hand's penalty points as a waxing moon. As points get handed out the moon fills
    * (🌑 → 🌕); the count and the "left to place" copy carry the real meaning, so
    * the glyph is reinforcement, never the only signal. When one player is holding
    * every heart *and* the Queen, the ribbon flips to its charged "Set for a moon
    * shot" state. Pure flavor — it lives entirely inside the editor and never
    * touches the shared chrome. No animation, so nothing to gate for reduced motion.
    */
-  const { points = 0, moonReady = false }: { points?: number; moonReady?: boolean } = $props();
+  const {
+    points = 0,
+    total = 26,
+    moonReady = false,
+  }: { points?: number; total?: number; moonReady?: boolean } = $props();
 
-  // 26 penalty points ride on every hand: 13 hearts + the 13-point Queen.
-  const TOTAL = HEARTS_TOTAL + QUEEN_POINTS;
-  const left = $derived(Math.max(0, TOTAL - points));
-  const over = $derived(points > TOTAL);
+  const left = $derived(Math.max(0, total - points));
+  const over = $derived(points > total);
 
-  // Map penalty points (0..26) onto the eight lunar glyphs, waxing to full.
+  // Map the configured penalty pool onto the eight lunar glyphs, waxing to full.
   const PHASES = ['🌑', '🌒', '🌒', '🌓', '🌓', '🌔', '🌔', '🌕'];
   const phase = $derived(
-    moonReady || points >= TOTAL
+    moonReady || points >= total
       ? '🌕'
-      : PHASES[Math.min(PHASES.length - 1, Math.round((points / TOTAL) * (PHASES.length - 1)))],
+      : PHASES[Math.min(PHASES.length - 1, Math.round((points / total) * (PHASES.length - 1)))],
   );
 
-  const pct = $derived(Math.min(100, (points / TOTAL) * 100));
+  const pct = $derived(Math.min(100, (points / total) * 100));
 
   const caption = $derived(
     moonReady
       ? 'Set for a moon shot'
       : over
-        ? `${points - TOTAL} too many points`
+        ? `${points - total} too many points`
         : left === 0
-          ? 'All 26 points placed'
+          ? `All ${total} points placed`
           : `${left} point${left === 1 ? '' : 's'} left to place`,
   );
 </script>
@@ -44,7 +43,7 @@
   <div class="body">
     <div class="cap">
       <span class="label">{caption}</span>
-      <span class="count">{points}/{TOTAL} pts</span>
+      <span class="count">{points}/{total} pts</span>
     </div>
     <div class="track" aria-hidden="true">
       <div class="fill" style="transform: scaleX({pct / 100})"></div>

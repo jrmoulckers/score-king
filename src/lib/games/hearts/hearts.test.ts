@@ -42,14 +42,23 @@ describe('readConfig', () => {
   it('applies defaults', () => {
     expect(readConfig({})).toEqual({
       endScore: 100,
+      deckCount: 1,
       variantJack: false,
       passCardCount: 3,
       passing: true,
     });
   });
   it('reads overrides and safely constrains the pass-card count', () => {
-    expect(readConfig({ endScore: 50, variantJack: true, passCardCount: 2 })).toEqual({
+    expect(
+      readConfig({
+        endScore: 50,
+        deckCount: '2',
+        variantJack: true,
+        passCardCount: 2,
+      }),
+    ).toEqual({
       endScore: 50,
+      deckCount: 2,
       variantJack: true,
       passCardCount: 2,
       passing: true,
@@ -79,7 +88,10 @@ describe('passing', () => {
     expect(passCycle(3)).toEqual(['left', 'right', 'hold']);
     expect(passCycle(5)).toEqual(['left', 'offset', 'offset', 'right', 'hold']);
     expect(passCycle(6)).toEqual(['left', 'offset', 'across', 'offset', 'right', 'hold']);
-    expect(passingFor(3, 6)).toMatchObject({ direction: 'offset', seatOffset: 4 });
+    expect(passingFor(3, 6)).toMatchObject({
+      direction: 'offset',
+      seatOffset: 4,
+    });
     expect(passingFor(4, 6).direction).toBe('right');
     expect(passingFor(5, 6).direction).toBe('hold');
     expect(passingFor(6, 6).direction).toBe('left');
@@ -106,6 +118,8 @@ describe('heart tallies', () => {
       hearts: { a: 0, b: 0, c: 0, d: 0 },
       queen: null,
       jack: null,
+      queens: { a: 0, b: 0, c: 0, d: 0 },
+      jacks: { a: 0, b: 0, c: 0, d: 0 },
       wrongWayPlayerIds: [],
     });
   });
@@ -138,9 +152,9 @@ describe('validateRound', () => {
     const msg = validateRound(input({ a: 10, b: 5, c: 0, d: 0 }, 'a'), P4, {});
     expect(msg).toMatch(/2 too many/);
   });
-  it('frames the shortfall against the 26-point hand', () => {
+  it('frames the shortfall against the required heart count', () => {
     const msg = validateRound(input({ a: 5, b: 3, c: 0, d: 0 }, 'a'), P4, {});
-    expect(msg).toMatch(/Must total 26/);
+    expect(msg).toMatch(/Must total 13/);
   });
   it('requires the Queen to be assigned', () => {
     const msg = validateRound(input({ a: 13, b: 0, c: 0, d: 0 }, null), P4, {});
@@ -165,6 +179,22 @@ describe('validateRound', () => {
   it('passes a well-formed round', () => {
     expect(validateRound(input({ a: 4, b: 4, c: 4, d: 1 }, 'd'), P4, {})).toBeNull();
   });
+  it('requires all double-deck hearts and Queens', () => {
+    const partial = {
+      ...input({ a: 13, b: 6, c: 4, d: 2 }),
+      queens: { a: 1, b: 0, c: 0, d: 0 },
+    };
+    expect(validateRound(partial, P4, { deckCount: 2 })).toMatch(/1 more heart/);
+
+    const missingQueen = {
+      ...partial,
+      hearts: { a: 13, b: 7, c: 4, d: 2 },
+    };
+    expect(validateRound(missingQueen, P4, { deckCount: 2 })).toMatch(/1 more Queen/);
+    expect(
+      validateRound({ ...missingQueen, queens: { a: 1, b: 1, c: 0, d: 0 } }, P4, { deckCount: 2 }),
+    ).toBeNull();
+  });
 });
 
 // ── scoring ──────────────────────────────────────────────────────────────
@@ -178,9 +208,19 @@ describe('scoreRound', () => {
 
   it('applies the Omnibus Jack (−10) only when enabled', () => {
     const i = input({ a: 4, b: 4, c: 4, d: 1 }, 'd', 'a');
-    expect(scoreRound(i, IDS, { variantJack: true })).toEqual({ a: -6, b: 4, c: 4, d: 14 });
+    expect(scoreRound(i, IDS, { variantJack: true })).toEqual({
+      a: -6,
+      b: 4,
+      c: 4,
+      d: 14,
+    });
     // Ignored when the variant is off.
-    expect(scoreRound(i, IDS, { variantJack: false })).toEqual({ a: 4, b: 4, c: 4, d: 14 });
+    expect(scoreRound(i, IDS, { variantJack: false })).toEqual({
+      a: 4,
+      b: 4,
+      c: 4,
+      d: 14,
+    });
   });
 
   it('12 hearts + the Queen is NOT a moon', () => {
@@ -190,13 +230,19 @@ describe('scoreRound', () => {
   });
 
   it('shoots the moon: everyone else +26 (add26)', () => {
-    const i = { ...input({ a: 13, b: 0, c: 0, d: 0 }, 'a'), moonRule: 'add26' as const };
+    const i = {
+      ...input({ a: 13, b: 0, c: 0, d: 0 }, 'a'),
+      moonRule: 'add26' as const,
+    };
     expect(shooter(i)).toBe('a');
     expect(scoreRound(i, IDS, {})).toEqual({ a: 0, b: 26, c: 26, d: 26 });
   });
 
   it('shoots the moon: shooter −26 (subtract)', () => {
-    const i = { ...input({ a: 13, b: 0, c: 0, d: 0 }, 'a'), moonRule: 'subtract' as const };
+    const i = {
+      ...input({ a: 13, b: 0, c: 0, d: 0 }, 'a'),
+      moonRule: 'subtract' as const,
+    };
     expect(scoreRound(i, IDS, {})).toEqual({ a: -26, b: 0, c: 0, d: 0 });
   });
 
@@ -232,6 +278,41 @@ describe('scoreRound', () => {
       c: 26,
       d: 26,
     });
+  });
+
+  it('scores two decks, both Queens, both Omnibus Jacks, and a 52-point moon', () => {
+    const ordinary = {
+      ...input({ a: 10, b: 8, c: 5, d: 3 }),
+      queens: { a: 1, b: 0, c: 1, d: 0 },
+      jacks: { a: 0, b: 2, c: 0, d: 0 },
+    };
+    expect(scoreRound(ordinary, IDS, { deckCount: 2, variantJack: true })).toEqual({
+      a: 23,
+      b: -12,
+      c: 18,
+      d: 3,
+    });
+    expect(validateRound(ordinary, P4, { deckCount: 2, variantJack: true })).toBeNull();
+
+    const moon = {
+      ...input({ a: 26, b: 0, c: 0, d: 0 }),
+      queens: { a: 2, b: 0, c: 0, d: 0 },
+      jacks: { a: 2, b: 0, c: 0, d: 0 },
+      moonRule: 'add26' as const,
+    };
+    expect(shooter(moon, { deckCount: 2 })).toBe('a');
+    expect(scoreRound(moon, IDS, { deckCount: 2, variantJack: true })).toEqual({
+      a: 0,
+      b: 52,
+      c: 52,
+      d: 52,
+    });
+    expect(
+      scoreRound({ ...moon, moonRule: 'subtract' }, IDS, {
+        deckCount: 2,
+        variantJack: true,
+      }),
+    ).toEqual({ a: -52, b: 0, c: 0, d: 0 });
   });
 });
 
@@ -288,6 +369,10 @@ describe('endgameInfo', () => {
     expect(endgameInfo({ a: 74, b: 20 }, ['a', 'b'], {}).imminent).toBe(true); // exactly 26 to go
     expect(endgameInfo({ a: 73, b: 20 }, ['a', 'b'], {}).imminent).toBe(false); // 27 to go
   });
+  it('uses a 52-point endgame window for double-deck games', () => {
+    expect(endgameInfo({ a: 49, b: 20 }, ['a', 'b'], { deckCount: 2 }).imminent).toBe(true);
+    expect(endgameInfo({ a: 47, b: 20 }, ['a', 'b'], { deckCount: 2 }).imminent).toBe(false);
+  });
   it('reports reached (not imminent) when a seat is already at the end', () => {
     const e = endgameInfo({ a: 100, b: 20 }, ['a', 'b'], {});
     expect(e).toMatchObject({ toEnd: 0, reached: true, imminent: false });
@@ -302,8 +387,16 @@ describe('endgameInfo', () => {
 
 // ── module wiring ──────────────────────────────────────────────────────────
 describe('hearts module', () => {
-  it('offers pass-card setup but no game-wide moon setup', () => {
+  it('offers deck and pass-card setup while keeping Omnibus advanced', () => {
     const fields = hearts.configFields ?? [];
+    expect(fields.find((field) => field.key === 'deckCount')).toMatchObject({
+      type: 'select',
+      default: '1',
+    });
+    expect(fields.find((field) => field.key === 'variantJack')).toMatchObject({
+      type: 'boolean',
+      advanced: true,
+    });
     expect(fields.find((field) => field.key === 'passCardCount')).toMatchObject({
       type: 'number',
       default: 3,
@@ -311,6 +404,9 @@ describe('hearts module', () => {
       max: 13,
     });
     expect(fields.some((field) => field.key === 'moonRule')).toBe(false);
+    expect(hearts.maxPlayers).toBe(11);
+    expect(hearts.maxPlayersForConfig?.({ deckCount: '1' })).toBe(6);
+    expect(hearts.maxPlayersForConfig?.({ deckCount: '2' })).toBe(11);
   });
 
   it('delegates validate/score/finish to the shared logic', () => {
@@ -352,7 +448,9 @@ describe('hearts module', () => {
     // Took the Queen and 12 of 13 hearts = 25 points: a moon missed by one card.
     const crashed = { input: input({ a: 12, b: 1, c: 0, d: 0 }, 'a') } as never;
     expect(hearts.describeRound!(crashed, P4)).toMatch(/☄️ A crashed a moon — 25/);
-    const ordinary = { input: input({ a: 4, b: 4, c: 4, d: 1 }, 'd', 'a') } as never;
+    const ordinary = {
+      input: input({ a: 4, b: 4, c: 4, d: 1 }, 'd', 'a'),
+    } as never;
     expect(hearts.describeRound!(ordinary, P4)).toMatch(/💔 D \+14 · ♦J A/);
     const wrongWay = {
       input: {
@@ -411,7 +509,10 @@ describe('hearts module', () => {
         id: 'r1',
         gameId: 'g1',
         index: 0,
-        input: { ...input({ a: 4, b: 4, c: 4, d: 1 }, 'd'), wrongWayPlayerIds: ['a'] },
+        input: {
+          ...input({ a: 4, b: 4, c: 4, d: 1 }, 'd'),
+          wrongWayPlayerIds: ['a'],
+        },
         deltas: {},
         createdAt: 2,
       },

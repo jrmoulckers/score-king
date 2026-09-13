@@ -20,12 +20,14 @@
     config = $bindable({}),
     fields,
     max = 12,
+    maxForConfig,
   }: {
     type: string;
     selected: ID[];
     config: Record<string, any>;
     fields: ConfigField[] | undefined;
     max?: number;
+    maxForConfig?: (config: Record<string, unknown>) => number;
   } = $props();
 
   const presets = $derived.by(() => {
@@ -38,7 +40,8 @@
   // How a preset resolves against today's roster — the source of truth for what it will seat,
   // so archived/removed members are reflected live (see resolvePresetPlayers).
   function seatedCount(p: GamePreset): number {
-    return resolvePresetPlayers(p, validIds, max).length;
+    const presetConfig = resolvePresetConfig(p, fields);
+    return resolvePresetPlayers(p, validIds, maxForConfig?.(presetConfig) ?? max).length;
   }
   /** Saved players who aren't in the current roster (archived, or absent after a partial restore). */
   function unavailableCount(p: GamePreset): number {
@@ -85,8 +88,9 @@
       mode = 'idle';
       return;
     }
-    selected = resolvePresetPlayers(p, validIds, max);
-    config = resolvePresetConfig(p, fields);
+    const presetConfig = resolvePresetConfig(p, fields);
+    selected = resolvePresetPlayers(p, validIds, maxForConfig?.(presetConfig) ?? max);
+    config = presetConfig;
     activeId = p.id;
     mode = 'idle';
   }
