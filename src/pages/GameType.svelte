@@ -34,6 +34,7 @@
   let selected = $state<string[]>([]);
   let config = $state<Record<string, any>>({});
   let lastInitFor = '';
+  const maxPlayers = $derived(module?.maxPlayersForConfig?.(config) ?? module?.maxPlayers ?? 1);
 
   $effect(() => {
     if (module && lastInitFor !== module.id) {
@@ -52,8 +53,8 @@
       showToast(`Need at least ${module.minPlayers} players.`);
       return;
     }
-    if (selected.length > module.maxPlayers) {
-      showToast(`At most ${module.maxPlayers} players.`);
+    if (selected.length > maxPlayers) {
+      showToast(`At most ${maxPlayers} players with this setup.`);
       return;
     }
     const g = await createGame(type, [...selected], { ...config });
@@ -130,14 +131,15 @@
     <GamePresets
       {type}
       fields={module.configFields}
-      max={module.maxPlayers}
+      max={maxPlayers}
+      maxForConfig={module.maxPlayersForConfig}
       bind:selected
       bind:config
     />
     <hr />
     <div>
-      <div class="fieldlabel">Players ({module.minPlayers}–{module.maxPlayers})</div>
-      <PlayerSelect bind:selected max={module.maxPlayers} min={module.minPlayers} />
+      <div class="fieldlabel">Players ({module.minPlayers}–{maxPlayers})</div>
+      <PlayerSelect bind:selected max={maxPlayers} min={module.minPlayers} />
     </div>
     {#if module.configFields?.length}
       <hr />

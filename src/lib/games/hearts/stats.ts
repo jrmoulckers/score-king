@@ -1,5 +1,5 @@
 import type { ID } from '../../types';
-import { shooter, wrongWayPlayers, type HeartsInput } from './logic';
+import { queenCount, shooter, wrongWayPlayers, type HeartsInput } from './logic';
 import type { GameSpecificStats, GameStatsInput, Metric } from '../../stats/types';
 import { fmtAvg, fmtInt, fmtPct } from '../../stats/format';
 
@@ -28,6 +28,7 @@ interface HeartsAgg {
  */
 export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameSpecificStats {
   const gameIds = new Set(games.map((g) => g.id));
+  const configByGame = new Map(games.map((game) => [game.id, game.config]));
   const per = new Map<ID, HeartsAgg>();
   const get = (id: ID): HeartsAgg => {
     let a = per.get(id);
@@ -53,17 +54,17 @@ export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameS
     if (!gameIds.has(r.gameId)) continue;
     const input = r.input as HeartsInput | undefined;
     if (!input?.hearts) continue;
-    const queenId = input.queen ? canonical(input.queen) : null;
-    const moon = shooter(input);
+    const config = configByGame.get(r.gameId) ?? {};
+    const moon = shooter(input, config);
     for (const [pid, h] of Object.entries(input.hearts)) {
       const id = canonical(pid);
       const a = get(id);
       a.rounds += 1;
-      const tookQueen = queenId === id;
-      if (tookQueen) a.queens += 1;
-      const points = (Number(h) || 0) + (tookQueen ? 13 : 0);
+      const queens = queenCount(input, pid);
+      if (queens) a.queens += queens;
+      const points = (Number(h) || 0) + queens * 13;
       if (points === 0) a.clean += 1;
-      // A moon flips the round on its head, so its raw 26 isn't a heavy hand —
+      // A moon flips the round on its head, so its raw penalty pool isn't a heavy hand —
       // keep it out of the "points eaten" averages.
       if (!moon) {
         a.scored += 1;
@@ -91,9 +92,19 @@ export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameS
     totWrongWays += a.wrongWays;
     const metrics: Metric[] = [];
     if (a.moons)
-      metrics.push({ key: 'h_moon', label: 'Moons shot', value: `${a.moons}`, emoji: '🌙' });
+      metrics.push({
+        key: 'h_moon',
+        label: 'Moons shot',
+        value: `${a.moons}`,
+        emoji: '🌙',
+      });
     if (a.queens)
-      metrics.push({ key: 'h_queen', label: '♠Q taken', value: `${a.queens}`, emoji: '♠️' });
+      metrics.push({
+        key: 'h_queen',
+        label: '♠Q taken',
+        value: `${a.queens}`,
+        emoji: '♠️',
+      });
     if (a.rounds) {
       metrics.push({
         key: 'h_clean',
@@ -109,7 +120,12 @@ export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameS
         value: fmtAvg(a.points / a.scored),
         emoji: '♥️',
       });
-      metrics.push({ key: 'h_worst', label: 'Worst hand', value: fmtInt(a.worst), emoji: '😱' });
+      metrics.push({
+        key: 'h_worst',
+        label: 'Worst hand',
+        value: fmtInt(a.worst),
+        emoji: '😱',
+      });
     }
     if (a.wrongWays) {
       const rounds = [...new Set(a.wrongWayRounds)].sort((x, y) => x - y);
@@ -130,7 +146,12 @@ export function heartsStats({ games, rounds, canonical }: GameStatsInput): GameS
 
   const global: Metric[] = [];
   if (totMoons)
-    global.push({ key: 'h_moon_all', label: 'Moons shot', value: `${totMoons}`, emoji: '🌙' });
+    global.push({
+      key: 'h_moon_all',
+      label: 'Moons shot',
+      value: `${totMoons}`,
+      emoji: '🌙',
+    });
   if (totWrongWays) {
     global.push({
       key: 'h_wrong_way_all',

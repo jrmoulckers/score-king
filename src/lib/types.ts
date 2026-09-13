@@ -194,7 +194,10 @@ export interface GameModule {
   /** Optional search aliases/keywords for catalog discovery (matched alongside name + tagline). */
   keywords?: string[];
   minPlayers: number;
+  /** Absolute upper bound; setup may narrow it for a specific configuration. */
   maxPlayers: number;
+  /** Resolve a lower setup limit when a variant changes the usable deck or board size. */
+  maxPlayersForConfig?(config: Record<string, unknown>): number;
   /** true when the lowest total wins (e.g. Hearts). */
   lowerIsBetter?: boolean;
   /** Resolve win direction from config (overrides lowerIsBetter when provided). */

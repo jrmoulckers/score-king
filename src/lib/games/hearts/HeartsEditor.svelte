@@ -8,14 +8,19 @@
   import MoonRise from './MoonRise.svelte';
   import PassRibbon from './PassRibbon.svelte';
   import {
-    HEARTS_TOTAL,
     QUEEN_POINTS,
     endgameInfo,
+    heartsInPlay,
     heartsRemaining,
     heartsTotal,
+    jackCount,
+    jacksTotal,
+    moonPoints,
     outcomeFor,
     passingFor,
     previewDelta,
+    queenCount,
+    queensTotal,
     readConfig,
     shooter,
     wrongWayPlayers,
@@ -26,9 +31,22 @@
   let { input = $bindable(), ctx }: { input: HeartsInput; ctx: RoundContext } = $props();
 
   if (input.wrongWayPlayerIds == null) input.wrongWayPlayerIds = [];
+  if (input.queens == null) {
+    input.queens = Object.fromEntries(ctx.players.map((player) => [player.id, 0]));
+    if (input.queen) input.queens[input.queen] = 1;
+    input.queen = null;
+  }
+  if (input.jacks == null) {
+    input.jacks = Object.fromEntries(ctx.players.map((player) => [player.id, 0]));
+    if (input.jack) input.jacks[input.jack] = 1;
+    input.jack = null;
+  }
 
   const cfg = $derived(readConfig(ctx.config));
   const variantJack = $derived(cfg.variantJack);
+  const cardCopies = $derived(cfg.deckCount);
+  const requiredHearts = $derived(heartsInPlay(ctx.config));
+  const moonValue = $derived(moonPoints(ctx.config));
   const ids = $derived(ctx.players.map((p) => p.id));
   const wrongWay = $derived(new Set(wrongWayPlayers(input)));
   const priorWrongWay = $derived.by(() =>
@@ -58,19 +76,21 @@
   );
 
   const placed = $derived(heartsTotal(input));
-  const remaining = $derived(heartsRemaining(input));
-  // The full penalty pool for the meter: hearts placed + the Queen's 13 once she lands.
-  const points = $derived(placed + (input.queen ? QUEEN_POINTS : 0));
-  const moon = $derived(shooter(input));
+  const remaining = $derived(heartsRemaining(input, ctx.config));
+  const queensPlaced = $derived(queensTotal(input));
+  const jacksPlaced = $derived(jacksTotal(input));
+  // The penalty meter counts every heart and Queen; Omnibus Jacks are a separate credit.
+  const points = $derived(placed + queensPlaced * QUEEN_POINTS);
+  const moon = $derived(shooter(input, ctx.config));
   const moonName = $derived(ctx.players.find((p) => p.id === moon)?.name ?? '');
   const moonChoicePending = $derived(
     !!moon && input.moonRule !== 'subtract' && input.moonRule !== 'add26',
   );
   const swing = $derived(
     input.moonRule === 'subtract'
-      ? `${moonName} takes −26`
+      ? `${moonName} takes −${moonValue}`
       : input.moonRule === 'add26'
-        ? 'everyone else takes +26'
+        ? `everyone else takes +${moonValue}`
         : 'choose how it scores below',
   );
 
@@ -107,24 +127,29 @@
   const signed = (v: number) => (v > 0 ? `+${v}` : v < 0 ? `−${Math.abs(v)}` : '0');
 
   function setQueen(id: string) {
-    const on = input.queen !== id;
-    input.queen = on ? id : null;
-    if (on) haptic('tick'); // a small beat of dread as the Queen lands
+    const current = queenCount(input, id);
+    input.queens![id] =
+      queensPlaced < cardCopies ? Math.min(cardCopies, current + 1) : current > 0 ? 0 : current;
+    haptic('tick');
   }
   function setJack(id: string) {
-    input.jack = input.jack === id ? null : id;
+    const current = jackCount(input, id);
+    input.jacks![id] =
+      jacksPlaced < cardCopies ? Math.min(cardCopies, current + 1) : current > 0 ? 0 : current;
     haptic('tick');
   }
   function takeRest(id: string) {
     if (remaining <= 0) return;
-    input.hearts[id] = Math.min(HEARTS_TOTAL, (Number(input.hearts[id]) || 0) + remaining);
-    // "The rest" sweeps up the still-unclaimed ♠Q too; an explicit pick stands.
-    if (input.queen === null) input.queen = id;
+    input.hearts[id] = Math.min(requiredHearts, (Number(input.hearts[id]) || 0) + remaining);
+    // "The rest" sweeps up every still-unclaimed ♠Q too; explicit picks stand.
+    input.queens![id] = queenCount(input, id) + Math.max(0, cardCopies - queensPlaced);
     haptic('tick');
   }
   function shootMoon(id: string) {
-    for (const p of ctx.players) input.hearts[p.id] = p.id === id ? HEARTS_TOTAL : 0;
-    input.queen = id;
+    for (const p of ctx.players) {
+      input.hearts[p.id] = p.id === id ? requiredHearts : 0;
+      input.queens![p.id] = p.id === id ? cardCopies : 0;
+    }
   }
   function setMoonRule(rule: MoonRule) {
     input.moonRule = rule;
@@ -139,13 +164,15 @@
   }
   // Whether the draft holds anything worth clearing — gates the "Clear hand" reset
   // so it only appears once you've started entering, never on an untouched round.
-  const dirty = $derived(
-    placed > 0 || input.queen !== null || input.jack !== null || wrongWay.size > 0,
-  );
+  const dirty = $derived(placed > 0 || queensPlaced > 0 || jacksPlaced > 0 || wrongWay.size > 0);
   function clearHand() {
     for (const id of ids) input.hearts[id] = 0;
     input.queen = null;
     input.jack = null;
+    for (const id of ids) {
+      input.queens![id] = 0;
+      input.jacks![id] = 0;
+    }
     input.moonRule = undefined; // drop any per-round moon pick with the rest of the hand
     input.wrongWayPlayerIds = [];
     haptic('undo'); // a gentle reversal beat — the whole hand goes back to zero
@@ -159,7 +186,7 @@
     <PassRibbon info={pass} hand={ctx.roundIndex + 1} />
   {/if}
 
-  <HeartsMeter {points} moonReady={!!moon} />
+  <HeartsMeter {points} total={moonValue} moonReady={!!moon} />
 
   {#if showEndgame}
     <div class="endgame" class:hot={endgame.imminent || endgame.reached} role="status">
@@ -208,13 +235,13 @@
             type="button"
             class="btn small ghost"
             aria-pressed={input.moonRule === 'add26'}
-            onclick={() => setMoonRule('add26')}>Everyone else +26</button
+            onclick={() => setMoonRule('add26')}>Everyone else +{moonValue}</button
           >
           <button
             type="button"
             class="btn small ghost"
             aria-pressed={input.moonRule === 'subtract'}
-            onclick={() => setMoonRule('subtract')}>{moonName} takes −26</button
+            onclick={() => setMoonRule('subtract')}>{moonName} takes −{moonValue}</button
           >
         </div>
       </div>
@@ -223,7 +250,9 @@
 
   {#each ctx.players as p (p.id)}
     {@const isShooter = moon === p.id}
-    {@const tookLady = !moon && input.queen === p.id}
+    {@const playerQueens = queenCount(input, p.id)}
+    {@const playerJacks = jackCount(input, p.id)}
+    {@const tookLady = !moon && playerQueens > 0}
     {@const oc = outcomes[p.id]}
     {@const pts = previews[p.id]}
     <div class="prow" class:shooter={isShooter} class:lady={tookLady}>
@@ -253,13 +282,18 @@
       </div>
 
       <div class="row" style="gap: 10px; align-items: center">
-        <Stepper bind:value={input.hearts[p.id]} min={0} max={13} label={`${p.name} hearts`} />
+        <Stepper
+          bind:value={input.hearts[p.id]}
+          min={0}
+          max={requiredHearts}
+          label={`${p.name} hearts`}
+        />
         <button
           type="button"
           class="btn small ghost grow"
           onclick={() => takeRest(p.id)}
           disabled={remaining <= 0}
-          title="Give every unplaced heart (and the ♠Q if unclaimed) to {p.name}"
+          title="Give every unplaced heart and unclaimed ♠Q to {p.name}"
         >
           ♥ Took the rest{remaining > 0 ? ` (${remaining})` : ''}
         </button>
@@ -269,23 +303,25 @@
         <button
           type="button"
           class="toggle queen"
-          class:on={input.queen === p.id}
-          aria-pressed={input.queen === p.id}
+          class:on={playerQueens > 0}
+          aria-pressed={playerQueens > 0}
+          aria-label={`Assign Queen of Spades to ${p.name}. ${playerQueens} of ${cardCopies} assigned here.`}
           onclick={() => setQueen(p.id)}
         >
-          <span class="glyph">♠Q</span>
-          <span class="sub">the Queen · +13</span>
+          <span class="glyph">♠Q{playerQueens > 0 ? ` ×${playerQueens}` : ''}</span>
+          <span class="sub">{cardCopies === 1 ? 'the Queen' : 'tap for Queens'} · +13 each</span>
         </button>
         {#if variantJack}
           <button
             type="button"
             class="toggle jack"
-            class:on={input.jack === p.id}
-            aria-pressed={input.jack === p.id}
+            class:on={playerJacks > 0}
+            aria-pressed={playerJacks > 0}
+            aria-label={`Assign Jack of Diamonds to ${p.name}. ${playerJacks} of ${cardCopies} assigned here.`}
             onclick={() => setJack(p.id)}
           >
-            <span class="glyph">♦J</span>
-            <span class="sub">−10</span>
+            <span class="glyph">♦J{playerJacks > 0 ? ` ×${playerJacks}` : ''}</span>
+            <span class="sub">−10 each</span>
           </button>
         {/if}
         <button
@@ -294,7 +330,9 @@
           class:on={isShooter}
           aria-pressed={isShooter}
           onclick={() => shootMoon(p.id)}
-          title="{p.name} took all 13 hearts and the ♠Q"
+          title="{p.name} took all {requiredHearts} hearts and {cardCopies === 1
+            ? 'the ♠Q'
+            : 'both ♠Qs'}"
         >
           <span class="glyph">🌙</span>
           <span class="sub">Shot the moon</span>
