@@ -73,6 +73,8 @@ export type RouteName =
   | 'home'
   | 'players'
   | 'history'
+  | 'nights'
+  | 'night'
   | 'stats'
   | 'court'
   | 'wrapped'
@@ -99,6 +101,7 @@ const RESERVED: Record<string, RouteName> = {
   '': 'home',
   players: 'players',
   history: 'history',
+  nights: 'nights',
   stats: 'stats',
   court: 'court',
   wrapped: 'wrapped',
@@ -123,6 +126,8 @@ const ROUTE_TITLES: Record<RouteName, string> = {
   home: 'Games',
   players: 'Players',
   history: 'History',
+  nights: 'Game nights',
+  night: 'Game night',
   stats: 'Stats',
   court: 'The Court',
   wrapped: 'Wrapped',
@@ -165,6 +170,9 @@ export function parseRoute(path: string): Route {
   }
   if (segs[0] === 'play' && segs[1]) {
     return { name: 'play', params: { id: segs[1] } };
+  }
+  if (segs[0] === 'nights' && segs[1] && segs.length === 2) {
+    return { name: 'night', params: { date: segs[1] } };
   }
   if (segs[0] === 'join' && segs[1]) {
     return { name: 'join', params: { code: segs[1] } };

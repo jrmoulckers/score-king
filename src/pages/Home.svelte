@@ -206,7 +206,10 @@
 {/if}
 
 {#if recent.length}
-  <div class="section-title">Recent results</div>
+  <div class="section-title cathead">
+    <span>Recent results</span>
+    <a class="manage-link" href="/nights" use:link>Game nights →</a>
+  </div>
   <div class="stack">
     {#each recent as g (g.id)}
       {@const m = getModule(g.type)}

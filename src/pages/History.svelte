@@ -268,6 +268,14 @@
 {/snippet}
 
 <h1>History</h1>
+<a class="card night-entry" href="/nights" use:link>
+  <span aria-hidden="true">🎲</span>
+  <span><strong>Game nights</strong><br /><span class="muted sm"
+      >Revisit a night with the whole table</span
+    ></span
+  >
+  <span aria-hidden="true">→</span>
+</a>
 
 {#if $activeGames.length === 0 && archivedGames.length === 0}
   <div class="empty firstrun">
@@ -447,6 +455,21 @@
 {/if}
 
 <style>
+  .night-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 60px;
+    margin-bottom: 18px;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .night-entry:hover {
+    border-color: var(--primary);
+  }
+  .night-entry span:last-child {
+    margin-left: auto;
+  }
   .firstrun {
     display: flex;
     flex-direction: column;

@@ -23,6 +23,16 @@ describe('titleForRoute', () => {
   it('labels the not-found route', () => {
     expect(titleForRoute(parseRoute('/foo/bar'))).toBe('Not found · Score King');
   });
+
+  it('keeps archive routes reloadable and under History', () => {
+    expect(parseRoute('/nights')).toEqual({ name: 'nights', params: {} });
+    expect(parseRoute('/nights/2026-09-27')).toEqual({
+      name: 'night',
+      params: { date: '2026-09-27' },
+    });
+    expect(parseRoute('/nights/2026-09-27/extra').name).toBe('notfound');
+    expect(titleForRoute(parseRoute('/nights/2026-09-27'))).toBe('Game night · Score King');
+  });
 });
 
 describe('announce', () => {
