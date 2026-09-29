@@ -7,7 +7,7 @@
   import { groupLeader } from './history';
   import { gameNights, isNightDate } from './nights';
 
-  let { date }: { date?: string } = $props();
+  const { date }: { date?: string } = $props();
 
   const nights = $derived(gameNights($games));
   const night = $derived(date ? nights.find((item) => item.date === date) : undefined);
