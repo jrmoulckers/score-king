@@ -60,7 +60,7 @@
   const navActive = $derived({
     games: ['home', 'gametype', 'customedit', 'managegames', 'browse'].includes(route.name),
     players: route.name === 'players',
-    history: route.name === 'history',
+    history: ['history', 'nights', 'night'].includes(route.name),
     stats: ['stats', 'court', 'wrapped', 'tonight'].includes(route.name),
   });
 
@@ -161,6 +161,11 @@
         <Players />
       {:else if route.name === 'history'}
         <History />
+      {:else if route.name === 'nights' || route.name === 'night'}
+        <Lazy
+          loader={() => import('./pages/Nights.svelte')}
+          props={{ date: route.name === 'night' ? route.params.date : undefined }}
+        />
       {:else if route.name === 'stats'}
         <Lazy loader={() => import('./pages/Stats.svelte')} />
       {:else if route.name === 'court'}

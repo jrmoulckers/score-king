@@ -25,13 +25,17 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
   travel with your backup.
 - **Players, history & stats** are shared across every game — reusable players, a full game log,
   and a win‑rate leaderboard.
+- **Game nights.** Browse past nights by local calendar date, see who played and who won most,
+  then open each saved result. Abandoned games are labeled; archived games remain in History.
+  The archive is derived from games already on this device (or restored through backup), so it
+  works offline and needs no additional account.
 - **Optional OneDrive sync.** Automatic (and one‑click) backup to a compact `.json` file in your own
   OneDrive, with one‑click restore. Keep **multiple titled backups** in the folder (one per group or
   occasion) and switch between them. Writes are guarded by an **ETag** and reconciled by a **per‑entity
   merge** (newest edit wins per player, game, and round), so two devices that change different things
   combine cleanly instead of one silently overwriting the other. Auto‑backup is on by default,
-  push‑only, and never interrupts you. Uses your own free Azure app registration — _no secrets live in
-  this repo._
+  includes foreground catch-up and remote-change checks, and never interrupts you. Uses your own
+  free Azure app registration — _no secrets live in this repo._
 - **Local JSON export/import** as a zero‑setup backup option.
 - **Play together (live).** Host a game and others follow along in real time on a shared board:
   the host stays the single source of truth and players send round entries as _intents_ the host
