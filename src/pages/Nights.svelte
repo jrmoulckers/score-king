@@ -45,7 +45,8 @@
     <h1>{label(night.date)}</h1>
     <p class="muted intro">
       {count(night.games.length, 'game')} · {count(night.playerIds.length, 'player')}
-      {#if night.abandoned} · {count(night.abandoned, 'abandoned game')}{/if}
+      {#if night.abandoned}
+        · {count(night.abandoned, 'abandoned game')}{/if}
     </p>
     {#if night.playerIds.length}
       <section aria-labelledby="night-table">
@@ -72,11 +73,16 @@
               <strong>{game.name || module?.name || game.type}</strong>
               <span class="muted sm">{game.status === 'abandoned' ? 'Abandoned' : 'Finished'}</span>
             </span>
-            <span class="muted sm">{rosterFor(game.playerIds, $players).map((p) => p.name).join(', ')}</span>
+            <span class="muted sm"
+              >{rosterFor(game.playerIds, $players)
+                .map((p) => p.name)
+                .join(', ')}</span
+            >
             {#if game.status === 'finished'}
               <span class="outcome">
                 {#if game.winnerIds?.length}
-                  <span aria-hidden="true">👑</span> {names(game.winnerIds)}
+                  <span aria-hidden="true">👑</span>
+                  {names(game.winnerIds)}
                   {#if game.winnerScore != null}
                     <strong class="tnum">· {game.winnerScore}</strong>
                   {/if}
@@ -101,7 +107,9 @@
   {#if nights.length === 0}
     <div class="empty">
       <p><strong>No game nights yet.</strong></p>
-      <p class="muted">Finish a game and you’ll find its night here. Archived results stay in History.</p>
+      <p class="muted">
+        Finish a game and you’ll find its night here. Archived results stay in History.
+      </p>
       <a class="btn primary" href="/" use:link>Start a game</a>
     </div>
   {:else}
@@ -109,14 +117,19 @@
       {#each nights as item (item.date)}
         {@const lead = groupLeader(item.games, nameFor)}
         <a class="card night-card" href={`/nights/${item.date}`} use:link>
-          <span class="night-title"><span aria-hidden="true">🎲</span> <strong>{label(item.date)}</strong></span>
+          <span class="night-title"
+            ><span aria-hidden="true">🎲</span> <strong>{label(item.date)}</strong></span
+          >
           <span class="muted sm">
             {count(item.games.length, 'game')} · {count(item.playerIds.length, 'player')}
-            {#if item.abandoned} · {count(item.abandoned, 'abandoned')}{/if}
+            {#if item.abandoned}
+              · {count(item.abandoned, 'abandoned')}{/if}
           </span>
           {#if item.playerIds.length}<span class="muted sm">{names(item.playerIds)}</span>{/if}
-          {#if lead}<span class="winner sm"><span aria-hidden="true">👑</span>
-              {lead.tie ? 'Most wins: a tie' : `Most wins: ${lead.name}`}</span>{/if}
+          {#if lead}<span class="winner sm"
+              ><span aria-hidden="true">👑</span>
+              {lead.tie ? 'Most wins: a tie' : `Most wins: ${lead.name}`}</span
+            >{/if}
         </a>
       {/each}
     </div>

@@ -270,7 +270,8 @@
 <h1>History</h1>
 <a class="card night-entry" href="/nights" use:link>
   <span aria-hidden="true">🎲</span>
-  <span><strong>Game nights</strong><br /><span class="muted sm"
+  <span
+    ><strong>Game nights</strong><br /><span class="muted sm"
       >Revisit a night with the whole table</span
     ></span
   >
