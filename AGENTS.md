@@ -181,3 +181,11 @@ edits there with `@web-engineer` because that file is consumed by the web client
 
 Run `npm run check`, `npm test`, and `npm run build` for the web client. Run
 `npm --prefix relay run typecheck` for relay changes.
+
+## Report-driven bug loop
+
+For a reported Score King defect, follow [BUG_LOOP.md](BUG_LOOP.md) by default unless the user
+requests investigation or planning only. A plain-language report or issue link is sufficient;
+a requested fix is optional. This repository-local playbook owns fast-lane eligibility, timing,
+focused verification, and live-delivery evidence. It does not replace the canonical discovery
+campaign in `.github/prompts/bug-bash.prompt.md` or relax the gates above.

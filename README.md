@@ -96,6 +96,22 @@ The committed [`.npmrc`](.npmrc) only routes the `@jrmoulckers` scope and contai
 
 ---
 
+## Bug reports and rapid fixes
+
+Send a plain-language bug report or issue link in an active Score King coding session; an optional
+requested fix is enough to start the [AI bug loop](BUG_LOOP.md):
+
+```text
+Bug loop: [what went wrong]. Expected: [what should happen].
+Requested fix: [optional].
+```
+
+The agent handles reproduction, issue tracking, a focused repair, regression coverage, PR delivery,
+and live verification. Eligible low-risk web fixes target **15 minutes from report to verified
+live** through existing CI and automatic Pages deployment, without bypassing checks. Risky or
+ambiguous changes stop for a decision. Existing installed/open PWAs still require accepting the
+update prompt; filing an issue alone does not start a background agent.
+
 ## 📦 Architecture
 
 > **Where this is heading:** see [ARCHITECTURE.md](ARCHITECTURE.md) for the target system — the
