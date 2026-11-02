@@ -161,7 +161,7 @@
       {/each}
     </div>
   {:else}
-    <p class="muted hint">Save a lineup and rules you like — then start it again in one tap.</p>
+    <p class="muted hint">Save these players and rules for your next game.</p>
   {/if}
 
   {#if mode === 'saving'}
