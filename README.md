@@ -25,6 +25,15 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
   travel with your backup.
 - **Players, history & stats** are shared across every game — reusable players, a full game log,
   and a win‑rate leaderboard.
+- **Saved setups.** Save a **Group** (players in seating order, reusable across games),
+  **Rules** (one game's rules without changing selected players), or a **Full setup** (both
+  for one game). Existing presets remain full setups, including empty lineups. Apply a saved
+  choice on New game, then adjust before starting; Update, Rename, and Delete/Undo manage it.
+  Groups automatically remove archived, deleted, or missing members when viewed or selected,
+  but only after the roster has finished loading/restoring. Available players are never
+  dropped to fit a game's limit: adjust the lineup or rules before Start becomes available.
+  All three kinds travel in JSON/OneDrive backups using the existing portable settings;
+  settings retain their existing whole-list restore/merge behavior, not per-group merging.
 - **Game nights.** Browse past nights by local calendar date, see who played and who won most,
   then open each saved result. Abandoned games are labeled; archived games remain in History.
   The archive is derived from games already on this device (or restored through backup), so it

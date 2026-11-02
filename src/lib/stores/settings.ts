@@ -51,8 +51,8 @@ export interface Settings {
    */
   catalogHidden: string[];
   /**
-   * Saved per-game setups (lineup + rules) the group can start again in one tap. Portable
-   * so a crew's presets travel with a restore, just like {@link Settings.catalogFavorites}.
+   * Saved cross-game groups, per-game rules, and full setups. Portable so saved choices
+   * travel with a restore, just like {@link Settings.catalogFavorites}.
    */
   gamePresets: GamePreset[];
 

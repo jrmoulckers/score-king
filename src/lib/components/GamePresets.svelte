@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { ConfigField, GamePreset, ID } from '../types';
+  import type { ConfigField, GamePreset, ID, PresetKind } from '../types';
   import { defaultConfig } from '../types';
-  import { activePlayers } from '../stores/players';
+  import { activePlayers, playerRosterReady } from '../stores/players';
   import { crewNames, crewSignature } from '../stores/crews';
   import {
     presetsForType,
@@ -9,9 +9,10 @@
     updatePreset,
     renamePreset,
     deletePresetWithUndo,
-    resolvePresetPlayers,
-    resolvePresetConfig,
+    presetKind,
+    previewPreset,
     presetMatches,
+    pruneUnavailableGroupPlayers,
   } from '../stores/presets';
 
   let {
@@ -19,13 +20,15 @@
     selected = $bindable([]),
     config = $bindable({}),
     fields,
+    min = 1,
     max = 12,
     maxForConfig,
   }: {
     type: string;
     selected: ID[];
-    config: Record<string, any>;
+    config: Record<string, unknown>;
     fields: ConfigField[] | undefined;
+    min?: number;
     max?: number;
     maxForConfig?: (config: Record<string, unknown>) => number;
   } = $props();
@@ -36,17 +39,38 @@
   });
 
   const validIds = $derived($activePlayers.map((p) => p.id));
+  let cleanupNotice = $state('');
+  let applyNotice = $state('');
 
-  // How a preset resolves against today's roster — the source of truth for what it will seat,
-  // so archived/removed members are reflected live (see resolvePresetPlayers).
-  function seatedCount(p: GamePreset): number {
-    const presetConfig = resolvePresetConfig(p, fields);
-    return resolvePresetPlayers(p, validIds, maxForConfig?.(presetConfig) ?? max).length;
+  $effect(() => {
+    if (!$playerRosterReady) return;
+    const removed = pruneUnavailableGroupPlayers(
+      $presets.filter((p) => presetKind(p) === 'group').map((p) => p.id),
+      validIds,
+    );
+    if (removed) {
+      cleanupNotice = `Removed ${removed} unavailable player${removed === 1 ? '' : 's'} from saved groups.`;
+    }
+  });
+
+  const kinds: { kind: PresetKind; label: string; description: string }[] = [
+    { kind: 'group', label: 'Groups', description: 'Players only · use across games' },
+    { kind: 'rules', label: 'Rules', description: 'Rules only · keep your selected players' },
+    { kind: 'full', label: 'Full setups', description: 'Players and rules · for this game' },
+  ];
+
+  function preview(p: GamePreset) {
+    return previewPreset(p, selected, config, validIds, fields);
   }
-  /** Saved players who aren't in the current roster (archived, or absent after a partial restore). */
-  function unavailableCount(p: GamePreset): number {
-    const valid = new Set(validIds);
-    return new Set(p.playerIds.filter((id) => !valid.has(id))).size;
+
+  function compatibility(p: GamePreset): string {
+    const next = preview(p);
+    const limit = maxForConfig?.(next.config) ?? max;
+    const issues: string[] = [];
+    if (next.unavailableIds.length) issues.push(`${next.unavailableIds.length} unavailable`);
+    if (next.selected.length < min) issues.push(`needs at least ${min} players`);
+    if (next.selected.length > limit) issues.push(`at most ${limit} players`);
+    return issues.join(' · ');
   }
 
   // Which preset (if any) the form was last filled from — drives the Update/Rename/Delete tools.
@@ -56,11 +80,13 @@
   type Mode = 'idle' | 'saving' | 'renaming';
   let mode = $state<Mode>('idle');
   let draftName = $state('');
+  let saveKind = $state<PresetKind>('full');
+  const canSave = $derived(saveKind === 'rules' || ($playerRosterReady && selected.length > 0));
 
   // The applied preset is "dirty" once the current form no longer matches it — only then is
   // there anything to Update.
   const dirty = $derived(
-    active ? !presetMatches(active, selected, config, validIds, max, fields) : false,
+    active ? !presetMatches(active, selected, config, validIds, fields) : false,
   );
 
   /** A friendly default name for a brand-new preset: the crew's nickname, else its player names. */
@@ -76,33 +102,47 @@
   }
 
   function apply(p: GamePreset) {
+    if (!$playerRosterReady) return;
+    applyNotice = '';
     // Clicking the already-active preset toggles it off. If the form still matches the preset
     // (untouched), fall back to the game's default empty state; if you've since edited it, keep
     // your changes and just detach the preset label ("barring any input changes I have made").
     if (activeId === p.id) {
       if (!dirty) {
-        selected = [];
-        config = defaultConfig(fields);
+        if (presetKind(p) !== 'rules') selected = [];
+        if (presetKind(p) !== 'group') config = defaultConfig(fields);
       }
       activeId = null;
       mode = 'idle';
       return;
     }
-    const presetConfig = resolvePresetConfig(p, fields);
-    selected = resolvePresetPlayers(p, validIds, maxForConfig?.(presetConfig) ?? max);
-    config = presetConfig;
+    if (presetKind(p) === 'group') {
+      pruneUnavailableGroupPlayers([p.id], validIds);
+    }
+    commitApply(p);
+  }
+
+  function commitApply(p: GamePreset) {
+    const next = preview(p);
+    selected = next.selected;
+    config = next.config;
     activeId = p.id;
+    applyNotice = next.unavailableIds.length
+      ? `${next.unavailableIds.length} unavailable players were not selected. The saved full setup is unchanged.`
+      : '';
     mode = 'idle';
   }
 
   function startSave() {
     draftName = suggestName();
+    saveKind = 'full';
     mode = 'saving';
   }
 
   function confirmSave(e: Event) {
     e.preventDefault();
-    const p = savePreset(type, draftName, selected, config);
+    if (!canSave || !draftName.trim()) return;
+    const p = savePreset(type, draftName, selected, config, saveKind);
     activeId = p.id;
     mode = 'idle';
   }
@@ -136,48 +176,86 @@
 </script>
 
 <div class="presets">
-  <div class="fieldlabel">Presets</div>
+  <div class="fieldlabel">Saved setups</div>
 
   {#if $presets.length}
-    <div class="pchips" role="list">
-      {#each $presets as p (p.id)}
-        <button
-          type="button"
-          class="pchip"
-          class:on={activeId === p.id}
-          aria-pressed={activeId === p.id}
-          onclick={() => apply(p)}
-          title={activeId === p.id ? `Turn off “${p.name}”` : `Use “${p.name}”`}
-        >
-          <span class="pname">{p.name}</span>
-          <span class="pcount">
-            {seatedCount(p)}👤{#if unavailableCount(p)}<span
-                class="away"
-                title={`${unavailableCount(p)} saved player${unavailableCount(p) > 1 ? 's are' : ' is'} no longer in the roster and will be skipped`}
-                >· {unavailableCount(p)} away</span
-              >{/if}
-          </span>
-        </button>
-      {/each}
-    </div>
+    {#each kinds as section (section.kind)}
+      {@const entries = $presets.filter((p) => presetKind(p) === section.kind)}
+      {#if entries.length}
+        <div class="preset-section" role="group" aria-label={section.label}>
+          <div class="kind-label">{section.label}</div>
+          <p class="muted hint">{section.description}</p>
+          <div class="pchips">
+            {#each entries as p (p.id)}
+              <button
+                type="button"
+                class="pchip"
+                class:on={activeId === p.id}
+                aria-pressed={activeId === p.id}
+                disabled={!$playerRosterReady}
+                onclick={() => apply(p)}
+                title={activeId === p.id ? `Turn off “${p.name}”` : `Use “${p.name}”`}
+              >
+                <span class="pname">{p.name}</span>
+                <span class="pcount">
+                  {#if section.kind !== 'rules'}{p.playerIds.length} players{/if}
+                  {#if compatibility(p)}<span> · {compatibility(p)}</span>{/if}
+                </span>
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
+    {/each}
   {:else}
-    <p class="muted hint">Save these players and rules for your next game.</p>
+    <p class="muted hint empty-hint">Save these players and rules for your next game.</p>
+    <p class="muted hint">
+      Save players as a Group, game rules as Rules, or both as a Full setup. Apply one here, then
+      adjust before starting.
+    </p>
+  {/if}
+
+  {#if !$playerRosterReady}
+    <p class="hint muted" role="status">
+      Saved players are unavailable while the roster loads or restores. If loading fails, reload to
+      retry; saved groups stay unchanged.
+    </p>
+  {/if}
+  {#if cleanupNotice}
+    <p class="hint muted" role="status">{cleanupNotice}</p>
+  {/if}
+  {#if applyNotice}
+    <p class="hint muted" role="status">{applyNotice}</p>
   {/if}
 
   {#if mode === 'saving'}
-    <form class="prow" onsubmit={confirmSave}>
-      <!-- svelte-ignore a11y_autofocus -->
-      <input
-        class="grow"
-        type="text"
-        placeholder="Preset name…"
-        aria-label="Preset name"
-        autocomplete="off"
-        bind:value={draftName}
-        autofocus
-      />
-      <button class="btn" type="submit">Save</button>
-      <button class="btn ghost" type="button" onclick={cancel}>Cancel</button>
+    <form class="stack" onsubmit={confirmSave}>
+      <label class="stack">
+        <span class="hint">Save as</span>
+        <select bind:value={saveKind}>
+          <option value="group">Group — players only, across games</option>
+          <option value="rules">Rules — this game, keep selected players</option>
+          <option value="full">Full setup — players and rules for this game</option>
+        </select>
+      </label>
+      {#if !canSave}
+        <p class="hint muted" role="status">Select players below to save a Group or Full setup.</p>
+      {/if}
+      <div class="prow">
+        <!-- svelte-ignore a11y_autofocus -->
+        <input
+          class="grow"
+          type="text"
+          placeholder="Saved setup name…"
+          aria-label="Saved setup name"
+          required
+          autocomplete="off"
+          bind:value={draftName}
+          autofocus
+        />
+        <button class="btn" type="submit" disabled={!canSave || !draftName.trim()}>Save</button>
+        <button class="btn ghost" type="button" onclick={cancel}>Cancel</button>
+      </div>
     </form>
   {:else if mode === 'renaming' && active}
     <form class="prow" onsubmit={confirmRename}>
@@ -185,28 +263,40 @@
       <input
         class="grow"
         type="text"
-        placeholder="Preset name…"
-        aria-label="Rename preset"
+        placeholder="Saved setup name…"
+        aria-label="Rename saved setup"
+        required
         autocomplete="off"
         bind:value={draftName}
         autofocus
       />
-      <button class="btn" type="submit">Rename</button>
+      <button class="btn" type="submit" disabled={!draftName.trim()}>Rename</button>
       <button class="btn ghost" type="button" onclick={cancel}>Cancel</button>
     </form>
   {:else if active}
     <div class="ptools">
       <span class="applied">
-        {#if dirty}Using modified preset: {active.name}{:else}Using preset: {active.name}{/if}
+        {#if dirty}Modified:
+        {:else}Using:
+        {/if}{active.name}
       </span>
       <span class="spacer"></span>
       {#if dirty}
-        <button class="btn small" type="button" onclick={saveOverActive}>Update</button>
+        <button
+          class="btn small"
+          type="button"
+          onclick={saveOverActive}
+          disabled={presetKind(active) !== 'rules' && (!$playerRosterReady || !selected.length)}
+          >Update</button
+        >
       {/if}
       <button class="btn small ghost" type="button" onclick={startRename}>Rename</button>
       <button class="btn small ghost" type="button" onclick={startSave}>Save new</button>
       <button class="btn small ghost" type="button" onclick={remove}>Delete</button>
     </div>
+    {#if dirty && preview(active).unavailableIds.length}
+      <p class="muted hint">Updating replaces the saved lineup, including unavailable players.</p>
+    {/if}
   {:else}
     <button class="linkbtn" type="button" onclick={startSave}> ＋ Save current setup </button>
   {/if}
@@ -256,13 +346,37 @@
     color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
-  .away {
-    margin-left: 4px;
+  .preset-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .kind-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .pname {
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .pchip {
+    max-width: 100%;
+    flex-wrap: wrap;
+    text-align: left;
+  }
+  select {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
   }
   .prow {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+  }
+  .prow input {
+    min-width: 120px;
   }
   .ptools {
     display: flex;

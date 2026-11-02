@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import type { ConfigField, GamePreset } from '../types';
-import { settings } from './settings';
+import { settings, getBackupSettings, applyBackupSettings } from './settings';
+import { serializeSnapshot, deserializeSnapshot } from '../storage/sync';
 import {
   savePreset,
   updatePreset,
@@ -14,7 +15,12 @@ import {
   resolvePresetPlayers,
   resolvePresetConfig,
   presetMatches,
+  presetKind,
+  previewPreset,
+  pruneUnavailableGroupPlayers,
+  deletePresetWithUndo,
 } from './presets';
+import { toast, dismissToast } from './toast';
 
 const FIELDS: ConfigField[] = [
   { key: 'target', label: 'Target', type: 'number', default: 100 },
@@ -50,10 +56,97 @@ describe('game presets store', () => {
     expect(p.name).toBe('Preset');
   });
 
-  it('saves a rules-only preset with no players selected', () => {
+  it('preserves empty legacy-style full setups rather than inferring rules-only', () => {
     const p = savePreset('avalon', 'Morgana on', [], { morgana: true });
     expect(p.playerIds).toEqual([]);
     expect(getPresetsForType('avalon')[0].config).toEqual({ morgana: true });
+  });
+
+  it('shares an ordered group across games without storing rules', () => {
+    const p = savePreset('avalon', 'Regulars', ['p2', 'p1'], { target: 200 }, 'group');
+    expect(p.config).toEqual({});
+    expect(getPresetsForType('hearts')).toEqual([p]);
+    expect(get(presetsForType('hearts'))).toEqual([p]);
+    expect(previewPreset(p, ['p3'], { target: 42 }, ['p1', 'p2'], FIELDS)).toEqual({
+      selected: ['p2', 'p1'],
+      config: { target: 42 },
+      unavailableIds: [],
+    });
+    updatePreset(p.id, ['p1', 'p2', 'p3'], { target: 99 });
+    expect(getPresetsForType('hearts')[0].config).toEqual({});
+    prunePresetsForType('avalon');
+    expect(getPresetsForType('hearts')[0].id).toBe(p.id);
+  });
+
+  it('scopes rules to their game, never stores or replaces players', () => {
+    const p = savePreset('avalon', 'Morgana', ['p1', 'p2'], { morgana: true }, 'rules');
+    expect(p.playerIds).toEqual([]);
+    expect(getPresetsForType('hearts')).toEqual([]);
+    const next = previewPreset(p, ['p3', 'p2'], {}, ['p2', 'p3'], FIELDS);
+    expect(next.selected).toEqual(['p3', 'p2']);
+    expect(next.config).toEqual({ target: 100, morgana: true });
+    expect(presetMatches(p, ['any'], next.config, [], FIELDS)).toBe(true);
+    updatePreset(p.id, ['p4'], { target: 150 });
+    expect(getPresetsForType('avalon')[0].playerIds).toEqual([]);
+  });
+
+  it('only prunes unavailable members in viewed groups, retaining available player order', () => {
+    const viewed = savePreset('avalon', 'Viewed', ['p3', 'gone', 'p1'], {}, 'group');
+    const other = savePreset('hearts', 'Not viewed', ['gone'], {}, 'group');
+    const full = savePreset('avalon', 'Full', ['gone'], {});
+    pruneDeletedPlayers(['gone']);
+    expect(get(settings).gamePresets.find((p) => p.id === viewed.id)?.playerIds).toContain('gone');
+    expect(pruneUnavailableGroupPlayers([viewed.id], ['p1', 'p3'])).toBe(1);
+    expect(get(settings).gamePresets.find((p) => p.id === viewed.id)?.playerIds).toEqual([
+      'p3',
+      'p1',
+    ]);
+    expect(get(settings).gamePresets.find((p) => p.id === other.id)?.playerIds).toEqual(['gone']);
+    expect(get(settings).gamePresets.find((p) => p.id === full.id)?.playerIds).toEqual([]);
+    const before = get(settings);
+    expect(pruneUnavailableGroupPlayers([viewed.id], ['p1', 'p3'])).toBe(0);
+    expect(get(settings)).toBe(before);
+  });
+
+  it.each(['group', 'rules', 'full'] as const)(
+    'renames and deletes/undoes %s records exactly',
+    (kind) => {
+      const p = savePreset('avalon', 'Before', ['p2', 'p1'], { target: 123 }, kind);
+      renamePreset(p.id, 'After');
+      const renamed = get(settings).gamePresets[0];
+      deletePresetWithUndo(renamed);
+      expect(get(settings).gamePresets).toEqual([]);
+      get(toast)?.action?.run();
+      expect(get(settings).gamePresets).toEqual([renamed]);
+      dismissToast();
+    },
+  );
+
+  it('round-trips every kind and unmodified legacy records through portable backups', () => {
+    const full = savePreset('avalon', 'Legacy empty', [], { target: 150 });
+    const { kind: _kind, ...legacy } = full;
+    void _kind;
+    settings.update((s) => ({ ...s, gamePresets: [legacy] }));
+    savePreset('avalon', 'Group', ['p2', 'p1'], {}, 'group');
+    savePreset('avalon', 'Rules', [], { target: 125 }, 'rules');
+    const saved = get(settings).gamePresets;
+    const back = deserializeSnapshot(
+      serializeSnapshot({
+        players: [],
+        games: [],
+        rounds: [],
+        exportedAt: 123,
+        settings: getBackupSettings(),
+      }),
+    );
+    reset();
+    applyBackupSettings(back?.settings);
+    expect(get(settings).gamePresets).toEqual(saved);
+    expect(presetKind(get(settings).gamePresets[0])).toBe('full');
+    expect(previewPreset(legacy, ['p1'], {}, ['p1'], FIELDS).selected).toEqual([]);
+    applyBackupSettings({ theme: 'dark' });
+    expect(get(settings).gamePresets).toEqual(saved);
+    expect(JSON.parse(localStorage.getItem('sk_settings')!).gamePresets).toEqual(saved);
   });
 
   it('updates a preset in place, keeping its name and id', () => {
@@ -142,9 +235,11 @@ describe('preset apply/dirty helpers', () => {
     updatedAt: 0,
   };
 
-  it('drops unknown players, dedupes, and caps at max', () => {
-    expect(resolvePresetPlayers(preset, ['p1', 'p2', 'p4'], 12)).toEqual(['p1', 'p2']);
-    expect(resolvePresetPlayers(preset, ['p1', 'p2'], 1)).toEqual(['p1']);
+  it('drops unavailable players but never caps available players at a game limit', () => {
+    expect(resolvePresetPlayers(preset, ['p1', 'p2', 'p4'])).toEqual(['p1', 'p2']);
+    expect(
+      resolvePresetPlayers({ ...preset, playerIds: ['p2', 'p1', 'p2'] }, ['p1', 'p2']),
+    ).toEqual(['p2', 'p1']);
   });
 
   it('overlays saved config on current defaults, dropping retired keys and defaulting new ones', () => {
@@ -167,12 +262,12 @@ describe('preset apply/dirty helpers', () => {
 
   it('detects a clean match versus a dirty form', () => {
     const valid = ['p1', 'p2'];
-    const players = resolvePresetPlayers(preset, valid, 12);
+    const players = resolvePresetPlayers(preset, valid);
     const config = resolvePresetConfig(preset, FIELDS);
 
-    expect(presetMatches(preset, players, config, valid, 12, FIELDS)).toBe(true);
-    expect(presetMatches(preset, ['p1'], config, valid, 12, FIELDS)).toBe(false);
-    expect(presetMatches(preset, players, { ...config, morgana: false }, valid, 12, FIELDS)).toBe(
+    expect(presetMatches(preset, players, config, valid, FIELDS)).toBe(true);
+    expect(presetMatches(preset, ['p1'], config, valid, FIELDS)).toBe(false);
+    expect(presetMatches(preset, players, { ...config, morgana: false }, valid, FIELDS)).toBe(
       false,
     );
   });

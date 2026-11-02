@@ -4,6 +4,7 @@ import type { CustomGameDef } from '../games/custom/types';
 import type { Settings } from '../stores/settings';
 import { getBackupSettings, applyBackupSettings } from '../stores/settings';
 import { refreshCustomGames } from '../stores/customGames';
+import { refreshPlayers, suspendPlayerRoster } from '../stores/players';
 
 export interface Snapshot {
   players: Player[];
@@ -271,18 +272,23 @@ export async function buildSnapshot(): Promise<Snapshot> {
 }
 
 export async function restoreSnapshot(snapshot: Snapshot): Promise<void> {
-  await db.replaceAll({
-    players: snapshot.players,
-    games: snapshot.games,
-    rounds: snapshot.rounds,
-    gameDefs: snapshot.gameDefs ?? [],
-  });
-  applyBackupSettings(snapshot.settings);
-  // Rebuild the in-memory custom registries so restored/merged-in custom types resolve
-  // immediately. `customGames` is already in the app's static graph (catalog, the play and
-  // manage screens all import it), so a static import here is simplest and avoids Vite's
-  // INEFFECTIVE_DYNAMIC_IMPORT warning about a module that can't be split out anyway.
-  await refreshCustomGames();
+  const releaseRoster = suspendPlayerRoster();
+  try {
+    await db.replaceAll({
+      players: snapshot.players,
+      games: snapshot.games,
+      rounds: snapshot.rounds,
+      gameDefs: snapshot.gameDefs ?? [],
+    });
+    applyBackupSettings(snapshot.settings);
+    // Rebuild the in-memory custom registries so restored/merged-in custom types resolve
+    // immediately. `customGames` is already in the app's static graph (catalog, the play and
+    // manage screens all import it), so a static import here is simplest and avoids Vite's
+    // INEFFECTIVE_DYNAMIC_IMPORT warning about a module that can't be split out anyway.
+    await Promise.all([refreshCustomGames(), refreshPlayers()]);
+  } finally {
+    releaseRoster();
+  }
 }
 
 // ── Per-entity merge (Phase 2) ───────────────────────────────────────────────
