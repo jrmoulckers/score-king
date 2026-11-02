@@ -35,6 +35,9 @@
   let config = $state<Record<string, any>>({});
   let lastInitFor = '';
   const maxPlayers = $derived(module?.maxPlayersForConfig?.(config) ?? module?.maxPlayers ?? 1);
+  const unavailableSelected = $derived(
+    selected.filter((id) => !$activePlayers.some((p) => p.id === id)),
+  );
 
   $effect(() => {
     if (module && lastInitFor !== module.id) {
@@ -49,6 +52,10 @@
 
   async function start() {
     if (!module) return;
+    if (unavailableSelected.length) {
+      showToast('Remove unavailable players or restore them from Players before starting.');
+      return;
+    }
     if (selected.length < module.minPlayers) {
       showToast(`Need at least ${module.minPlayers} players.`);
       return;
@@ -131,6 +138,7 @@
     <GamePresets
       {type}
       fields={module.configFields}
+      min={module.minPlayers}
       max={maxPlayers}
       maxForConfig={module.maxPlayersForConfig}
       bind:selected
@@ -140,6 +148,24 @@
     <div>
       <div class="fieldlabel">Players ({module.minPlayers}–{maxPlayers})</div>
       <PlayerSelect bind:selected max={maxPlayers} min={module.minPlayers} />
+      {#if selected.length > maxPlayers}
+        <p class="muted sm" role="status">
+          {selected.length} players selected; this setup allows at most {maxPlayers}. Deselect
+          players above or adjust the rules. No players were removed automatically.
+        </p>
+      {/if}
+      {#if unavailableSelected.length}
+        <p class="muted sm" role="status">
+          {unavailableSelected.length} selected players are no longer available. Restore them from Players
+          or remove them from this setup.
+        </p>
+        <button
+          class="btn ghost"
+          type="button"
+          onclick={() => (selected = selected.filter((id) => !unavailableSelected.includes(id)))}
+          >Remove unavailable players</button
+        >
+      {/if}
     </div>
     {#if module.configFields?.length}
       <hr />
@@ -148,7 +174,9 @@
     <button
       class="btn primary block"
       onclick={start}
-      disabled={selected.length < module.minPlayers}
+      disabled={selected.length < module.minPlayers ||
+        selected.length > maxPlayers ||
+        unavailableSelected.length > 0}
     >
       Start game
     </button>

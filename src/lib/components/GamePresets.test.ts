@@ -26,7 +26,7 @@ describe('GamePresets helper', () => {
     (type) => {
       const target = renderPresets(type);
 
-      expect(target.querySelector('.hint')?.textContent).toBe(
+      expect(target.querySelector('.empty-hint')?.textContent).toBe(
         'Save these players and rules for your next game.',
       );
       expect(target.querySelector('.linkbtn')?.textContent).toContain('Save current setup');
@@ -52,9 +52,9 @@ describe('GamePresets helper', () => {
     const hearts = renderPresets('hearts');
     const tally = renderPresets('tally');
 
-    expect(hearts.querySelector('.hint')).toBeNull();
+    expect(hearts.querySelector('.empty-hint')).toBeNull();
     expect(hearts.querySelector('.pname')?.textContent).toBe('Usual Hearts');
-    expect(tally.querySelector('.hint')?.textContent).toBe(
+    expect(tally.querySelector('.empty-hint')?.textContent).toBe(
       'Save these players and rules for your next game.',
     );
   });

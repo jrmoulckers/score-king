@@ -9,15 +9,41 @@ import { reportStorageError } from './storage';
 
 /** Every member, archived included — Stats and History need the full roster. */
 export const players = writable<Player[]>([]);
+/** Destructive saved-group cleanup is safe only after a complete, successful roster read. */
+export const playerRosterReady = writable(false);
+let rosterRevision = 0;
+let rosterLoaded = false;
+let rosterHolds = 0;
+
+/** Keep stale/in-flight reads from authorizing cleanup while a backup replaces the World. */
+export function suspendPlayerRoster(): () => void {
+  rosterHolds++;
+  rosterRevision++;
+  rosterLoaded = false;
+  playerRosterReady.set(false);
+  return () => {
+    rosterHolds--;
+    playerRosterReady.set(rosterLoaded && rosterHolds === 0);
+  };
+}
 
 /** Active (non-archived) members: the roster shown for play and selection. */
-export const activePlayers = derived(players, ($players) => $players.filter((p) => !p.archived));
+export const activePlayers = derived(players, ($players) =>
+  $players.filter((p) => !p.archived && !p.deleted),
+);
 
 export async function refreshPlayers(): Promise<void> {
+  const revision = ++rosterRevision;
+  rosterLoaded = false;
+  playerRosterReady.set(false);
   try {
-    players.set(await db.getAllPlayers());
+    const loaded = await db.getAllPlayers();
+    if (revision !== rosterRevision) return;
+    players.set(loaded);
+    rosterLoaded = true;
+    playerRosterReady.set(rosterHolds === 0);
   } catch {
-    reportStorageError();
+    if (revision === rosterRevision) reportStorageError();
   }
 }
 

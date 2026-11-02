@@ -1,16 +1,15 @@
 import { derived, get, type Readable } from 'svelte/store';
-import type { ConfigField, GamePreset, ID } from '../types';
+import type { ConfigField, GamePreset, ID, PresetKind } from '../types';
 import { defaultConfig } from '../types';
 import { settings } from './settings';
 import { showActionToast } from './toast';
 import { uid } from '../util';
 
 /**
- * Game-by-game presets: a saved lineup + rules for a specific game type, so a group can start
- * "the usual" in one tap without being locked into it. Presets are persisted as the portable
+ * Saved groups (cross-game), rules (per-game), and full setups, persisted as the portable
  * {@link Settings.gamePresets} setting (they ride a backup/restore like catalog favorites), and
- * only ever *pre-fill* the New game form — applying one never commits you to it, and it changes
- * only when you explicitly Update it.
+ * only ever *pre-fill* the New game form. Saved content changes only on explicit Update,
+ * except unavailable group members are pruned lazily when viewed with a loaded roster.
  *
  * The apply/dirty logic lives here as pure helpers so it's testable without a component and so
  * a preset saved before a config field or player existed still resolves sensibly today.
@@ -21,20 +20,29 @@ export const gamePresets: Readable<GamePreset[]> = derived(settings, ($s) =>
   [...$s.gamePresets].sort((a, b) => b.updatedAt - a.updatedAt),
 );
 
-/** Presets for a single game type, most-recently-edited first (reactive). */
+/** Older records always remain full setups, even when their saved lineup is empty. */
+export function presetKind(preset: GamePreset): PresetKind {
+  return preset.kind ?? 'full';
+}
+
+function availableForType(preset: GamePreset, type: string): boolean {
+  return presetKind(preset) === 'group' || preset.type === type;
+}
+
+/** Cross-game groups plus this game's rules/full setups, newest edit first. */
 export function presetsForType(type: string): Readable<GamePreset[]> {
-  return derived(gamePresets, ($all) => $all.filter((p) => p.type === type));
+  return derived(gamePresets, ($all) => $all.filter((p) => availableForType(p, type)));
 }
 
 /** Snapshot of a type's presets (non-reactive), for one-off reads. */
 export function getPresetsForType(type: string): GamePreset[] {
   return get(settings)
-    .gamePresets.filter((p) => p.type === type)
+    .gamePresets.filter((p) => availableForType(p, type))
     .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 /**
- * Save a new preset for a game type. `playerIds` and `config` are snapshotted (deep-copied)
+ * Save a new preset. `playerIds` and scalar config fields are snapshotted
  * so later edits to the form don't mutate the stored preset. Returns the created preset.
  */
 export function savePreset(
@@ -42,14 +50,16 @@ export function savePreset(
   name: string,
   playerIds: ID[],
   config: Record<string, unknown>,
+  kind: PresetKind = 'full',
 ): GamePreset {
   const now = Date.now();
   const preset: GamePreset = {
     id: uid(),
     type,
+    kind,
     name: name.trim() || 'Preset',
-    playerIds: [...playerIds],
-    config: { ...config },
+    playerIds: kind === 'rules' ? [] : [...playerIds],
+    config: kind === 'group' ? {} : { ...config },
     createdAt: now,
     updatedAt: now,
   };
@@ -63,7 +73,12 @@ export function updatePreset(id: ID, playerIds: ID[], config: Record<string, unk
     ...s,
     gamePresets: s.gamePresets.map((p) =>
       p.id === id
-        ? { ...p, playerIds: [...playerIds], config: { ...config }, updatedAt: Date.now() }
+        ? {
+            ...p,
+            playerIds: presetKind(p) === 'rules' ? [] : [...playerIds],
+            config: presetKind(p) === 'group' ? {} : { ...config },
+            updatedAt: Date.now(),
+          }
         : p,
     ),
   }));
@@ -87,10 +102,11 @@ export function removePreset(id: ID): void {
 }
 
 /**
- * Strip hard-deleted player ids from every stored preset. Called when a member is permanently
+ * Strip hard-deleted player ids from legacy/full setups. Called when a member is permanently
  * removed (a tombstone, never coming back), so presets don't keep a ghost id that would
  * silently re-sync or resurrect. Archived (recoverable) members are deliberately NOT pruned —
  * those are hidden reactively so restoring the member restores them to the preset.
+ * Groups are excluded: their unavailable membership is resolved lazily when viewed.
  */
 export function pruneDeletedPlayers(deletedIds: Iterable<ID>): void {
   const gone = new Set(deletedIds);
@@ -98,6 +114,7 @@ export function pruneDeletedPlayers(deletedIds: Iterable<ID>): void {
   settings.update((s) => {
     let changed = false;
     const next = s.gamePresets.map((p) => {
+      if (presetKind(p) === 'group') return p;
       if (!p.playerIds.some((id) => gone.has(id))) return p;
       changed = true;
       return {
@@ -110,6 +127,26 @@ export function pruneDeletedPlayers(deletedIds: Iterable<ID>): void {
   });
 }
 
+/** Prune only groups being viewed, after the caller has confirmed roster readiness. */
+export function pruneUnavailableGroupPlayers(
+  viewedIds: Iterable<ID>,
+  validIds: Iterable<ID>,
+): number {
+  const viewed = new Set(viewedIds);
+  const valid = new Set(validIds);
+  let removed = 0;
+  const s = get(settings);
+  const next = s.gamePresets.map((p) => {
+    if (!viewed.has(p.id) || presetKind(p) !== 'group') return p;
+    const playerIds = p.playerIds.filter((id) => valid.has(id));
+    if (playerIds.length === p.playerIds.length) return p;
+    removed += p.playerIds.length - playerIds.length;
+    return { ...p, playerIds, updatedAt: Date.now() };
+  });
+  if (removed) settings.set({ ...s, gamePresets: next });
+  return removed;
+}
+
 /**
  * Drop every preset belonging to a game type that no longer exists — a hard-deleted custom
  * type (an *archived* type is still resolvable, so its presets are kept). Without this, its
@@ -117,8 +154,11 @@ export function pruneDeletedPlayers(deletedIds: Iterable<ID>): void {
  */
 export function prunePresetsForType(type: string): void {
   settings.update((s) =>
-    s.gamePresets.some((p) => p.type === type)
-      ? { ...s, gamePresets: s.gamePresets.filter((p) => p.type !== type) }
+    s.gamePresets.some((p) => p.type === type && presetKind(p) !== 'group')
+      ? {
+          ...s,
+          gamePresets: s.gamePresets.filter((p) => p.type !== type || presetKind(p) === 'group'),
+        }
       : s,
   );
 }
@@ -139,21 +179,19 @@ export function deletePresetWithUndo(preset: GamePreset): void {
 // ── Pure apply/dirty helpers ────────────────────────────────────────────────────
 
 /**
- * The lineup a preset resolves to *right now*: its saved players in order, dropping any who
- * are no longer selectable (archived/deleted since it was saved) and capping at the game's
- * `max`. Keeps a preset useful even as the roster changes underneath it.
+ * Available saved players, in order, WITHOUT a player-limit cap. Callers disclose
+ * unavailable full-setup members; groups prune them lazily after roster loading.
+ * Oversized lineups stay intact so the user, not the app, chooses who leaves.
  */
-export function resolvePresetPlayers(
-  preset: GamePreset,
-  validIds: Iterable<ID>,
-  max: number,
-): ID[] {
+export function resolvePresetPlayers(preset: GamePreset, validIds: Iterable<ID>): ID[] {
   const valid = new Set(validIds);
-  const out: ID[] = [];
-  for (const id of preset.playerIds) {
-    if (valid.has(id) && !out.includes(id) && out.length < max) out.push(id);
-  }
-  return out;
+  return [...new Set(preset.playerIds)].filter((id) => valid.has(id));
+}
+
+export function unavailablePresetPlayers(preset: GamePreset, validIds: Iterable<ID>): ID[] {
+  if (presetKind(preset) === 'rules') return [];
+  const valid = new Set(validIds);
+  return [...new Set(preset.playerIds)].filter((id) => !valid.has(id));
 }
 
 /**
@@ -172,6 +210,23 @@ export function resolvePresetConfig(
   return cfg;
 }
 
+/** Preview the owned portion only, leaving the other half of the form unchanged. */
+export function previewPreset(
+  preset: GamePreset,
+  selected: ID[],
+  config: Record<string, unknown>,
+  validIds: Iterable<ID>,
+  fields: ConfigField[] | undefined,
+): { selected: ID[]; config: Record<string, unknown>; unavailableIds: ID[] } {
+  const kind = presetKind(preset);
+  const valid = [...validIds];
+  return {
+    selected: kind === 'rules' ? [...selected] : resolvePresetPlayers(preset, valid),
+    config: kind === 'group' ? { ...config } : resolvePresetConfig(preset, fields),
+    unavailableIds: unavailablePresetPlayers(preset, valid),
+  };
+}
+
 /**
  * Whether the current form (selected players + config) already matches what applying `preset`
  * would yield. Used to show an "Update" affordance only when there's something to save.
@@ -181,14 +236,16 @@ export function presetMatches(
   selected: ID[],
   config: Record<string, unknown>,
   validIds: Iterable<ID>,
-  max: number,
   fields: ConfigField[] | undefined,
 ): boolean {
-  const players = resolvePresetPlayers(preset, validIds, max);
-  if (players.length !== selected.length || players.some((id, i) => id !== selected[i])) {
+  const preview = previewPreset(preset, selected, config, validIds, fields);
+  if (
+    preview.selected.length !== selected.length ||
+    preview.selected.some((id, i) => id !== selected[i])
+  ) {
     return false;
   }
-  const wantCfg = resolvePresetConfig(preset, fields);
+  const wantCfg = preview.config;
   const keys = Object.keys(wantCfg);
   return keys.every((k) => Object.is(wantCfg[k], config[k]));
 }
