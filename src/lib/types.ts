@@ -55,7 +55,8 @@ export interface Player {
  *
  * Deliberately *not* a locked configuration — a preset only pre-fills the New game form.
  * You can apply it and then freely retune players or config before starting; the preset
- * only changes when you explicitly Update it. Keyed by `type` (a built-in slug like
+ * changes on explicit Update, except groups lazily discard unavailable members.
+ * Keyed by `type` (a built-in slug like
  * `avalon` or a custom def id `def_…`). Stored as a portable setting so a group's presets
  * travel with a backup/restore, exactly like {@link Player} ids and catalog favorites do.
  */

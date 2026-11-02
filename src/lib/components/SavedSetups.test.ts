@@ -97,6 +97,7 @@ describe('saved setup interaction', () => {
     expect(target.textContent).not.toContain('Other game rules');
     useSaved(target, 'Two decks');
     expect(selected(target)).toEqual([]);
+    expect(target.querySelector('.applied')?.textContent?.trim()).toBe('Using: Two decks');
     useSaved(target, 'Cross game');
     expect(selected(target)).toEqual(['Player 3', 'Player 1', 'Player 2']);
     expect(target.querySelector<HTMLSelectElement>('#deckCount')?.value).toBe('2');

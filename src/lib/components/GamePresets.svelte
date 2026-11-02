@@ -127,9 +127,10 @@
     selected = next.selected;
     config = next.config;
     activeId = p.id;
-    applyNotice = next.unavailableIds.length
-      ? `${next.unavailableIds.length} unavailable players were not selected. The saved full setup is unchanged.`
-      : '';
+    applyNotice =
+      presetKind(p) === 'full' && next.unavailableIds.length
+        ? `${next.unavailableIds.length} unavailable players were not selected. The saved full setup is unchanged.`
+        : '';
     mode = 'idle';
   }
 
@@ -199,7 +200,9 @@
                 <span class="pname">{p.name}</span>
                 <span class="pcount">
                   {#if section.kind !== 'rules'}{p.playerIds.length} players{/if}
-                  {#if compatibility(p)}<span> · {compatibility(p)}</span>{/if}
+                  {#if compatibility(p)}
+                    <span>{section.kind === 'rules' ? '' : ' · '}{compatibility(p)}</span>
+                  {/if}
                 </span>
               </button>
             {/each}
@@ -276,9 +279,7 @@
   {:else if active}
     <div class="ptools">
       <span class="applied">
-        {#if dirty}Modified:
-        {:else}Using:
-        {/if}{active.name}
+        {dirty ? 'Modified' : 'Using'}: {active.name}
       </span>
       <span class="spacer"></span>
       {#if dirty}
