@@ -27,9 +27,9 @@ function form(config = defaultConfig(hearts.configFields)) {
   return el;
 }
 
-function editor(config: Record<string, unknown>, roundIndex = 0) {
+function editor(config: Record<string, unknown>, roundIndex = 0, playerCount = 4) {
   const el = target();
-  const ids = ['a', 'b', 'c', 'd'];
+  const ids = Array.from({ length: playerCount }, (_, i) => `player-${i}`);
   const ctx: RoundContext = {
     game: {
       id: 'synthetic',
@@ -111,5 +111,48 @@ describe('Card Passing interface', () => {
     expect(editor({}, 1).querySelector('.pass')?.textContent).toContain('Pass across');
     expect(editor({ passing: false }, 1).querySelector('.pass')).toBeNull();
     expect(editor({ passMode: 'legacy-hidden' }, 1).querySelector('.pass')).toBeNull();
+  });
+
+  it('uses an inline decorative direction rather than a navigation-like badge', () => {
+    const ribbon = editor({ passMode: 'clockwise' }).querySelector('.pass')!;
+    expect(ribbon.querySelector('.badge')).toBeNull();
+    expect(ribbon.querySelector('.direction')?.getAttribute('aria-hidden')).toBe('true');
+    expect(ribbon.querySelector('button, a, [role="button"], [tabindex]')).toBeNull();
+    expect(ribbon.textContent).toContain('Pass 3 cards to the player on your left');
+    expect(ribbon.textContent).not.toContain('Hand ');
+    expect(ribbon.querySelector('.progress')).toBeNull();
+  });
+
+  it('shows cycle and deal progression including Hold across supported rosters and decks', () => {
+    for (const deckCount of [1, 2]) {
+      for (let count = 3; count <= (deckCount === 1 ? 6 : 11); count++) {
+        for (const passMode of ['rotating', 'legacy']) {
+          for (const roundIndex of [0, count - 1, count, 2 * count, 3 * count - 1]) {
+            const ribbon = editor({ passMode, deckCount }, roundIndex, count).querySelector(
+              '.pass',
+            )!;
+            const progress = ribbon.querySelector('.progress')?.textContent;
+            expect(progress).toContain(`Passing cycle ${Math.floor(roundIndex / count) + 1}`);
+            expect(progress).toContain(`Deal ${(roundIndex % count) + 1} of ${count}`);
+            expect(progress).toContain('(includes Hold)');
+            expect(ribbon.textContent).not.toContain('Hand ');
+            if (roundIndex % count === count - 1)
+              expect(ribbon.querySelector('.label')?.textContent).toContain('Hold');
+          }
+        }
+      }
+    }
+  });
+
+  it('omits fabricated cycles for fixed directions and all text for hidden reminders', () => {
+    for (const passMode of ['clockwise', 'counterclockwise']) {
+      const ribbon = editor({ passMode }, 22, 11).querySelector('.pass')!;
+      expect(ribbon.querySelector('.progress')).toBeNull();
+      expect(ribbon.textContent).not.toContain('Hand ');
+    }
+    expect(editor({}, 8).querySelector('.progress')?.textContent).toContain('Passing cycle 3');
+    for (const config of [{ passing: false }, { passMode: 'legacy-hidden' }]) {
+      expect(editor(config, 22, 11).querySelector('.pass')).toBeNull();
+    }
   });
 });

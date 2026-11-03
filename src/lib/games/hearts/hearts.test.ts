@@ -14,6 +14,7 @@ import {
   outcomeFor,
   passCycle,
   passingFor,
+  passingProgress,
   previewDelta,
   readConfig,
   scoreRound,
@@ -110,6 +111,25 @@ describe('readConfig', () => {
 
 // ── passing ritual ─────────────────────────────────────────────────────────
 describe('passing', () => {
+  it('derives display cycles from the actual mode without changing passing instructions', () => {
+    for (const mode of ['rotating', 'legacy'] as const) {
+      for (let count = 3; count <= 11; count++) {
+        const sequence = passCycle(count, mode);
+        for (let hand = 0; hand < count * 3; hand++) {
+          expect(passingProgress(hand, count, mode)).toEqual({
+            cycle: Math.floor(hand / sequence.length) + 1,
+            deal: (hand % sequence.length) + 1,
+            cycleLength: sequence.length,
+          });
+          expect(passingFor(hand, count, 3, mode).direction).toBe(sequence[hand % sequence.length]);
+        }
+      }
+    }
+    for (const mode of ['clockwise', 'counterclockwise', 'legacy-hidden'] as const)
+      expect(passingProgress(12, 4, mode)).toBeNull();
+    expect(passingProgress(8, 4)).toEqual({ cycle: 3, deal: 1, cycleLength: 4 });
+  });
+
   it('uses the conventional four-player rotating order', () => {
     expect(passCycle(4, 'rotating')).toEqual(['left', 'right', 'across', 'hold']);
     expect(Array.from({ length: 8 }, (_, i) => passingFor(i, 4, 3, 'rotating').seatOffset)).toEqual(

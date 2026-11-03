@@ -18,6 +18,7 @@
     moonPoints,
     outcomeFor,
     passingFor,
+    passingProgress,
     previewDelta,
     queenCount,
     queensTotal,
@@ -183,7 +184,7 @@
   <MoonRise token={moonToken} />
 
   {#if pass}
-    <PassRibbon info={pass} hand={ctx.roundIndex + 1} />
+    <PassRibbon info={pass} progress={passingProgress(ctx.roundIndex, ids.length, cfg.passMode)} />
   {/if}
 
   <HeartsMeter {points} total={moonValue} moonReady={!!moon} />

@@ -136,6 +136,27 @@ export function passCycle(playerCount: number, mode: PassMode = 'legacy'): PassD
   });
 }
 
+export interface PassProgress {
+  cycle: number;
+  deal: number;
+  cycleLength: number;
+}
+
+/** Display progress through the configured recipient sequence, including its hold deal. */
+export function passingProgress(
+  handIndex: number,
+  playerCount: number,
+  mode: PassMode = 'legacy',
+): PassProgress | null {
+  if (mode === 'clockwise' || mode === 'counterclockwise' || mode === 'legacy-hidden') return null;
+  const cycleLength = passCycle(playerCount, mode).length;
+  return {
+    cycle: Math.floor(handIndex / cycleLength) + 1,
+    deal: (handIndex % cycleLength) + 1,
+    cycleLength,
+  };
+}
+
 /** Which way cards pass on a given (0-based) hand, for a given table size. */
 export function passingFor(
   handIndex: number,

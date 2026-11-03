@@ -22,6 +22,14 @@ Group mode and card count under a shared, semantic Card Passing fieldset. New mo
 always show their direction in round entry, including when an older configuration
 still carries `passing:false`. Passing remains informational and never changes scores.
 
+Round entry uses an unboxed, decorative direction glyph beside readable instructions,
+not a navigation-style badge. Rotating and visible legacy reminders show
+`Passing cycle C · Deal D of N (includes Hold)`: one cycle visits every other seat
+then holds, so the hold deal is position N and the next deal starts cycle C+1.
+Progress is derived from the configured mode's actual sequence and reopened round
+index, independent of deck count. Fixed directions have no all-around cycle and omit
+this metadata; no reminder repeats the shared editor's round number as a hand label.
+
 Missing `passMode` retains the old cycle. The old `passing:false` flag only proves
 that reminders were hidden, not that the group did not pass. Preserve that visibility
 without inventing a No passing rule. Do not rewrite games, rounds, presets, or backups.
