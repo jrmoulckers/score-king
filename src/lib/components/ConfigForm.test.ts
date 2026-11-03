@@ -67,13 +67,13 @@ describe('configuration rules summaries', () => {
       { key: 'plain', label: 'Plain', type: 'number', default: 1 },
     ]);
     const count = target.querySelector('#count')!;
-    expect(document.getElementById(count.getAttribute('aria-describedby')!)?.textContent).toBe(
-      'Keep this instruction.',
-    );
+    expect(
+      document.getElementById(count.getAttribute('aria-describedby')!)?.textContent?.trim(),
+    ).toBe('Keep this instruction.');
     const toggle = target.querySelector('input[type="checkbox"]')!;
-    expect(document.getElementById(toggle.getAttribute('aria-describedby')!)?.textContent).toBe(
-      'Toggle help.',
-    );
+    expect(
+      document.getElementById(toggle.getAttribute('aria-describedby')!)?.textContent?.trim(),
+    ).toBe('Toggle help.');
     expect(target.querySelector('#plain')?.hasAttribute('aria-describedby')).toBe(false);
   });
 
@@ -160,7 +160,15 @@ describe('configuration rules summaries', () => {
     [unogolf, 'format', 'target', ['End when anyone reaches 100 points', 'Lowest total wins']],
   ];
 
-  it.each(cases)('renders selected rules for %s %s = %s', (module, key, value, expected) => {
+  it.each(
+    cases.map(([module, key, value, expected]) => ({
+      module,
+      name: module.name,
+      key,
+      value,
+      expected,
+    })),
+  )('renders selected rules for $name $key = $value', ({ module, key, value, expected }) => {
     const target = render(module.configFields!);
     change(target, key, value);
     expect(rules(target, key)).toEqual(expected);
