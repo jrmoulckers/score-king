@@ -274,6 +274,85 @@ describe('validateRound', () => {
     expect(validateRound({ ...moon, moonRule: 'add26' }, P4, {})).toBeNull();
     expect(validateRound({ ...moon, moonRule: 'subtract' }, P4, {})).toBeNull();
   });
+
+  it('names the single Queen and double-deck copies accurately', () => {
+    const hand = input({ a: 0, b: 5, c: 7, d: 1 }, 'd');
+    expect(outcomeFor(hand, 'd', IDS, {}).label).toBe('took the Queen');
+    expect(outcomeFor(hand, 'd', IDS, { deckCount: 2 }).label).toBe('took a Queen');
+    hand.queens = { a: 0, b: 0, c: 0, d: 2 };
+    expect(outcomeFor(hand, 'd', IDS, { deckCount: 2 }).label).toBe('took 2 Queens');
+  });
+
+  it('adds card context instead of repeating the numeric heart score', () => {
+    const hand = input({ a: 4, b: 5, c: 3, d: 1 }, 'd');
+    expect(previewDelta(hand, 'a', IDS, {})).toBe(4);
+    expect(outcomeFor(hand, 'a', IDS, {})).toMatchObject({
+      kind: 'points',
+      label: 'hearts only',
+    });
+  });
+
+  it('rotates clean feedback by round and seat, not by unrelated edits or restoration', () => {
+    const hand = input({ a: 0, b: 5, c: 7, d: 1 }, 'd');
+    const labels = new Set(
+      Array.from({ length: 5 }, (_, seed) => outcomeFor(hand, 'a', IDS, {}, seed).label),
+    );
+    expect(labels.size).toBe(5);
+    const before = outcomeFor(hand, 'a', IDS, {}, 3);
+    hand.hearts.b = 6;
+    hand.hearts.c = 6;
+    expect(outcomeFor(hand, 'a', IDS, {}, 3)).toEqual(before);
+    expect(outcomeFor(structuredClone(hand), 'a', IDS, {}, 3)).toEqual(before);
+  });
+
+  it('does not celebrate untouched, incomplete, overallocated or malformed hands', () => {
+    const hand = emptyInput(IDS);
+    expect(outcomeFor(hand, 'a', IDS, {})).toMatchObject({
+      kind: 'pending',
+      label: 'no penalty cards yet',
+    });
+    hand.hearts.b = 13;
+    expect(outcomeFor(hand, 'a', IDS, {}).kind).toBe('pending');
+    hand.queens!.c = 1;
+    expect(outcomeFor(hand, 'a', IDS, {}).kind).toBe('clean');
+    hand.hearts.b = 14;
+    expect(outcomeFor(hand, 'a', IDS, {}).kind).toBe('pending');
+    hand.hearts = { a: 0, b: 5.5, c: 6.5, d: 1 };
+    expect(outcomeFor(hand, 'a', IDS, {}).kind).toBe('pending');
+    hand.hearts.b = NaN;
+    expect(outcomeFor(hand, 'a', IDS, {}).label).toBe('check card entries');
+  });
+
+  it('waits for Omnibus completion and never calls offset hearts a clean hand', () => {
+    const hand = input({ a: 10, b: 1, c: 1, d: 1 }, 'd');
+    const config = { variantJack: true };
+    expect(outcomeFor(hand, 'b', IDS, config).kind).toBe('points');
+    hand.jack = 'a';
+    expect(previewDelta(hand, 'a', IDS, config)).toBe(0);
+    expect(outcomeFor(hand, 'a', IDS, config)).toMatchObject({
+      kind: 'credit',
+      label: 'Jack to the rescue',
+    });
+    hand.hearts = { a: 0, b: 5, c: 7, d: 1 };
+    hand.jack = null;
+    expect(outcomeFor(hand, 'a', IDS, config).kind).toBe('pending');
+  });
+
+  it('distinguishes entered moons and scoring choices without changing deltas', () => {
+    const hand = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
+    expect(outcomeFor(hand, 'a', IDS, {})).toMatchObject({
+      kind: 'pending',
+      label: 'awaiting choice',
+    });
+    hand.moonRule = 'add26';
+    expect(outcomeFor(hand, 'a', IDS, {}).label).toBe('moon shot entered');
+    expect(outcomeFor(hand, 'b', IDS, {}).label).toBe('mooned');
+    expect(previewDelta(hand, 'b', IDS, {})).toBe(26);
+    hand.moonRule = 'subtract';
+    expect(outcomeFor(hand, 'b', IDS, {}).label).toBe('shooter takes the deduction');
+    expect(previewDelta(hand, 'b', IDS, {})).toBe(0);
+    expect(outcomeFor(hand, 'a', IDS, { variantJack: true }).label).toBe('finish card entries');
+  });
   it('passes a well-formed round', () => {
     expect(validateRound(input({ a: 4, b: 4, c: 4, d: 1 }, 'd'), P4, {})).toBeNull();
   });
@@ -429,6 +508,7 @@ describe('previews', () => {
     expect(outcomeFor(clean, 'd', IDS, {}).kind).toBe('lady');
 
     const moon = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
+    moon.moonRule = 'add26';
     expect(outcomeFor(moon, 'a', IDS, {}).kind).toBe('moon');
     expect(outcomeFor(moon, 'b', IDS, {}).kind).toBe('points');
   });

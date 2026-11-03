@@ -132,11 +132,33 @@ describe('outcomeLabel', () => {
     expect(outcomeLabel(row(0, 0), 4).kind).toBe('idle');
   });
   it('celebrates a met positive bid', () => {
-    expect(outcomeLabel(row(3, 3), 5).kind).toBe('hit');
+    expect(outcomeLabel(row(3, 3), 5, true).kind).toBe('hit');
+    expect(outcomeLabel(row(3, 3), 5).kind).toBe('idle');
   });
   it('flags a busted bid as a miss', () => {
     expect(outcomeLabel(row(3, 1), 5).kind).toBe('miss');
     expect(outcomeLabel(row(0, 2), 5).kind).toBe('miss');
+  });
+  it('celebrates a zero bid only once all tricks have been allocated', () => {
+    expect(outcomeLabel(row(0, 0), 4, false).kind).toBe('idle');
+    expect(outcomeLabel(row(0, 0), 4, true).kind).toBe('zero');
+  });
+  it('varies contextual complete successes stably across rounds and seats', () => {
+    for (const bid of [0, 2]) {
+      const hand = row(bid, bid);
+      const labels = new Set(
+        Array.from({ length: 3 }, (_, seed) => outcomeLabel(hand, 4, true, seed).label),
+      );
+      expect(labels.size).toBe(3);
+      expect(outcomeLabel({ ...hand, bonus: 50 }, 4, true, 1)).toEqual(
+        outcomeLabel(hand, 4, true, 1),
+      );
+    }
+  });
+  it('does not celebrate invalid matching bids', () => {
+    for (const bid of [NaN, -1, 2.5, 6]) {
+      expect(outcomeLabel(row(bid, bid), 5, true).kind).toBe('idle');
+    }
   });
 });
 

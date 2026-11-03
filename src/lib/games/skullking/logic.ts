@@ -1,4 +1,5 @@
 import type { ID, RoundContext } from '../../types';
+import { pickRoundFlavor } from '../../util';
 
 /**
  * Pure, Svelte-free Skull King scoring. Kept isolated from the editor so the
@@ -156,16 +157,45 @@ export interface SKOutcome {
   emoji: string;
 }
 
-export function outcomeLabel(row: SKRow, n: number): SKOutcome {
+export function outcomeLabel(row: SKRow, n: number, complete = false, seed = n - 1): SKOutcome {
+  if (
+    !Number.isInteger(n) ||
+    n < 1 ||
+    ![row.bid, row.actual].every((value) => Number.isInteger(value) && value >= 0 && value <= n)
+  )
+    return { kind: 'idle', label: 'Check bid and tricks', emoji: '🃏' };
   const bid = Number(row.bid) || 0;
   const actual = Number(row.actual) || 0;
   const made = actual === bid;
-  if (bid === 0 && actual === 0) {
+  if (bid === 0 && actual === 0 && !complete) {
     // A pledged-and-standing zero bid: still clean, worth 10 × round if it holds.
     return { kind: 'idle', label: `Sworn to take none · +${10 * n} if it holds`, emoji: '🫙' };
   }
-  if (made && bid === 0) return { kind: 'zero', label: 'Slipped away clean!', emoji: '🕊️' };
-  if (made) return { kind: 'hit', label: 'Nailed the bid!', emoji: '🎯' };
+  if (made && bid === 0)
+    return {
+      kind: 'zero',
+      ...pickRoundFlavor(
+        [
+          { label: 'Slipped away clean!', emoji: '🕊️' },
+          { label: 'Zero tricks, smooth sailing!', emoji: '⛵' },
+          { label: 'Ducked every trick!', emoji: '🦆' },
+        ],
+        seed,
+      ),
+    };
+  if (made && !complete) return { kind: 'idle', label: 'Bid matched so far', emoji: '🧭' };
+  if (made)
+    return {
+      kind: 'hit',
+      ...pickRoundFlavor(
+        [
+          { label: 'Nailed the bid!', emoji: '🎯' },
+          { label: 'Bid right on course!', emoji: '🧭' },
+          { label: 'Perfect bid, captain!', emoji: '🏴‍☠️' },
+        ],
+        seed,
+      ),
+    };
   const off = Math.abs(actual - bid);
   if (bid === 0) return { kind: 'miss', label: 'Oath broken — overboard', emoji: '🌊' };
   return {

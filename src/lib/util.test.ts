@@ -8,8 +8,24 @@ import {
   CVD_PALETTE,
   PALETTE,
   resolvePlayerColor,
+  pickRoundFlavor,
 } from './util';
 import type { Player } from './types';
+
+describe('pickRoundFlavor', () => {
+  it('rotates whole emoji/message pairs and preserves a fixed round selection', () => {
+    const bank: [{ emoji: string; label: string }, ...{ emoji: string; label: string }[]] = [
+      { emoji: 'a', label: 'first' },
+      { emoji: 'b', label: 'second' },
+      { emoji: 'c', label: 'third' },
+    ];
+    expect(pickRoundFlavor(bank, 0)).toEqual(bank[0]);
+    expect(pickRoundFlavor(bank, 1)).toEqual(bank[1]);
+    expect(pickRoundFlavor(bank, 4)).toEqual(bank[1]);
+    expect(pickRoundFlavor(bank, -1)).toEqual(bank[2]);
+    expect(pickRoundFlavor(bank, NaN)).toEqual(bank[0]);
+  });
+});
 
 // The Stepper's − / + buttons and its typed-value guard both route through
 // `clamp`, so a keyboard user can never push a score past its bounds.

@@ -1,4 +1,5 @@
 import type { ID } from '../../types';
+import { pickRoundFlavor } from '../../util';
 
 /**
  * Hearts scoring — pure, Svelte-free. Everything the module, its editor, and its
@@ -417,7 +418,7 @@ export function validateRound(
   return null;
 }
 
-export type OutcomeKind = 'moon' | 'lady' | 'clean' | 'points';
+export type OutcomeKind = 'moon' | 'lady' | 'clean' | 'credit' | 'points' | 'pending';
 
 export interface Outcome {
   kind: OutcomeKind;
@@ -435,12 +436,47 @@ export function outcomeFor(
   id: ID,
   playerIds: readonly ID[],
   config: Record<string, unknown>,
+  seed = 0,
 ): Outcome {
+  const cfg = readConfig(config);
+  const countValid = (value: number, max: number) =>
+    Number.isInteger(value) && value >= 0 && value <= max;
+  const cardsValid = (counts: Record<ID, number> | undefined, legacy: ID | null) =>
+    counts
+      ? Object.entries(counts).every(
+          ([holder, count]) => playerIds.includes(holder) && countValid(count, cfg.deckCount),
+        )
+      : legacy === null || playerIds.includes(legacy);
+  const valid =
+    playerIds.every((holder) => countValid(input.hearts[holder], heartsInPlay(config))) &&
+    Object.keys(input.hearts).every((holder) => playerIds.includes(holder)) &&
+    cardsValid(input.queens, input.queen) &&
+    (!cfg.variantJack || cardsValid(input.jacks, input.jack)) &&
+    heartsTotal(input) <= heartsInPlay(config) &&
+    queensTotal(input) <= cfg.deckCount &&
+    (!cfg.variantJack || jacksTotal(input) <= cfg.deckCount);
+  if (!valid) return { kind: 'pending', emoji: '', label: 'check card entries' };
+
+  const complete =
+    validateRound(
+      input,
+      playerIds.map((holder) => ({ id: holder, name: holder })),
+      config,
+    ) === null;
   const moon = shooter(input, config);
   if (moon) {
-    return id === moon
-      ? { kind: 'moon', emoji: '🌙', label: 'shot the moon' }
-      : { kind: 'points', emoji: '☄️', label: 'mooned' };
+    if (!complete)
+      return {
+        kind: 'pending',
+        emoji: '🌙',
+        label:
+          input.moonRule === 'add26' || input.moonRule === 'subtract'
+            ? 'finish card entries'
+            : 'awaiting choice',
+      };
+    if (id === moon) return { kind: 'moon', emoji: '🌙', label: 'moon shot entered' };
+    if (input.moonRule === 'add26') return { kind: 'points', emoji: '☄️', label: 'mooned' };
+    return { kind: 'points', emoji: '🌙', label: 'shooter takes the deduction' };
   }
   const delta = previewDelta(input, id, playerIds, config);
   const queens = queenCount(input, id);
@@ -448,11 +484,39 @@ export function outcomeFor(
     return {
       kind: 'lady',
       emoji: '💔',
-      label: queens === 1 ? 'took a Queen' : `took ${queens} Queens`,
+      label:
+        queens === 1
+          ? cfg.deckCount === 1
+            ? 'took the Queen'
+            : 'took a Queen'
+          : `took ${queens} Queens`,
     };
   }
-  if (delta <= 0) return { kind: 'clean', emoji: '😇', label: 'clean' };
-  return { kind: 'points', emoji: '♥️', label: `+${delta}` };
+  const jacks = cfg.variantJack ? jackCount(input, id) : 0;
+  if (jacks > 0) {
+    return {
+      kind: complete && delta <= 0 ? 'credit' : 'points',
+      emoji: '♦️',
+      label: jacks === 1 ? 'Jack to the rescue' : `${jacks} Jacks to the rescue`,
+    };
+  }
+  if (input.hearts[id] === 0) {
+    if (!complete) return { kind: 'pending', emoji: '', label: 'no penalty cards yet' };
+    return {
+      kind: 'clean',
+      ...pickRoundFlavor(
+        [
+          { emoji: '😇', label: 'clean' },
+          { emoji: '🧹', label: 'swept clean' },
+          { emoji: '🫧', label: 'squeaky clean' },
+          { emoji: '🦆', label: 'ducked the points' },
+          { emoji: '✨', label: 'spotless hand' },
+        ],
+        seed,
+      ),
+    };
+  }
+  return { kind: 'points', emoji: '♥️', label: 'hearts only' };
 }
 
 // ── Round storytelling ───────────────────────────────────────────────────────
