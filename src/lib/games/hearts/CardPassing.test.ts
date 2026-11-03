@@ -17,10 +17,12 @@ function target() {
 
 function form(config = defaultConfig(hearts.configFields)) {
   const el = target();
-  mounted.push(mount(ConfigForm, {
-    target: el,
-    props: { fields: hearts.configFields!, config },
-  }));
+  mounted.push(
+    mount(ConfigForm, {
+      target: el,
+      props: { fields: hearts.configFields!, config },
+    }),
+  );
   flushSync();
   return el;
 }
@@ -30,16 +32,26 @@ function editor(config: Record<string, unknown>, roundIndex = 0) {
   const ids = ['a', 'b', 'c', 'd'];
   const ctx: RoundContext = {
     game: {
-      id: 'synthetic', type: 'hearts', playerIds: ids, config,
-      status: 'active', roundCount: roundIndex, createdAt: 1,
+      id: 'synthetic',
+      type: 'hearts',
+      playerIds: ids,
+      config,
+      status: 'active',
+      roundCount: roundIndex,
+      createdAt: 1,
     },
     players: ids.map((id) => ({ id, name: id, color: '#7c5cff', createdAt: 1 })),
-    config, roundIndex, totals: {}, rounds: [],
+    config,
+    roundIndex,
+    totals: {},
+    rounds: [],
   };
-  mounted.push(mount(HeartsEditor, {
-    target: el,
-    props: { ctx, input: emptyInput(ids) },
-  }));
+  mounted.push(
+    mount(HeartsEditor, {
+      target: el,
+      props: { ctx, input: emptyInput(ids) },
+    }),
+  );
   flushSync();
   return el;
 }
@@ -52,13 +64,17 @@ afterEach(async () => {
 describe('Card Passing interface', () => {
   it('groups direction and card count without a reminder checkbox', () => {
     const el = form();
-    const section = [...el.querySelectorAll('fieldset')]
-      .find((node) => node.querySelector('legend')?.textContent === 'Card Passing');
+    const section = [...el.querySelectorAll('fieldset')].find(
+      (node) => node.querySelector('legend')?.textContent === 'Card Passing',
+    );
     expect(section).toBeDefined();
     const select = section!.querySelector<HTMLSelectElement>('#passMode')!;
     expect(select.value).toBe('clockwise');
-    expect([...select.options].map((option) => option.value))
-      .toEqual(['clockwise', 'counterclockwise', 'rotating']);
+    expect([...select.options].map((option) => option.value)).toEqual([
+      'clockwise',
+      'counterclockwise',
+      'rotating',
+    ]);
     expect(section!.querySelector('#passCardCount')).not.toBeNull();
     expect(el.textContent).not.toContain('Show the passing direction each hand');
   });
@@ -71,23 +87,32 @@ describe('Card Passing interface', () => {
     select.value = 'rotating';
     select.dispatchEvent(new Event('change', { bubbles: true }));
     flushSync();
-    expect([...select.options].map((option) => option.value))
-      .toEqual(['clockwise', 'counterclockwise', 'rotating']);
+    expect([...select.options].map((option) => option.value)).toEqual([
+      'clockwise',
+      'counterclockwise',
+      'rotating',
+    ]);
     expect(el.querySelector('#passCardCount')).not.toBeNull();
   });
 
   it('shows fixed directions on later hands despite an old hidden flag', () => {
-    expect(editor({ passMode: 'clockwise', passing: false, passCardCount: 2 }, 3)
-      .querySelector('.pass')?.textContent).toContain('Pass clockwise (left)');
-    expect(editor({ passMode: 'counterclockwise', passCardCount: 1 }, 3)
-      .querySelector('.pass')?.textContent).toContain('Pass counterclockwise (right)');
+    expect(
+      editor({ passMode: 'clockwise', passing: false, passCardCount: 2 }, 3).querySelector('.pass')
+        ?.textContent,
+    ).toContain('Pass clockwise (left)');
+    expect(
+      editor({ passMode: 'counterclockwise', passCardCount: 1 }, 3).querySelector('.pass')
+        ?.textContent,
+    ).toContain('Pass counterclockwise (right)');
   });
 
   it('shows conventional rotating directions and hold in reopened hand indices', () => {
-    expect(editor({ passMode: 'rotating' }, 1).querySelector('.pass')?.textContent)
-      .toContain('Pass right');
-    expect(editor({ passMode: 'rotating' }, 3).querySelector('.pass')?.textContent)
-      .toContain('Hold');
+    expect(editor({ passMode: 'rotating' }, 1).querySelector('.pass')?.textContent).toContain(
+      'Pass right',
+    );
+    expect(editor({ passMode: 'rotating' }, 3).querySelector('.pass')?.textContent).toContain(
+      'Hold',
+    );
   });
 
   it('retains original saved-game reminders and the legacy hidden exception', () => {

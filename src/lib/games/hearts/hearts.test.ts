@@ -87,9 +87,14 @@ describe('readConfig', () => {
     for (const kind of ['full', 'rules'] as const) {
       for (const passing of [undefined, true, false]) {
         const preset: GamePreset = {
-          id: 'old', name: 'Old setup', type: 'hearts', kind,
-          playerIds: IDS, config: { passCardCount: 2, ...(passing === undefined ? {} : { passing }) },
-          createdAt: 1, updatedAt: 1,
+          id: 'old',
+          name: 'Old setup',
+          type: 'hearts',
+          kind,
+          playerIds: IDS,
+          config: { passCardCount: 2, ...(passing === undefined ? {} : { passing }) },
+          createdAt: 1,
+          updatedAt: 1,
         };
         const original = structuredClone(preset);
         const cfg = resolvePresetConfig(preset, hearts.configFields);
@@ -107,34 +112,44 @@ describe('readConfig', () => {
 describe('passing', () => {
   it('uses the conventional four-player rotating order', () => {
     expect(passCycle(4, 'rotating')).toEqual(['left', 'right', 'across', 'hold']);
-    expect(Array.from({ length: 8 }, (_, i) => passingFor(i, 4, 3, 'rotating').seatOffset))
-      .toEqual([1, 3, 2, null, 1, 3, 2, null]);
+    expect(Array.from({ length: 8 }, (_, i) => passingFor(i, 4, 3, 'rotating').seatOffset)).toEqual(
+      [1, 3, 2, null, 1, 3, 2, null],
+    );
   });
   it('alternates nearest recipients then holds at every supported table size', () => {
     for (let count = 3; count <= 11; count++) {
-      const targets = Array.from({ length: count }, (_, i) =>
-        passingFor(i, count, 2, 'rotating'));
+      const targets = Array.from({ length: count }, (_, i) => passingFor(i, count, 2, 'rotating'));
       const offsets = targets.slice(0, -1).map((target) => target.seatOffset);
-      expect([...offsets].sort((a, b) => a! - b!))
-        .toEqual(Array.from({ length: count - 1 }, (_, i) => i + 1));
+      expect([...offsets].sort((a, b) => a! - b!)).toEqual(
+        Array.from({ length: count - 1 }, (_, i) => i + 1),
+      );
       expect(offsets.slice(0, 2)).toEqual([1, count - 1]);
       expect(targets[count - 1].direction).toBe('hold');
-      expect(targets.filter((target) => target.direction === 'across')).toHaveLength(count % 2 === 0 ? 1 : 0);
+      expect(targets.filter((target) => target.direction === 'across')).toHaveLength(
+        count % 2 === 0 ? 1 : 0,
+      );
       expect(passingFor(count, count, 2, 'rotating')).toEqual(targets[0]);
     }
-    expect(Array.from({ length: 6 }, (_, i) => passingFor(i, 6, 3, 'rotating').seatOffset))
-      .toEqual([1, 5, 2, 4, 3, null]);
-    expect(passingFor(3, 6, 2, 'rotating').hint).toBe('Pass 2 cards to the player 2 seats to your right');
+    expect(Array.from({ length: 6 }, (_, i) => passingFor(i, 6, 3, 'rotating').seatOffset)).toEqual(
+      [1, 5, 2, 4, 3, null],
+    );
+    expect(passingFor(3, 6, 2, 'rotating').hint).toBe(
+      'Pass 2 cards to the player 2 seats to your right',
+    );
   });
   it('keeps fixed directions on every hand without hold hands', () => {
     for (let count = 3; count <= 11; count++) {
       for (let hand = 0; hand < count * 2; hand++) {
         expect(passingFor(hand, count, 1, 'clockwise')).toMatchObject({
-          direction: 'left', seatOffset: 1, label: 'Pass clockwise (left)',
+          direction: 'left',
+          seatOffset: 1,
+          label: 'Pass clockwise (left)',
           hint: 'Pass 1 card to the player on your left',
         });
         expect(passingFor(hand, count, 2, 'counterclockwise')).toMatchObject({
-          direction: 'right', seatOffset: count - 1, label: 'Pass counterclockwise (right)',
+          direction: 'right',
+          seatOffset: count - 1,
+          label: 'Pass counterclockwise (right)',
         });
       }
     }
@@ -468,7 +483,9 @@ describe('hearts module', () => {
       max: 13,
     });
     expect(fields.find((field) => field.key === 'passMode')).toMatchObject({
-      section: 'Card Passing', type: 'select', default: 'clockwise',
+      section: 'Card Passing',
+      type: 'select',
+      default: 'clockwise',
     });
     expect(fields.some((field) => field.key === 'passing')).toBe(false);
     expect(fields.some((field) => field.key === 'moonRule')).toBe(false);

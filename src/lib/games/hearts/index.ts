@@ -17,7 +17,14 @@ import {
   type HeartsInput,
 } from './logic';
 
-export type { HeartsInput, HeartsConfig, MoonRule, PassMode, PassDirection, PassInfo } from './logic';
+export type {
+  HeartsInput,
+  HeartsConfig,
+  MoonRule,
+  PassMode,
+  PassDirection,
+  PassInfo,
+} from './logic';
 
 export const hearts: GameModule = {
   id: 'hearts',

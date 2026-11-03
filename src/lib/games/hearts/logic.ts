@@ -86,7 +86,8 @@ export function savedPassMode(config: Record<string, unknown>): PassMode {
     mode === 'rotating' ||
     mode === 'legacy' ||
     mode === 'legacy-hidden'
-  ) return mode;
+  )
+    return mode;
   return config.passing === false ? 'legacy-hidden' : 'legacy';
 }
 
@@ -130,12 +131,12 @@ function passOffsets(playerCount: number, mode: PassMode): (number | null)[] {
 export function passCycle(playerCount: number, mode: PassMode = 'legacy'): PassDirection[] {
   const count = Math.max(2, Math.floor(playerCount));
   return passOffsets(count, mode).map((offset) => {
-      if (offset === null) return 'hold';
-      if (offset === 1) return 'left';
-      if (offset === count - 1) return 'right';
-      if (count % 2 === 0 && offset === count / 2) return 'across';
-      return 'offset';
-    });
+    if (offset === null) return 'hold';
+    if (offset === 1) return 'left';
+    if (offset === count - 1) return 'right';
+    if (count % 2 === 0 && offset === count / 2) return 'across';
+    return 'offset';
+  });
 }
 
 /** Which way cards pass on a given (0-based) hand, for a given table size. */
@@ -196,12 +197,14 @@ export function passingFor(
     direction,
     seatOffset,
     glyph: '↷',
-    label: mode === 'rotating' && seatOffset > playerCount / 2
-      ? `Pass ${playerCount - seatOffset} seats right`
-      : `Pass ${seatOffset} seats left`,
-    hint: mode === 'rotating' && seatOffset > playerCount / 2
-      ? `Pass ${cards} to the player ${playerCount - seatOffset} seats to your right`
-      : `Pass ${cards} to the player ${seatOffset} seats to your left`,
+    label:
+      mode === 'rotating' && seatOffset > playerCount / 2
+        ? `Pass ${playerCount - seatOffset} seats right`
+        : `Pass ${seatOffset} seats left`,
+    hint:
+      mode === 'rotating' && seatOffset > playerCount / 2
+        ? `Pass ${cards} to the player ${playerCount - seatOffset} seats to your right`
+        : `Pass ${cards} to the player ${seatOffset} seats to your left`,
   };
 }
 
