@@ -1,5 +1,13 @@
 <script lang="ts">
-  const { points = 0, total = 26, moonReady = false, hearts, totalHearts, queens, totalQueens }: {
+  const {
+    points = 0,
+    total = 26,
+    moonReady = false,
+    hearts,
+    totalHearts,
+    queens,
+    totalQueens,
+  }: {
     points?: number;
     total?: number;
     moonReady?: boolean;
@@ -47,8 +55,7 @@
             <span
               class="playing-card"
               class:allocated={i >= Math.min(stack.total, stack.left)}
-              style="--offset: {i * 4}px"
-              >{stack.glyph}</span
+              style="--offset: {i * 4}px">{stack.glyph}</span
             >
           {/each}
         </div>
