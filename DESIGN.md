@@ -354,6 +354,11 @@ element shares one shape language (9px controls, 14px containers) and one state 
 
 ### Feedback (loading & save)
 
+- **Hearts allocation ribbon:** Remaining hearts and Queens of Spades form separate,
+  noninteractive card stacks. Each assigned card leaves its stack in a brief 180ms
+  fade/lift and returns when unassigned; reduced motion updates instantly. Readable
+  card counts and penalty-point totals carry progress independently of the artwork.
+  Stack sizes follow the configured deck count, not the Queen's 13-point value.
 - **Loading skeleton:** While a screen's data resolves, shaped shimmer blocks mirror the
   content silhouette (meta bar → board → entry card) instead of a bare "Loading…". No
   layout shift on arrival; the shimmer sweep settles to a static block under reduced motion.

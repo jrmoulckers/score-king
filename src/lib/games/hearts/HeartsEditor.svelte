@@ -189,7 +189,15 @@
     <PassRibbon info={pass} progress={passingProgress(ctx.roundIndex, ids.length, cfg.passMode)} />
   {/if}
 
-  <HeartsMeter {points} total={moonValue} moonReady={!!moon} />
+  <HeartsMeter
+    {points}
+    total={moonValue}
+    moonReady={!!moon}
+    hearts={placed}
+    totalHearts={requiredHearts}
+    queens={queensPlaced}
+    totalQueens={cardCopies}
+  />
 
   {#if showEndgame}
     <div class="endgame" class:hot={endgame.imminent || endgame.reached} role="status">
