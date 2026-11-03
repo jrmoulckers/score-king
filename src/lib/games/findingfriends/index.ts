@@ -5,6 +5,7 @@ import {
   WINNING_LEVEL_INDEX,
   describeDeal,
   deckCountFromConfig,
+  totalPoints,
   optionsFromConfig,
   scoreFindingFriends,
   sideLevelIndex,
@@ -54,7 +55,11 @@ export const findingFriends: GameModule = {
         { value: '3', label: '3 decks — 7–8 players' },
         { value: '4', label: '4 decks — house rule for a big table' },
       ],
-      help: 'More decks add more point cards (100 pts each); the level-jump table scales with it.',
+      rulesSummary: (config) => [
+        `${totalPoints(deckCountFromConfig(config))}-point pool`,
+        '5s = 5 points',
+        '10s & Kings = 10 points',
+      ],
     },
   ],
 

@@ -4,6 +4,8 @@ import { presidentsStats } from './stats';
 import {
   describeRound as describePresidentsRound,
   freshPositions,
+  normalizeScheme,
+  pointsForPosition,
   isFinished as presidentsFinished,
   maxRounds as presidentsMaxRounds,
   scoreRound as scorePresidents,
@@ -33,7 +35,22 @@ export const presidents: GameModule = {
         { value: 'tieredTitles', label: 'Tiered titles (+3 / +1 / 0 / −1 / −3)' },
         { value: 'winsOnly', label: 'Presidencies only (+1 for President)' },
       ],
-      help: 'How a finishing spot converts to points. Rank points scale with the table; tiered titles are fixed regardless of table size; presidencies-only just counts wins.',
+      rulesSummary: (config) => {
+        switch (normalizeScheme(config.scheme)) {
+          case 'winsOnly':
+            return ['President = 1 point', 'Everyone else = 0'];
+          case 'tieredTitles':
+            return [
+              `President = ${pointsForPosition('tieredTitles', 1, 5)}`,
+              `Vice President = ${pointsForPosition('tieredTitles', 2, 5)}`,
+              `Citizen = ${pointsForPosition('tieredTitles', 3, 5)}`,
+              `Vice Scum = ${pointsForPosition('tieredTitles', 4, 5)}`,
+              `Scum = ${pointsForPosition('tieredTitles', 5, 5)}`,
+            ];
+          default:
+            return ['1st = player count minus 1', 'Each place down = 1 less', 'Last = 0'];
+        }
+      },
     },
     {
       key: 'targetScore',

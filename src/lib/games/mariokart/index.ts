@@ -4,6 +4,9 @@ import { RoundEditor } from '../editor';
 import { mariokartStats } from './stats';
 import {
   TABLE_META,
+  POINTS_TABLES,
+  normalizeTable,
+  normalizeRacers,
   freshPositions,
   normalizeRaces,
   scoreRace,
@@ -42,7 +45,16 @@ export const mariokart: GameModule = {
         { value: 'retro4', label: `Retro · top 4 (${TABLE_META.retro4.curve})` },
         { value: 'party', label: 'Party · everyone scores (rank countdown)' },
       ],
-      help: 'How each finishing spot pays out. Modern is Mario Kart 8 / Wii; Retro is the MK64 top-4.',
+      rulesSummary: (config) => {
+        const table = normalizeTable(config.pointsTable);
+        if (table === 'party') {
+          return [`1st = ${normalizeRacers(config.racers)} points`, 'Each place down = 1 less'];
+        }
+        return [
+          `${POINTS_TABLES[table].join(' / ')} points by place`,
+          `After ${POINTS_TABLES[table].length}th = 0 points`,
+        ];
+      },
     },
     {
       key: 'racers',

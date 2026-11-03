@@ -5,6 +5,7 @@ import {
   createUnoInput,
   isUnoFinished,
   opponentsTotal,
+  readConfig,
   scoreUno,
   validateUno,
   type UnoInput,
@@ -33,7 +34,10 @@ export const uno: GameModule = {
         { value: 'winner', label: 'Winner scoops opponents’ cards' },
         { value: 'golf', label: 'Everyone counts their own — low wins' },
       ],
-      help: 'Standard Uno banks leftover cards to the player who went out. Golf makes every player carry the cards left in their own hand.',
+      rulesSummary: (config) =>
+        readConfig(config).mode === 'golf'
+          ? ['Count your own leftover cards', 'Lowest total wins']
+          : ['Winner scores opponents’ leftover cards', 'Highest total wins'],
     },
     {
       key: 'actionValue',

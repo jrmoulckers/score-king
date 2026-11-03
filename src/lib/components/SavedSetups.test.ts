@@ -89,6 +89,31 @@ afterEach(async () => {
 });
 
 describe('saved setup interaction', () => {
+  it.each(['rules', 'full'] as PresetKind[])(
+    'updates Hearts rules summaries when a saved %s preset replaces the draft',
+    (kind) => {
+      const preset = savePreset(
+        'hearts',
+        'Double deck rules',
+        ['p1', 'p2', 'p3'],
+        { deckCount: '2' },
+        kind,
+      );
+      const target = render();
+      const summary = () =>
+        [...target.querySelectorAll('.rules-summary li > span:last-child')].map(
+          (el) => el.textContent,
+        );
+      expect(summary()).toEqual(['13 hearts', '1 Queen', '26-point moon']);
+      useSaved(target, preset.name);
+      expect(target.querySelector<HTMLSelectElement>('#deckCount')?.value).toBe('2');
+      expect(summary()).toEqual(['26 hearts', '2 Queens', '52-point moon']);
+      change(target, '#deckCount', '1');
+      expect(summary()).toEqual(['13 hearts', '1 Queen', '26-point moon']);
+      expect(get(settings).gamePresets[0].config.deckCount).toBe('2');
+    },
+  );
+
   it('applies cross-game groups and game-specific rules independently, including toggling off', () => {
     savePreset('avalon', 'Cross game', ['p3', 'p1', 'p2'], {}, 'group');
     savePreset('hearts', 'Two decks', [], { deckCount: '2', endScore: 200 }, 'rules');
