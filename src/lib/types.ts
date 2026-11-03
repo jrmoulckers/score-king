@@ -149,6 +149,10 @@ export interface RoundContext {
 interface ConfigFieldDisplay {
   /** Compact rule facts for the current draft, including configurations applied by presets. */
   rulesSummary?: (config: Record<string, unknown>) => string[];
+  /** Adjacent fields with the same section share a named fieldset. */
+  section?: string;
+  /** Preserve old saved semantics when this field did not exist yet. */
+  defaultForSaved?: (config: Record<string, unknown>) => string | number | boolean;
   /** Tuck this field inside the collapsed "Advanced" group instead of the main list. */
   advanced?: boolean;
   /** Only show this field when the predicate holds for the current draft config. */
@@ -178,7 +182,11 @@ export type ConfigField =
       label: string;
       type: 'select';
       default: string;
-      options: { value: string; label: string }[];
+      options: {
+        value: string;
+        label: string;
+        showIf?: (config: Record<string, unknown>) => boolean;
+      }[];
       help?: string;
     } & ConfigFieldDisplay);
 

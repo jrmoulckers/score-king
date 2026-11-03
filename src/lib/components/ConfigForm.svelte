@@ -10,6 +10,16 @@
   const visible = $derived(fields.filter((f) => (f.showIf ? f.showIf(config) : true)));
   const basic = $derived(visible.filter((f) => !f.advanced));
   const advanced = $derived(visible.filter((f) => f.advanced));
+
+  function groups(list: ConfigField[]) {
+    const result: { section?: string; fields: ConfigField[] }[] = [];
+    for (const f of list) {
+      const previous = result[result.length - 1];
+      if (f.section && previous?.section === f.section) previous.fields.push(f);
+      else result.push({ section: f.section, fields: [f] });
+    }
+    return result;
+  }
 </script>
 
 {#snippet field(f: ConfigField)}
@@ -29,7 +39,7 @@
     {:else if f.type === 'select'}
       <label for={f.key}>{f.label}</label>
       <select id={f.key} bind:value={config[f.key]} aria-describedby={descriptionId}>
-        {#each f.options as o (o.value)}
+        {#each f.options.filter((o) => !o.showIf || o.showIf(config)) as o (o.value)}
           <option value={o.value}>{o.label}</option>
         {/each}
       </select>
@@ -62,10 +72,25 @@
   </div>
 {/snippet}
 
-<div class="stack">
-  {#each basic as f (f.key)}
-    {@render field(f)}
+{#snippet grouped(list: ConfigField[])}
+  {#each groups(list) as group (group.fields[0].key)}
+    {#if group.section}
+      <fieldset class="config-section">
+        <legend>{group.section}</legend>
+        <div class="stack">
+          {#each group.fields as f (f.key)}
+            {@render field(f)}
+          {/each}
+        </div>
+      </fieldset>
+    {:else}
+      {@render field(group.fields[0])}
+    {/if}
   {/each}
+{/snippet}
+
+<div class="stack">
+  {@render grouped(basic)}
 
   {#if advanced.length}
     <details class="advanced">
@@ -89,9 +114,7 @@
         <span class="count">{advanced.length}</span>
       </summary>
       <div class="stack adv-body">
-        {#each advanced as f (f.key)}
-          {@render field(f)}
-        {/each}
+        {@render grouped(advanced)}
       </div>
     </details>
   {/if}
@@ -110,6 +133,17 @@
   }
   .rules-summary li {
     display: inline;
+  }
+  .config-section {
+    min-width: 0;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .config-section legend {
+    padding: 0 4px;
+    font-weight: 600;
   }
   /* A quiet disclosure that keeps rarely-touched knobs out of the way until asked for.
      No new violet fill, no gold — it climbs the surface ramp, matching the setup card. */

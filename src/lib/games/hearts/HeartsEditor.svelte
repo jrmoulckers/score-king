@@ -63,7 +63,7 @@
   );
 
   const pass = $derived(
-    cfg.passing ? passingFor(ctx.roundIndex, ids.length, cfg.passCardCount) : null,
+    cfg.passing ? passingFor(ctx.roundIndex, ids.length, cfg.passCardCount, cfg.passMode) : null,
   );
 
   // How close the game is to ending, from the standings going into this hand. The

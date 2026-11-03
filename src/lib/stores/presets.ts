@@ -204,6 +204,11 @@ export function resolvePresetConfig(
   fields: ConfigField[] | undefined,
 ): Record<string, unknown> {
   const cfg = defaultConfig(fields);
+  for (const field of fields ?? []) {
+    if (!(field.key in preset.config) && field.defaultForSaved) {
+      cfg[field.key] = field.defaultForSaved(preset.config);
+    }
+  }
   for (const key of Object.keys(cfg)) {
     if (key in preset.config) cfg[key] = preset.config[key];
   }
