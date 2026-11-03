@@ -1,5 +1,5 @@
 import type { ID } from '../../types';
-import { PALETTE, uid } from '../../util';
+import { PALETTE, uid, pickRoundFlavor as pick } from '../../util';
 
 /**
  * Pure Cornhole scoring — no Svelte, no I/O, fully unit-testable. `index.ts` and the
@@ -344,13 +344,6 @@ export interface FrameFlavor {
   emoji: string;
   text: string;
   tone: 'good' | 'muted' | 'bad';
-}
-
-/** Deterministically pick one line from a list, rotated by `seed` (the round index). */
-function pick(list: string[], seed: number): string {
-  if (list.length === 0) return '';
-  const i = ((Math.trunc(seed) % list.length) + list.length) % list.length;
-  return list[i]!;
 }
 
 /**

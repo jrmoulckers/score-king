@@ -29,7 +29,7 @@
 
   const caption = $derived(
     moonReady
-      ? 'Set for a moon shot'
+      ? 'Moon shot entered — not saved'
       : over
         ? `${points - total} too many points`
         : left === 0

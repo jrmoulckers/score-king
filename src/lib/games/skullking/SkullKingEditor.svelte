@@ -14,6 +14,7 @@
     outcomeLabel,
     readConfig,
     scoreRow,
+    validateSkullKing,
     type SKBounty,
     type SKInput,
   } from './logic';
@@ -31,6 +32,14 @@
   );
   const bidRead = $derived(
     bidSum === n ? '⚖️ dead even' : bidSum > n ? '🌊 over-bid seas' : '🍃 tricks to spare',
+  );
+  const outcomesComplete = $derived(
+    won === n &&
+      validateSkullKing(input, ctx) === null &&
+      ctx.players.every((p) => {
+        const row = input.rows[p.id];
+        return row && [row.bid, row.actual].every((value) => Number.isInteger(value));
+      }),
   );
 
   let showHelp = $state(false);
@@ -119,7 +128,7 @@
   {#each ctx.players as p (p.id)}
     {@const row = input.rows[p.id]}
     {@const b = row.bounty ?? emptyBounty()}
-    {@const oc = outcomeLabel(row, n)}
+    {@const oc = outcomeLabel(row, n, outcomesComplete, ctx.roundIndex + ctx.players.indexOf(p))}
     {@const pts = preview(p.id)}
     <div class="prow">
       <div class="row spread" style="margin-bottom: 10px">

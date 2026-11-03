@@ -124,6 +124,13 @@ export function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
 
+/** Rotate curated round feedback without rerolling during edits or draft restoration. */
+export function pickRoundFlavor<T>(list: readonly [T, ...T[]], seed: number): T {
+  const round = Number.isFinite(seed) ? Math.trunc(seed) : 0;
+  const index = ((round % list.length) + list.length) % list.length;
+  return list[index] ?? list[0];
+}
+
 export function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString(undefined, {
     month: 'short',

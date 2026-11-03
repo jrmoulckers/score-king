@@ -99,7 +99,9 @@
     Object.fromEntries(ids.map((id) => [id, previewDelta(input, id, ids, ctx.config)])),
   );
   const outcomes = $derived(
-    Object.fromEntries(ids.map((id) => [id, outcomeFor(input, id, ids, ctx.config)])),
+    Object.fromEntries(
+      ids.map((id, seat) => [id, outcomeFor(input, id, ids, ctx.config, ctx.roundIndex + seat)]),
+    ),
   );
 
   let showHelp = $state(false);
@@ -274,7 +276,7 @@
           {:else}
             <span
               class="outcome"
-              class:score-good={oc.kind === 'clean' || oc.kind === 'moon'}
+              class:score-good={oc.kind === 'clean' || oc.kind === 'moon' || oc.kind === 'credit'}
               class:score-bad={oc.kind === 'lady' || (oc.kind === 'points' && pts > 0)}
               >{oc.emoji} {oc.label}</span
             >
