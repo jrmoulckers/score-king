@@ -4,7 +4,10 @@ import type { RoundContext } from '../../types';
 import HeartsMeterHarness from './HeartsMeterHarness.svelte';
 import { emptyInput, type HeartsInput } from './logic';
 
-vi.mock('../../motion', () => ({ animateMotion: vi.fn() }));
+vi.mock('../../motion', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../motion')>();
+  return { ...actual, animateMotion: vi.fn() };
+});
 
 const mounted: ReturnType<typeof mount>[] = [];
 const ids = ['a', 'b', 'c', 'd'];
