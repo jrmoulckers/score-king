@@ -1,13 +1,5 @@
 <script lang="ts">
-  const {
-    points = 0,
-    total = 26,
-    moonReady = false,
-    hearts,
-    totalHearts,
-    queens,
-    totalQueens,
-  }: {
+  const { points = 0, total = 26, moonReady = false, hearts, totalHearts, queens, totalQueens }: {
     points?: number;
     total?: number;
     moonReady?: boolean;

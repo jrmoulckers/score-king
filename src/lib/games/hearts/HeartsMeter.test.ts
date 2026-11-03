@@ -72,7 +72,7 @@ describe('Hearts card allocation meter', () => {
     }
   });
 
-  it.each([1, 2] as const)('allocates and restores actual cards, not Queen points (%i)', (decks) => {
+  it.each([1, 2] as const)('allocates and restores cards, not Queen points (%i)', (decks) => {
     const el = editor(decks);
     typeHearts(el, 'a', 5);
     typeHearts(el, 'b', 4);
@@ -131,7 +131,7 @@ describe('Hearts card allocation meter', () => {
     expect(el.querySelector('.count')!.textContent).toBe('13/26 pts');
   });
 
-  it.each([1, 2] as const)('keeps over-allocation errors while bounding the stack (%i)', (decks) => {
+  it.each([1, 2] as const)('keeps over-allocation errors and bounds the stack (%i)', (decks) => {
     const input = emptyInput(ids);
     input.hearts.a = 13 * decks;
     input.hearts.b = 1;
