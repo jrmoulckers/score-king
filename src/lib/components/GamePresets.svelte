@@ -185,7 +185,8 @@
       {#if entries.length}
         <div class="preset-section" role="group" aria-label={section.label}>
           <div class="kind-label">
-            <span aria-hidden="true">{section.icon}</span> {section.label}
+            <span aria-hidden="true">{section.icon}</span>
+            {section.label}
           </div>
           <div class="pchips">
             {#each entries as p (p.id)}
