@@ -57,13 +57,13 @@ describe('readConfig', () => {
         deckCount: '2',
         variantJack: true,
         passCardCount: 2,
-        passMode: 'legacy',
       }),
     ).toEqual({
       endScore: 50,
       deckCount: 2,
       variantJack: true,
       passCardCount: 2,
+      passMode: 'legacy',
       passing: true,
     });
     expect(readConfig({ passCardCount: 0 }).passCardCount).toBe(1);

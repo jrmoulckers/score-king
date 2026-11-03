@@ -84,14 +84,6 @@ describe('Card Passing interface', () => {
     const select = el.querySelector<HTMLSelectElement>('#passMode')!;
     expect(select.selectedOptions[0].textContent).toContain('reminder hidden');
     expect(el.textContent).not.toContain('No passing');
-    select.value = 'rotating';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-    flushSync();
-    expect([...select.options].map((option) => option.value)).toEqual([
-      'clockwise',
-      'counterclockwise',
-      'rotating',
-    ]);
     expect(el.querySelector('#passCardCount')).not.toBeNull();
   });
 

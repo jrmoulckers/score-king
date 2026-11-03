@@ -108,10 +108,7 @@ export interface PassInfo {
   hint: string;
 }
 
-/**
- * Visit each other seat in order around the circle, then hold. This makes the
- * cycle complete and deterministic for every supported table size.
- */
+/** Fixed recipient, alternating near-to-far pairs, or the original saved cycle. */
 function passOffsets(playerCount: number, mode: PassMode): (number | null)[] {
   const count = Math.max(2, Math.floor(playerCount));
   if (mode === 'clockwise') return [1];

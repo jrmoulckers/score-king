@@ -113,6 +113,33 @@ describe('saved setup interaction', () => {
       expect(get(settings).gamePresets[0].config.deckCount).toBe('2');
     },
   );
+  it('preserves old Hearts passing until an explicit mode change, without rewriting the preset', () => {
+    const saved = savePreset('hearts', 'Legacy passing', ids.slice(0, 4), {
+      passing: false,
+      passCardCount: 2,
+    });
+    const original = structuredClone(saved);
+    const target = render();
+    useSaved(target, saved.name);
+    const select = target.querySelector<HTMLSelectElement>('#passMode')!;
+    expect(select.value).toBe('legacy-hidden');
+    expect(select.selectedOptions[0].textContent).toContain('reminder hidden');
+    expect(target.querySelector<HTMLInputElement>('#passCardCount')?.value).toBe('2');
+    expect(get(settings).gamePresets[0]).toEqual(original);
+    change(target, '#passMode', 'rotating');
+    expect([...select.options].map((option) => option.value)).toEqual([
+      'clockwise',
+      'counterclockwise',
+      'rotating',
+    ]);
+    expect(get(settings).gamePresets[0]).toEqual(original);
+    expect(button(target, 'Update')).toBeDefined();
+    button(target, 'Update').click();
+    flushSync();
+    expect(get(settings).gamePresets[0].config.passMode).toBe('rotating');
+    useSaved(target, saved.name);
+    expect(select.value).toBe('clockwise');
+  });
 
   it('applies cross-game groups and game-specific rules independently, including toggling off', () => {
     savePreset('avalon', 'Cross game', ['p3', 'p1', 'p2'], {}, 'group');
