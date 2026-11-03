@@ -181,6 +181,11 @@ That's it — the registry **auto-discovers** every `src/lib/games/<id>/index.ts
 no registration step. Keep unit-testable scoring in a Svelte-free helper (e.g. `logic.ts`) that
 `index.ts` imports, so a `*.test.ts` can exercise the real scoring without pulling in the editor.
 
+For selectable deck, scoring, or format rules, use `ConfigField.rulesSummary(config)` to return
+short rule facts for the current draft. Reuse the game's normalization/scoring helpers; the shared
+form renders an accessible, dot-separated list and updates it when controls or presets change.
+Keep `help` for static control instructions rather than descriptions of an unselected variant.
+
 ### Custom games (no code)
 
 Players can author games from the app — no build step. Tap **＋ Create a game** on the home

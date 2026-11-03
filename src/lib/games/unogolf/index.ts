@@ -34,7 +34,15 @@ export const unogolf: GameModule = {
         { value: 'holes', label: 'Fixed holes' },
         { value: 'target', label: 'Play to a target' },
       ],
-      help: 'Fixed plays a set number of holes; Target plays until someone reaches the score cap. Lowest total always wins.',
+      rulesSummary: (config) => {
+        const cfg = resolveConfig(config);
+        return [
+          cfg.format === 'holes'
+            ? `${cfg.holes} hole${cfg.holes === 1 ? '' : 's'}`
+            : `End when anyone reaches ${cfg.target} points`,
+          'Lowest total wins',
+        ];
+      },
     },
     {
       key: 'holes',

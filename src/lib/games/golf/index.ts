@@ -26,7 +26,10 @@ export const golf: GameModule = {
         { value: '4', label: '4 cards (2×2)' },
         { value: '9', label: '9 cards (3×3)' },
       ],
-      help: 'How many cards each player lays out per hole.',
+      rulesSummary: (config) => [
+        `${readConfig(config).grid} cards per hole`,
+        'Equal cards in a column cancel',
+      ],
     },
     {
       key: 'kingValue',
@@ -37,7 +40,7 @@ export const golf: GameModule = {
         { value: '0', label: 'King = 0' },
         { value: '-2', label: 'King = −2' },
       ],
-      help: 'Kings are free in the common ruleset; −2 is a popular variant.',
+      rulesSummary: (config) => [`King = ${readConfig(config).kingValue} points`],
     },
     {
       key: 'jokers',

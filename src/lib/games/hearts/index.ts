@@ -6,6 +6,8 @@ import {
   emptyInput,
   isFinished as heartsFinished,
   readConfig,
+  HEARTS_TOTAL,
+  moonPoints,
   scoreRound as scoreHearts,
   queenCount,
   shooter,
@@ -36,7 +38,14 @@ export const hearts: GameModule = {
         { value: '1', label: 'Single deck (26 points)' },
         { value: '2', label: 'Double deck (52 points)' },
       ],
-      help: 'Double deck uses 26 hearts, two Queens, and a 52-point moon.',
+      rulesSummary: (config) => {
+        const decks = readConfig(config).deckCount;
+        return [
+          `${HEARTS_TOTAL * decks} hearts`,
+          `${decks} Queen${decks === 1 ? '' : 's'}`,
+          `${moonPoints(config)}-point moon`,
+        ];
+      },
     },
     {
       key: 'endScore',

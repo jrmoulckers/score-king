@@ -36,7 +36,11 @@ export const chickenfoot: GameModule = {
         { value: '9', label: 'Double-9 · 10 rounds' },
         { value: '12', label: 'Double-12 · 13 rounds' },
       ],
-      help: 'Play counts down one round per double, from here to double-blank.',
+      rulesSummary: (config) => [
+        `${logic.totalRounds(config)} rounds`,
+        `Double-${logic.startDouble(config)} to double-blank`,
+        'Lowest total wins',
+      ],
     },
     {
       key: 'doubleBlankValue',

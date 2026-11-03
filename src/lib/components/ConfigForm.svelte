@@ -3,6 +3,7 @@
 
   let { fields, config = $bindable() }: { fields: ConfigField[]; config: Record<string, any> } =
     $props();
+  const formId = $props.id();
 
   // Only fields whose condition holds for the current draft show at all — irrelevant
   // knobs (e.g. blinds when we're only tracking buy-ins) simply aren't there.
@@ -12,15 +13,22 @@
 </script>
 
 {#snippet field(f: ConfigField)}
+  {@const rules = f.rulesSummary?.(config) ?? []}
+  {@const descriptionId = f.help || rules.length ? `${formId}-${f.key}-description` : undefined}
   <div>
     {#if f.type === 'boolean'}
       <label class="row" style="gap: 10px; cursor: pointer">
-        <input type="checkbox" bind:checked={config[f.key]} style="width: auto; min-height: 0" />
+        <input
+          type="checkbox"
+          bind:checked={config[f.key]}
+          aria-describedby={descriptionId}
+          style="width: auto; min-height: 0"
+        />
         <span>{f.label}</span>
       </label>
     {:else if f.type === 'select'}
       <label for={f.key}>{f.label}</label>
-      <select id={f.key} bind:value={config[f.key]}>
+      <select id={f.key} bind:value={config[f.key]} aria-describedby={descriptionId}>
         {#each f.options as o (o.value)}
           <option value={o.value}>{o.label}</option>
         {/each}
@@ -34,10 +42,22 @@
         min={f.min}
         max={f.max}
         step={f.step ?? 1}
+        aria-describedby={descriptionId}
       />
     {/if}
-    {#if f.help}
-      <div class="muted" style="font-size: 0.8rem; margin-top: 4px">{f.help}</div>
+    {#if descriptionId}
+      <div id={descriptionId} class="muted field-description">
+        {#if rules.length}
+          <ul class="rules-summary" aria-label={`${f.label} rules`} role="list">
+            {#each rules as rule, index (index)}
+              <li>
+                {#if index > 0}<span aria-hidden="true"> · </span>{/if}<span>{rule}</span>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+        {#if f.help}<div>{f.help}</div>{/if}
+      </div>
     {/if}
   </div>
 {/snippet}
@@ -78,6 +98,19 @@
 </div>
 
 <style>
+  .field-description {
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+  .rules-summary {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .rules-summary li {
+    display: inline;
+  }
   /* A quiet disclosure that keeps rarely-touched knobs out of the way until asked for.
      No new violet fill, no gold — it climbs the surface ramp, matching the setup card. */
   .advanced {

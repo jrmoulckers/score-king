@@ -147,6 +147,8 @@ export interface RoundContext {
  * matching and `defaultConfig` still see every field regardless of these.
  */
 interface ConfigFieldDisplay {
+  /** Compact rule facts for the current draft, including configurations applied by presets. */
+  rulesSummary?: (config: Record<string, unknown>) => string[];
   /** Tuck this field inside the collapsed "Advanced" group instead of the main list. */
   advanced?: boolean;
   /** Only show this field when the predicate holds for the current draft config. */
