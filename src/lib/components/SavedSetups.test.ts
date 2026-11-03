@@ -101,7 +101,7 @@ describe('saved setup interaction', () => {
       );
       const target = render();
       const summary = () =>
-        [...target.querySelectorAll('.rules-summary li > span:last-child')].map(
+        [...target.querySelectorAll('[aria-label="Decks rules"] li > span:last-child')].map(
           (el) => el.textContent,
         );
       expect(summary()).toEqual(['13 hearts', '1 Queen', '26-point moon']);
@@ -124,9 +124,13 @@ describe('saved setup interaction', () => {
     const select = target.querySelector<HTMLSelectElement>('#passMode')!;
     expect(select.value).toBe('legacy-hidden');
     expect(select.selectedOptions[0].textContent).toContain('reminder hidden');
+    const passingSummary = () =>
+      target.querySelector('[aria-label="Passing direction rules"]')?.textContent;
+    expect(passingSummary()).toContain('reminders remain hidden');
     expect(target.querySelector<HTMLInputElement>('#passCardCount')?.value).toBe('2');
     expect(get(settings).gamePresets[0]).toEqual(original);
     change(target, '#passMode', 'rotating');
+    expect(passingSummary()).toContain('4 players: Left, Right, Across, Hold');
     expect([...select.options].map((option) => option.value)).toEqual([
       'clockwise',
       'counterclockwise',
@@ -139,6 +143,7 @@ describe('saved setup interaction', () => {
     expect(get(settings).gamePresets[0].config.passMode).toBe('rotating');
     useSaved(target, saved.name);
     expect(select.value).toBe('clockwise');
+    expect(passingSummary()).toContain('Left every hand');
   });
 
   it('applies cross-game groups and game-specific rules independently, including toggling off', () => {

@@ -142,9 +142,8 @@ export interface RoundContext {
 }
 
 /**
- * Presentation hints shared by every config field. Purely cosmetic — they change
- * where/whether a field renders in the setup form, never its stored value. So preset
- * matching and `defaultConfig` still see every field regardless of these.
+ * Shared field hints. Presentation never changes stored values; saved defaults
+ * apply only when resolving older presets. `defaultConfig` still sees every field.
  */
 interface ConfigFieldDisplay {
   /** Compact rule facts for the current draft, including configurations applied by presets. */

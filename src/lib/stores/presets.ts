@@ -197,7 +197,8 @@ export function unavailablePresetPlayers(preset: GamePreset, validIds: Iterable<
 /**
  * The config a preset resolves to: the game's current defaults, overlaid with the preset's
  * saved values for keys that still exist. New config fields added since the preset was saved
- * fall back to their default; retired keys are dropped.
+ * use their saved-default resolver when provided, otherwise their current default;
+ * retired keys are dropped only after compatibility defaults have been resolved.
  */
 export function resolvePresetConfig(
   preset: GamePreset,

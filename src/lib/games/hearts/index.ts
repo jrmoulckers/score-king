@@ -92,7 +92,24 @@ export const hearts: GameModule = {
           showIf: (config) => config.passMode === 'legacy-hidden',
         },
       ],
-      help: 'Directions follow physical seating, not scoreboard order. Fixed directions apply every hand. Rotating cycle: left, right, then farther left/right pairs, across once at even-sized tables, then hold. With four players: Left, Right, Across, Hold.',
+      rulesSummary: (config) => {
+        switch (savedPassMode(config)) {
+          case 'clockwise':
+            return ['Left every hand'];
+          case 'counterclockwise':
+            return ['Right every hand'];
+          case 'rotating':
+            return [
+              '4 players: Left, Right, Across, Hold',
+              'Other tables: nearest left/right pairs, then farther pairs, across once if even, then hold',
+            ];
+          case 'legacy':
+            return ['Original saved cycle: each seat in order, then hold'];
+          case 'legacy-hidden':
+            return ['Original saved cycle; reminders remain hidden'];
+        }
+      },
+      help: 'Directions follow physical seating, not scoreboard order.',
     },
     {
       key: 'passCardCount',
