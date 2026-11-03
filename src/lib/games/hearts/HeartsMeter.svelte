@@ -1,36 +1,35 @@
 <script lang="ts">
-  /**
-   * Hearts' per-game "costume": a slim ribbon at the top of the round editor that
-   * reads the hand's penalty points as a waxing moon. As points get handed out the moon fills
-   * (🌑 → 🌕); the count and the "left to place" copy carry the real meaning, so
-   * the glyph is reinforcement, never the only signal. When one player is holding
-   * every heart *and* the Queen, the ribbon flips to its charged "Set for a moon
-   * shot" state. Pure flavor — it lives entirely inside the editor and never
-   * touches the shared chrome. No animation, so nothing to gate for reduced motion.
-   */
   const {
     points = 0,
     total = 26,
     moonReady = false,
-  }: { points?: number; total?: number; moonReady?: boolean } = $props();
+    hearts,
+    totalHearts,
+    queens,
+    totalQueens,
+  }: {
+    points?: number;
+    total?: number;
+    moonReady?: boolean;
+    hearts: number;
+    totalHearts: number;
+    queens: number;
+    totalQueens: number;
+  } = $props();
 
   const left = $derived(Math.max(0, total - points));
-  const over = $derived(points > total);
-
-  // Map the configured penalty pool onto the eight lunar glyphs, waxing to full.
-  const PHASES = ['🌑', '🌒', '🌒', '🌓', '🌓', '🌔', '🌔', '🌕'];
-  const phase = $derived(
-    moonReady || points >= total
-      ? '🌕'
-      : PHASES[Math.min(PHASES.length - 1, Math.round((points / total) * (PHASES.length - 1)))],
-  );
-
-  const pct = $derived(Math.min(100, (points / total) * 100));
+  const over = $derived(points > total || hearts > totalHearts || queens > totalQueens);
+  const heartsLeft = $derived(Math.max(0, totalHearts - hearts));
+  const queensLeft = $derived(Math.max(0, totalQueens - queens));
+  const stacks = $derived([
+    { suit: 'heart', glyph: '♥', total: totalHearts, left: heartsLeft },
+    { suit: 'queen', glyph: 'Q♠', total: totalQueens, left: queensLeft },
+  ]);
 
   const caption = $derived(
     moonReady
       ? 'Moon shot entered — not saved'
-      : over
+      : points > total
         ? `${points - total} too many points`
         : left === 0
           ? `All ${total} points placed`
@@ -39,23 +38,55 @@
 </script>
 
 <div class="meter" class:ready={moonReady} class:over>
-  <span class="moon" aria-hidden="true">{phase}</span>
-  <div class="body">
-    <div class="cap">
-      <span class="label">{caption}</span>
-      <span class="count">{points}/{total} pts</span>
-    </div>
-    <div class="track" aria-hidden="true">
-      <div class="fill" style="transform: scaleX({pct / 100})"></div>
-    </div>
+  <div class="cap">
+    <span class="label">{caption}</span>
+    <span class="count">{points}/{total} pts</span>
   </div>
+  <div class="inventory">
+    {#each stacks as stack (stack.suit)}
+      <div class="pile">
+        <div
+          class="cards"
+          data-suit={stack.suit}
+          style="--stack-width: {24 + (stack.total - 1) * 4}px"
+          aria-hidden="true"
+        >
+          {#each Array.from({ length: stack.total }, (_, i) => i) as i (i)}
+            <span
+              class="playing-card"
+              class:allocated={i >= Math.min(stack.total, stack.left)}
+              style="--offset: {i * 4}px"
+              >{stack.glyph}</span
+            >
+          {/each}
+        </div>
+        <span class="remaining">
+          {#if stack.suit === 'heart'}
+            {heartsLeft} heart{heartsLeft === 1 ? '' : 's'} left
+          {:else}
+            {queensLeft} Queen{queensLeft === 1 ? '' : 's'} left
+          {/if}
+        </span>
+      </div>
+    {/each}
+  </div>
+  {#if hearts > totalHearts || queens > totalQueens}
+    <span class="card-error">
+      {#if hearts > totalHearts}
+        {hearts - totalHearts} too many hearts.
+      {/if}
+      {#if queens > totalQueens}
+        {queens - totalQueens} too many Queens.
+      {/if}
+    </span>
+  {/if}
 </div>
 
 <style>
   .meter {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    gap: 10px;
     padding: 10px 12px;
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -67,20 +98,9 @@
   .meter.over {
     border-color: color-mix(in srgb, var(--bad) 60%, var(--border));
   }
-  .moon {
-    font-size: 1.5rem;
-    line-height: 1;
-    flex: none;
-  }
-  .body {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
   .cap {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
     gap: 10px;
@@ -88,6 +108,7 @@
   .label {
     font-weight: 700;
     font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
   }
   .meter.ready .label {
     color: var(--primary);
@@ -99,28 +120,66 @@
     font-size: 0.8rem;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
+    font-weight: 700;
     white-space: nowrap;
   }
-  .track {
-    height: 6px;
-    border-radius: 999px;
-    background: var(--surface-3);
-    overflow: hidden;
+  .inventory {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    align-items: center;
   }
-  .fill {
-    height: 100%;
-    width: 100%;
-    transform-origin: left center;
-    border-radius: 999px;
-    background: var(--primary);
-    transition: transform var(--dur-base, 180ms) var(--ease-standard, ease);
+  .pile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
-  .meter.over .fill {
-    background: var(--bad);
+  .cards {
+    position: relative;
+    width: var(--stack-width);
+    height: 32px;
+    flex: none;
+    pointer-events: none;
+  }
+  .playing-card {
+    position: absolute;
+    inset: 0 auto auto 0;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 32px;
+    border: 1px solid var(--muted);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.8rem;
+    font-weight: 700;
+    transform: translateX(var(--offset));
+    transition:
+      transform var(--dur-base, 180ms) var(--ease-standard, ease),
+      opacity var(--dur-base, 180ms) var(--ease-standard, ease);
+  }
+  .playing-card.allocated {
+    opacity: 0;
+    transform: translate(var(--offset), -6px);
+  }
+  .remaining {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+  .card-error {
+    font-size: 0.8rem;
+    color: var(--bad);
   }
   @media (prefers-reduced-motion: reduce) {
-    .fill {
+    .playing-card {
       transition: none;
     }
+  }
+  :global(html[data-motion='reduce']) .playing-card {
+    transition: none;
   }
 </style>
