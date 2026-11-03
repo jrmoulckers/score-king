@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { Player } from '../../types';
+import { defaultConfig, type GamePreset, type Player } from '../../types';
+import { presetMatches, resolvePresetConfig } from '../../stores/presets';
 import { hearts } from './index';
 import { heartsStats } from './stats';
 import {
@@ -45,6 +46,7 @@ describe('readConfig', () => {
       deckCount: 1,
       variantJack: false,
       passCardCount: 3,
+      passMode: 'legacy',
       passing: true,
     });
   });
@@ -61,6 +63,7 @@ describe('readConfig', () => {
       deckCount: 2,
       variantJack: true,
       passCardCount: 2,
+      passMode: 'legacy',
       passing: true,
     });
     expect(readConfig({ passCardCount: 0 }).passCardCount).toBe(1);
@@ -71,11 +74,86 @@ describe('readConfig', () => {
     expect(readConfig({}).passing).toBe(true);
     expect(readConfig({ passing: true }).passing).toBe(true);
     expect(readConfig({ passing: false }).passing).toBe(false);
+    expect(readConfig({ passing: false }).passMode).toBe('legacy-hidden');
+    for (const passMode of ['clockwise', 'counterclockwise', 'rotating']) {
+      expect(readConfig({ passing: false, passMode }).passing).toBe(true);
+    }
+  });
+  it('defaults only fresh configurations to clockwise', () => {
+    expect(readConfig(defaultConfig(hearts.configFields)).passMode).toBe('clockwise');
+    expect(readConfig({ passMode: 'unknown' }).passMode).toBe('legacy');
+  });
+  it('preserves legacy rules/full presets without modifying stored data', () => {
+    for (const kind of ['full', 'rules'] as const) {
+      for (const passing of [undefined, true, false]) {
+        const preset: GamePreset = {
+          id: 'old',
+          name: 'Old setup',
+          type: 'hearts',
+          kind,
+          playerIds: IDS,
+          config: { passCardCount: 2, ...(passing === undefined ? {} : { passing }) },
+          createdAt: 1,
+          updatedAt: 1,
+        };
+        const original = structuredClone(preset);
+        const cfg = resolvePresetConfig(preset, hearts.configFields);
+        expect(readConfig(cfg).passMode).toBe(passing === false ? 'legacy-hidden' : 'legacy');
+        expect(readConfig(cfg).passing).toBe(passing !== false);
+        expect(cfg.passCardCount).toBe(2);
+        expect(presetMatches(preset, IDS, cfg, IDS, hearts.configFields)).toBe(true);
+        expect(preset).toEqual(original);
+      }
+    }
   });
 });
 
 // ── passing ritual ─────────────────────────────────────────────────────────
 describe('passing', () => {
+  it('uses the conventional four-player rotating order', () => {
+    expect(passCycle(4, 'rotating')).toEqual(['left', 'right', 'across', 'hold']);
+    expect(Array.from({ length: 8 }, (_, i) => passingFor(i, 4, 3, 'rotating').seatOffset)).toEqual(
+      [1, 3, 2, null, 1, 3, 2, null],
+    );
+  });
+  it('alternates nearest recipients then holds at every supported table size', () => {
+    for (let count = 3; count <= 11; count++) {
+      const targets = Array.from({ length: count }, (_, i) => passingFor(i, count, 2, 'rotating'));
+      const offsets = targets.slice(0, -1).map((target) => target.seatOffset);
+      expect([...offsets].sort((a, b) => a! - b!)).toEqual(
+        Array.from({ length: count - 1 }, (_, i) => i + 1),
+      );
+      expect(offsets.slice(0, 2)).toEqual([1, count - 1]);
+      expect(targets[count - 1].direction).toBe('hold');
+      expect(targets.filter((target) => target.direction === 'across')).toHaveLength(
+        count % 2 === 0 ? 1 : 0,
+      );
+      expect(passingFor(count, count, 2, 'rotating')).toEqual(targets[0]);
+    }
+    expect(Array.from({ length: 6 }, (_, i) => passingFor(i, 6, 3, 'rotating').seatOffset)).toEqual(
+      [1, 5, 2, 4, 3, null],
+    );
+    expect(passingFor(3, 6, 2, 'rotating').hint).toBe(
+      'Pass 2 cards to the player 2 seats to your right',
+    );
+  });
+  it('keeps fixed directions on every hand without hold hands', () => {
+    for (let count = 3; count <= 11; count++) {
+      for (let hand = 0; hand < count * 2; hand++) {
+        expect(passingFor(hand, count, 1, 'clockwise')).toMatchObject({
+          direction: 'left',
+          seatOffset: 1,
+          label: 'Pass clockwise (left)',
+          hint: 'Pass 1 card to the player on your left',
+        });
+        expect(passingFor(hand, count, 2, 'counterclockwise')).toMatchObject({
+          direction: 'right',
+          seatOffset: count - 1,
+          label: 'Pass counterclockwise (right)',
+        });
+      }
+    }
+  });
   it('visits every other seat around a four-handed table before holding', () => {
     expect(passCycle(4)).toEqual(['left', 'across', 'right', 'hold']);
     expect(passingFor(0, 4).direction).toBe('left');
@@ -398,11 +476,18 @@ describe('hearts module', () => {
       advanced: true,
     });
     expect(fields.find((field) => field.key === 'passCardCount')).toMatchObject({
+      section: 'Card Passing',
       type: 'number',
       default: 3,
       min: 1,
       max: 13,
     });
+    expect(fields.find((field) => field.key === 'passMode')).toMatchObject({
+      section: 'Card Passing',
+      type: 'select',
+      default: 'clockwise',
+    });
+    expect(fields.some((field) => field.key === 'passing')).toBe(false);
     expect(fields.some((field) => field.key === 'moonRule')).toBe(false);
     expect(hearts.maxPlayers).toBe(11);
     expect(hearts.maxPlayersForConfig?.({ deckCount: '1' })).toBe(6);

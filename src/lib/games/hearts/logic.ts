@@ -31,6 +31,7 @@ export interface HeartsInput {
 }
 
 export type MoonRule = 'add26' | 'subtract';
+export type PassMode = 'clockwise' | 'counterclockwise' | 'rotating' | 'legacy' | 'legacy-hidden';
 
 export interface HeartsConfig {
   endScore: number;
@@ -38,7 +39,8 @@ export interface HeartsConfig {
   variantJack: boolean;
   /** Number of cards each player passes before a deal. */
   passCardCount: number;
-  /** Show the rotating pass target each hand. */
+  passMode: PassMode;
+  /** Legacy reminder visibility. Explicit new modes always show the direction. */
   passing: boolean;
 }
 
@@ -47,6 +49,7 @@ export const DEFAULT_CONFIG: HeartsConfig = {
   deckCount: 1,
   variantJack: false,
   passCardCount: 3,
+  passMode: 'clockwise',
   passing: true,
 };
 
@@ -63,20 +66,33 @@ function numOr(v: unknown, fallback: number): number {
 
 export function readConfig(config: Record<string, unknown> = {}): HeartsConfig {
   const passCardCount = Math.floor(numOr(config.passCardCount, DEFAULT_CONFIG.passCardCount));
+  const passMode = savedPassMode(config);
   return {
     endScore: numOr(config.endScore, DEFAULT_CONFIG.endScore),
     deckCount: numOr(config.deckCount, DEFAULT_CONFIG.deckCount) === 2 ? 2 : 1,
     variantJack: !!config.variantJack,
     passCardCount: Math.min(HEARTS_TOTAL, Math.max(1, passCardCount)),
-    // Default on (standard Hearts passes); only an explicit `false` turns it off,
-    // so games saved before this option existed still show the ritual.
-    passing: config.passing !== false,
+    passMode,
+    passing: passMode !== 'legacy-hidden',
   };
 }
 
+/** Missing mode means a saved configuration, never the new-game default. */
+export function savedPassMode(config: Record<string, unknown>): PassMode {
+  const mode = config.passMode;
+  if (
+    mode === 'clockwise' ||
+    mode === 'counterclockwise' ||
+    mode === 'rotating' ||
+    mode === 'legacy' ||
+    mode === 'legacy-hidden'
+  )
+    return mode;
+  return config.passing === false ? 'legacy-hidden' : 'legacy';
+}
+
 // ── Passing ritual ───────────────────────────────────────────────────────────
-// Before each deal, the target advances around every other seat, followed by a hold.
-// Purely informational (it never touches scoring).
+// Passing is a physical table ritual; these reminders never touch scoring.
 
 export type PassDirection = 'left' | 'right' | 'across' | 'offset' | 'hold';
 
@@ -92,30 +108,46 @@ export interface PassInfo {
   hint: string;
 }
 
-/**
- * Visit each other seat in order around the circle, then hold. This makes the
- * cycle complete and deterministic for every supported table size.
- */
-export function passCycle(playerCount: number): PassDirection[] {
+/** Fixed recipient, alternating near-to-far pairs, or the original saved cycle. */
+function passOffsets(playerCount: number, mode: PassMode): (number | null)[] {
   const count = Math.max(2, Math.floor(playerCount));
-  return [
-    ...Array.from({ length: count - 1 }, (_, i) => {
-      const offset = i + 1;
-      if (offset === 1) return 'left';
-      if (offset === count - 1) return 'right';
-      if (count % 2 === 0 && offset === count / 2) return 'across';
-      return 'offset';
-    }),
-    'hold',
-  ];
+  if (mode === 'clockwise') return [1];
+  if (mode === 'counterclockwise') return [count - 1];
+  const offsets: (number | null)[] = [];
+  if (mode === 'rotating') {
+    for (let distance = 1; distance <= Math.floor(count / 2); distance++) {
+      offsets.push(distance);
+      if (distance !== count - distance) offsets.push(count - distance);
+    }
+  } else {
+    for (let offset = 1; offset < count; offset++) offsets.push(offset);
+  }
+  return [...offsets, null];
+}
+
+export function passCycle(playerCount: number, mode: PassMode = 'legacy'): PassDirection[] {
+  const count = Math.max(2, Math.floor(playerCount));
+  return passOffsets(count, mode).map((offset) => {
+    if (offset === null) return 'hold';
+    if (offset === 1) return 'left';
+    if (offset === count - 1) return 'right';
+    if (count % 2 === 0 && offset === count / 2) return 'across';
+    return 'offset';
+  });
 }
 
 /** Which way cards pass on a given (0-based) hand, for a given table size. */
-export function passingFor(handIndex: number, playerCount: number, cardCount = 3): PassInfo {
-  const cycle = passCycle(playerCount);
+export function passingFor(
+  handIndex: number,
+  playerCount: number,
+  cardCount = 3,
+  mode: PassMode = 'legacy',
+): PassInfo {
+  const cycle = passCycle(playerCount, mode);
   const i = ((handIndex % cycle.length) + cycle.length) % cycle.length || 0;
   const direction = cycle[i];
-  if (direction === 'hold') {
+  const offset = passOffsets(playerCount, mode)[i];
+  if (offset === null) {
     return {
       direction,
       seatOffset: null,
@@ -125,7 +157,7 @@ export function passingFor(handIndex: number, playerCount: number, cardCount = 3
     };
   }
 
-  const offset = i + 1;
+  const seatOffset = offset;
   const safeCardCount = Math.min(
     HEARTS_TOTAL,
     Math.max(1, Math.floor(numOr(cardCount, DEFAULT_CONFIG.passCardCount))),
@@ -134,25 +166,25 @@ export function passingFor(handIndex: number, playerCount: number, cardCount = 3
   if (direction === 'left') {
     return {
       direction,
-      seatOffset: offset,
+      seatOffset,
       glyph: '←',
-      label: 'Pass left',
+      label: mode === 'clockwise' ? 'Pass clockwise (left)' : 'Pass left',
       hint: `Pass ${cards} to the player on your left`,
     };
   }
   if (direction === 'right') {
     return {
       direction,
-      seatOffset: offset,
+      seatOffset,
       glyph: '→',
-      label: 'Pass right',
+      label: mode === 'counterclockwise' ? 'Pass counterclockwise (right)' : 'Pass right',
       hint: `Pass ${cards} to the player on your right`,
     };
   }
   if (direction === 'across') {
     return {
       direction,
-      seatOffset: offset,
+      seatOffset,
       glyph: '↔',
       label: 'Pass across',
       hint: `Pass ${cards} to the player across from you`,
@@ -160,10 +192,16 @@ export function passingFor(handIndex: number, playerCount: number, cardCount = 3
   }
   return {
     direction,
-    seatOffset: offset,
+    seatOffset,
     glyph: '↷',
-    label: `Pass ${offset} seats left`,
-    hint: `Pass ${cards} to the player ${offset} seats to your left`,
+    label:
+      mode === 'rotating' && seatOffset > playerCount / 2
+        ? `Pass ${playerCount - seatOffset} seats right`
+        : `Pass ${seatOffset} seats left`,
+    hint:
+      mode === 'rotating' && seatOffset > playerCount / 2
+        ? `Pass ${cards} to the player ${playerCount - seatOffset} seats to your right`
+        : `Pass ${cards} to the player ${seatOffset} seats to your left`,
   };
 }
 

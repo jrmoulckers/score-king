@@ -8,6 +8,7 @@ import {
   readConfig,
   HEARTS_TOTAL,
   moonPoints,
+  savedPassMode,
   scoreRound as scoreHearts,
   queenCount,
   shooter,
@@ -16,7 +17,14 @@ import {
   type HeartsInput,
 } from './logic';
 
-export type { HeartsInput, HeartsConfig, MoonRule, PassDirection, PassInfo } from './logic';
+export type {
+  HeartsInput,
+  HeartsConfig,
+  MoonRule,
+  PassMode,
+  PassDirection,
+  PassInfo,
+} from './logic';
 
 export const hearts: GameModule = {
   id: 'hearts',
@@ -63,21 +71,55 @@ export const hearts: GameModule = {
       help: 'Adds one good card worth grabbing: whoever takes the ♦J shaves 10 off their round.',
     },
     {
-      key: 'passing',
-      label: 'Show the passing direction each hand',
-      type: 'boolean',
-      default: true,
-      help: 'A reminder rotates through every other seat around the table, then a hold. Turn off if your group doesn’t pass.',
+      key: 'passMode',
+      section: 'Card Passing',
+      label: 'Passing direction',
+      type: 'select',
+      default: 'clockwise',
+      defaultForSaved: savedPassMode,
+      options: [
+        { value: 'clockwise', label: 'Clockwise (left)' },
+        { value: 'counterclockwise', label: 'Counterclockwise (right)' },
+        { value: 'rotating', label: 'Rotating cycle' },
+        {
+          value: 'legacy',
+          label: 'Original cycle (saved setup)',
+          showIf: (config) => config.passMode === 'legacy',
+        },
+        {
+          value: 'legacy-hidden',
+          label: 'Original cycle, reminder hidden (saved setup)',
+          showIf: (config) => config.passMode === 'legacy-hidden',
+        },
+      ],
+      rulesSummary: (config) => {
+        switch (savedPassMode(config)) {
+          case 'clockwise':
+            return ['Left every hand'];
+          case 'counterclockwise':
+            return ['Right every hand'];
+          case 'rotating':
+            return [
+              '4 players: Left, Right, Across, Hold',
+              'Other tables: nearest left/right pairs, then farther pairs, across once if even, then hold',
+            ];
+          case 'legacy':
+            return ['Original saved cycle: each seat in order, then hold'];
+          case 'legacy-hidden':
+            return ['Original saved cycle; reminders remain hidden'];
+        }
+      },
+      help: 'Directions follow physical seating, not scoreboard order.',
     },
     {
       key: 'passCardCount',
+      section: 'Card Passing',
       label: 'Cards each player passes',
       type: 'number',
       default: 3,
       min: 1,
       max: 13,
       step: 1,
-      showIf: (config) => config.passing !== false,
     },
   ],
 
@@ -132,6 +174,14 @@ export const hearts: GameModule = {
     '',
     '♦J Omnibus (optional): each Jack of Diamonds is a good card — whoever takes one',
     'shaves 10 points off their round.',
+    '',
+    'Card Passing: clockwise (left) or counterclockwise (right) stays the same each',
+    'hand. Rotating cycle alternates left/right recipients, nearest first, then holds.',
+    'Four players: Left, Right, Across, Hold. Larger tables visit every other seat',
+    'before holding; only even-sized tables have an across seat. Directions refer',
+    'to physical seating, not score order. Pass the configured number of cards.',
+    'Saved setups keep their original cycle and reminder visibility until you',
+    'choose a new passing direction. Passing never changes recorded scores.',
     '',
     'The game ends when someone reaches the end score (100 by default). Lowest total',
     'at that moment wins the crown.',
