@@ -64,10 +64,12 @@ export const hearts: GameModule = {
     },
     {
       key: 'variantJack',
-      label: 'Jack of Diamonds = −10 (Omnibus variant)',
+      label: 'Omnibus',
       type: 'boolean',
       default: false,
       advanced: true,
+      section: 'Variant',
+      rulesSummary: () => ['♦J = -10'],
       help: 'Adds one good card worth grabbing: whoever takes the ♦J shaves 10 off their round.',
     },
     {
