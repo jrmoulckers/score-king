@@ -51,7 +51,7 @@
           <ul class="rules-summary" aria-label={`${f.label} rules`} role="list">
             {#each rules as rule, index (index)}
               <li>
-                {#if index > 0}<span aria-hidden="true"> · </span>{/if}<span>{rule}</span>
+                {#if index > 0}<span aria-hidden="true">{' · '}</span>{/if}<span>{rule}</span>
               </li>
             {/each}
           </ul>

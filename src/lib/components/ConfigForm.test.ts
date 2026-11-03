@@ -48,6 +48,9 @@ describe('configuration rules summaries', () => {
   it('describes the default Hearts deck and reacts to selection changes in both directions', () => {
     const target = render(hearts.configFields!);
     expect(rules(target, 'deckCount')).toEqual(['13 hearts', '1 Queen', '26-point moon']);
+    expect(target.querySelector('.rules-summary')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      '13 hearts · 1 Queen · 26-point moon',
+    );
     expect(target.textContent).not.toContain('Double deck uses');
     change(target, 'deckCount', '2');
     expect(rules(target, 'deckCount')).toEqual(['26 hearts', '2 Queens', '52-point moon']);
