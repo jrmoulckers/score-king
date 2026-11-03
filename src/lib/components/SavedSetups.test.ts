@@ -153,10 +153,10 @@ describe('saved setup interaction', () => {
       const target = render();
       target.querySelectorAll<HTMLButtonElement>('.chip')[0].click();
       flushSync();
-      button(target, '＋ Save current setup').click();
+      button(target, '＋ Save preset').click();
       flushSync();
       change(target, '.presets select', kind);
-      change(target, '[aria-label="Saved setup name"]', `Saved ${kind}`);
+      change(target, '[aria-label="Preset name"]', `Saved ${kind}`);
       button(target, 'Save').click();
       flushSync();
       let record = get(settings).gamePresets[0];
@@ -186,7 +186,7 @@ describe('saved setup interaction', () => {
       );
       button(target, 'Rename').click();
       flushSync();
-      change(target, '[aria-label="Rename saved setup"]', 'Renamed');
+      change(target, '[aria-label="Rename preset"]', 'Renamed');
       button(target, 'Rename').click();
       flushSync();
       record = get(settings).gamePresets[0];
@@ -202,9 +202,9 @@ describe('saved setup interaction', () => {
 
   it('allows rules without players, but requires players for a new group or full setup', () => {
     const target = render();
-    button(target, '＋ Save current setup').click();
+    button(target, '＋ Save preset').click();
     flushSync();
-    change(target, '[aria-label="Saved setup name"]', 'Rules only');
+    change(target, '[aria-label="Preset name"]', 'Rules only');
     expect(button(target, 'Save').disabled).toBe(true);
     change(target, '.presets select', 'rules');
     expect(button(target, 'Save').disabled).toBe(false);
@@ -256,7 +256,7 @@ describe('lazy group cleanup readiness', () => {
     const target = render();
     expect(get(settings).gamePresets[0].playerIds).toEqual(p.playerIds);
     expect(target.querySelector<HTMLButtonElement>('.pchip')?.disabled).toBe(true);
-    expect(target.textContent).toContain('saved groups stay unchanged');
+    expect(target.textContent).toContain('Player Groups stay unchanged');
   });
 
   it('holds cleanup across restore and ignores an older roster response', async () => {

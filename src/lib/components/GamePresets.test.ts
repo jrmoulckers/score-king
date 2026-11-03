@@ -1,4 +1,4 @@
-import { mount, unmount } from 'svelte';
+import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import { settings } from '../stores/settings';
 import GamePresets from './GamePresets.svelte';
@@ -20,20 +20,36 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe('GamePresets helper', () => {
+describe('GamePresets presentation', () => {
   it.each(['hearts', 'skull-king', 'tally'])(
-    'explains saving players and rules without promising to start %s',
+    'shows concise preset copy and exactly three icon-labelled save kinds for %s',
     (type) => {
       const target = renderPresets(type);
 
-      expect(target.querySelector('.empty-hint')?.textContent).toBe(
-        'Save these players and rules for your next game.',
-      );
-      expect(target.querySelector('.linkbtn')?.textContent).toContain('Save current setup');
+      expect(target.querySelector('.fieldlabel')?.textContent).toBe('Presets');
+      expect(target.querySelector('.empty-hint')).toBeNull();
+      expect(target.textContent).not.toContain('Save these players and rules');
+      expect(target.textContent).not.toContain('Save players as a Group');
+      expect(target.querySelector('.linkbtn')?.textContent).toContain('Save preset');
+      target.querySelector<HTMLButtonElement>('.linkbtn')!.click();
+      flushSync();
+      const options = [...target.querySelectorAll('option')];
+      expect(options.map((option) => option.value)).toEqual(['group', 'rules', 'full']);
+      expect(options.map((option) => option.textContent)).toEqual([
+        '👥 Player Group',
+        '⚙️ Rules Preset',
+        '👥 ⚙️ Game Preset',
+      ]);
+      expect(options.map((option) => option.getAttribute('aria-label'))).toEqual([
+        'Player Group',
+        'Rules Preset',
+        'Game Preset',
+      ]);
+      expect(target.querySelector('[aria-label="Preset name"]')).not.toBeNull();
     },
   );
 
-  it('only shows the helper when the current game has no presets', () => {
+  it('keeps legacy presets visible only in their game without explanatory blocks', () => {
     settings.update((value) => ({
       ...value,
       gamePresets: [
@@ -54,8 +70,8 @@ describe('GamePresets helper', () => {
 
     expect(hearts.querySelector('.empty-hint')).toBeNull();
     expect(hearts.querySelector('.pname')?.textContent).toBe('Usual Hearts');
-    expect(tally.querySelector('.empty-hint')?.textContent).toBe(
-      'Save these players and rules for your next game.',
-    );
+    expect(hearts.querySelector('.kind-label')?.textContent).toContain('Game Preset');
+    expect(tally.querySelector('.empty-hint')).toBeNull();
+    expect(tally.querySelector('.pname')).toBeNull();
   });
 });
