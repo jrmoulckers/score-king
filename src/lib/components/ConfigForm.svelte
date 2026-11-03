@@ -50,7 +50,21 @@
   {#if advanced.length}
     <details class="advanced">
       <summary>
-        <span class="chev" aria-hidden="true">›</span>
+        <svg
+          class="chev"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="m6 4 4 4-4 4" />
+        </svg>
         Advanced options
         <span class="count">{advanced.length}</span>
       </summary>
@@ -87,9 +101,8 @@
     display: none;
   }
   .chev {
-    display: inline-block;
-    font-size: 1.1rem;
-    line-height: 1;
+    display: block;
+    flex: none;
     color: var(--muted);
     transition: transform var(--dur-base, 0.2s) var(--ease-standard, ease);
   }
