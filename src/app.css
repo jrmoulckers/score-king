@@ -239,7 +239,6 @@ select {
   border-color: color-mix(in srgb, var(--bad) 40%, var(--border));
 }
 .btn.small {
-  min-height: 36px;
   padding: 7px 12px;
   font-size: 0.9rem;
 }

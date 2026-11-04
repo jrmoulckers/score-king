@@ -304,8 +304,8 @@ element shares one shape language (9px controls, 14px containers) and one state 
 - **Danger:** Transparent with Loss Coral text and a coral-tinted border — destructive
   actions only.
 - **States:** `:active` presses down 1px (`translateY(1px)`); `:focus-visible` shows a 2px
-  Royal Violet outline at 1px offset; disabled drops to 50% opacity. `small` variant is
-  36px tall; `block` spans full width.
+  Royal Violet outline at 1px offset; disabled drops to 50% opacity. `small` retains
+  compact typography and padding with the same 46px minimum target; `block` spans full width.
 
 ### Pills
 
