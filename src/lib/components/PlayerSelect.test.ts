@@ -110,7 +110,8 @@ describe('player selection capacity', () => {
     flushSync(() => chips()[11].click());
     expect(props.selected).toHaveLength(12);
     expect(chips()[12].disabled).toBe(true);
-    expect(chips().slice(0, 12).every((chip) => !chip.disabled)).toBe(true);
+    const selectedChips = chips().slice(0, 12);
+    expect(selectedChips.every((chip) => !chip.disabled)).toBe(true);
     const hint = document.getElementById(chips()[12].getAttribute('aria-describedby')!)!;
     expect(hint.getAttribute('role')).toBe('status');
     expect(hint.textContent).toContain('at most 12 players');
