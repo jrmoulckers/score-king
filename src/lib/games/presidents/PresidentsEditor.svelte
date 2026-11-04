@@ -124,10 +124,10 @@
     {@const finish = pos(p.id)}
     {@const clash = isClash(p.id)}
     {@const entered = input.positions[p.id]}
-    {@const title = Number.isInteger(entered) && entered >= 1 && entered <= n
-      ? titleFor(entered, n)
-      : null}
-    {@const rankLabel = title ? title.label : entered == null ? 'Finish not entered' : 'Invalid finish'}
+    {@const valid = Number.isInteger(entered) && entered >= 1 && entered <= n}
+    {@const title = valid ? titleFor(entered, n) : null}
+    {@const fallback = entered == null ? 'Finish not entered' : 'Invalid finish'}
+    {@const rankLabel = title?.label ?? fallback}
     <div
       class="prow"
       class:clash

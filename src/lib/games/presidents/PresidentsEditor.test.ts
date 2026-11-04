@@ -2,7 +2,13 @@ import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoundContext } from '../../types';
 import PresidentsEditorHarness from './PresidentsEditorHarness.svelte';
-import { freshPositions, scoreRound, titleFor, validateRound, type PresidentsInput } from './logic';
+import {
+  freshPositions,
+  scoreRound,
+  titleFor,
+  validateRound,
+  type PresidentsInput,
+} from './logic';
 
 vi.mock('../../motion', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../motion')>();
@@ -64,7 +70,7 @@ afterEach(async () => {
 });
 
 describe('Presidents finishing-place context', () => {
-  it.each([0, 1])('shows neutral context after clearing a fresh/edited finish (%s)', (roundIndex) => {
+  it.each([0, 1])('keeps a cleared fresh/edited finish neutral (%s)', (roundIndex) => {
     const initial = freshPositions(players);
     const target = render(initial, roundIndex);
     enter(target, '', true);
