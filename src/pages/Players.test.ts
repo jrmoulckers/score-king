@@ -107,6 +107,7 @@ describe('Players roster containment', () => {
       claimed: true,
       appearance: { style: 'gradient', color2: '#1d4ed8' },
     });
+  });
 
     describe('Players inline profile focus', () => {
       it('focuses the replacement name input and returns to the same player on Cancel', async () => {
@@ -195,7 +196,6 @@ describe('Players roster containment', () => {
         );
       });
     });
-  });
 
   it('keeps archived identities and restore/delete confirmation controls', async () => {
     await click(card(1).querySelector<HTMLButtonElement>('[aria-label="Edit player"]')!);
