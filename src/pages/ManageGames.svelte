@@ -196,6 +196,7 @@
   }
   .mrow {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
@@ -210,6 +211,8 @@
     align-items: center;
     gap: 12px;
     min-width: 0;
+    flex: 1 1 18rem;
+    max-width: 100%;
   }
   .info.dim {
     opacity: 0.6;
@@ -226,6 +229,7 @@
   }
   .name {
     font-weight: 700;
+    overflow-wrap: anywhere;
   }
   .sm {
     font-size: 0.85rem;
@@ -235,9 +239,12 @@
   }
   .actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
     flex: none;
+    max-width: 100%;
+    margin-left: auto;
   }
   /* A neutral star: filled ★ vs outline ☆ + aria-pressed carry the state — never gold
      (reserved for the leader/winner) and never a second violet fill. */
