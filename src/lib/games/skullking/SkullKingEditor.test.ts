@@ -1,10 +1,15 @@
 import { flushSync, mount, unmount } from 'svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoundContext } from '../../types';
 import { skullking } from './index';
 import { bountyTotal, emptyBounty, type SKInput } from './logic';
 import SkullKingEditorHarness from './SkullKingEditorHarness.svelte';
 import source from './SkullKingEditor.svelte?raw';
+
+vi.mock('../../motion', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../motion')>();
+  return { ...actual, animateMotion: vi.fn() };
+});
 
 const mounted: ReturnType<typeof mount>[] = [];
 const keys = ['jollyRoger', 'mermaidCatchesSK', 'skOverMermaid'] as const;
