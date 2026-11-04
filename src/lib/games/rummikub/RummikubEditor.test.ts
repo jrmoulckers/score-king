@@ -108,6 +108,34 @@ describe('Rummikub responsive tile keypad', () => {
     expect(keyRule).toContain('min-height: 46px');
   });
 
+  describe('Rummikub raw rack validation', () => {
+    it.each(['tiles', 'jokers'] as const)(
+      'blocks fractional %s until corrected, including saved input',
+      (field) => {
+        const initial: RummikubInput = {
+          winner: 'a',
+          hands: { a: { tiles: 0, jokers: 0 }, b: { tiles: 0, jokers: 1 } },
+        };
+        const { target, ctx } = render(30, initial);
+        const control = target.querySelector<HTMLInputElement>(`[aria-label="B ${field}"]`)!;
+        control.value = '1.5';
+        control.dispatchEvent(new Event('input', { bubbles: true }));
+        flushSync();
+        expect(control.checkValidity()).toBe(false);
+        expect(draft(target).hands.b[field]).toBe(1.5);
+        expect(rummikub.validateRound(draft(target), ctx)).toMatch(/whole-number/);
+        for (const value of [0, 1, 2]) {
+          control.value = String(value);
+          control.dispatchEvent(new Event('input', { bubbles: true }));
+          flushSync();
+          expect(rummikub.validateRound(draft(target), ctx)).toBeNull();
+          expect(draft(target).hands.b[field]).toBe(value);
+        }
+        expect(initial.hands.b).toEqual({ tiles: 0, jokers: 1 });
+      },
+    );
+  });
+
   it('keeps numbered keys in order, tallies repeated tiles, caps jokers and clears the rack', () => {
     const { target } = render();
     const rack = target.querySelector<HTMLElement>('.prow')!;

@@ -118,8 +118,12 @@ export function validateRummikub(input: RummikubInput, playerIds: ID[]): string 
   for (const id of playerIds) {
     if (id === input.winner) continue;
     const hand = input.hands?.[id];
-    if ((Number(hand?.tiles) || 0) < 0) return 'Leftover tile totals can’t be negative.';
-    if ((Number(hand?.jokers) || 0) < 0) return 'Joker counts can’t be negative.';
+    if (hand?.tiles < 0) return 'Leftover tile totals can’t be negative.';
+    if (!Number.isInteger(hand?.tiles)) return 'Enter a whole-number leftover tile total.';
+    if (hand?.jokers < 0) return 'Joker counts can’t be negative.';
+    if (!Number.isInteger(hand?.jokers) || hand.jokers > 2) {
+      return 'Enter a whole-number joker count: 0, 1 or 2.';
+    }
   }
   return null;
 }
