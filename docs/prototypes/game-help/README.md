@@ -11,7 +11,7 @@ node docs\prototypes\game-help\serve.mjs
 
 Open the localhost URL printed by the server (it chooses an available port). Choose
 a bid, tap the stacks representing tricks you won, and read the score directly below.
-Each stack is a toggle, with a checkmark and "Won" label when selected.
+Each stack is a toggle, with a checkmark and pressed state when selected.
 Change the round, browse topics, and switch between light and dark themes.
 The preview uses the existing app CSS and serves the existing Skull King scorer
 with TypeScript types stripped; it does not maintain a second scoring implementation.

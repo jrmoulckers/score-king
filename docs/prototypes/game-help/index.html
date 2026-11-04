@@ -60,16 +60,9 @@
               </div>
               <div>
                 <dt>Bid zero</dt>
-                <dd>
-                  <strong>±10 × round</strong
-                  ><button class="text-button" data-topic="zero">See zero-bid scoring →</button>
-                </dd>
+                <dd><strong>±10 × round</strong></dd>
               </div>
             </dl>
-            <p class="reference-note">
-              The first two rules apply to bids of 1 or more. Bonuses are added separately.
-            </p>
-            <button class="text-button" data-topic="bounties">Bonus values →</button>
           </section>
 
           <section id="topic-view" aria-labelledby="topic-title" hidden>
@@ -103,10 +96,9 @@
               <span>tricks</span>
             </div>
             <div class="tricks-heading">
-              <strong>Which tricks did you win?</strong>
+              <strong>Tap the tricks you won</strong>
               <button class="text-button" id="clear-tricks">Clear</button>
             </div>
-            <p class="interaction-hint">Tap a stack to mark it won. Tap again to undo.</p>
             <div
               class="trick-choices"
               id="trick-choices"
@@ -115,7 +107,7 @@
             ></div>
             <div class="score-receipt" role="status" aria-live="polite" aria-atomic="true">
               <div class="score-summary">
-                <span id="comparison">Bid 2 · Won 2</span>
+                <span id="comparison" class="sr-only">Bid 2 · Won 2</span>
                 <strong class="sample-score" id="score">+40<span> points</span></strong>
               </div>
               <div class="score-reason">
@@ -123,7 +115,7 @@
               </div>
             </div>
             <div class="example-bottom">
-              <span>No bonuses in this example.</span
+              <span>Bonuses excluded.</span
               ><button class="text-button" id="reset">Reset example</button>
             </div>
           </section>

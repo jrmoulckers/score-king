@@ -58,8 +58,7 @@ function rebuildChoices() {
       button.setAttribute('aria-label', `Trick ${index + 1}`);
       for (const [className, text] of [
         ['trick-number', String(index + 1)],
-        ['trick-symbol', '+'],
-        ['trick-state', 'Not won'],
+        ['trick-symbol', ''],
       ]) {
         const span = document.createElement('span');
         span.className = className;
@@ -81,8 +80,7 @@ function render() {
   document.querySelectorAll('[data-trick]').forEach((button) => {
     const won = state.won.has(Number(button.dataset.trick));
     button.setAttribute('aria-pressed', String(won));
-    button.querySelector('.trick-symbol').textContent = won ? '✓' : '+';
-    button.querySelector('.trick-state').textContent = won ? 'Won' : 'Not won';
+    button.querySelector('.trick-symbol').textContent = won ? '✓' : '';
   });
   byId('comparison').textContent = `Bid ${state.bid} · Won ${actual}`;
   const unit = document.createElement('span');
