@@ -128,7 +128,7 @@ describe('new game numeric constraints', () => {
     await tick();
     expect(createGame).toHaveBeenCalledWith('tally', ['setup-player'], {
       amount: 0.5,
-      optional: undefined,
+      optional: null,
       advanced: 3,
     });
   });
@@ -177,6 +177,7 @@ describe('new game numeric constraints', () => {
     flushSync();
     expect(target.querySelector('form form')).toBeNull();
     button(target, 'Cancel').click();
+    flushSync();
     await tick();
     expect(document.activeElement).toBe(button(target, 'Save new'));
     button(target, 'Start game').click();
