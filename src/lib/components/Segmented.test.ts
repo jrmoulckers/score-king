@@ -128,6 +128,7 @@ describe('Segmented forced-colors selection', () => {
     style.textContent += `\n${forcedRules}`;
     const { buttons } = render();
     const outside = document.createElement('button');
+    outside.style.color = 'CanvasText';
     document.body.appendChild(outside);
     buttons[0].focus();
     outside.focus();
@@ -136,7 +137,8 @@ describe('Segmented forced-colors selection', () => {
     expect(getComputedStyle(buttons[0]).textDecorationLine).toBe('underline');
     expect(getComputedStyle(buttons[0]).textDecorationThickness).toBe('3px');
     expect(getComputedStyle(buttons[0]).textUnderlineOffset).toBe('4px');
-    expect(getComputedStyle(buttons[0]).textDecorationColor.toLowerCase()).toBe('canvastext');
+    expect(forcedRules).toMatch(/text-decoration-color:\s*CanvasText;/);
+    expect(getComputedStyle(buttons[0]).textDecorationColor).toBe(getComputedStyle(outside).color);
     expect(getComputedStyle(buttons[1]).textDecorationLine).not.toBe('underline');
 
     flushSync(() => buttons[2].click());
