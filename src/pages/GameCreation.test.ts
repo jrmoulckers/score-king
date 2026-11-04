@@ -20,7 +20,6 @@ vi.mock('../lib/storage/db', () => ({
   putGame: vi.fn(),
 }));
 vi.mock('../lib/router', () => ({ navigate: vi.fn(), link: vi.fn() }));
-vi.mock('../lib/motion', () => ({ pop: vi.fn(), prefersReducedMotion: () => true }));
 
 type Surface = 'start' | 'finished' | 'abandoned';
 const roster: Player[] = ['Blake', 'Alex'].map((name) => ({

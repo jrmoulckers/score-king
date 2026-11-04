@@ -610,7 +610,8 @@
         class="btn primary grow"
         onclick={playAgain}
         disabled={creating}
-        aria-busy={creating}>{creating ? 'Starting game...' : 'Play again'}</button
+        aria-busy={creating}
+        >{creating ? 'Starting game...' : 'Play again'}</button
       >
     </div>
   {:else if game.status === 'abandoned'}
@@ -622,7 +623,8 @@
         class="btn primary grow"
         onclick={playAgain}
         disabled={creating}
-        aria-busy={creating}>{creating ? 'Starting game...' : 'Play again'}</button
+        aria-busy={creating}
+        >{creating ? 'Starting game...' : 'Play again'}</button
       >
     </div>
   {:else if editing}
