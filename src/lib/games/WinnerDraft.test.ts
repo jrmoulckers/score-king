@@ -9,8 +9,11 @@ import RummikubEditor from './rummikub/RummikubEditor.svelte';
 import { uno } from './uno';
 import { unogolf } from './unogolf';
 import { rummikub } from './rummikub';
+import type { UnoGolfInput } from './unogolf/logic';
+import type { RummikubInput } from './rummikub/logic';
 
 const mounted: ReturnType<typeof mount>[] = [];
+type Draft = (UnoGolfInput | RummikubInput) & { left?: Record<string, number> };
 const cases: {
   module: GameModule;
   Editor: Component<RoundEditorProps>;
@@ -75,10 +78,11 @@ function render(test: (typeof cases)[number], saved = false) {
     totals: {},
     rounds: [],
   };
-  const fresh = test.module.createRoundInput(ctx);
+  const fresh = test.module.createRoundInput(ctx) as Draft;
   const initial = structuredClone(fresh);
   if (saved) {
-    initial[test.winner] = 'c';
+    if ('winner' in initial) initial.winner = 'c';
+    else initial.out = 'c';
     initial.hands.a =
       test.module.id === 'rummikub'
         ? { tiles: 7, jokers: 1 }
@@ -94,7 +98,7 @@ function render(test: (typeof cases)[number], saved = false) {
   return { target, ctx, initial, fresh };
 }
 
-function draft(target: HTMLElement): RoundEditorProps['input'] {
+function draft(target: HTMLElement): Draft {
   return JSON.parse(target.querySelector('[data-draft]')!.textContent!);
 }
 
@@ -152,8 +156,7 @@ describe.each(cases)('$module.id mistaken-winner recovery ($config)', (test) => 
     toggle(target, 2);
     const corrected = draft(target);
     expect(test.module.validateRound(corrected, ctx)).toBeNull();
-    const value =
-      test.module.id === 'rummikub' ? (test.config.jokerValue === 0 ? 7 : 37) : 82;
+    const value = test.module.id === 'rummikub' ? (test.config.jokerValue === 0 ? 7 : 37) : 82;
     expect(test.module.scoreRound(corrected, ctx)).toEqual(
       test.module.id === 'uno'
         ? { a: 0, b: 0, c: value }
