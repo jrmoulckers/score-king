@@ -4,13 +4,16 @@ import { get } from 'svelte/store';
 import type { Player } from '../lib/types';
 import { players, refreshPlayers } from '../lib/stores/players';
 import { settings } from '../lib/stores/settings';
+import { updatePlayer } from '../lib/storage/db';
 import Players from './Players.svelte';
 import source from './Players.svelte?raw';
 
 const fixture = vi.hoisted(() => ({ rows: [] as Player[] }));
 
 vi.mock('../lib/storage/db', () => ({
-  getAllPlayers: vi.fn(async () => structuredClone(fixture.rows)),
+  getAllPlayers: vi.fn(async () =>
+    structuredClone(fixture.rows).sort((a, b) => a.name.localeCompare(b.name)),
+  ),
   updatePlayer: vi.fn(async (player: Player) => {
     const saved = structuredClone(player);
     fixture.rows = fixture.rows.map((row) => (row.id === player.id ? saved : row));
@@ -50,6 +53,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await unmount(component);
   fixture.rows = [];
+  vi.clearAllMocks();
   players.set([]);
   settings.update((value) => ({ ...value, leadMemberId: null }));
   document.body.replaceChildren();
@@ -98,10 +102,98 @@ describe('Players roster containment', () => {
     await click(button('Save profile'));
     expect(target.querySelector('.editing')).toBeNull();
     expect(card(2).querySelector('.avatar.gradient')).not.toBeNull();
-    expect(get(players)[2]).toMatchObject({
+    expect(get(players).find((player) => player.id === 'roster-2')).toMatchObject({
       name: names[2],
       claimed: true,
       appearance: { style: 'gradient', color2: '#1d4ed8' },
+    });
+  });
+
+  describe('Players inline profile focus', () => {
+    it('focuses the replacement name input and returns to the same player on Cancel', async () => {
+      const opener = card(2).querySelector<HTMLButtonElement>('[aria-label="Edit player"]')!;
+      opener.focus();
+      await click(opener);
+      const input = target.querySelector<HTMLInputElement>('[aria-label="Player name"]')!;
+      expect(document.activeElement).toBe(input);
+      input.value = 'Discarded draft';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await click(button('Gradient'));
+      await click(button('Cancel'));
+      expect(document.activeElement).toBe(
+        card(2).querySelector<HTMLButtonElement>('[aria-label="Edit player"]'),
+      );
+      expect(get(players).find((player) => player.id === 'roster-2')?.name).toBe(names[2]);
+      await click(document.activeElement as HTMLButtonElement);
+      expect(document.activeElement).toBe(
+        target.querySelector<HTMLInputElement>('[aria-label="Player name"]'),
+      );
+      expect(target.querySelector<HTMLInputElement>('[aria-label="Player name"]')?.value).toBe(
+        names[2],
+      );
+      expect(button('Solid').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('waits for async Save and follows the player id through name sorting', async () => {
+      const update = vi.mocked(updatePlayer);
+      const persist = update.getMockImplementation()!;
+      let finish!: () => void;
+      update.mockImplementationOnce(
+        (player) =>
+          new Promise<void>((resolve) => {
+            finish = () => {
+              void persist(player).then(resolve);
+            };
+          }),
+      );
+      await click(card(2).querySelector<HTMLButtonElement>('[aria-label="Edit player"]')!);
+      const input = target.querySelector<HTMLInputElement>('[aria-label="Player name"]')!;
+      input.value = 'ZZ Synthetic Renamed';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await click(button('Gradient'));
+      await click(target.querySelector<HTMLButtonElement>('[aria-label="Use Fox badge"]')!);
+      const save = button('Save profile');
+      save.focus();
+      await click(save);
+      expect(document.activeElement).toBe(save);
+      expect(target.querySelector('.editing')).not.toBeNull();
+      finish();
+      await vi.waitFor(() => expect(target.querySelector('.editing')).toBeNull());
+      const lastCard = target.querySelector<HTMLElement>('.player-grid > .card:last-child')!;
+      expect(lastCard.querySelector('.who strong')?.textContent).toBe('ZZ Synthetic Renamed');
+      expect(document.activeElement).toBe(lastCard.querySelector('[aria-label="Edit player"]'));
+      expect(get(players).find((player) => player.id === 'roster-2')).toMatchObject({
+        name: 'ZZ Synthetic Renamed',
+        appearance: { style: 'gradient', emoji: '🦊' },
+      });
+    });
+
+    it('keeps invalid-image focus and draft recovery inside the inline editor', async () => {
+      await click(card(0).querySelector<HTMLButtonElement>('[aria-label="Edit player"]')!);
+      await click(
+        [...target.querySelectorAll<HTMLButtonElement>('.style-choice')].find((element) =>
+          element.textContent?.trim().endsWith('Image'),
+        )!,
+      );
+      const url = target.querySelector<HTMLInputElement>('[aria-label="Image URL"]')!;
+      url.value = 'invalid';
+      url.dispatchEvent(new Event('input', { bubbles: true }));
+      flushSync();
+      const useUrl = button('Use URL');
+      useUrl.focus();
+      await click(useUrl);
+      expect(document.activeElement).toBe(useUrl);
+      expect(target.querySelector('[role="alert"]')?.textContent).toContain(
+        'Enter a complete image URL',
+      );
+      expect(target.querySelector('[role="dialog"]')).toBeNull();
+      await click(button('Cancel'));
+      expect(document.activeElement).toBe(card(0).querySelector('[aria-label="Edit player"]'));
+      await click(document.activeElement as HTMLButtonElement);
+      expect(target.querySelector('[role="alert"]')).toBeNull();
+      expect(target.querySelector<HTMLInputElement>('[aria-label="Player name"]')?.value).toBe(
+        names[0],
+      );
     });
   });
 
