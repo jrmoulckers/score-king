@@ -85,18 +85,17 @@ async function addNamed(name: string) {
   input.value = name;
   input.dispatchEvent(new Event('input', { bubbles: true }));
   flushSync();
-  document
-    .querySelector('form')!
-    .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  const form = document.querySelector('form')!;
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   await tick();
   flushSync();
 }
 
 async function settleCreation() {
   flushSync();
-  await vi.waitFor(() =>
-    expect(document.querySelector('form')?.getAttribute('aria-busy')).toBe('false'),
-  );
+  await vi.waitFor(() => {
+    expect(document.querySelector('form')?.getAttribute('aria-busy')).toBe('false');
+  });
   flushSync();
 }
 
@@ -123,7 +122,7 @@ describe('player selection capacity', () => {
     expect(props.selected).toEqual([...names.slice(1).map((_, i) => `player-${i + 1}`), 'extra']);
   });
 
-  it('retains the full ordered lineup when a dynamic maximum drops, and recovers without truncation', () => {
+  it('retains ordered players across dynamic maximum changes', () => {
     const selected = ['player-3', 'player-1', 'player-0'];
     const { props, limits } = renderCapacity(selected, 4);
     flushSync(() => limits.set('max', 2));
@@ -148,16 +147,15 @@ describe('player selection capacity', () => {
       const { props } = renderCapacity(['player-1', 'player-0'], 2);
       if (kind === 'named') await addNamed('New friend');
       else {
-        document.querySelector<HTMLButtonElement>('[aria-label="Add a random player"]')!.click();
+        document.querySelector<HTMLButtonElement>('[title="Surprise me"]')!.click();
       }
       await settleCreation();
       expect(stored).toHaveLength(13);
       expect(get(players).at(-1)?.id).toBe('player-12');
       expect(props.selected).toEqual(['player-1', 'player-0']);
       expect(chips()[12].disabled).toBe(true);
-      expect(get(toast)?.message).toContain(
-        `${stored[12].name} was added to Players, but not selected.`,
-      );
+      const message = `${stored[12].name} was added to Players, but not selected.`;
+      expect(get(toast)?.message).toContain(message);
       expect(get(toast)?.message).toContain('Deselect players to make room.');
       flushSync(() => chips()[1].click());
       flushSync(() => chips()[12].click());
@@ -169,21 +167,26 @@ describe('player selection capacity', () => {
   it.each(['named', 'random'])('selects a %s creation when space remains', async (kind) => {
     const { props } = renderCapacity(['player-0'], 2);
     if (kind === 'named') await addNamed('New friend');
-    else document.querySelector<HTMLButtonElement>('[aria-label="Add a random player"]')!.click();
+    else document.querySelector<HTMLButtonElement>('[title="Surprise me"]')!.click();
     await settleCreation();
     expect(props.selected).toEqual(['player-0', 'player-12']);
     expect(get(toast)).toBeNull();
   });
 
-  it('checks the current selection and maximum after pending creation and prevents duplicate submissions', async () => {
+  it('checks current limits after pending creation and prevents duplicate submissions', async () => {
     let finish!: (player: Player) => void;
-    vi.mocked(addPlayer).mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+    vi.mocked(addPlayer).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
     const { props, limits } = renderCapacity(['player-0'], 3);
     await addNamed('Pending friend');
     expect(document.querySelector('form')?.getAttribute('aria-busy')).toBe('true');
     expect(document.querySelector<HTMLInputElement>('input')?.disabled).toBe(true);
     document.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
-    document.querySelector<HTMLButtonElement>('[aria-label="Add a random player"]')!.click();
+    document.querySelector<HTMLButtonElement>('[title="Surprise me"]')!.click();
     flushSync(() => chips()[1].click());
     flushSync(() => limits.set('max', 2));
     const player = { ...stored[0], id: 'pending', name: 'Pending friend' };
