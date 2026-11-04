@@ -492,7 +492,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 40px;
+    min-height: 46px;
     padding: 6px 12px;
     border-radius: 999px;
     border: 1px solid var(--border);

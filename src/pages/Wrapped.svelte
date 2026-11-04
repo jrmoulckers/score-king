@@ -332,7 +332,7 @@
     margin: 0 2px 10px;
   }
   .chip {
-    min-height: 40px;
+    min-height: 46px;
     padding: 6px 12px;
     border: 1px solid var(--border);
     border-radius: 999px;
@@ -440,6 +440,8 @@
   }
   .dots {
     display: flex;
+    flex: 1;
+    min-width: 0;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
@@ -447,10 +449,11 @@
   }
   .dot {
     display: inline-flex;
+    flex: none;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 32px;
+    width: 46px;
+    height: 46px;
     padding: 0;
     border: none;
     background: none;
