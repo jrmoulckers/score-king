@@ -96,7 +96,8 @@
     let target = chip;
     if (destination === 'rename') target = renameButton;
     else if (destination === 'save') target = saveButton;
-    (target?.isConnected ? target : chip ?? saveButton)?.focus();
+    if (target?.isConnected) target.focus();
+    else (chip ?? saveButton)?.focus();
   }
 
   // The applied preset is "dirty" once the current form no longer matches it — only then is
