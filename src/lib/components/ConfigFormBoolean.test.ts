@@ -75,7 +75,7 @@ describe('boolean configuration targets', () => {
         default: true,
         advanced: true,
         section: 'Optional rules',
-        showIf: (config) => config.enabled,
+        showIf: (config) => config.enabled === true,
       },
     ]);
     const enabled = target.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
@@ -84,16 +84,14 @@ describe('boolean configuration targets', () => {
     const conditional = target.querySelector<HTMLInputElement>('details input[type="checkbox"]')!;
     expect(conditional.checked).toBe(true);
     expect(conditional.closest('label')?.textContent?.trim()).toBe(longLabel);
-    expect(conditional.closest('fieldset')?.querySelector('legend')?.textContent).toBe(
-      'Optional rules',
-    );
+    const legend = conditional.closest('fieldset')?.querySelector('legend');
+    expect(legend?.textContent).toBe('Optional rules');
     flushSync(() => conditional.closest('label')!.click());
     expect(conditional.checked).toBe(false);
     flushSync(() => enabled.closest('label')!.click());
     expect(target.querySelector('details')).toBeNull();
     flushSync(() => enabled.closest('label')!.click());
-    expect(
-      target.querySelector<HTMLInputElement>('details input[type="checkbox"]')?.checked,
-    ).toBe(false);
+    const restored = target.querySelector<HTMLInputElement>('details input[type="checkbox"]');
+    expect(restored?.checked).toBe(false);
   });
 });
