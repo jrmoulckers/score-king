@@ -184,7 +184,7 @@ describe('local editor identity containment', () => {
     expect(tworooms.scoreRound(draft(target), ctx)).toEqual(tworooms.scoreRound(expected, ctx));
   });
 
-  it.each(['counter', 'columns'] as const)('keeps custom %s values and full field labels', (shape) => {
+  it.each(['counter', 'columns'] as const)('preserves custom %s values and field labels', (shape) => {
     for (const name of names) {
       const def = {
         ...blankDef(),
