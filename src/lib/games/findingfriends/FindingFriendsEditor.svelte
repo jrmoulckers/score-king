@@ -13,6 +13,7 @@
   } from './logic';
 
   let { input = $bindable(), ctx }: { input: FindingFriendsInput; ctx: RoundContext } = $props();
+  const pointsLabelId = `${$props.id()}-points-label`;
 
   let showRules = $state(false);
 
@@ -107,7 +108,7 @@
   </div>
 
   <div class="field">
-    <div class="qlabel">Points the challengers captured (5s, 10s, Ks)</div>
+    <div id={pointsLabelId} class="qlabel">Points the challengers captured (5s, 10s, Ks)</div>
     <div class="quick">
       {#each quickPoints as n (n)}
         <button
@@ -122,6 +123,7 @@
     </div>
     <input
       class="numinput"
+      aria-labelledby={pointsLabelId}
       type="number"
       inputmode="numeric"
       min="0"
