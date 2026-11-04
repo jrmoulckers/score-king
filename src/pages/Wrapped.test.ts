@@ -26,6 +26,7 @@ let target: HTMLDivElement;
 let component: ReturnType<typeof mount>;
 
 beforeEach(async () => {
+  vi.spyOn(Date, 'now').mockReturnValue(new Date(2026, 10, 3, 20).getTime());
   const now = Date.now();
   players.set(['A', 'B'].map((id) => ({ id, name: id, color: '#7c5cff', createdAt: now })));
   const rows: Game[] = [0, 1, 2].map((i) => ({
@@ -60,6 +61,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await unmount(component);
+  vi.restoreAllMocks();
   games.set([]);
   players.set([]);
   settings.update((value) => ({ ...value, leadMemberId: null }));
@@ -68,6 +70,26 @@ afterEach(async () => {
 
 function tabs() {
   return [...target.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+}
+
+function ranges() {
+  return [
+    ...target.querySelectorAll<HTMLButtonElement>('[aria-label="Wrapped range"] button'),
+  ];
+}
+
+function pressed(index: number) {
+  expect(ranges().map((button) => button.textContent?.trim())).toEqual([
+    'This year',
+    'Last 12 months',
+    'Tonight',
+  ]);
+  expect(ranges().map((button) => button.getAttribute('aria-pressed'))).toEqual(
+    ranges().map((_, i) => String(i === index)),
+  );
+  expect(ranges().map((button) => button.classList.contains('on'))).toEqual(
+    ranges().map((_, i) => i === index),
+  );
 }
 
 function key(element: HTMLElement, value: string, ctrlKey = false) {
@@ -105,6 +127,78 @@ describe('Wrapped story keyboard navigation', () => {
     selected(0);
     key(tabs()[0], 'ArrowRight', true);
     selected(0);
+  });
+
+  describe('Wrapped range selection', () => {
+    it('exposes exactly one pressed range and resets the story without moving range focus', () => {
+      pressed(0);
+      for (const index of [1, 2, 0, 0]) {
+        tabs()[0].focus();
+        key(tabs()[0], 'End');
+        const range = ranges()[index];
+        range.focus();
+        range.click();
+        flushSync();
+        pressed(index);
+        expect(document.activeElement).toBe(range);
+        expect(tabs()[0].getAttribute('aria-selected')).toBe('true');
+      }
+    });
+
+    it.each(['year', 'rolling', 'tonight'] as const)(
+      'exposes the initial %s preset before any interaction',
+      async (initialPreset) => {
+        await unmount(component);
+        component = mount(Wrapped, { target, props: { initialPreset } });
+        await vi.waitFor(() => {
+          flushSync();
+          pressed(['year', 'rolling', 'tonight'].indexOf(initialPreset));
+        });
+      },
+    );
+
+    it('preserves date filtering, empty-range feedback, and recovery with truthful pressed state', () => {
+      const now = Date.now();
+      const times = [
+        now - 1000,
+        new Date(2026, 9, 1, 12).getTime(),
+        new Date(2025, 11, 15, 12).getTime(),
+        now - 400 * 86_400_000,
+      ];
+      const rows: Game[] = times.map((time, i) => ({
+        id: `range-${i}`,
+        type: 'tally',
+        config: {},
+        playerIds: ['A', 'B'],
+        winnerIds: ['A'],
+        status: 'finished',
+        createdAt: time,
+        finishedAt: time,
+        roundCount: 0,
+      }));
+      games.set(rows);
+      flushSync();
+      pressed(0);
+      expect(target.textContent).toContain('2 games');
+      ranges()[1].click();
+      flushSync();
+      pressed(1);
+      expect(target.textContent).toContain('3 games');
+      ranges()[2].click();
+      flushSync();
+      pressed(2);
+      expect(target.textContent).toContain('1 games');
+      games.set(rows.slice(1));
+      flushSync();
+      pressed(2);
+      expect(target.textContent).toContain('No finished games tonight yet');
+      expect(tabs()[0].getAttribute('aria-selected')).toBe('true');
+      ranges()[0].click();
+      flushSync();
+      pressed(0);
+      expect(target.textContent).toContain('1 games');
+      expect(tabs()[0].getAttribute('aria-selected')).toBe('true');
+    });
   });
 
   it('does not hijack range, panel, window, or manual-navigation keys', () => {

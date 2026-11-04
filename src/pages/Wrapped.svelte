@@ -225,8 +225,11 @@
   <!-- Range presets -->
   <div class="row wrap seg" role="group" aria-label="Wrapped range">
     {#each presetOptions as o (o.key)}
-      <button class="chip" class:on={preset === o.key} onclick={() => choose(o.key)}
-        >{o.label}</button
+      <button
+        class="chip"
+        class:on={preset === o.key}
+        aria-pressed={preset === o.key}
+        onclick={() => choose(o.key)}>{o.label}</button
       >
     {/each}
   </div>
