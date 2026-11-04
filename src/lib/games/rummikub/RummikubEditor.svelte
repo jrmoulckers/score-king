@@ -3,7 +3,7 @@
   import Avatar from '../../components/Avatar.svelte';
   import Stepper from '../../components/Stepper.svelte';
   import { haptic } from '../../haptics';
-  import { handPenalty, potTotal, type RummikubInput } from './logic';
+  import { handPenalty, potTotal, readJokerValue, type RummikubInput } from './logic';
   import { rummikub } from './index';
   import TileRack from './TileRack.svelte';
   import Pot from './Pot.svelte';
@@ -13,7 +13,7 @@
 
   let { input = $bindable(), ctx }: { input: RummikubInput; ctx: RoundContext } = $props();
 
-  const jokerValue = $derived(Math.max(0, Number(ctx.config.jokerValue) || 30));
+  const jokerValue = $derived(readJokerValue(ctx.config));
   const fixedRounds = $derived(
     ctx.config.endMode === 'target' ? null : Number(ctx.config.rounds) || 4,
   );
