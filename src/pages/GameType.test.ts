@@ -179,7 +179,9 @@ describe('new game numeric constraints', () => {
     button(target, 'Cancel').click();
     flushSync();
     await tick();
-    expect(document.activeElement).toBe(button(target, 'Save new'));
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(button(target, 'Save new'));
+    });
     button(target, 'Start game').click();
     await tick();
     expect(createGame).toHaveBeenCalledWith('tally', ['setup-player'], {
