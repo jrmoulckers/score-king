@@ -339,25 +339,25 @@
         <div class="fieldlabel">{targetLabel}</div>
         <div class="muted sm">0 = no target</div>
       </div>
-      <Stepper bind:value={def.target} min={0} step={targetStep} />
+      <Stepper label={targetLabel} bind:value={def.target} min={0} step={targetStep} />
     </div>
     <div class="row spread optrow">
       <div>
         <div class="fieldlabel">Round limit</div>
         <div class="muted sm">0 = open-ended</div>
       </div>
-      <Stepper bind:value={def.roundLimit} min={0} step={1} />
+      <Stepper label="Round limit" bind:value={def.roundLimit} min={0} step={1} />
     </div>
     <div class="row spread optrow">
       <div class="fieldlabel" style="margin: 0">Players</div>
       <div class="row wrap player-bounds">
         <div class="row wrap">
           <span class="muted sm">min</span>
-          <Stepper bind:value={def.minPlayers} min={1} max={99} step={1} />
+          <Stepper label="Minimum players" bind:value={def.minPlayers} min={1} max={99} step={1} />
         </div>
         <div class="row wrap">
           <span class="muted sm">max</span>
-          <Stepper bind:value={def.maxPlayers} min={1} max={99} step={1} />
+          <Stepper label="Maximum players" bind:value={def.maxPlayers} min={1} max={99} step={1} />
         </div>
       </div>
     </div>
@@ -366,7 +366,7 @@
         <div class="fieldlabel">Points per tap</div>
         <div class="muted sm">Stepper increment during play</div>
       </div>
-      <Stepper bind:value={def.step} min={1} max={100} step={1} />
+      <Stepper label="Points per tap" bind:value={def.step} min={1} max={100} step={1} />
     </div>
   </div>
 
