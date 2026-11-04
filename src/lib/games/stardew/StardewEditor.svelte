@@ -48,7 +48,7 @@
   }
 </script>
 
-<div class="stack">
+<div class="stack editor">
   <div class="row spread">
     <span class="pill">{label.emoji} {label.name} · Year {label.year}</span>
     <span class="row" style="gap: 8px">
@@ -123,13 +123,13 @@
           <span class="muted hint">{c.hint}</span>
         </span>
       </div>
-      <div class="right">
-        <span class="tally" class:maxed>
-          {done}<span class="cap">/{c.cap}</span>
-          {#if maxed}<span class="sr-only">— complete</span><span class="check" aria-hidden="true"
-              >✓</span
-            >{/if}
-        </span>
+      <span class="tally" class:maxed>
+        {done}<span class="cap">/{c.cap}</span>
+        {#if maxed}<span class="sr-only">— complete</span><span class="check" aria-hidden="true"
+            >✓</span
+          >{/if}
+      </span>
+      <div class="category-stepper">
         <Stepper
           bind:value={input[c.key]}
           min={0}
@@ -142,6 +142,9 @@
 </div>
 
 <style>
+  .editor {
+    container-type: inline-size;
+  }
   .meter {
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -262,9 +265,9 @@
     font-variant-numeric: tabular-nums;
   }
   .crow {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -284,15 +287,14 @@
   }
   .stack.tight {
     gap: 2px;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .hint {
     font-size: 0.75rem;
   }
-  .right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: none;
+  .category-stepper {
+    justify-self: end;
   }
   .tally {
     font-weight: 800;
@@ -313,6 +315,14 @@
   .tally .check {
     margin-left: 3px;
     font-size: 0.8rem;
+  }
+  @container (max-width: 480px) {
+    .crow {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .category-stepper {
+      grid-column: 1 / -1;
+    }
   }
   .help {
     white-space: pre-wrap;
