@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Tabletop game help · Score King prototype</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/prototype.css" />
+    <script type="module" src="/prototype.js"></script>
+  </head>
+  <body>
+    <main class="sample-app">
+      <header class="sample-bar"><strong>Score King</strong><span>Design prototype</span></header>
+      <section class="sample-game" aria-labelledby="sample-title">
+        <p class="eyebrow">Sample table · no saved game</p>
+        <h1 id="sample-title">🏴‍☠️ Skull King</h1>
+        <p class="muted">A reference for the table. A little room to explore.</p>
+        <button class="btn primary" id="open-guide">Open game guide</button>
+        <div class="sample-players" aria-label="Illustrative scoreboard, not real players">
+          <div><span>Alex</span><strong>120</strong></div>
+          <div><span>Sam</span><strong>100</strong></div>
+          <div><span>Charlie</span><strong>80</strong></div>
+        </div>
+        <p class="muted">This preview never reads or writes your games.</p>
+      </section>
+    </main>
+
+    <dialog id="guide" aria-labelledby="guide-title">
+      <header class="guide-header">
+        <div class="identity">
+          <span class="game-mark" aria-hidden="true">🏴‍☠️</span>
+          <div>
+            <p class="eyebrow">The table guide</p>
+            <h1 id="guide-title" tabindex="-1">Skull King</h1>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn ghost" id="theme" aria-label="Switch to light theme">Light</button>
+          <button class="btn" id="close-guide" aria-label="Close game guide">✕</button>
+        </div>
+      </header>
+
+      <div class="guide-body">
+        <nav class="topic-nav" aria-label="Guide topics">
+          <p class="eyebrow">Find your answer</p>
+          <button class="topic-link" data-topic="reference" aria-current="page">
+            <span>At a glance</span><span aria-hidden="true">↗</span>
+          </button>
+          <button class="topic-link" data-topic="bids">
+            <span>Bids &amp; scoring</span><span aria-hidden="true">›</span>
+          </button>
+          <button class="topic-link" data-topic="zero">
+            <span>Bidding zero</span><span aria-hidden="true">›</span>
+          </button>
+          <button class="topic-link" data-topic="bounties">
+            <span>Bounties &amp; captures</span><span aria-hidden="true">›</span>
+          </button>
+          <button class="topic-link" data-topic="settings">
+            <span>Table settings</span><span aria-hidden="true">›</span>
+          </button>
+          <div class="learn-link">
+            <p class="muted">First voyage?</p>
+            <button class="topic-link" data-topic="learn">
+              <span>Learn the game</span><span aria-hidden="true">→</span>
+            </button>
+            <span class="muted small">Learning-path preview</span>
+          </div>
+        </nav>
+
+        <div class="content" id="content">
+          <section id="reference-view" aria-labelledby="reference-title">
+            <p class="eyebrow">Quick reference</p>
+            <h2 id="reference-title" tabindex="-1">Make your bid. Hit your mark.</h2>
+            <p class="intro">The points, without the page turning.</p>
+            <div class="scoring-strip">
+              <button data-topic="bids">
+                <span>Hit your bid</span><strong>+20 × bid</strong><span>Exactly right</span>
+              </button>
+              <button data-topic="bids">
+                <span>Miss a bid of 1+</span><strong>−10 × gap</strong><span>Over or under</span>
+              </button>
+              <button data-topic="zero">
+                <span>Bid zero</span><strong>±10 × round</strong><span>All or nothing</span>
+              </button>
+            </div>
+          </section>
+
+          <section id="topic-view" aria-labelledby="topic-title" hidden>
+            <button class="btn ghost back" data-topic="reference">← Quick reference</button>
+            <p class="eyebrow" id="topic-kicker">Explore the rules</p>
+            <h2 id="topic-title" tabindex="-1"></h2>
+            <div id="topic-copy" class="topic-copy"></div>
+          </section>
+
+          <section class="practice" id="practice" aria-labelledby="practice-title">
+            <div class="practice-heading">
+              <div>
+                <p class="eyebrow">Try it on the table</p>
+                <h3 id="practice-title">A hand of your own</h3>
+              </div>
+              <span class="practice-badge">Practice only</span>
+            </div>
+            <p class="muted practice-intro">
+              Change your bid or the tricks you won. Watch the points follow.
+            </p>
+            <div class="round-control">
+              <label for="round">Round</label>
+              <select id="round">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option selected>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+              </select>
+              <span class="muted" id="round-caption">5 tricks available</span>
+            </div>
+            <div class="tabletop">
+              <div class="bid-area">
+                <span class="piece-label">Your bid</span>
+                <div class="bid-token" aria-hidden="true"><span id="bid-token">2</span></div>
+                <div class="stepper" role="group" aria-label="Sample bid">
+                  <button class="btn" data-change="bid:-1" aria-label="Decrease sample bid">
+                    −
+                  </button>
+                  <output id="bid-value" aria-label="Sample bid">2</output>
+                  <button class="btn" data-change="bid:1" aria-label="Increase sample bid">
+                    +
+                  </button>
+                </div>
+              </div>
+              <div class="tricks-area">
+                <span class="piece-label">Tricks won</span>
+                <div class="trick-stacks" id="trick-stacks" aria-hidden="true"></div>
+                <div class="stepper" role="group" aria-label="Sample tricks won">
+                  <button
+                    class="btn"
+                    data-change="actual:-1"
+                    aria-label="Decrease sample tricks won"
+                  >
+                    −
+                  </button>
+                  <output id="actual-value" aria-label="Sample tricks won">2</output>
+                  <button
+                    class="btn"
+                    data-change="actual:1"
+                    aria-label="Increase sample tricks won"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p class="piece-caption">
+              Each little stack represents one won trick, not individual cards.
+            </p>
+            <div class="score-receipt" role="status" aria-live="polite" aria-atomic="true">
+              <div>
+                <span class="eyebrow">This hand scores</span
+                ><strong class="sample-score" id="score">+40<span> pts</span></strong>
+              </div>
+              <div class="score-reason">
+                <strong id="verdict">Right on your bid.</strong
+                ><span id="equation">20 × 2 = +40 points</span>
+              </div>
+            </div>
+            <div class="example-presets" role="group" aria-label="Example scenarios">
+              <button class="btn" data-scenario="hit" aria-pressed="true">Hit a bid</button>
+              <button class="btn" data-scenario="miss" aria-pressed="false">Miss a bid</button>
+              <button class="btn" data-scenario="zero" aria-pressed="false">Try zero</button>
+              <button class="btn ghost" id="reset">Reset</button>
+            </div>
+            <p class="muted small">
+              Base scoring only; no bounties in this example. Nothing is saved.
+            </p>
+          </section>
+          <p class="prototype-note">
+            Design prototype · scoring follows Score King’s current rules. Illustrative pieces, not
+            official card artwork. This is not a complete rulebook.
+          </p>
+        </div>
+      </div>
+      <footer class="guide-footer">
+        <span class="footer-practice"
+          >Practice score <strong id="footer-score">+40 pts</strong></span
+        ><button class="btn primary" id="done">Back to the table</button>
+      </footer>
+    </dialog>
+  </body>
+</html>
