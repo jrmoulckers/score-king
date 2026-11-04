@@ -73,9 +73,7 @@ function tabs() {
 }
 
 function ranges() {
-  return [
-    ...target.querySelectorAll<HTMLButtonElement>('[aria-label="Wrapped range"] button'),
-  ];
+  return [...target.querySelectorAll<HTMLButtonElement>('[aria-label="Wrapped range"] button')];
 }
 
 function pressed(index: number) {
