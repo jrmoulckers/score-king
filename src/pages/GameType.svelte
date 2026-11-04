@@ -107,9 +107,9 @@
   </div>
 {:else}
   <BackLink href="/" label="Games" />
-  <div class="row" style="gap: 12px; margin: 10px 4px 4px">
-    <span style="font-size: 2rem">{module.emoji}</span>
-    <div>
+  <div class="row setup-heading" style="gap: 12px; margin: 10px 4px 4px">
+    <span class="setup-emoji" style="font-size: 2rem">{module.emoji}</span>
+    <div class="setup-identity">
       <h1 style="margin: 0">{module.name}</h1>
       <div class="muted">{module.tagline}</div>
     </div>
@@ -200,6 +200,16 @@
 {/if}
 
 <style>
+  .setup-heading {
+    min-width: 0;
+  }
+  .setup-emoji {
+    flex: none;
+  }
+  .setup-identity {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   .authoring {
     display: flex;
     gap: 8px;

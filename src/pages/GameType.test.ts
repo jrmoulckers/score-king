@@ -1,15 +1,20 @@
 import { flushSync, mount, tick, unmount } from 'svelte';
 import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ConfigField } from '../lib/types';
+import type { ConfigField, GameModule } from '../lib/types';
 import { tally } from '../lib/games/tally';
+import { hearts } from '../lib/games/hearts';
+import { buildCustomModule } from '../lib/games/custom/factory';
+import { blankDef, MAX_NAME_LEN } from '../lib/games/custom/types';
 import { getModule } from '../lib/games/registry';
 import { createGame } from '../lib/stores/games';
+import { customGameDefs } from '../lib/stores/customGames';
 import { players, refreshPlayers } from '../lib/stores/players';
 import { savePreset } from '../lib/stores/presets';
 import { settings } from '../lib/stores/settings';
 import { dismissToast, toast } from '../lib/stores/toast';
 import GameType from './GameType.svelte';
+import source from './GameType.svelte?raw';
 
 vi.mock('../lib/storage/db', () => ({
   getAllPlayers: vi.fn().mockResolvedValue([]),
@@ -38,12 +43,17 @@ function button(target: HTMLElement, label: string) {
   return found!;
 }
 
-async function render(fields = tally.configFields) {
-  vi.mocked(getModule).mockReturnValue({ ...tally, configFields: fields });
+function renderModule(module: GameModule, type = module.id) {
+  vi.mocked(getModule).mockReturnValue(module);
   const target = document.createElement('div');
   document.body.appendChild(target);
-  component = mount(GameType, { target, props: { type: 'tally' } });
+  component = mount(GameType, { target, props: { type } });
   flushSync();
+  return target;
+}
+
+async function render(fields = tally.configFields) {
+  const target = renderModule({ ...tally, configFields: fields });
   target.querySelector<HTMLButtonElement>('.chip')!.click();
   flushSync();
   await tick();
@@ -62,14 +72,60 @@ beforeEach(async () => {
   vi.clearAllMocks();
   await refreshPlayers();
   players.set([{ id: 'setup-player', name: 'Setup Player', color: '#7c5cff', createdAt: 1 }]);
+  customGameDefs.set([]);
 });
 
 afterEach(async () => {
   if (component) await unmount(component);
   component = undefined;
+  customGameDefs.set([]);
   dismissToast();
   settings.update((value) => ({ ...value, gamePresets: [] }));
   document.body.replaceChildren();
+});
+
+describe('setup heading identities', () => {
+  it('lets the identity shrink and wrap unbroken text without shrinking the emoji', () => {
+    expect(source).toMatch(/\.setup-heading\s*\{[^}]*min-width:\s*0/);
+    expect(source).toMatch(/\.setup-emoji\s*\{[^}]*flex:\s*none/);
+    expect(source).toMatch(
+      /\.setup-identity\s*\{[^}]*min-width:\s*0;[^}]*overflow-wrap:\s*anywhere/,
+    );
+  });
+
+  it.each(['UnbrokenTabletopCounterX', 'Tabletop Counter Players'])(
+    'retains the full legal name %s, emoji, tagline, actions and player selection',
+    async (name) => {
+      expect(name).toHaveLength(MAX_NAME_LEN);
+      const def = { ...blankDef(), name, tagline: 'Keep every point', minPlayers: 1 };
+      customGameDefs.set([def]);
+      const target = renderModule(buildCustomModule(def));
+      const heading = target.querySelector('.setup-heading')!;
+      expect(heading.querySelector('h1')?.textContent).toBe(name);
+      expect(heading.querySelector('.setup-emoji')?.textContent).toBe(def.emoji);
+      expect(heading.querySelector('.muted')?.textContent).toBe(def.tagline);
+      expect(target.querySelector('[aria-label="Custom game actions"] a')?.textContent).toBe(
+        'Edit',
+      );
+      expect(button(target, 'Duplicate').disabled).toBe(false);
+      expect(button(target, 'Delete').disabled).toBe(false);
+      expect(button(target, 'Start game').disabled).toBe(true);
+      target.querySelector<HTMLButtonElement>('.chip')!.click();
+      flushSync();
+      expect(button(target, 'Start game').disabled).toBe(false);
+      button(target, 'Start game').click();
+      await tick();
+      expect(createGame).toHaveBeenCalledWith(def.id, ['setup-player'], {});
+    },
+  );
+
+  it.each([hearts, tally])('preserves the ordinary $name identity', (module) => {
+    const target = renderModule(module);
+    expect(target.querySelector('.setup-heading h1')?.textContent).toBe(module.name);
+    expect(target.querySelector('.setup-emoji')?.textContent).toBe(module.emoji);
+    expect(target.querySelector('.setup-identity .muted')?.textContent).toBe(module.tagline);
+    expect(target.querySelector('[aria-label="Custom game actions"]')).toBeNull();
+  });
 });
 
 describe('new game numeric constraints', () => {
