@@ -126,11 +126,16 @@
     gap: 14px;
   }
   .reset {
+    flex-wrap: wrap;
     gap: 14px;
     margin-top: 4px;
   }
+  .reset .meta {
+    flex: 1 1 24rem;
+  }
   .reset .btn {
     flex: none;
+    max-width: 100%;
   }
   .portable {
     display: flex;
