@@ -59,6 +59,36 @@ afterEach(async () => {
 });
 
 describe('Hearts card allocation meter', () => {
+  it.each([1, 2] as const)(
+    'distinguishes moon rows before and after either choice (%i)',
+    (decks) => {
+      const el = editor(decks);
+      click(el, '.moon-btn');
+      const rows = el.querySelectorAll('.prow');
+      expect(rows[0].querySelector('.outcome')!.textContent).toBe(
+        '🌙 shot the moon · choose scoring',
+      );
+      expect(rows[1].querySelector('.outcome')!.textContent).toBe('🌙 mooned · points pending');
+      expect(rows[0].querySelector('.preview')!.textContent).toBe('—');
+      expect(el.querySelector('.meter.ready .label')!.textContent).toBe('🌙 Moon shot');
+      const body = el.querySelector('.moon-body')!;
+      expect(body.firstElementChild!.textContent).toBe('a is shooting the moon!');
+      expect(body.querySelector('.moon-scoring')!.firstElementChild!.textContent).toBe(
+        'Choose how to score the moon.',
+      );
+      click(el, '.moon-choice button');
+      expect(rows[0].querySelector('.outcome')!.textContent).toBe('🌙 shot the moon');
+      expect(rows[1].querySelector('.outcome')!.textContent).toBe(
+        `🌙 mooned · +${26 * decks} points`,
+      );
+      expect(rows[1].querySelector('.preview')!.textContent).toBe(`+${26 * decks}`);
+      click(el, '.moon-choice button:nth-child(2)');
+      expect(rows[0].querySelector('.preview')!.textContent).toBe(`−${26 * decks}`);
+      expect(rows[1].querySelector('.outcome')!.textContent).toBe('🌙 mooned · no points added');
+      expect(rows[1].querySelector('.preview')!.textContent).toBe('0');
+    },
+  );
+
   it.each([1, 2] as const)('starts with thirteen hearts and one Queen per deck (%i)', (decks) => {
     const el = editor(decks);
     expect(available(el, 'heart')).toBe(13 * decks);

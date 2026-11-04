@@ -121,12 +121,75 @@ describe('Hearts scoring presentation and entry feedback', () => {
       'Choose how to score the moon to continue.',
     );
     expect(save.disabled).toBe(true);
-    button(target, 'Everyone else +26').click();
+    const choices = target.querySelectorAll('.moon-choice');
+    expect(choices).toHaveLength(2);
+    expect(choices[1].compareDocumentPosition(save) & 4).toBe(4);
+    expect(target.querySelector('.save-area')?.textContent).toContain('Round not saved yet.');
+    expect(target.querySelectorAll('.prow .outcome')[0].textContent).toContain('shot the moon');
+    expect(target.querySelectorAll('.prow .outcome')[1].textContent).toContain('points pending');
+    choices[1].querySelector<HTMLButtonElement>('button')!.click();
     flushSync();
+    for (const choice of choices)
+      expect(choice.querySelector('button')!.getAttribute('aria-pressed')).toBe('true');
     expect(save.disabled).toBe(false);
     expect(target.querySelector('[role="alert"]')).toBeNull();
     expect(db.putRound).not.toHaveBeenCalled();
+    choices[0].querySelector<HTMLButtonElement>('button:nth-child(2)')!.click();
+    flushSync();
+    for (const choice of choices)
+      expect(choice.querySelector('button:nth-child(2)')!.getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+    expect(target.querySelectorAll('.prow .outcome')[1].textContent).toContain('no points added');
+    expect(save.disabled).toBe(false);
   });
+
+  it.each(['add26', 'subtract'] as const)(
+    'preserves a saved moon choice and shares edits at both controls (%s)',
+    async (moonRule) => {
+      const saved: Round = {
+        id: 'saved-moon',
+        gameId: game.id,
+        index: 0,
+        input: {
+          ...emptyInput(ids),
+          hearts: { a: 13, b: 0, c: 0, d: 0 },
+          queens: { a: 1, b: 0, c: 0, d: 0 },
+          moonRule,
+        },
+        deltas: moonRule === 'add26' ? { a: 0, b: 26, c: 26, d: 26 } : { a: -26, b: 0, c: 0, d: 0 },
+        createdAt: 1,
+      };
+      const target = await render([saved]);
+      target.querySelector<HTMLButtonElement>('[aria-label="Edit round 1"]')!.click();
+      await vi.waitFor(() => {
+        flushSync();
+        expect(target.querySelectorAll('.moon-choice')).toHaveLength(2);
+      });
+      const choices = target.querySelectorAll('.moon-choice');
+      const selector = moonRule === 'add26' ? 'button' : 'button:nth-child(2)';
+      for (const choice of choices)
+        expect(choice.querySelector(selector)!.getAttribute('aria-pressed')).toBe('true');
+      expect(button(target, 'Save changes').disabled).toBe(false);
+      expect(target.querySelector('.save-area')?.textContent).toContain('Changes not saved yet.');
+      expect(target.querySelector('.prow .outcome')?.textContent).toBe('🌙 shot the moon');
+      choices[1].querySelector<HTMLButtonElement>('button:nth-child(2)')!.click();
+      flushSync();
+      expect(choices[0].querySelector('button:nth-child(2)')!.getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+      expect(db.putRound).not.toHaveBeenCalled();
+      expect((saved.input as { moonRule: string }).moonRule).toBe(moonRule);
+      button(target, 'Clear hand').click();
+      flushSync();
+      target.querySelector<HTMLButtonElement>('.moon-btn')!.click();
+      flushSync();
+      expect(button(target, 'Save changes').disabled).toBe(true);
+      expect(target.querySelector('[role="alert"]')?.textContent).toContain(
+        'Choose how to score the moon to continue.',
+      );
+    },
+  );
 
   it('uses the same actionable alert and save guard when editing a saved round', async () => {
     const saved: Round = {

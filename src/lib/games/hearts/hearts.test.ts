@@ -369,16 +369,19 @@ describe('validateRound', () => {
     const hand = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
     expect(outcomeFor(hand, 'a', IDS, {})).toMatchObject({
       kind: 'pending',
-      label: 'awaiting choice',
+      label: 'shot the moon · choose scoring',
     });
+    expect(outcomeFor(hand, 'b', IDS, {}).label).toBe('mooned · points pending');
     hand.moonRule = 'add26';
-    expect(outcomeFor(hand, 'a', IDS, {}).label).toBe('moon shot entered');
-    expect(outcomeFor(hand, 'b', IDS, {}).label).toBe('mooned');
+    expect(outcomeFor(hand, 'a', IDS, {}).label).toBe('shot the moon');
+    expect(outcomeFor(hand, 'b', IDS, {}).label).toBe('mooned · +26 points');
     expect(previewDelta(hand, 'b', IDS, {})).toBe(26);
     hand.moonRule = 'subtract';
-    expect(outcomeFor(hand, 'b', IDS, {}).label).toBe('shooter takes the deduction');
+    expect(outcomeFor(hand, 'b', IDS, {}).label).toBe('mooned · no points added');
     expect(previewDelta(hand, 'b', IDS, {})).toBe(0);
-    expect(outcomeFor(hand, 'a', IDS, { variantJack: true }).label).toBe('finish card entries');
+    expect(outcomeFor(hand, 'a', IDS, { variantJack: true }).label).toBe(
+      'shot the moon · finish card entries',
+    );
   });
   it('passes a well-formed round', () => {
     expect(validateRound(input({ a: 4, b: 4, c: 4, d: 1 }, 'd'), P4, {})).toBeNull();

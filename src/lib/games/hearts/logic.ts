@@ -471,12 +471,17 @@ export function outcomeFor(
         emoji: '🌙',
         label:
           input.moonRule === 'add26' || input.moonRule === 'subtract'
-            ? 'finish card entries'
-            : 'awaiting choice',
+            ? id === moon
+              ? 'shot the moon · finish card entries'
+              : 'mooned · finish card entries'
+            : id === moon
+              ? 'shot the moon · choose scoring'
+              : 'mooned · points pending',
       };
-    if (id === moon) return { kind: 'moon', emoji: '🌙', label: 'moon shot entered' };
-    if (input.moonRule === 'add26') return { kind: 'points', emoji: '☄️', label: 'mooned' };
-    return { kind: 'points', emoji: '🌙', label: 'shooter takes the deduction' };
+    if (id === moon) return { kind: 'moon', emoji: '🌙', label: 'shot the moon' };
+    if (input.moonRule === 'add26')
+      return { kind: 'points', emoji: '🌙', label: `mooned · +${moonPoints(config)} points` };
+    return { kind: 'points', emoji: '🌙', label: 'mooned · no points added' };
   }
   const delta = previewDelta(input, id, playerIds, config);
   const queens = queenCount(input, id);
