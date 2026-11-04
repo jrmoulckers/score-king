@@ -34,7 +34,7 @@ describe('boolean configuration targets', () => {
       expect(label.classList.contains('boolean-field')).toBe(true);
       expect(checkbox.labels?.[0]).toBe(label);
       expect(checkbox.style.width).toBe('auto');
-      expect(checkbox.style.minHeight).toBe('0');
+      expect(parseFloat(checkbox.style.minHeight)).toBe(0);
       expect(checkbox.hasAttribute('role')).toBe(false);
       expect(checkbox.hasAttribute('aria-checked')).toBe(false);
       expect(checkbox.checked).toBe(false);
@@ -61,7 +61,9 @@ describe('boolean configuration targets', () => {
     flushSync(() => checkbox.closest('label')!.click());
     expect(checkbox.checked).toBe(false);
     expect(description?.textContent).toContain('♦J = -10');
-    expect(target.querySelector('#target')?.closest('label.boolean-field')).toBeNull();
+    const numeric = target.querySelector('input[type="number"]')!;
+    expect(numeric).not.toBeNull();
+    expect(numeric.closest('label.boolean-field')).toBeNull();
   });
 
   it('keeps long conditional labels in their group and preserves drafts when hidden', () => {
