@@ -96,7 +96,6 @@ describe('Rummikub joker configuration in the editor', () => {
     expect(rummikub.scoreRound(draft(target), ctx)).toEqual({ a: 13, b: -13 });
     expect(initial.hands.b).toEqual({ tiles: 0, jokers: 1 });
   });
-
 });
 
 describe('Rummikub responsive tile keypad', () => {
