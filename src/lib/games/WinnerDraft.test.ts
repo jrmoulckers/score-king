@@ -113,7 +113,12 @@ function toggle(target: HTMLElement, seat: number) {
   flushSync();
 }
 
-function enter(target: HTMLElement, test: (typeof cases)[number], seat = 'A', values = test.values) {
+function enter(
+  target: HTMLElement,
+  test: (typeof cases)[number],
+  seat = 'A',
+  values = test.values,
+) {
   for (const [i, label] of test.labels.entries()) {
     const field = target.querySelector<HTMLInputElement>(`[aria-label="${seat} ${label}"]`)!;
     field.value = String(values[i]);
