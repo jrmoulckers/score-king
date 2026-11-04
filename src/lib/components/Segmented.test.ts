@@ -137,7 +137,7 @@ describe('Segmented forced-colors selection', () => {
     expect(getComputedStyle(buttons[0]).textDecorationLine).toBe('underline');
     expect(getComputedStyle(buttons[0]).textDecorationThickness).toBe('3px');
     expect(getComputedStyle(buttons[0]).textUnderlineOffset).toBe('4px');
-    expect(forcedRules).toMatch(/text-decoration-color:\s*CanvasText;/);
+    expect(forcedRules).toMatch(/text-decoration-color:\s*CanvasText;/i);
     expect(getComputedStyle(buttons[0]).textDecorationColor).toBe(getComputedStyle(outside).color);
     expect(getComputedStyle(buttons[1]).textDecorationLine).not.toBe('underline');
 
@@ -147,7 +147,7 @@ describe('Segmented forced-colors selection', () => {
     expect(getComputedStyle(buttons[0]).textDecorationLine).not.toBe('underline');
     expect(getComputedStyle(buttons[2]).textDecorationLine).toBe('underline');
     expect(getComputedStyle(buttons[2]).outlineStyle).not.toBe('solid');
-    expect(forcedRules).toMatch(/\.seg:focus-visible\s*\{\s*outline-color:\s*Highlight;/);
+    expect(forcedRules).toMatch(/\.seg:focus-visible\s*\{\s*outline-color:\s*Highlight;/i);
   });
 
   it('confines the selected underline to forced colors and leaves the normal palette intact', () => {
