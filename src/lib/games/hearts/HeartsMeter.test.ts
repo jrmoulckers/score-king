@@ -108,7 +108,9 @@ describe('Hearts card allocation meter', () => {
     expect(heart.getAttribute('aria-label')).toBe('Heart points placed');
     expect(queen.getAttribute('aria-label')).toBe('Queen of Spades points placed');
     expect(heart.getAttribute('aria-valuetext')).toBe(`${hearts} of ${decks * 13} points placed`);
-    expect(queen.getAttribute('aria-valuetext')).toBe(`${queens * 13} of ${decks * 13} points placed`);
+    expect(queen.getAttribute('aria-valuetext')).toBe(
+      `${queens * 13} of ${decks * 13} points placed`,
+    );
     expect(el.querySelector('.count')!.textContent).toBe(`${points}/${total} pts`);
     const panel = el.querySelector('.progress-panel')!;
     expect(el.querySelector('.inventory')!.nextElementSibling).toBe(panel);
