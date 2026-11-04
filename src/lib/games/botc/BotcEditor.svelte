@@ -560,7 +560,7 @@
 
   .life {
     flex: none;
-    min-height: 40px;
+    min-height: 46px;
     padding: 0 14px;
     border: 1px solid var(--border);
     border-radius: 999px;
@@ -593,7 +593,7 @@
     border-radius: var(--radius-sm);
   }
   .team button {
-    min-height: 38px;
+    min-height: 46px;
     padding: 0 12px;
     border: 0;
     border-radius: var(--radius-sm);
@@ -615,7 +615,7 @@
     gap: 6px;
   }
   .act {
-    min-height: 38px;
+    min-height: 46px;
     padding: 0 12px;
     border: 1px solid var(--border);
     border-radius: 999px;

@@ -364,7 +364,7 @@
   }
   .dice {
     flex: none;
-    min-height: 36px;
+    min-height: 46px;
     padding: 6px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);

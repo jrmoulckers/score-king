@@ -672,11 +672,13 @@
   }
   .vbeads {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
   }
   .vbead {
-    flex: 1 1 0;
-    min-height: 40px;
+    flex: 1 1 46px;
+    min-width: 46px;
+    min-height: 46px;
     border: 1px solid var(--border);
     border-radius: 10px;
     background: var(--surface-2);

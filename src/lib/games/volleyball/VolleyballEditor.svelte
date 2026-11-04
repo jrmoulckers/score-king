@@ -594,7 +594,7 @@
     font-size: 0.85rem;
     cursor: pointer;
     padding: 6px 2px;
-    min-height: 40px;
+    min-height: 46px;
   }
   .linklike:hover {
     color: var(--text);
@@ -805,7 +805,7 @@
     min-width: 0;
     align-items: center;
     gap: 8px;
-    min-height: 40px;
+    min-height: 46px;
     padding: 4px 6px;
     background: var(--surface);
     border: 1px solid var(--border);
