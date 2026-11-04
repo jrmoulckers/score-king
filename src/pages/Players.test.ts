@@ -12,9 +12,7 @@ const fixture = vi.hoisted(() => ({ rows: [] as Player[] }));
 vi.mock('../lib/storage/db', () => ({
   getAllPlayers: vi.fn(async () => structuredClone(fixture.rows)),
   updatePlayer: vi.fn(async (player: Player) => {
-    fixture.rows = fixture.rows.map((row) =>
-      row.id === player.id ? structuredClone(player) : row,
-    );
+    fixture.rows = fixture.rows.map((row) => (row.id === player.id ? structuredClone(player) : row));
   }),
 }));
 
@@ -84,9 +82,7 @@ describe('Players roster containment', () => {
     await click(card(2).querySelector<HTMLButtonElement>('button[aria-pressed]')!);
     expect(card(2).querySelector('.lead-tag')?.textContent).toContain('On this device');
     expect(card(2).querySelector('.muted-tag')?.textContent).toBe('Unclaimed');
-    expect(card(2).querySelector('button[aria-pressed]')?.getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(card(2).querySelector('button[aria-pressed]')?.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('preserves full editor names, gradient colors and save behavior', async () => {
@@ -112,12 +108,8 @@ describe('Players roster containment', () => {
     await click(button('Archive'));
     await click(target.querySelector<HTMLButtonElement>('.archtoggle')!);
     expect(target.querySelector('.arch-name')?.textContent).toBe(names[1]);
-    expect(target.querySelector('.card.arch .avatar')?.getAttribute('aria-label')).toBe(
-      names[1],
-    );
-    await click(
-      target.querySelector<HTMLButtonElement>(`[aria-label="Delete ${names[1]} for good"]`)!,
-    );
+    expect(target.querySelector('.card.arch .avatar')?.getAttribute('aria-label')).toBe(names[1]);
+    await click(target.querySelector<HTMLButtonElement>(`[aria-label="Delete ${names[1]} for good"]`)!);
     expect(button('Delete')).toBeDefined();
     await click(button('Cancel'));
     await click(button('Restore'));
