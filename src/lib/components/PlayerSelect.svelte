@@ -1,5 +1,7 @@
 <script lang="ts">
   import { activePlayers as roster, createPlayer, generatePlayer } from '../stores/players';
+  import { reportStorageError } from '../stores/storage';
+  import { showToast } from '../stores/toast';
   import type { ID } from '../types';
   import { MAX_NAME_LEN } from '../util';
   import Avatar from './Avatar.svelte';
@@ -11,23 +13,34 @@
   }: { selected: ID[]; min?: number; max?: number } = $props();
 
   let newName = $state('');
+  let adding = $state(false);
+  const capacityHintId = $props.id();
+  const atCapacity = $derived(selected.length >= max);
 
   function toggle(id: ID) {
     if (selected.includes(id)) selected = selected.filter((x) => x !== id);
     else if (selected.length < max) selected = [...selected, id];
   }
 
-  async function add() {
+  async function add(random = false) {
     const name = newName.trim();
-    if (!name) return;
-    const p = await createPlayer(name);
-    newName = '';
-    if (selected.length < max) selected = [...selected, p.id];
-  }
-
-  async function addRandom() {
-    const p = await generatePlayer();
-    if (selected.length < max) selected = [...selected, p.id];
+    if (adding || (!random && !name)) return;
+    adding = true;
+    try {
+      const p = await (random ? generatePlayer() : createPlayer(name));
+      if (!random) newName = '';
+      if (selected.length < max) selected = [...selected, p.id];
+      else {
+        showToast(
+          `${p.name} was added to Players, but not selected. Deselect players to make room.`,
+          6000,
+        );
+      }
+    } catch {
+      reportStorageError();
+    } finally {
+      adding = false;
+    }
   }
 </script>
 
@@ -39,6 +52,8 @@
         class="chip"
         class:on={selected.includes(p.id)}
         aria-pressed={selected.includes(p.id)}
+        disabled={atCapacity && !selected.includes(p.id)}
+        aria-describedby={atCapacity ? capacityHintId : undefined}
         onclick={() => toggle(p.id)}
       >
         <Avatar
@@ -64,8 +79,17 @@
     {/if}
   </div>
 
+  {#if atCapacity}
+    <p class="muted" id={capacityHintId} role="status">
+      This setup allows at most {max} player{max === 1 ? '' : 's'}. Deselect players to change your
+      selection. New players are saved to Players without being selected.
+    </p>
+  {/if}
+
   <form
     class="row"
+    aria-describedby={atCapacity ? capacityHintId : undefined}
+    aria-busy={adding}
     onsubmit={(e) => {
       e.preventDefault();
       add();
@@ -78,15 +102,17 @@
       aria-label="Add a player by name"
       maxlength={MAX_NAME_LEN}
       bind:value={newName}
+      disabled={adding}
     />
     <button
       class="btn"
       type="button"
-      onclick={addRandom}
+      onclick={() => add(true)}
+      disabled={adding}
       aria-label="Add a random player"
       title="Surprise me">🎲</button
     >
-    <button class="btn" type="submit" disabled={!newName.trim()}>Add</button>
+    <button class="btn" type="submit" disabled={adding || !newName.trim()}>Add</button>
   </form>
 </div>
 
