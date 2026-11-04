@@ -42,8 +42,7 @@ function render(guessed = [0, 0, 0]) {
   return {
     target,
     click,
-    draft: () =>
-      JSON.parse(target.querySelector('[data-draft]')!.textContent!) as SaladBowlInput,
+    draft: () => JSON.parse(target.querySelector('[data-draft]')!.textContent!) as SaladBowlInput,
     pending: () => target.querySelector('.tn')!.textContent,
     active: () =>
       [...target.querySelectorAll('.chip')].findIndex(
