@@ -1,6 +1,7 @@
 import { flushSync, mount, unmount } from 'svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { RoundContext } from '../../types';
+import { settings } from '../../stores/settings';
 import { EVAL_CATEGORIES, emptySeason, type StardewSeasonInput } from './logic';
 import StardewEditorHarness from './StardewEditorHarness.svelte';
 
@@ -49,9 +50,14 @@ function draft(target: HTMLElement): StardewSeasonInput {
   return JSON.parse(target.querySelector('[data-draft]')!.textContent!);
 }
 
+beforeEach(() => {
+  settings.update((value) => ({ ...value, motion: 'reduce' }));
+});
+
 afterEach(async () => {
   for (const component of mounted.splice(0)) await unmount(component);
   document.body.replaceChildren();
+  settings.update((value) => ({ ...value, motion: 'system' }));
 });
 
 describe('Stardew category entry regions', () => {
