@@ -350,11 +350,15 @@
     </div>
     <div class="row spread optrow">
       <div class="fieldlabel" style="margin: 0">Players</div>
-      <div class="row" style="gap: 10px">
-        <span class="muted sm">min</span>
-        <Stepper bind:value={def.minPlayers} min={1} max={99} step={1} />
-        <span class="muted sm">max</span>
-        <Stepper bind:value={def.maxPlayers} min={1} max={99} step={1} />
+      <div class="row wrap player-bounds">
+        <div class="row wrap">
+          <span class="muted sm">min</span>
+          <Stepper bind:value={def.minPlayers} min={1} max={99} step={1} />
+        </div>
+        <div class="row wrap">
+          <span class="muted sm">max</span>
+          <Stepper bind:value={def.maxPlayers} min={1} max={99} step={1} />
+        </div>
       </div>
     </div>
     <div class="row spread optrow">
@@ -529,6 +533,9 @@
   .optrow {
     gap: 12px;
     flex-wrap: wrap;
+  }
+  .player-bounds {
+    max-width: 100%;
   }
   .help-area {
     width: 100%;
