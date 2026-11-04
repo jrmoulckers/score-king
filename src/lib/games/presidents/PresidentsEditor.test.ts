@@ -2,13 +2,7 @@ import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoundContext } from '../../types';
 import PresidentsEditorHarness from './PresidentsEditorHarness.svelte';
-import {
-  freshPositions,
-  scoreRound,
-  titleFor,
-  validateRound,
-  type PresidentsInput,
-} from './logic';
+import { freshPositions, scoreRound, titleFor, validateRound, type PresidentsInput } from './logic';
 
 vi.mock('../../motion', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../motion')>();
@@ -107,7 +101,7 @@ describe('Presidents finishing-place context', () => {
     expect(target.querySelector('.wrap-banner')).not.toBeNull();
   });
 
-  it.each(['0', '-1', '6', '1.5'])('does not assign a title to invalid typed finish %s', (value) => {
+  it.each(['0', '-1', '6', '1.5'])('keeps invalid typed finish %s neutral', (value) => {
     const target = render();
     enter(target, value);
     const invalid = row(target);
