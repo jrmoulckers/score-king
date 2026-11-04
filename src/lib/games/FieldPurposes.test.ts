@@ -72,7 +72,7 @@ afterEach(async () => {
 });
 
 describe('round field purposes', () => {
-  it('associates the visible secret-word purpose before and after typing without changing outcomes', () => {
+  it('associates the secret-word purpose and preserves outcomes', () => {
     const { target, ctx } = render(werewords, WerewordsEditor);
     const field = target.querySelector<HTMLInputElement>('.spell-input')!;
     expect(purpose(field)).toBe('🔮 The secret word');
@@ -93,7 +93,7 @@ describe('round field purposes', () => {
     expect(purpose(field)).toBe('🔮 The secret word');
   });
 
-  it('associates captured points with the challengers while preserving bounds, clearing and scoring', () => {
+  it('associates captured points and preserves bounds, clearing and scoring', () => {
     const { target, ctx } = render(findingFriends, FindingFriendsEditor);
     const field = target.querySelector<HTMLInputElement>('.numinput')!;
     const label = 'Points the challengers captured (5s, 10s, Ks)';
