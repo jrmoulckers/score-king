@@ -187,6 +187,26 @@ describe.each<Surface>(['start', 'finished', 'abandoned'])('%s creation action',
     });
   });
 
+  it('stays single-flight until the persisted game list refresh completes', async () => {
+    const { action } = await render(surface);
+    const refresh = deferred();
+    vi.mocked(db.getAllGames).mockImplementationOnce(async () => {
+      await refresh.promise;
+      return [...stored];
+    });
+    action.click();
+    await vi.waitFor(() => {
+      flushSync();
+      expect(db.putGame).toHaveBeenCalledTimes(1);
+      expect(action.disabled).toBe(true);
+    });
+    action.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(db.putGame).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+    refresh.resolve();
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
+  });
+
   it('allows ordinary single creation and a later deliberate creation', async () => {
     const { action } = await render(surface);
     const count = stored.length;
