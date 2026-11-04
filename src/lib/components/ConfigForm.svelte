@@ -47,7 +47,7 @@
   {@const descriptionId = f.help || rules.length ? `${formId}-${f.key}-description` : undefined}
   <div>
     {#if f.type === 'boolean'}
-      <label class="row" style="gap: 10px; cursor: pointer">
+      <label class="row boolean-field">
         <input
           type="checkbox"
           bind:checked={config[f.key]}
@@ -141,6 +141,17 @@
 </div>
 
 <style>
+  .boolean-field {
+    min-height: 46px;
+    cursor: pointer;
+  }
+  .boolean-field input {
+    flex: none;
+  }
+  .boolean-field span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   .field-description {
     font-size: 0.8rem;
     margin-top: 4px;
