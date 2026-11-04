@@ -13,6 +13,7 @@
   import SignalShare from './SignalShare.svelte';
   import QrScanner from './QrScanner.svelte';
   import { focusTrap } from '../a11y/focusTrap';
+  import { documentScrollLock } from '../a11y/documentScrollLock';
 
   const {
     mode,
@@ -177,6 +178,7 @@
   aria-label="Play together"
   tabindex="-1"
   bind:this={sheet}
+  use:documentScrollLock
   use:focusTrap
 >
   <div class="grabber" aria-hidden="true"></div>

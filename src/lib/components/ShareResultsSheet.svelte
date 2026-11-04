@@ -18,6 +18,7 @@
   } from '../share/recap';
   import Scoreboard from './Scoreboard.svelte';
   import { focusTrap } from '../a11y/focusTrap';
+  import { documentScrollLock } from '../a11y/documentScrollLock';
 
   const { payload, onclose }: { payload: RecapPayload; onclose: () => void } = $props();
 
@@ -172,6 +173,7 @@
   aria-label="Share results"
   tabindex="-1"
   bind:this={sheet}
+  use:documentScrollLock
   use:focusTrap
 >
   <div class="grabber" aria-hidden="true"></div>
