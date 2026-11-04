@@ -26,7 +26,7 @@
 
   let newName = $state('');
   let editingId = $state<string | null>(null);
-  let editNameInput: HTMLInputElement | undefined;
+  let editNameInput = $state<HTMLInputElement>();
   const editButtons: Record<string, HTMLButtonElement | undefined> = {};
   let editName = $state('');
   let editColor = $state('#7c5cff');
