@@ -97,8 +97,10 @@ describe('local editor identity containment', () => {
     [roomsSource, '.chip', '.chipname'],
     [customSource, '.who', '.who strong'],
   ])('bounds the identity item and wraps its complete text', (source, item, text) => {
-    const rule = (selector: string) =>
-      source.slice(source.indexOf(`  ${selector} {`)).split('}')[0];
+    function rule(selector: string) {
+      const start = source.indexOf(`  ${selector} {`);
+      return source.slice(start).split('}')[0];
+    }
     expect(rule(item)).toContain('min-width: 0');
     expect(rule(text)).toContain('overflow-wrap: anywhere');
     expect(rule(text)).not.toContain('text-overflow: ellipsis');
@@ -106,13 +108,15 @@ describe('local editor identity containment', () => {
   });
 
   it.each(names)('keeps Wizard identity and bid/tricks interaction intact: %s', (name) => {
-    const { target, ctx, initial } = render(wizard, WizardEditor, name);
+    const { target, ctx } = render(wizard, WizardEditor, name);
     expect(target.querySelector('.who strong')!.textContent).toBe(name);
     click(target, `[aria-label="Increase ${name} bid"]`);
     click(target, `[aria-label="Increase ${name} tricks"]`);
-    const expected = structuredClone(initial);
-    expected.rows.p0.bid = 1;
-    expected.rows.p0.tricks = 1;
+    const expected = {
+      rows: Object.fromEntries(
+        ctx.players.map((p, i) => [p.id, { bid: i ? 0 : 1, tricks: i ? 0 : 1 }]),
+      ),
+    };
     expect(draft(target)).toEqual(expected);
     expect(wizard.validateRound(draft(target), ctx)).toBeNull();
     expect(wizard.scoreRound(draft(target), ctx).p0).toBe(30);
@@ -131,14 +135,23 @@ describe('local editor identity containment', () => {
   });
 
   it.each(names)('keeps Euchre teams, lone caller and scoring intact: %s', (name) => {
-    const { target, ctx, initial } = render(euchre, EuchreEditor, name);
+    const { target, ctx } = render(euchre, EuchreEditor, name);
     expect(target.querySelector('.names')!.textContent).toBe(`${name} & Player 2`);
     click(target, '.teambtn');
     click(target, '.alonebtn');
     expect(target.querySelector('.whoname')!.textContent).toBe(name);
     click(target, '.whobtn');
     click(target, '.resbtn:nth-child(2)');
-    const expected = { ...initial, maker: 0, alone: true, alonePlayer: 'p0', result: 'march' };
+    const expected = {
+      teams: [
+        ['p0', 'p1'],
+        ['p2', 'p3'],
+      ],
+      maker: 0,
+      alone: true,
+      alonePlayer: 'p0',
+      result: 'march',
+    };
     expect(draft(target)).toEqual(expected);
     expect(euchre.validateRound(draft(target), ctx)).toBeNull();
     expect(euchre.scoreRound(draft(target), ctx)).toEqual({ p0: 4, p1: 4, p2: 0, p3: 0 });
@@ -146,13 +159,17 @@ describe('local editor identity containment', () => {
   });
 
   it.each(names)('keeps Finding Friends sides, names and points intact: %s', (name) => {
-    const { target, ctx, initial } = render(findingFriends, FindingFriendsEditor, name);
+    const { target, ctx } = render(findingFriends, FindingFriendsEditor, name);
     expect(target.querySelector('.chipname')!.textContent).toBe(name);
     click(target, '.chip');
     expect(draft(target).challengers).toContain('p0');
     click(target, '.chip');
     click(target, '.qbtn');
-    const expected = { ...initial, pointsCaptured: 0 };
+    const expected = {
+      declarers: ['p0'],
+      challengers: ['p1', 'p2', 'p3'],
+      pointsCaptured: 0,
+    };
     expect(draft(target)).toEqual(expected);
     expect(findingFriends.validateRound(draft(target), ctx)).toBeNull();
     expect(findingFriends.scoreRound(draft(target), ctx)).toEqual(
@@ -162,23 +179,33 @@ describe('local editor identity containment', () => {
   });
 
   it.each(names)('keeps Holdem buy-in identity and amount intact: %s', (name) => {
-    const { target, ctx, initial } = render(holdem, HoldemEditor, name);
+    const { target, ctx } = render(holdem, HoldemEditor, name);
     expect(target.querySelector('.chipname')!.textContent).toBe(name);
     click(target, '.pchip:nth-child(2)');
     click(target, '[aria-label="Increase Buy-in amount"]');
-    const expected = { kind: 'buyin', playerId: 'p1', amount: initial.amount + 1 };
+    const expected = {
+      kind: 'buyin',
+      playerId: 'p1',
+      amount: Number(ctx.config.defaultBuyin) + 1,
+    };
     expect(draft(target)).toEqual(expected);
     expect(holdem.validateRound(draft(target), ctx)).toBeNull();
     expect(holdem.scoreRound(draft(target), ctx)).toEqual(holdem.scoreRound(expected, ctx));
   });
 
   it.each(names)('keeps Two Rooms leader and hostage fields intact: %s', (name) => {
-    const { target, ctx, initial } = render(tworooms, TwoRoomsEditor, name);
+    const { target, ctx } = render(tworooms, TwoRoomsEditor, name);
     expect(target.querySelector('.chipname')!.textContent).toBe(name);
     click(target, '.room .chip');
     expect(target.querySelector('.ledby')!.textContent).toContain(name);
     click(target, '[aria-label="Increase from Room 1 to Room 2"]');
-    const expected = { ...initial, leader1: 'p0', sent1: initial.sent1 + 1 };
+    const expected = {
+      leader1: 'p0',
+      leader2: null,
+      sent1: 2,
+      sent2: 1,
+      reveal: { winner: null, winners: [], president: null, bomber: null },
+    };
     expect(draft(target)).toEqual(expected);
     expect(tworooms.validateRound(draft(target), ctx)).toBeNull();
     expect(tworooms.scoreRound(draft(target), ctx)).toEqual(tworooms.scoreRound(expected, ctx));
@@ -194,12 +221,14 @@ describe('local editor identity containment', () => {
       };
       setCustomDefsRegistry([def]);
       const module = buildCustomModule(def);
-      const { target, ctx, initial } = render(module, CustomRoundEditor, name);
+      const { target, ctx } = render(module, CustomRoundEditor, name);
       expect(target.querySelector('.who strong')!.textContent).toBe(name);
       const label = shape === 'counter' ? name : `${name} Points`;
       click(target, `[aria-label="Increase ${label}"]`);
-      const expected = structuredClone(initial);
-      expected.values.p0[shape === 'counter' ? 'v' : 'points'] = 1;
+      const key = shape === 'counter' ? 'v' : 'points';
+      const expected = {
+        values: Object.fromEntries(ctx.players.map((p, i) => [p.id, { [key]: i ? 0 : 1 }])),
+      };
       expect(draft(target)).toEqual(expected);
       expect(module.validateRound(draft(target), ctx)).toBeNull();
       expect(module.scoreRound(draft(target), ctx)).toEqual({ p0: 1, p1: 0 });
