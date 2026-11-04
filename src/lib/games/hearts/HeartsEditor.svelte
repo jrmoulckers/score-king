@@ -7,6 +7,7 @@
   import { hearts } from './index';
   import HeartsMeter from './HeartsMeter.svelte';
   import MoonRise from './MoonRise.svelte';
+  import MoonScoringChoice from './MoonScoringChoice.svelte';
   import PassRibbon from './PassRibbon.svelte';
   import {
     QUEEN_POINTS,
@@ -27,7 +28,6 @@
     shooter,
     wrongWayPlayers,
     type HeartsInput,
-    type MoonRule,
   } from './logic';
 
   let { input = $bindable(), ctx }: { input: HeartsInput; ctx: RoundContext } = $props();
@@ -88,13 +88,6 @@
   const moonChoicePending = $derived(
     !!moon && input.moonRule !== 'subtract' && input.moonRule !== 'add26',
   );
-  const swing = $derived(
-    input.moonRule === 'subtract'
-      ? `${moonName} takes −${moonValue}`
-      : input.moonRule === 'add26'
-        ? `everyone else takes +${moonValue}`
-        : 'choose how it scores below',
-  );
 
   const previews = $derived(
     Object.fromEntries(ids.map((id) => [id, previewDelta(input, id, ids, ctx.config)])),
@@ -153,10 +146,6 @@
       input.hearts[p.id] = p.id === id ? requiredHearts : 0;
       input.queens![p.id] = p.id === id ? cardCopies : 0;
     }
-  }
-  function setMoonRule(rule: MoonRule) {
-    input.moonRule = rule;
-    haptic('tick');
   }
   function toggleWrongWay(id: string) {
     const current = wrongWayPlayers(input);
@@ -243,21 +232,8 @@
     <div class="moon-banner" role="region" aria-label="Shooting the moon">
       <span class="ic" aria-hidden="true">🌙</span>
       <div class="moon-body">
-        <span><strong>{moonName} is shooting the moon!</strong> — {swing}.</span>
-        <div class="moon-choice" role="group" aria-label="How this moon scores">
-          <button
-            type="button"
-            class="btn small ghost"
-            aria-pressed={input.moonRule === 'add26'}
-            onclick={() => setMoonRule('add26')}>Everyone else +{moonValue}</button
-          >
-          <button
-            type="button"
-            class="btn small ghost"
-            aria-pressed={input.moonRule === 'subtract'}
-            onclick={() => setMoonRule('subtract')}>{moonName} takes −{moonValue}</button
-          >
-        </div>
+        <span><strong>{moonName} is shooting the moon!</strong></span>
+        <MoonScoringChoice bind:input {ctx} />
       </div>
     </div>
   {/if}
@@ -282,16 +258,12 @@
             class:score-bad={!moonChoicePending && pts > 0}
             >{moonChoicePending ? '—' : signed(pts)}</span
           >
-          {#if moonChoicePending}
-            <span class="outcome">🌙 awaiting choice</span>
-          {:else}
-            <span
-              class="outcome"
-              class:score-good={oc.kind === 'clean' || oc.kind === 'moon' || oc.kind === 'credit'}
-              class:score-bad={oc.kind === 'lady' || (oc.kind === 'points' && pts > 0)}
-              >{oc.emoji} {oc.label}</span
-            >
-          {/if}
+          <span
+            class="outcome"
+            class:score-good={oc.kind === 'clean' || oc.kind === 'moon' || oc.kind === 'credit'}
+            class:score-bad={oc.kind === 'lady' || (oc.kind === 'points' && pts > 0)}
+            >{oc.emoji} {oc.label}</span
+          >
         </span>
       </div>
 
@@ -435,23 +407,6 @@
     gap: 8px;
     min-width: 0;
   }
-  /* The shooter's call: everyone-else +26 vs take −26 yourself. A segmented pair;
-     the active choice reads in Royal Violet as an accent (border + tint + weight),
-     co-signalled by aria-pressed, never colour alone. */
-  .moon-choice {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .moon-choice .btn[aria-pressed='true'] {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 14%, transparent);
-    font-weight: 700;
-  }
-  .moon-choice .btn {
-    min-height: 46px;
-  }
   /* Endgame tension: a quiet "the finish is near" line that escalates to caution
      amber when a single hand could end it. Co-signalled by the 🎯/⚠️/🏁 icon and
      the bold copy, never hue alone. */
@@ -516,7 +471,8 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 2px;
-    flex: none;
+    min-width: 0;
+    max-width: 60%;
   }
   .preview {
     font-weight: 800;
@@ -528,7 +484,7 @@
     font-weight: 700;
     color: var(--muted);
     text-align: right;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
   .cards {
     display: flex;

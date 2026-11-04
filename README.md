@@ -66,6 +66,11 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
 | ♥️ **Hearts**     | 26‑point validation, shoot‑the‑moon, optional J♦ variant, lower‑is‑better |
 | 🎲 **Tally**      | Generic counter — pick high‑ or low‑score‑wins and an optional target     |
 
+In Hearts, moon feedback identifies the shooter and everyone else's point outcome.
+Choose the scoring rule beside the moon announcement or just above Save; both controls
+share the same choice. A moon still needs an explicit choice and valid card allocation
+before saving, and the save area distinguishes unsaved rounds or edits.
+
 ### Games on the roadmap
 
 Spades (bags/nil), Cribbage (121 pegboard + skunks), Finding Friends / Zhao Pengyou

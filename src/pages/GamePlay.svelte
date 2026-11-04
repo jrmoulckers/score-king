@@ -33,6 +33,7 @@
   import PlaySheet from '../lib/components/PlaySheet.svelte';
   import ShareResultsSheet from '../lib/components/ShareResultsSheet.svelte';
   import BackLink from '../lib/components/BackLink.svelte';
+  import MoonScoringChoice from '../lib/games/hearts/MoonScoringChoice.svelte';
   import { buildRecapPayload } from '../lib/share/recap';
   import { get } from 'svelte/store';
   import {
@@ -604,6 +605,9 @@
     <div class="card stack" style="margin-top: 12px">
       <strong>Editing round {editing.index + 1}</strong>
       <EditorC loader={module.editorLoader} bind:input={editDraft} ctx={ectx} />
+      {#if game.type === 'hearts' && editDraft}
+        <MoonScoringChoice bind:input={editDraft} ctx={ectx} saveArea editing />
+      {/if}
       {#if editError}
         <p class="entry-error" role="alert">⚠️ {editError}</p>
       {/if}
@@ -628,6 +632,9 @@
         {/if}
         {#if draftError}
           <p class="entry-error" role="alert">⚠️ {draftError}</p>
+        {/if}
+        {#if game.type === 'hearts' && draft}
+          <MoonScoringChoice bind:input={draft} ctx={actx} saveArea />
         {/if}
         <button class="btn primary block save-round" onclick={saveRound} disabled={!!draftError}
           >Save round</button
