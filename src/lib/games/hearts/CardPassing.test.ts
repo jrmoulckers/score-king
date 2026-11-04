@@ -113,8 +113,11 @@ describe('Card Passing interface', () => {
     expect(editor({ passMode: 'legacy-hidden' }, 1).querySelector('.pass')).toBeNull();
   });
 
-  it('uses an inline decorative direction rather than a navigation-like badge', () => {
+  it('places the decorative direction after its label without a navigation-like badge', () => {
     const ribbon = editor({ passMode: 'clockwise' }).querySelector('.pass')!;
+    const label = ribbon.querySelector('.label')!;
+    expect(label.firstElementChild?.textContent).toBe('Pass clockwise (left)');
+    expect(label.lastElementChild).toBe(ribbon.querySelector('.direction'));
     expect(ribbon.querySelector('.badge')).toBeNull();
     expect(ribbon.querySelector('.direction')?.getAttribute('aria-hidden')).toBe('true');
     expect(ribbon.querySelector('button, a, [role="button"], [tabindex]')).toBeNull();
@@ -123,7 +126,7 @@ describe('Card Passing interface', () => {
     expect(ribbon.querySelector('.progress')).toBeNull();
   });
 
-  it('shows cycle and deal progression including Hold across supported rosters and decks', () => {
+  it('shows compact top-right cycle and pass progression including Hold across rosters and decks', () => {
     for (const deckCount of [1, 2]) {
       for (let count = 3; count <= (deckCount === 1 ? 6 : 11); count++) {
         for (const passMode of ['rotating', 'legacy']) {
@@ -131,10 +134,18 @@ describe('Card Passing interface', () => {
             const ribbon = editor({ passMode, deckCount }, roundIndex, count).querySelector(
               '.pass',
             )!;
-            const progress = ribbon.querySelector('.progress')?.textContent;
-            expect(progress).toContain(`Passing cycle ${Math.floor(roundIndex / count) + 1}`);
-            expect(progress).toContain(`Deal ${(roundIndex % count) + 1} of ${count}`);
-            expect(progress).toContain('(includes Hold)');
+            const header = ribbon.querySelector('.header')!;
+            const progress = header.querySelector('.progress')!;
+            expect(header.firstElementChild).toBe(ribbon.querySelector('.label'));
+            expect(header.lastElementChild).toBe(progress);
+            expect(ribbon.lastElementChild).toBe(ribbon.querySelector('.hint'));
+            expect([...progress.children].map((node) => node.textContent)).toEqual([
+              `Cycle ${Math.floor(roundIndex / count) + 1}`,
+              `Pass ${(roundIndex % count) + 1}/${count}`,
+            ]);
+            const label = ribbon.querySelector('.label')!;
+            expect(label.lastElementChild).toBe(ribbon.querySelector('.direction'));
+            expect(ribbon.textContent).not.toContain('Deal ');
             expect(ribbon.textContent).not.toContain('Hand ');
             if (roundIndex % count === count - 1)
               expect(ribbon.querySelector('.label')?.textContent).toContain('Hold');
@@ -150,7 +161,7 @@ describe('Card Passing interface', () => {
       expect(ribbon.querySelector('.progress')).toBeNull();
       expect(ribbon.textContent).not.toContain('Hand ');
     }
-    expect(editor({}, 8).querySelector('.progress')?.textContent).toContain('Passing cycle 3');
+    expect(editor({}, 8).querySelector('.progress')?.textContent).toContain('Cycle 3');
     for (const config of [{ passing: false }, { passMode: 'legacy-hidden' }]) {
       expect(editor(config, 22, 11).querySelector('.pass')).toBeNull();
     }
