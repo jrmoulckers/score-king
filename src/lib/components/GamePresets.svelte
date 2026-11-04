@@ -82,15 +82,15 @@
   let mode = $state<Mode>('idle');
   let draftName = $state('');
   let saveKind = $state<PresetKind>('full');
-  let container: HTMLDivElement;
-  let saveButton: HTMLButtonElement;
-  let renameButton: HTMLButtonElement;
+  let container = $state<HTMLDivElement>();
+  let saveButton = $state<HTMLButtonElement>();
+  let renameButton = $state<HTMLButtonElement>();
   const canSave = $derived(saveKind === 'rules' || ($playerRosterReady && selected.length > 0));
 
   async function closeForm(destination: 'preset' | 'rename' | 'save', id = activeId) {
     mode = 'idle';
     await tick();
-    const chip = [...container.querySelectorAll<HTMLButtonElement>('.pchip')].find(
+    const chip = [...(container?.querySelectorAll<HTMLButtonElement>('.pchip') ?? [])].find(
       (button) => button.dataset.presetId === id && !button.disabled,
     );
     const target =
