@@ -186,13 +186,15 @@ describe('configuration-aware player requirements', () => {
   it.each([2, 3])('blocks %i-player doubles until the roster is complete', async (count) => {
     const ids = roster();
     const target = renderModule(spikeball);
-    select(target, Array.from({ length: count }, (_, i) => i));
+    const initial = Array.from({ length: count }, (_, i) => i);
+    select(target, initial);
     expect(target.textContent).toContain('Players (4)');
     expect(target.textContent).toContain(`Pick ${4 - count} more player`);
     expect(button(target, 'Start game').disabled).toBe(true);
     button(target, 'Start game').click();
     expect(createGame).not.toHaveBeenCalled();
-    select(target, Array.from({ length: 4 - count }, (_, i) => count + i));
+    const remaining = Array.from({ length: 4 - count }, (_, i) => count + i);
+    select(target, remaining);
     expect(button(target, 'Start game').disabled).toBe(false);
     button(target, 'Start game').click();
     await tick();
@@ -206,7 +208,8 @@ describe('configuration-aware player requirements', () => {
   it.each([3, 4])('retains %i singles players until corrected', async (count) => {
     const ids = roster();
     const target = renderModule(spikeball);
-    select(target, Array.from({ length: count }, (_, i) => i));
+    const initial = Array.from({ length: count }, (_, i) => i);
+    select(target, initial);
     format(target, '1v1');
     expect(target.textContent).toContain('Players (2)');
     expect(target.textContent).toContain('No players were removed automatically.');
@@ -215,7 +218,8 @@ describe('configuration-aware player requirements', () => {
     button(target, 'Start game').click();
     expect(createGame).not.toHaveBeenCalled();
     expect(target.querySelectorAll<HTMLButtonElement>('.chip')[4].disabled).toBe(true);
-    select(target, Array.from({ length: count - 2 }, (_, i) => count - 1 - i));
+    const extra = Array.from({ length: count - 2 }, (_, i) => count - 1 - i);
+    select(target, extra);
     button(target, 'Start game').click();
     await tick();
     expect(createGame).toHaveBeenCalledWith(
