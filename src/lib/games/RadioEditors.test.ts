@@ -86,11 +86,11 @@ afterEach(async () => {
 
 describe('editor choice semantics', () => {
   it.each([
-    [yahtzee, YahtzeeEditor, 'Ada fixed score'],
-    [scrabble, ScrabbleEditor, 'round type'],
-    [ginRummy, GinRummyEditor, 'knocker'],
-    [cribbage, CribbageEditor, 'dealer'],
-  ] as const)('supports one tab stop and radio navigation for %s / %s / %s', (module, Editor) => {
+    { module: yahtzee, Editor: YahtzeeEditor, label: 'fixed score' },
+    { module: scrabble, Editor: ScrabbleEditor, label: 'round type and player' },
+    { module: ginRummy, Editor: GinRummyEditor, label: 'knocker' },
+    { module: cribbage, Editor: CribbageEditor, label: 'dealer' },
+  ])('supports one tab stop and radio navigation for $label', ({ module, Editor }) => {
     const { target } = render(module, Editor);
     const labels = [...target.querySelectorAll('[role="radiogroup"]')].map((group) =>
       group.getAttribute('aria-label'),
