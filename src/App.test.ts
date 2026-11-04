@@ -107,9 +107,9 @@ describe('shared primary navigation', () => {
       await Promise.resolve();
       expectNavigation('/players', 'page');
       expect(window.location.pathname).toBe('/players');
-      await vi.waitFor(() =>
-        expect(document.activeElement).toBe(target.querySelector('main')),
-      );
+      await vi.waitFor(() => {
+        expect(document.activeElement).toBe(target.querySelector('main'));
+      });
 
       await visit('/court');
       expectNavigation('/stats', 'true');
@@ -118,9 +118,9 @@ describe('shared primary navigation', () => {
       flushSync();
       await Promise.resolve();
       expectNavigation('/', 'page');
-      await vi.waitFor(() =>
-        expect(document.activeElement).toBe(target.querySelector('main')),
-      );
+      await vi.waitFor(() => {
+        expect(document.activeElement).toBe(target.querySelector('main'));
+      });
     }
   });
 });
