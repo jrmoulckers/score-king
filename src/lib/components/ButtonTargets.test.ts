@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
-import source from '../../app.css?raw';
+
+const source = readFileSync(new URL('../../app.css', import.meta.url), 'utf8');
 
 afterEach(() => {
   document.head.querySelector('#button-target-styles')?.remove();
