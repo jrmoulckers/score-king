@@ -702,6 +702,7 @@
     margin: 0;
     padding: 10px 12px;
     text-align: center;
+    overflow-wrap: anywhere;
     font-weight: 700;
     border-radius: var(--radius-sm);
     background: var(--surface-2);
@@ -722,7 +723,7 @@
   /* ── Match (two contesting sides, split by the net) ── */
   .match {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     gap: 8px;
     align-items: stretch;
   }
@@ -749,6 +750,7 @@
   }
   .side {
     display: flex;
+    min-width: 0;
     flex-direction: column;
     gap: 10px;
     padding: 12px;
@@ -800,6 +802,7 @@
   }
   .sidehead {
     display: flex;
+    min-width: 0;
     align-items: center;
     gap: 8px;
     min-height: 40px;
@@ -985,6 +988,7 @@
      primary on this screen stays the shell's "Save round" button below the editor. */
   .plus {
     flex: 1;
+    min-width: 46px;
     min-height: 56px;
     display: flex;
     flex-direction: column;
@@ -1025,11 +1029,13 @@
   /* Undo + swap sit together under the courts, as low-emphasis surface controls. */
   .livebar {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: stretch;
   }
   .undo {
-    flex: 1;
+    flex: 1 140px;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1060,6 +1066,10 @@
   }
   .undoicon {
     font-size: 1.1rem;
+  }
+  .undo > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .swap {
     flex: none;
@@ -1394,6 +1404,21 @@
   .tnameinput:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 1px;
+  }
+
+  @media (max-width: 380px) {
+    .match {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .net {
+      flex-direction: row;
+      width: auto;
+    }
+    .net::before,
+    .net::after {
+      border-left: none;
+      border-top: 2px dashed color-mix(in srgb, var(--border) 80%, var(--muted));
+    }
   }
 
   @media (max-width: 360px) {
