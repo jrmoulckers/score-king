@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ID, RoundContext } from '../../types';
   import Avatar from '../../components/Avatar.svelte';
+  import GameExtras from '../../components/GameExtras.svelte';
   import { haptic } from '../../haptics';
   import AssassinReveal from './AssassinReveal.svelte';
   import {
@@ -34,7 +35,6 @@
   const word = $derived(codeword(ctx.game.id));
   /** Round 0 has no carried teams, so the roster is front-and-centre; later it tucks away. */
   const setupOpen = $derived(ctx.roundIndex === 0);
-  let showSpies = $state(false);
 
   function teamOf(id: ID): Team {
     return input.teams[id] === 'blue' ? 'blue' : 'red';
@@ -304,15 +304,12 @@
     </details>
   {/if}
 
-  <!-- Optional: log who ran each spymaster desk, for the spymaster win-rate stat. -->
-  <details class="teams-details spies" bind:open={showSpies}>
-    <summary>
-      <span>🎙️ Spymasters</span>
-      <span class="summ">
-        {#if input.spymasters?.red || input.spymasters?.blue}logged · tap to edit{:else}optional{/if}
-      </span>
-    </summary>
+  <GameExtras
+    initialOpen={!!(input.spymasters?.red || input.spymasters?.blue)}
+    metadata={input.spymasters?.red || input.spymasters?.blue ? 'logged · tap to edit' : 'optional'}
+  >
     <div class="spybody">
+      <h3>🎙️ Spymasters</h3>
       {#each TEAMS as t (t)}
         {@const roster = t === 'red' ? redPlayers : bluePlayers}
         <div class="spyrow">
@@ -338,7 +335,7 @@
         The spymaster gives one-word clues — logging them unlocks a win-rate stat.
       </p>
     </div>
-  </details>
+  </GameExtras>
 </div>
 
 <style>
@@ -741,7 +738,14 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-bottom: 12px;
+  }
+  .spybody h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .spybody p {
+    margin: 0;
   }
   .spyrow {
     display: flex;
