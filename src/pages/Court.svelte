@@ -161,13 +161,13 @@
         {#each court.throne.kings as king (king.gameType)}
           {@const k = playerById.get(king.holderId)}
           <div class="card row spread tile">
-            <span class="row" style="gap: 10px">
+            <span class="row identity" style="gap: 10px">
               <span style="font-size: 1.3rem" aria-hidden="true">{gameEmoji(king.gameType)}</span>
-              <span>
+              <span class="grow">
                 <div class="muted sm">{gameLabel(king.gameType)}</div>
                 <div class="row" style="gap: 8px">
                   {#if k}<Avatar name={k.name} color={k.color} size={20} />{/if}
-                  <strong>{nameOf(king.holderId)}</strong>
+                  <strong class="member-name">{nameOf(king.holderId)}</strong>
                   {#if king.holderId === meId}<span class="you">You</span>{/if}
                 </div>
               </span>
@@ -193,11 +193,11 @@
     <div class="card stack">
       {#each standings as row, i (row.playerId)}
         {@const p = playerById.get(row.playerId)}
-        <div class="row spread" class:me={row.playerId === meId}>
-          <span class="row" style="gap: 8px">
+        <div class="row spread standing" class:me={row.playerId === meId}>
+          <span class="row identity" style="gap: 8px">
             <span class="rank tnum" class:lead={i === 0}>{i + 1}</span>
             {#if p}<Avatar name={p.name} color={p.color} size={22} />{/if}
-            <span>{p?.name ?? '—'}</span>
+            <span class="member-name">{p?.name ?? '—'}</span>
             {#if row.playerId === meId}<span class="you">You</span>{/if}
           </span>
           <span class="row figures">
@@ -263,7 +263,7 @@
     <!-- 4 ─ Head-to-head matrix -->
     {#if courtMembers.length > 1}
       <div class="section-title">Head to head</div>
-      <div class="card matrix-wrap">
+      <div class="card matrix-wrap" tabindex="0" role="region" aria-label="Head-to-head results">
         <table class="matrix">
           <thead>
             <tr>
@@ -387,6 +387,30 @@
 {/if}
 
 <style>
+  .row,
+  .grow,
+  .member-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .spread {
+    flex-wrap: wrap;
+  }
+  .spread > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .identity {
+    flex: 1 1 14rem;
+  }
+  .member-name {
+    flex: 1;
+  }
+  .you,
+  .rank,
+  .crown {
+    flex-shrink: 0;
+  }
   .tnum {
     font-variant-numeric: tabular-nums;
     font-weight: 700;
@@ -486,6 +510,7 @@
   /* Standings figures — compact, right-aligned, tabular. */
   .figures {
     gap: 12px;
+    flex-wrap: wrap;
   }
   .fig {
     display: inline-flex;
@@ -503,8 +528,11 @@
   }
 
   /* Rivalry vs bar */
+  .vs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
   .vs .side {
-    flex: 1;
     font-weight: 700;
   }
   .vs .side.end {
@@ -548,9 +576,9 @@
     font-weight: 600;
   }
   .matrix .rowhead .nm {
-    max-width: 6.5em;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    width: 6.5em;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .matrix .diag {
     color: var(--muted);
@@ -582,6 +610,22 @@
     transform-origin: left center;
     background: color-mix(in srgb, var(--text) 45%, var(--surface-3));
     transition: transform 0.4s ease;
+  }
+  @media (max-width: 480px) {
+    .standing .identity {
+      flex-basis: 100%;
+    }
+    .standing .figures {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .vs {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+    }
+    .vs .side.end {
+      text-align: left;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .parity-fill {
