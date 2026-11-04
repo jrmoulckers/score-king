@@ -2,6 +2,10 @@
 
 Review-only Skull King concept for [#335](https://github.com/jrmoulckers/score-king/issues/335).
 It is not connected to production routes, storage, game drafts, or the app build.
+The user-approved layout now informs the production Skull King guide in
+`src/lib/games/skullking/SkullKingHelp.svelte` ([#340](https://github.com/jrmoulckers/score-king/issues/340)).
+This standalone preview remains a design artifact, including its unfinished lesson placeholders;
+the production guide contains only the implemented scoring reference and walkthrough.
 
 From the repository root, using Node 24:
 

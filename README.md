@@ -57,6 +57,10 @@ works fully offline, and can back itself up to a **JSON file in your OneDrive**.
   leaves the local network. Hosts add players from the game screen (**📡 Play nearby**); guests join
   at **/nearby**. Same host‑authoritative engine, just a serverless transport.
 - **Dark / light** themes.
+- **Skull King rules & scoring.** Open the in-game guide for a quick reference,
+  zero-bid and bonus topics, and a tappable scoring example that never changes your
+  real round. Bonus guidance follows the game's settings. The scoring walkthrough
+  explains using Score King; it is not a complete Skull King rulebook.
 
 ### Games today
 
@@ -190,6 +194,12 @@ For selectable deck, scoring, or format rules, use `ConfigField.rulesSummary(con
 short rule facts for the current draft. Reuse the game's normalization/scoring helpers; the shared
 form renders an accessible, dot-separated list and updates it when controls or presets change.
 Keep `help` for static control instructions rather than descriptions of an unselected variant.
+
+For richer in-game references, reuse `src/lib/components/GameHelpDialog.svelte`;
+Skull King's `SkullKingHelp.svelte` is the first adopter. The game owns its topic
+selection and content; the shell owns modal focus, dismissal, and scroll locking.
+Keep example state separate from round drafts and use the game's existing scorer
+and normalized settings. Other games retain their existing help until migrated.
 
 ### Custom games (no code)
 
