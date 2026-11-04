@@ -7,6 +7,7 @@
   import { suggestWord } from './words';
 
   let { input = $bindable(), ctx }: { input: WerewordsInput; ctx: RoundContext } = $props();
+  const wordLabelId = $props.id();
 
   const seerOn = $derived(!!ctx.config.seer);
   const expectedWolves = $derived(Math.max(1, Number(ctx.config.werewolves) || 1));
@@ -120,13 +121,14 @@
   <!-- The secret word: Werewords' centerpiece, dressed as a little spellbook field. -->
   <div class="spell">
     <div class="spell-top">
-      <span class="fieldlabel spell-label">🔮 The secret word</span>
+      <span id={wordLabelId} class="fieldlabel spell-label">🔮 The secret word</span>
       <button type="button" class="dice" onclick={rollWord} title="Suggest a word">
         🎲 Need a word?
       </button>
     </div>
     <input
       class="spell-input"
+      aria-labelledby={wordLabelId}
       type="text"
       autocapitalize="characters"
       autocomplete="off"
