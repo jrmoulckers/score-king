@@ -3,15 +3,13 @@ import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PresetKind } from '../types';
 import { settings } from '../stores/settings';
-import { refreshPlayers } from '../stores/players';
+import { players, refreshPlayers } from '../stores/players';
 import { removePreset, savePreset } from '../stores/presets';
 import { dismissToast } from '../stores/toast';
 import GamePresets from './GamePresets.svelte';
 
 vi.mock('../storage/db', () => ({
-  getAllPlayers: vi.fn().mockResolvedValue([
-    { id: 'focus-player', name: 'Focus Player', color: '#7c5cff', createdAt: 1 },
-  ]),
+  getAllPlayers: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('../motion', () => ({ pop: vi.fn() }));
 
@@ -26,6 +24,14 @@ function renderPresets(type: string, selected: string[] = [], config = {}) {
 
 beforeEach(async () => {
   await refreshPlayers();
+  players.set([
+    {
+      id: 'focus-player',
+      name: 'Focus Player',
+      color: '#7c5cff',
+      createdAt: 1,
+    },
+  ]);
 });
 
 afterEach(async () => {

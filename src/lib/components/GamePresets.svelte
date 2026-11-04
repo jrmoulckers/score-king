@@ -83,8 +83,6 @@
   let draftName = $state('');
   let saveKind = $state<PresetKind>('full');
   let container = $state<HTMLDivElement>();
-  let saveButton = $state<HTMLButtonElement>();
-  let renameButton = $state<HTMLButtonElement>();
   const canSave = $derived(saveKind === 'rules' || ($playerRosterReady && selected.length > 0));
 
   async function closeForm(destination: 'preset' | 'rename' | 'save', id = activeId) {
@@ -93,6 +91,8 @@
     const chip = [...(container?.querySelectorAll<HTMLButtonElement>('.pchip') ?? [])].find(
       (button) => button.dataset.presetId === id && !button.disabled,
     );
+    const saveButton = container?.querySelector<HTMLButtonElement>('.psave, .linkbtn');
+    const renameButton = container?.querySelector<HTMLButtonElement>('.prename');
     let target = chip;
     if (destination === 'rename') target = renameButton;
     else if (destination === 'save') target = saveButton;
@@ -308,29 +308,15 @@
           >Update</button
         >
       {/if}
-      <button
-        class="btn small ghost"
-        type="button"
-        bind:this={renameButton}
-        onclick={startRename}
-        >Rename</button
-      >
-      <button
-        class="btn small ghost"
-        type="button"
-        bind:this={saveButton}
-        onclick={startSave}
-        >Save new</button
-      >
+      <button class="btn small ghost prename" type="button" onclick={startRename}>Rename</button>
+      <button class="btn small ghost psave" type="button" onclick={startSave}>Save new</button>
       <button class="btn small ghost" type="button" onclick={remove}>Delete</button>
     </div>
     {#if dirty && preview(active).unavailableIds.length}
       <p class="muted hint">Updating replaces the saved lineup, including unavailable players.</p>
     {/if}
   {:else}
-    <button class="linkbtn" type="button" bind:this={saveButton} onclick={startSave}
-      >＋ Save preset</button
-    >
+    <button class="linkbtn" type="button" onclick={startSave}> ＋ Save preset </button>
   {/if}
 </div>
 
