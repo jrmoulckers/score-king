@@ -58,8 +58,10 @@ afterEach(async () => {
 });
 
 function renderCapacity(selected: string[] = [], max = 12) {
-  const lineup = new SvelteMap([['selected', selected]]);
-  const limits = new SvelteMap([['max', max]]);
+  const lineup = new SvelteMap<string, string[]>();
+  const limits = new SvelteMap<string, number>();
+  lineup.set('selected', selected);
+  limits.set('max', max);
   const props = {
     get selected() {
       return lineup.get('selected')!;
@@ -119,7 +121,8 @@ describe('player selection capacity', () => {
     expect(chips()[12].disabled).toBe(false);
     expect(document.getElementById(hint.id)).toBeNull();
     flushSync(() => chips()[12].click());
-    expect(props.selected).toEqual([...names.slice(1).map((_, i) => `player-${i + 1}`), 'extra']);
+    const expected = [...names.slice(1).map((_, i) => `player-${i + 1}`), 'extra'];
+    expect(props.selected).toEqual(expected);
   });
 
   it('retains ordered players across dynamic maximum changes', () => {
@@ -173,14 +176,12 @@ describe('player selection capacity', () => {
     expect(get(toast)).toBeNull();
   });
 
-  it('checks current limits after pending creation and prevents duplicate submissions', async () => {
+  it('checks pending limits and prevents duplicate submissions', async () => {
     let finish!: (player: Player) => void;
-    vi.mocked(addPlayer).mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finish = resolve;
-        }),
-    );
+    const pending = new Promise<Player>((resolve) => {
+      finish = resolve;
+    });
+    vi.mocked(addPlayer).mockReturnValueOnce(pending);
     const { props, limits } = renderCapacity(['player-0'], 3);
     await addNamed('Pending friend');
     expect(document.querySelector('form')?.getAttribute('aria-busy')).toBe('true');
@@ -196,7 +197,8 @@ describe('player selection capacity', () => {
     expect(addPlayer).toHaveBeenCalledTimes(1);
     expect(props.selected).toEqual(['player-0', 'player-1']);
     expect(get(players).some((p) => p.id === 'pending')).toBe(true);
-    expect(get(toast)?.message).toContain('Pending friend was added to Players, but not selected.');
+    const message = 'Pending friend was added to Players, but not selected.';
+    expect(get(toast)?.message).toContain(message);
   });
 
   it('retains the name, reports storage failure and permits a retry', async () => {
