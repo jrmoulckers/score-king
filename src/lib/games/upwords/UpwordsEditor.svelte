@@ -27,10 +27,35 @@
   function setMode(mode: 'turn' | 'endgame') {
     if (input.mode === mode) return;
     const ids = ctx.players.map((p) => p.id);
+    const activePlayerId = ctx.players[ctx.roundIndex % (ctx.players.length || 1)]?.id ?? null;
+    const word = emptyWordEntry();
+    const populated =
+      input.mode === 'turn'
+        ? input.activePlayerId !== activePlayerId ||
+          input.quBonus ||
+          input.bingo ||
+          input.words.length !== 1 ||
+          input.words.some(
+            (w) =>
+              w.letters !== word.letters ||
+              w.flat !== word.flat ||
+              w.stackHeight !== word.stackHeight,
+          )
+        : Object.values(input.unplayedTiles).some((tiles) => tiles !== 0);
+    if (
+      populated &&
+      !confirm(
+        mode === 'endgame'
+          ? 'Discard this turn and switch to end of game? Cancel to keep editing.'
+          : 'Discard these end-of-game tile counts and switch to a turn? Cancel to keep editing.',
+      )
+    ) {
+      return;
+    }
     input =
       mode === 'endgame'
         ? createEndgameInput(ids)
-        : createTurnInput(ids, ctx.players[ctx.roundIndex % (ctx.players.length || 1)]?.id ?? null);
+        : createTurnInput(ids, activePlayerId);
   }
 
   function setActive(id: string) {
