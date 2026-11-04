@@ -251,7 +251,7 @@
     {#each $activePlayers as p (p.id)}
       <div class="card" class:lead={$leadMember?.id === p.id} class:editing={editingId === p.id}>
         <div class="row spread">
-          <span class="row grow" style="gap: 10px; min-width: 0">
+          <span class="row grow identity" style="gap: 10px">
             <Avatar
               name={editingId === p.id ? editName || p.name : p.name}
               color={editingId === p.id ? editColor : p.color}
@@ -269,7 +269,7 @@
               />
             {:else}
               <span class="who">
-                <strong>{p.name}</strong>
+                <strong title={p.name}>{p.name}</strong>
                 {#if $leadMember?.id === p.id || !p.claimed}
                   <span class="tags">
                     {#if $leadMember?.id === p.id}<span class="tag lead-tag">👑 On this device</span
@@ -281,7 +281,7 @@
             {/if}
           </span>
           {#if editingId !== p.id}
-            <span class="row" style="gap: 6px">
+            <span class="row profile-actions" style="gap: 6px">
               <button
                 class="iconbtn"
                 class:on={$leadMember?.id === p.id}
@@ -510,8 +510,8 @@
     <div class="stack">
       {#each archived as p (p.id)}
         <div class="card arch">
-          <div class="row spread">
-            <span class="row" style="gap: 10px">
+          <div class="row spread wrap">
+            <span class="row grow identity" style="gap: 10px">
               <Avatar
                 name={p.name}
                 color={p.color}
@@ -519,10 +519,10 @@
                 appearance={p.appearance}
                 size={28}
               />
-              <span class="muted">{p.name}</span>
+              <span class="muted arch-name" title={p.name}>{p.name}</span>
             </span>
             {#if confirmDeleteId === p.id}
-              <span class="row" style="gap: 6px">
+              <span class="row archive-actions" style="gap: 6px">
                 <span class="confirm-q">Delete for good?</span>
                 <button class="btn small ghost" onclick={() => (confirmDeleteId = null)}
                   >Cancel</button
@@ -530,7 +530,7 @@
                 <button class="btn small danger" onclick={() => remove(p)}>Delete</button>
               </span>
             {:else}
-              <span class="row" style="gap: 6px">
+              <span class="row archive-actions" style="gap: 6px">
                 <button class="btn small ghost" onclick={() => restorePlayer(p)}>Restore</button>
                 <button
                   class="iconbtn"
@@ -549,7 +549,7 @@
 <style>
   .player-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
     align-items: start;
   }
@@ -559,7 +559,36 @@
     }
   }
   .card {
+    min-width: 0;
     transition: border-color 0.15s ease;
+  }
+  .identity {
+    min-width: 0;
+  }
+  .identity input {
+    min-width: 0;
+  }
+  .profile-actions {
+    flex: none;
+  }
+  .archive-actions {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    max-width: 100%;
+    margin-left: auto;
+  }
+  .arch-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .editactions {
+    flex-wrap: wrap;
+  }
+  .editactions > .row {
+    flex-wrap: wrap;
+    margin-left: auto;
   }
   .editpanel {
     margin-top: 12px;
@@ -595,6 +624,7 @@
   .style-choice {
     min-height: 58px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
     padding: 8px 10px;
@@ -652,7 +682,8 @@
       0 0 0 1px var(--text);
   }
   .custom-color {
-    min-width: 96px;
+    grid-column: span 2;
+    min-width: 0;
     min-height: 58px;
     display: grid;
     grid-template-columns: 46px 1fr;
@@ -760,6 +791,7 @@
   }
   .who {
     display: inline-flex;
+    flex: 1;
     flex-direction: column;
     gap: 2px;
     min-width: 0;
