@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { RoundContext } from '../../types';
   import Avatar from '../../components/Avatar.svelte';
-  import { PALETTE } from '../../util';
+  import { PLAYER_COLOR_CHOICES } from '../../util';
   import { haptic } from '../../haptics';
   import { bumpOnChange, popIn } from '../../motion';
   import BagTossRow from './BagTossRow.svelte';
@@ -302,16 +302,22 @@
             <span class="tcount" class:over={overCap(t)}>{t.memberIds.length}/{MAX_PER_SIDE}</span>
           </div>
 
-          <div class="palette" role="group" aria-label="Side colour">
-            {#each PALETTE as c (c)}
+          <div class="palette" role="group" aria-label={`Side ${i === 0 ? 'A' : 'B'} colour`}>
+            {#each PLAYER_COLOR_CHOICES as c (c.value)}
               <button
                 type="button"
                 class="dot"
-                class:sel={t.color === c}
-                style={`background:${c}`}
-                onclick={() => updateTeam(t.id, { color: c })}
-                aria-label="Set side colour"
-              ></button>
+                class:sel={t.color === c.value}
+                onclick={() => updateTeam(t.id, { color: c.value })}
+                aria-label={`Side ${i === 0 ? 'A' : 'B'} colour: ${c.name}`}
+                aria-pressed={t.color === c.value}
+                title={c.name}
+              >
+                <span class="swatch" style={`background:${c.value}`} aria-hidden="true"></span>
+                {#if t.color === c.value}
+                  <span class="colour-check" aria-hidden="true">✓</span>
+                {/if}
+              </button>
             {/each}
           </div>
 
@@ -655,16 +661,45 @@
     gap: 6px;
   }
   .dot {
-    width: 26px;
-    height: 26px;
+    position: relative;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    background: var(--surface-2);
+    color: var(--text);
     border-radius: 999px;
     border: 2px solid transparent;
     cursor: pointer;
     padding: 0;
   }
   .dot.sel {
-    border-color: var(--fg);
-    box-shadow: 0 0 0 2px var(--surface);
+    border-color: var(--text);
+  }
+  .dot:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+  }
+  .swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+  }
+  .colour-check {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
   }
   .chips {
     display: flex;
