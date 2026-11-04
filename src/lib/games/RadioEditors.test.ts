@@ -117,6 +117,7 @@ describe('editor choice semantics', () => {
       flushSync(() => buttons[1].click());
       expect(buttons[1].getAttribute('aria-checked')).toBe('true');
       expect(buttons[1].tabIndex).toBe(0);
+      flushSync(() => buttons[0].click());
     }
   });
 
