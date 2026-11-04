@@ -1,8 +1,13 @@
 import { flushSync, mount, unmount } from 'svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoundContext } from '../../types';
 import GolfEditorHarness from './GolfEditorHarness.svelte';
 import { computeGrid, readConfig, scoreGolf, validateGolf, type GolfInput } from './logic';
+
+vi.mock('../../motion', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../motion')>();
+  return { ...actual, animateMotion: vi.fn() };
+});
 
 const mounted: ReturnType<typeof mount>[] = [];
 const ctx: RoundContext = {
