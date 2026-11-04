@@ -106,7 +106,7 @@ describe('Court identity and figures', () => {
     ]);
     expect(target.querySelector('.matrix .nm')?.textContent).toBe(name);
     const region = target.querySelector<HTMLElement>('[aria-label="Head-to-head results"]')!;
-    expect(region.tabIndex).toBe(0);
+    expect(region.getAttribute('role')).toBe('region');
     expect(region.querySelector('table')).not.toBeNull();
     expect(region.textContent).toContain('3–2');
 

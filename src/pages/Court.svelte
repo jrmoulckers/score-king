@@ -263,7 +263,7 @@
     <!-- 4 ─ Head-to-head matrix -->
     {#if courtMembers.length > 1}
       <div class="section-title">Head to head</div>
-      <div class="card matrix-wrap" tabindex="0" role="region" aria-label="Head-to-head results">
+      <div class="card matrix-wrap" role="region" aria-label="Head-to-head results">
         <table class="matrix">
           <thead>
             <tr>
