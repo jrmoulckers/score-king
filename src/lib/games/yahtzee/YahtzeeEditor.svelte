@@ -4,6 +4,7 @@
   import Stepper from '../../components/Stepper.svelte';
   import { bumpOnChange } from '../../motion';
   import { haptic } from '../../haptics';
+  import { radioGroupKeydown } from '../radioGroup';
   import { yahtzee } from './index';
   import {
     CATEGORIES,
@@ -109,11 +110,18 @@
 
         {#if cat.fixedScore}
           {@const hit = score >= cat.fixedScore}
-          <div class="fixed-toggle" role="radiogroup" aria-label={`${p.name} ${cat.label}`}>
+          <div
+            class="fixed-toggle"
+            role="radiogroup"
+            aria-label={`${p.name} ${cat.label}`}
+            tabindex="-1"
+            onkeydown={radioGroupKeydown}
+          >
             <button
               type="button"
               role="radio"
               aria-checked={!hit}
+              tabindex={!hit ? 0 : -1}
               class="fchoice"
               class:on={!hit}
               onclick={() => toggleFixed(p.id, false)}
@@ -124,6 +132,7 @@
               type="button"
               role="radio"
               aria-checked={hit}
+              tabindex={hit ? 0 : -1}
               class="fchoice"
               class:on={hit}
               onclick={() => toggleFixed(p.id, true)}
