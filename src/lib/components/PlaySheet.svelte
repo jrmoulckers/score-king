@@ -13,6 +13,7 @@
   import SignalShare from './SignalShare.svelte';
   import QrScanner from './QrScanner.svelte';
   import { focusTrap } from '../a11y/focusTrap';
+  import { documentScrollLock } from '../a11y/documentScrollLock';
 
   const {
     mode,
@@ -178,6 +179,7 @@
   tabindex="-1"
   bind:this={sheet}
   use:focusTrap
+  use:documentScrollLock
 >
   <div class="grabber" aria-hidden="true"></div>
 
