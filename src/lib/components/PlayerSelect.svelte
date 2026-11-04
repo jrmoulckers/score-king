@@ -49,7 +49,7 @@
           size={22}
           decorative
         />
-        {p.name}
+        <span class="name">{p.name}</span>
         {#if selected.includes(p.id)}<span class="ord" aria-hidden="true"
             >{selected.indexOf(p.id) + 1}</span
           >{/if}
@@ -100,6 +100,8 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    max-width: 100%;
     min-height: 46px;
     padding: 7px 14px 7px 10px;
     border-radius: 999px;
@@ -113,8 +115,13 @@
     border-color: var(--primary);
     background: color-mix(in srgb, var(--primary) 18%, var(--surface-2));
   }
+  .name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   .ord {
     display: inline-flex;
+    flex: none;
     align-items: center;
     justify-content: center;
     min-width: 20px;
