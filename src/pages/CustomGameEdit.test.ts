@@ -37,6 +37,62 @@ function setValue(input: HTMLInputElement, value: string) {
   flushSync();
 }
 
+describe('custom game emoji entry', () => {
+  const cases = [
+    { label: 'simple emoji', input: '🎲', expected: '🎲' },
+    { label: 'complete family', input: '👨‍👩‍👧‍👦', expected: '👨‍👩‍👧‍👦' },
+    { label: 'skin-tone ZWJ', input: '👩🏽‍🚀', expected: '👩🏽‍🚀' },
+    { label: 'flag', input: '🇨🇦', expected: '🇨🇦' },
+    { label: 'keycap', input: '1️⃣', expected: '1️⃣' },
+    { label: 'whitespace and text', input: '  👨‍👩‍👧‍👦 family', expected: '👨‍👩‍👧‍👦' },
+    { label: 'trailing emoji', input: '🏴‍☠️🎲', expected: '🏴‍☠️' },
+    { label: 'whitespace fallback', input: '   ', expected: '🎲' },
+    { label: 'empty fallback', input: '', expected: '🎲' },
+  ];
+
+  it.each([false, true].flatMap((editing) => cases.map((entry) => ({ ...entry, editing }))))(
+    'preserves $label through preview, save and reopening: editing=$editing',
+    async ({ editing, input, expected }) => {
+      const def = { ...blankDef(), name: 'Emoji test' };
+      if (editing) customGameDefs.set([def]);
+      const target = document.createElement('div');
+      document.body.appendChild(target);
+      component = mount(CustomGameEdit, {
+        target,
+        props: editing ? { id: def.id } : {},
+      });
+      flushSync();
+      if (!editing) {
+        setValue(target.querySelector<HTMLInputElement>('[aria-label="Game name"]')!, def.name);
+      }
+
+      const emoji = target.querySelector<HTMLInputElement>('[aria-label="Game emoji"]')!;
+      // DOM assignment alone bypasses native maxlength, so guard the input boundary too.
+      expect(emoji.hasAttribute('maxlength')).toBe(false);
+      setValue(emoji, input);
+      expect(emoji.value).toBe(input);
+      expect(target.querySelector('.preview .emoji')?.textContent).toBe(expected);
+      target.querySelector<HTMLButtonElement>('.actions .primary')!.click();
+      await tick();
+      expect(saveCustomGame).toHaveBeenCalledOnce();
+      expect(saveCustomGame).toHaveBeenCalledWith(
+        expect.objectContaining({ name: def.name, emoji: expected }),
+      );
+
+      const saved = vi.mocked(saveCustomGame).mock.calls[0][0];
+      await unmount(component);
+      component = undefined;
+      customGameDefs.set([saved]);
+      component = mount(CustomGameEdit, { target, props: { id: saved.id } });
+      flushSync();
+      expect(target.querySelector<HTMLInputElement>('[aria-label="Game emoji"]')?.value).toBe(
+        expected,
+      );
+      expect(target.querySelector('.preview .emoji')?.textContent).toBe(expected);
+    },
+  );
+});
+
 describe('custom game player bounds', () => {
   it.each([false, true])(
     'keeps separately wrapping bounds and validation in edit mode %s',

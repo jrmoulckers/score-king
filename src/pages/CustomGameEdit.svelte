@@ -217,7 +217,6 @@
         <input
           class="emoji-in"
           type="text"
-          maxlength="8"
           bind:value={def.emoji}
           aria-label="Game emoji"
         />
