@@ -123,13 +123,10 @@ describe('round field purposes', () => {
   it.each([
     [werewords, WerewordsEditor, '.spell-input'],
     [findingFriends, FindingFriendsEditor, '.numinput'],
-  ] as const)(
-    'keeps label references unique for simultaneous %s editors',
-    (module, Editor, selector) => {
-      const first = render(module, Editor).target.querySelector<HTMLInputElement>(selector)!;
-      const second = render(module, Editor).target.querySelector<HTMLInputElement>(selector)!;
-      expect(first.getAttribute('aria-labelledby')).not.toBe(second.getAttribute('aria-labelledby'));
-      expect(purpose(first)).toBe(purpose(second));
-    },
-  );
+  ] as const)('keeps %s editor purpose IDs unique', (module, Editor, selector) => {
+    const first = render(module, Editor).target.querySelector<HTMLInputElement>(selector)!;
+    const second = render(module, Editor).target.querySelector<HTMLInputElement>(selector)!;
+    expect(first.getAttribute('aria-labelledby')).not.toBe(second.getAttribute('aria-labelledby'));
+    expect(purpose(first)).toBe(purpose(second));
+  });
 });
