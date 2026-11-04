@@ -137,7 +137,9 @@ describe('Hearts scoring presentation and entry feedback', () => {
     choices[0].querySelector<HTMLButtonElement>('button:nth-child(2)')!.click();
     flushSync();
     for (const choice of choices)
-      expect(choice.querySelector('button:nth-child(2)')!.getAttribute('aria-pressed')).toBe('true');
+      expect(choice.querySelector('button:nth-child(2)')!.getAttribute('aria-pressed')).toBe(
+        'true',
+      );
     expect(target.querySelectorAll('.prow .outcome')[1].textContent).toContain('no points added');
     expect(save.disabled).toBe(false);
   });
@@ -155,10 +157,7 @@ describe('Hearts scoring presentation and entry feedback', () => {
           queens: { a: 1, b: 0, c: 0, d: 0 },
           moonRule,
         },
-        deltas:
-          moonRule === 'add26'
-            ? { a: 0, b: 26, c: 26, d: 26 }
-            : { a: -26, b: 0, c: 0, d: 0 },
+        deltas: moonRule === 'add26' ? { a: 0, b: 26, c: 26, d: 26 } : { a: -26, b: 0, c: 0, d: 0 },
         createdAt: 1,
       };
       const target = await render([saved]);
