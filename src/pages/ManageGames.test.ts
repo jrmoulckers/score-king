@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 describe('Manage games row containment', () => {
-  it('wraps constrained rows and action groups without truncating names or shrinking targets', () => {
+  it('wraps rows and actions without truncating names or shrinking targets', () => {
     const style = document.createElement('style');
     style.id = 'manage-games-layout';
     style.textContent = ['mrow', 'info', 'name', 'actions', 'starbtn']
@@ -77,6 +77,7 @@ describe('Manage games row containment', () => {
     });
     expect(target.querySelectorAll('.mrow')).toHaveLength(1);
     expect(target.querySelector('.name')?.textContent).toBe(custom.name);
-    expect(get(customGameDefs).map((d) => d.name)).toEqual([custom.name, hidden.name, retired.name]);
+    const savedNames = get(customGameDefs).map((d) => d.name);
+    expect(savedNames).toEqual([custom.name, hidden.name, retired.name]);
   });
 });
