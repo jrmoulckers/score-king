@@ -93,7 +93,7 @@
     );
     const saveButton = container?.querySelector<HTMLButtonElement>('.psave, .linkbtn');
     const renameButton = container?.querySelector<HTMLButtonElement>('.prename');
-    let target = chip;
+    let target: HTMLButtonElement | null | undefined = chip;
     if (destination === 'rename') target = renameButton;
     else if (destination === 'save') target = saveButton;
     if (target?.isConnected) target.focus();
