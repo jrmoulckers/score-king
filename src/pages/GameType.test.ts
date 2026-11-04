@@ -247,10 +247,8 @@ describe('configuration-aware player requirements', () => {
     flushSync();
     expect(button(target, 'Start game').disabled).toBe(true);
     expect(target.querySelectorAll('.chip[aria-pressed="true"]')).toHaveLength(2);
-    expect(get(settings).gamePresets.find((p) => p.id === full.id)?.playerIds).toEqual([
-      ids[2],
-      ids[0],
-    ]);
+    const saved = get(settings).gamePresets.find((p) => p.id === full.id);
+    expect(saved?.playerIds).toEqual([ids[2], ids[0]]);
     presetButton(full.id).click();
     flushSync();
     button(target, 'Start game').click();
