@@ -1,7 +1,8 @@
 import { flushSync, mount, unmount, type Component } from 'svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { GameModule, RoundContext, RoundEditorProps } from '../types';
 import { defaultConfig } from '../types';
+import { settings } from '../stores/settings';
 import IdentityEditorHarness from './IdentityEditorHarness.svelte';
 import WizardEditor from './wizard/WizardEditor.svelte';
 import SpadesEditor from './spades/SpadesEditor.svelte';
@@ -26,11 +27,6 @@ import friendsSource from './findingfriends/FindingFriendsEditor.svelte?raw';
 import holdemSource from './holdem/HoldemEditor.svelte?raw';
 import roomsSource from './tworooms/TwoRoomsEditor.svelte?raw';
 import customSource from './custom/CustomRoundEditor.svelte?raw';
-
-vi.mock('../motion', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../motion')>();
-  return { ...actual, animateMotion: vi.fn(), prefersReducedMotion: () => true };
-});
 
 const mounted: ReturnType<typeof mount>[] = [];
 const names = [
@@ -81,6 +77,10 @@ function draft(target: HTMLElement): RoundEditorProps['input'] {
   return JSON.parse(target.querySelector('[data-draft]')!.textContent!);
 }
 
+beforeEach(() => {
+  settings.update((value) => ({ ...value, motion: 'reduce' }));
+});
+
 afterEach(async () => {
   for (const component of mounted.splice(0)) await unmount(component);
   document.body.replaceChildren();
@@ -96,7 +96,7 @@ describe('local editor identity containment', () => {
     [holdemSource, '.pchip', '.chipname'],
     [roomsSource, '.chip', '.chipname'],
     [customSource, '.who', '.who strong'],
-  ])('bounds the identity item and wraps its complete text', (source, item, text) => {
+  ])('bounds and wraps complete identity text', (source, item, text) => {
     function rule(selector: string) {
       const start = source.indexOf(`  ${selector} {`);
       return source.slice(start).split('}')[0];
@@ -107,7 +107,7 @@ describe('local editor identity containment', () => {
     expect(rule(text)).not.toContain('white-space: nowrap');
   });
 
-  it.each(names)('keeps Wizard identity and bid/tricks interaction intact: %s', (name) => {
+  it.each(names)('preserves Wizard bids and tricks for %s', (name) => {
     const { target, ctx } = render(wizard, WizardEditor, name);
     expect(target.querySelector('.who strong')!.textContent).toBe(name);
     click(target, `[aria-label="Increase ${name} bid"]`);
@@ -123,7 +123,7 @@ describe('local editor identity containment', () => {
     expect(target.querySelector('.proj')!.textContent?.trim()).toBe('+30');
   });
 
-  it.each(names)('keeps Spades names, Nil and untouched fields intact: %s', (name) => {
+  it.each(names)('preserves Spades Nil and names for %s', (name) => {
     const { target, ctx, initial } = render(spades, SpadesEditor, name);
     expect(target.querySelector('.who strong')!.textContent).toBe(name);
     click(target, '.toggle');
@@ -134,7 +134,7 @@ describe('local editor identity containment', () => {
     expect(spades.scoreRound(draft(target), ctx)).toEqual(spades.scoreRound(initial, ctx));
   });
 
-  it.each(names)('keeps Euchre teams, lone caller and scoring intact: %s', (name) => {
+  it.each(names)('preserves Euchre teams and lone caller for %s', (name) => {
     const { target, ctx } = render(euchre, EuchreEditor, name);
     expect(target.querySelector('.names')!.textContent).toBe(`${name} & Player 2`);
     click(target, '.teambtn');
@@ -158,7 +158,7 @@ describe('local editor identity containment', () => {
     expect(target.querySelector('.cel-cheer')!.textContent).toContain(name);
   });
 
-  it.each(names)('keeps Finding Friends sides, names and points intact: %s', (name) => {
+  it.each(names)('preserves Finding Friends sides and points for %s', (name) => {
     const { target, ctx } = render(findingFriends, FindingFriendsEditor, name);
     expect(target.querySelector('.chipname')!.textContent).toBe(name);
     click(target, '.chip');
@@ -178,7 +178,7 @@ describe('local editor identity containment', () => {
     expect(target.querySelector('.cel-cheer')!.textContent).toContain(name);
   });
 
-  it.each(names)('keeps Holdem buy-in identity and amount intact: %s', (name) => {
+  it.each(names)('preserves Holdem buy-in identity and amount for %s', (name) => {
     const { target, ctx } = render(holdem, HoldemEditor, name);
     expect(target.querySelector('.chipname')!.textContent).toBe(name);
     click(target, '.pchip:nth-child(2)');
@@ -193,7 +193,7 @@ describe('local editor identity containment', () => {
     expect(holdem.scoreRound(draft(target), ctx)).toEqual(holdem.scoreRound(expected, ctx));
   });
 
-  it.each(names)('keeps Two Rooms leader and hostage fields intact: %s', (name) => {
+  it.each(names)('preserves Two Rooms leaders and hostages for %s', (name) => {
     const { target, ctx } = render(tworooms, TwoRoomsEditor, name);
     expect(target.querySelector('.chipname')!.textContent).toBe(name);
     click(target, '.room .chip');
@@ -211,7 +211,7 @@ describe('local editor identity containment', () => {
     expect(tworooms.scoreRound(draft(target), ctx)).toEqual(tworooms.scoreRound(expected, ctx));
   });
 
-  it.each(['counter', 'columns'] as const)('preserves custom %s values and field labels', (shape) => {
+  it.each(['counter', 'columns'] as const)('preserves custom %s values and labels', (shape) => {
     for (const name of names) {
       const def = {
         ...blankDef(),
