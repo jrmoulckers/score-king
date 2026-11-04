@@ -94,11 +94,7 @@
       (button) => button.dataset.presetId === id && !button.disabled,
     );
     const target =
-      destination === 'preset'
-        ? chip
-        : destination === 'rename'
-          ? renameButton
-          : saveButton;
+      destination === 'preset' ? chip : destination === 'rename' ? renameButton : saveButton;
     (target?.isConnected ? target : chip ?? saveButton)?.focus();
   }
 

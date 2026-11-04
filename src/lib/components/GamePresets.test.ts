@@ -20,9 +20,7 @@ const mounted: ReturnType<typeof mount>[] = [];
 function renderPresets(type: string, selected: string[] = [], config = {}) {
   const target = document.createElement('div');
   document.body.appendChild(target);
-  mounted.push(
-    mount(GamePresets, { target, props: { type, selected, config, fields: [] } }),
-  );
+  mounted.push(mount(GamePresets, { target, props: { type, selected, config, fields: [] } }));
   return target;
 }
 
