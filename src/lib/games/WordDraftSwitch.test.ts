@@ -4,12 +4,7 @@ import type { RoundContext } from '../types';
 import Harness from './IdentityEditorHarness.svelte';
 import ScrabbleEditor from './scrabble/ScrabbleEditor.svelte';
 import UpwordsEditor from './upwords/UpwordsEditor.svelte';
-import {
-  emptyTurnInput,
-  emptyFinalInput,
-  scoreRound,
-  type ScrabbleInput,
-} from './scrabble/logic';
+import { emptyTurnInput, emptyFinalInput, scoreRound, type ScrabbleInput } from './scrabble/logic';
 import { createTurnInput, createEndgameInput, scoreUpwords } from './upwords/logic';
 
 vi.mock('../motion', () => ({ animateMotion: vi.fn(), bumpOnChange: vi.fn() }));

@@ -52,10 +52,7 @@
     ) {
       return;
     }
-    input =
-      mode === 'endgame'
-        ? createEndgameInput(ids)
-        : createTurnInput(ids, activePlayerId);
+    input = mode === 'endgame' ? createEndgameInput(ids) : createTurnInput(ids, activePlayerId);
   }
 
   function setActive(id: string) {
