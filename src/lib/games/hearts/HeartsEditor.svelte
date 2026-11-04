@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { RoundContext } from '../../types';
   import Avatar from '../../components/Avatar.svelte';
+  import GameExtras from '../../components/GameExtras.svelte';
   import Stepper from '../../components/Stepper.svelte';
   import { haptic } from '../../haptics';
   import { hearts } from './index';
@@ -105,7 +106,6 @@
   );
 
   let showHelp = $state(false);
-  let showOtherStats = $state(wrongWayPlayers(input).length > 0);
   let moonToken = $state(0);
   let prevMoon: string | null = null;
   let ready = false;
@@ -352,47 +352,45 @@
     </div>
   {/each}
 
-  <details class="other-stats" bind:open={showOtherStats}>
-    <summary>
-      <span>↩ Other stats</span>
-      <span class="summary-meta">
-        {wrongWay.size > 0 ? `${wrongWay.size} marked` : 'optional'}
-      </span>
-    </summary>
-    <div class="other-stats-body">
-      <p class="muted small">Who tried to keep play moving the wrong way this hand?</p>
-      <div class="wrong-way-players">
-        {#each ctx.players as p (p.id)}
-          <button
-            type="button"
-            class="wrong-way-player"
-            class:on={wrongWay.has(p.id)}
-            aria-pressed={wrongWay.has(p.id)}
-            aria-label={`Mark ${p.name} for a wrong-way moment`}
-            onclick={() => toggleWrongWay(p.id)}
-          >
-            <Avatar name={p.name} color={p.color} size={24} />
-            <span>{p.name}</span>
-            {#if wrongWay.has(p.id)}<span class="check" aria-hidden="true">↩</span>{/if}
-          </button>
+  <GameExtras
+    initialOpen={wrongWay.size > 0}
+    metadata={wrongWay.size > 0 ? `${wrongWay.size} marked` : 'optional'}
+  >
+    <h3 class="extras-heading">Wrong-way moments</h3>
+    <p class="muted small extras-help">
+      Mark anyone who tried to play in the wrong direction this hand. This doesn't affect scores.
+    </p>
+    <div class="wrong-way-players">
+      {#each ctx.players as p (p.id)}
+        <button
+          type="button"
+          class="wrong-way-player"
+          class:on={wrongWay.has(p.id)}
+          aria-pressed={wrongWay.has(p.id)}
+          aria-label={`Mark ${p.name} for a wrong-way moment`}
+          onclick={() => toggleWrongWay(p.id)}
+        >
+          <Avatar name={p.name} color={p.color} size={24} />
+          <span>{p.name}</span>
+          {#if wrongWay.has(p.id)}<span class="check" aria-hidden="true">✓</span>{/if}
+        </button>
+      {/each}
+    </div>
+    {#if priorWrongWay.length > 0}
+      <div class="wrong-way-history">
+        <span class="muted small">Earlier this game</span>
+        {#each priorWrongWay as entry (entry.player.id)}
+          <div class="history-row">
+            <span>{entry.player.name}</span>
+            <span class="muted rounds">
+              {entry.rounds.length === 1 ? 'Round' : 'Rounds'}
+              {entry.rounds.join(', ')}
+            </span>
+          </div>
         {/each}
       </div>
-      {#if priorWrongWay.length > 0}
-        <div class="wrong-way-history">
-          <span class="muted small">Earlier this game</span>
-          {#each priorWrongWay as entry (entry.player.id)}
-            <div class="history-row">
-              <span>{entry.player.name}</span>
-              <span class="muted rounds">
-                {entry.rounds.length === 1 ? 'Round' : 'Rounds'}
-                {entry.rounds.join(', ')}
-              </span>
-            </div>
-          {/each}
-        </div>
-      {/if}
-    </div>
-  </details>
+    {/if}
+  </GameExtras>
 </div>
 
 <style>
@@ -583,41 +581,12 @@
     font-family: inherit;
     color: var(--muted);
   }
-  .other-stats {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface-2);
-    padding: 0 12px;
-  }
-  .other-stats summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    min-height: 46px;
-    cursor: pointer;
-    list-style: none;
-    font-weight: 700;
-  }
-  .other-stats summary::-webkit-details-marker {
-    display: none;
-  }
-  .summary-meta {
-    color: var(--muted);
-    font-size: 0.8rem;
+  .extras-heading {
+    margin: 0;
+    font-size: 0.9rem;
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
   }
-  .other-stats[open] summary {
-    border-bottom: 1px solid var(--border);
-  }
-  .other-stats-body {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 10px 0 12px;
-  }
-  .other-stats-body p {
+  .extras-help {
     margin: 0;
   }
   .wrong-way-players {
@@ -647,7 +616,6 @@
   .wrong-way-player:hover {
     background: var(--surface-3);
   }
-  .other-stats summary:focus-visible,
   .wrong-way-player:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;

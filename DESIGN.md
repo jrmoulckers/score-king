@@ -330,6 +330,18 @@ element shares one shape language (9px controls, 14px containers) and one state 
   vocabulary everywhere).
 - **Label:** muted 0.9rem, block, 6px below.
 
+### Optional round extras
+
+- `GameExtras` provides a shared native disclosure after core round entry. Its **Extras**
+  summary uses a decorative right/down SVG chevron, a 46px target, the surface ramp,
+  and the standard focus ring; reduced motion disables the chevron transition.
+- Game-specific headings name the existing activities inside: Hearts' **Wrong-way moments**
+  and Codenames' **Spymasters**. Editors own their records and summary metadata.
+  Recorded extras open when editing; collapsing never clears data. Empty incoming
+  records start collapsed.
+- Use this presentation for supplemental tracking, not main scoring controls or
+  core poker pot accounting. Do not show empty categories for unimplemented activities.
+
 ### Stepper (signature)
 
 - A horizontal − / number / + control for round entry: two 46px Lifted-Slate icon

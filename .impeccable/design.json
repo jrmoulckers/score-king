@@ -104,6 +104,13 @@
   },
   "components": [
     {
+      "name": "Optional Round Extras",
+      "kind": "custom",
+      "description": "Presentation-only native disclosure after core round entry. Extras groups existing supplemental tracking such as Hearts wrong-way moments and Codenames spymasters, never core scoring or unimplemented activities. Recorded extras open on editor mount; collapsing preserves data.",
+      "html": "<details class='ds-extras'><summary><svg class='ds-extras-chev' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true' focusable='false'><path d='m6 4 4 4-4 4'/></svg><span>Extras</span><span class='ds-extras-meta'>optional</span></summary><div class='ds-extras-body'><h3>Wrong-way moments</h3><p>Mark anyone who tried to play in the wrong direction this hand. This doesn't affect scores.</p></div></details>",
+      "css": ".ds-extras{border:1px solid var(--border,#313357);border-radius:var(--radius,14px);background:var(--surface-2,#24263f);color:var(--text,#e9e9f4);font:1rem system-ui;}.ds-extras summary{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 12px;cursor:pointer;list-style:none;font-weight:700;}.ds-extras summary::-webkit-details-marker{display:none;}.ds-extras summary:focus-visible{outline:2px solid var(--primary,#7c5cff);outline-offset:2px;}.ds-extras-chev{display:block;flex:none;color:var(--muted,#a3a6cb);transition:transform .2s ease;}.ds-extras[open]>summary{border-bottom:1px solid var(--border,#313357);}.ds-extras[open]>summary .ds-extras-chev{transform:rotate(90deg);}.ds-extras-meta{margin-left:auto;color:var(--muted,#a3a6cb);font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;}.ds-extras-body{display:flex;flex-direction:column;gap:10px;padding:10px 12px 12px;}.ds-extras-body h3{margin:0;font-size:.9rem;font-weight:600;}.ds-extras-body p{margin:0;font-size:.8rem;color:var(--muted,#a3a6cb);}@media(prefers-reduced-motion:reduce){.ds-extras-chev{transition:none;}}"
+    },
+    {
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
