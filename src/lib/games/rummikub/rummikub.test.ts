@@ -199,6 +199,53 @@ describe('validateRummikub', () => {
       validateRummikub(input('a', { a: hand(0), b: hand(5), c: hand(12, 1) }), ['a', 'b', 'c']),
     ).toBeNull();
   });
+
+  it.each([1.5, 0.1, NaN, Infinity, -Infinity, undefined, null, '', '2', true])(
+    'rejects raw invalid tile total %s before scoring normalization',
+    (tiles) => {
+      const round = JSON.parse(JSON.stringify(input('a', { a: hand(0), b: hand(0) })));
+      round.hands.b.tiles = tiles;
+      expect(validateRummikub(round, ['a', 'b'])).toMatch(/tile|negative/i);
+      expect(round.hands.b.tiles).toBe(tiles);
+    },
+  );
+
+  it.each([1.5, 0.1, 3, NaN, Infinity, -Infinity, undefined, null, '', '1', true])(
+    'rejects raw invalid joker count %s before scoring normalization',
+    (jokers) => {
+      const round = JSON.parse(JSON.stringify(input('a', { a: hand(0), b: hand(0) })));
+      round.hands.b.jokers = jokers;
+      expect(validateRummikub(round, ['a', 'b'])).toMatch(/joker|negative/i);
+      expect(round.hands.b.jokers).toBe(jokers);
+    },
+  );
+
+  it.each([0, 1, 2])('accepts corrected joker count %s and integer tiles', (jokers) => {
+    const round = input('a', { a: hand(0), b: hand(13, jokers) });
+    expect(validateRummikub(round, ['a', 'b'])).toBeNull();
+    expect(scoreRummikub(round, ['a', 'b'])).toEqual({
+      a: 13 + jokers * 30,
+      b: -(13 + jokers * 30),
+    });
+    expect(scoreRummikub(round, ['a', 'b'], 0)).toEqual({ a: 13, b: -13 });
+  });
+
+  it('ignores the winner and absent players but requires each opponent’s rack', () => {
+    expect(
+      validateRummikub(input('a', { a: hand(1.5, 3), b: hand(0), c: hand(0.5) }), ['a', 'b']),
+    ).toBeNull();
+    expect(validateRummikub(input('a', { a: hand(0) }), ['a', 'b'])).toMatch(/tile/i);
+  });
+
+  it('blocks fractional saves without changing defensive historical reconstruction', () => {
+    const round = input('a', { a: hand(99), b: hand(12.6, 1.5) });
+    const before = structuredClone(round);
+    expect(validateRummikub(round, ['a', 'b'])).toMatch(/whole-number/i);
+    expect(handPenalty(round.hands.b)).toBe(73);
+    expect(potTotal(round, ['a', 'b'])).toBe(73);
+    expect(scoreRummikub(round, ['a', 'b'])).toEqual({ a: 73, b: -73 });
+    expect(round).toEqual(before);
+  });
 });
 
 describe('rummikub module', () => {
