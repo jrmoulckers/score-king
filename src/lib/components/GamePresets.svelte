@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import type { ConfigField, GamePreset, ID, PresetKind } from '../types';
   import { defaultConfig } from '../types';
   import { activePlayers, playerRosterReady } from '../stores/players';
@@ -81,7 +82,25 @@
   let mode = $state<Mode>('idle');
   let draftName = $state('');
   let saveKind = $state<PresetKind>('full');
+  let container: HTMLDivElement;
+  let saveButton: HTMLButtonElement;
+  let renameButton: HTMLButtonElement;
   const canSave = $derived(saveKind === 'rules' || ($playerRosterReady && selected.length > 0));
+
+  async function closeForm(destination: 'preset' | 'rename' | 'save', id = activeId) {
+    mode = 'idle';
+    await tick();
+    const chip = [...container.querySelectorAll<HTMLButtonElement>('.pchip')].find(
+      (button) => button.dataset.presetId === id && !button.disabled,
+    );
+    const target =
+      destination === 'preset'
+        ? chip
+        : destination === 'rename'
+          ? renameButton
+          : saveButton;
+    (target?.isConnected ? target : chip ?? saveButton)?.focus();
+  }
 
   // The applied preset is "dirty" once the current form no longer matches it — only then is
   // there anything to Update.
@@ -140,12 +159,12 @@
     mode = 'saving';
   }
 
-  function confirmSave(e: Event) {
+  async function confirmSave(e: Event) {
     e.preventDefault();
     if (!canSave || !draftName.trim()) return;
     const p = savePreset(type, draftName, selected, config, saveKind);
     activeId = p.id;
-    mode = 'idle';
+    await closeForm('preset', p.id);
   }
 
   function startRename() {
@@ -154,29 +173,29 @@
     mode = 'renaming';
   }
 
-  function confirmRename(e: Event) {
+  async function confirmRename(e: Event) {
     e.preventDefault();
     if (active) renamePreset(active.id, draftName);
-    mode = 'idle';
+    await closeForm('preset');
   }
 
   function saveOverActive() {
     if (active) updatePreset(active.id, selected, config);
   }
 
-  function remove() {
+  async function remove() {
     if (!active) return;
     deletePresetWithUndo(active);
     activeId = null;
-    mode = 'idle';
+    await closeForm('save');
   }
 
-  function cancel() {
-    mode = 'idle';
+  async function cancel() {
+    await closeForm(mode === 'renaming' ? 'rename' : 'save');
   }
 </script>
 
-<div class="presets">
+<div class="presets" bind:this={container}>
   <div class="fieldlabel">Presets</div>
 
   {#if $presets.length}
@@ -193,6 +212,7 @@
               <button
                 type="button"
                 class="pchip"
+                data-preset-id={p.id}
                 class:on={activeId === p.id}
                 aria-pressed={activeId === p.id}
                 disabled={!$playerRosterReady}
@@ -291,15 +311,21 @@
           >Update</button
         >
       {/if}
-      <button class="btn small ghost" type="button" onclick={startRename}>Rename</button>
-      <button class="btn small ghost" type="button" onclick={startSave}>Save new</button>
+      <button class="btn small ghost" type="button" bind:this={renameButton} onclick={startRename}
+        >Rename</button
+      >
+      <button class="btn small ghost" type="button" bind:this={saveButton} onclick={startSave}
+        >Save new</button
+      >
       <button class="btn small ghost" type="button" onclick={remove}>Delete</button>
     </div>
     {#if dirty && preview(active).unavailableIds.length}
       <p class="muted hint">Updating replaces the saved lineup, including unavailable players.</p>
     {/if}
   {:else}
-    <button class="linkbtn" type="button" onclick={startSave}> ＋ Save preset </button>
+    <button class="linkbtn" type="button" bind:this={saveButton} onclick={startSave}>
+      ＋ Save preset
+    </button>
   {/if}
 </div>
 
