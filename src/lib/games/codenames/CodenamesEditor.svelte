@@ -769,7 +769,7 @@
   }
   .chip {
     --tc: #e5484d;
-    min-height: 38px;
+    min-height: 46px;
     padding: 6px 12px;
     border: 1px solid var(--border);
     border-radius: 999px;

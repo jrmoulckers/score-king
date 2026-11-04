@@ -7,6 +7,7 @@ import { hearts } from '../games/hearts';
 import { emptyInput, type HeartsInput } from '../games/hearts/logic';
 import { codenames } from '../games/codenames';
 import { createInput, type CodenamesInput } from '../games/codenames/logic';
+import codenamesSource from '../games/codenames/CodenamesEditor.svelte?raw';
 
 const mounted: ReturnType<typeof mount>[] = [];
 const ids = ['a', 'b', 'c', 'd'];
@@ -128,6 +129,10 @@ describe('Hearts Extras', () => {
 });
 
 describe('Codenames Extras', () => {
+  it('keeps spymaster targets at least 46px high', () => {
+    expect(codenamesSource).toMatch(/\.chip\s*\{[^}]*min-height: 46px/);
+  });
+
   it('uses the shared disclosure for optional spymasters and retains non-scoring selections', () => {
     const ctx = context('codenames');
     const initial = createInput(ctx);
