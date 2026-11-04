@@ -3,7 +3,7 @@
   import Avatar from '../../components/Avatar.svelte';
   import Stepper from '../../components/Stepper.svelte';
   import { haptic } from '../../haptics';
-  import { skullking } from './index';
+  import SkullKingHelp from './SkullKingHelp.svelte';
   import VoyageRibbon from './VoyageRibbon.svelte';
   import CoinBurst from './CoinBurst.svelte';
   import {
@@ -115,14 +115,19 @@
       <span class="pill" title="Total tricks bid vs. tricks available"
         >🗣️ bids {bidSum} · {bidRead}</span
       >
-      <button type="button" class="btn small ghost" onclick={() => (showHelp = !showHelp)}>
-        Bounty guide
+      <button
+        type="button"
+        class="btn ghost help-button"
+        aria-haspopup="dialog"
+        onclick={() => (showHelp = true)}
+      >
+        Rules &amp; scoring
       </button>
     </span>
   </div>
 
   {#if showHelp}
-    <pre class="help">{skullking.help}</pre>
+    <SkullKingHelp config={ctx.config} round={n} onclose={() => (showHelp = false)} />
   {/if}
 
   {#each ctx.players as p (p.id)}
@@ -386,15 +391,9 @@
   .manual input {
     width: 110px;
   }
-  .help {
-    white-space: pre-wrap;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 0.85rem;
-    margin: 0;
-    font-family: inherit;
-    color: var(--muted);
+  .help-button {
+    min-height: 46px;
+    font-size: 0.9rem;
+    padding: 7px 12px;
   }
 </style>

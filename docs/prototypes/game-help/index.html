@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Game help · Score King prototype</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/prototype.css" />
+    <script type="module" src="/prototype.js"></script>
+  </head>
+  <body>
+    <main class="sample-app">
+      <header class="sample-bar"><strong>Score King</strong><span>Prototype</span></header>
+      <section class="sample-game" aria-labelledby="sample-title">
+        <h1 id="sample-title">🏴‍☠️ Skull King</h1>
+        <button class="btn primary" id="open-guide">Rules &amp; scoring</button>
+        <p class="muted">Preview only. No saved game is open.</p>
+      </section>
+    </main>
+
+    <dialog id="guide" aria-labelledby="guide-title">
+      <header class="guide-header">
+        <div class="identity">
+          <span class="game-mark" aria-hidden="true">🏴‍☠️</span>
+          <div>
+            <h1 id="guide-title" tabindex="-1">Skull King</h1>
+            <p>Rules &amp; scoring</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn ghost" id="theme" aria-label="Switch to light theme">Light</button>
+          <button class="btn ghost" id="close-guide" aria-label="Close game guide">✕</button>
+        </div>
+      </header>
+
+      <div class="guide-scroll">
+        <nav class="topic-nav" aria-label="Guide topics">
+          <button class="topic-link" data-topic="reference" aria-current="page">Scoring</button>
+          <button class="topic-link" data-topic="zero">Zero bids</button>
+          <button class="topic-link" data-topic="bounties">Bonuses</button>
+          <button class="topic-link" data-topic="learn">
+            Learn to play <span aria-hidden="true">↗</span>
+          </button>
+        </nav>
+
+        <div class="content" id="content" data-topic="reference">
+          <section id="reference-view" aria-labelledby="reference-title">
+            <h2 id="reference-title" tabindex="-1">Quick reference</h2>
+            <p class="reference-intro">Bid how many tricks you expect to win.</p>
+            <dl class="reference-rules">
+              <div>
+                <dt>Match your bid (1+)</dt>
+                <dd><strong>+20</strong> per trick bid</dd>
+              </div>
+              <div>
+                <dt>Miss your bid (1+)</dt>
+                <dd><strong>−10</strong> per trick off</dd>
+              </div>
+              <div>
+                <dt>Bid zero</dt>
+                <dd><strong>±10 × round</strong></dd>
+              </div>
+            </dl>
+          </section>
+
+          <section id="topic-view" aria-labelledby="topic-title" hidden>
+            <button class="text-button back" data-topic="reference">← Scoring reference</button>
+            <h2 id="topic-title" tabindex="-1"></h2>
+            <div id="topic-copy" class="topic-copy"></div>
+          </section>
+
+          <section class="practice" id="practice" aria-labelledby="practice-title">
+            <div class="practice-heading">
+              <h2 id="practice-title" tabindex="-1">Try an example</h2>
+              <label class="round-control" for="round"
+                >Round
+                <select id="round" aria-label="Example round">
+                  <option>1</option>
+                  <option>2</option>
+                  <option>3</option>
+                  <option>4</option>
+                  <option selected>5</option>
+                  <option>6</option>
+                  <option>7</option>
+                  <option>8</option>
+                  <option>9</option>
+                  <option>10</option>
+                </select>
+              </label>
+            </div>
+            <div class="bid-control">
+              <label for="bid">Your bid</label>
+              <select id="bid" aria-label="Example bid"></select>
+              <span>tricks</span>
+            </div>
+            <div class="tricks-heading">
+              <strong>Tap the tricks you won</strong>
+              <button class="text-button" id="clear-tricks">Clear</button>
+            </div>
+            <div
+              class="trick-choices"
+              id="trick-choices"
+              role="group"
+              aria-label="Tricks won in the example"
+            ></div>
+            <div class="score-receipt" role="status" aria-live="polite" aria-atomic="true">
+              <div class="score-summary">
+                <span id="comparison" class="sr-only">Bid 2 · Won 2</span>
+                <strong class="sample-score" id="score">+40<span> points</span></strong>
+              </div>
+              <div class="score-reason">
+                <strong id="verdict">Bid matched</strong><span id="equation">2 × 20 = 40</span>
+              </div>
+            </div>
+            <div class="example-bottom">
+              <span>Bonuses excluded.</span
+              ><button class="text-button" id="reset">Reset example</button>
+            </div>
+          </section>
+        </div>
+      </div>
+      <footer class="guide-footer">
+        <span>Prototype · nothing is saved</span><button class="btn primary" id="done">Done</button>
+      </footer>
+    </dialog>
+  </body>
+</html>
