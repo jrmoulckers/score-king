@@ -52,7 +52,7 @@ async function settled() {
 }
 
 describe('lazy route recovery', () => {
-  it('shows pending feedback, renders the real page, and forwards reactive props without reloading', async () => {
+  it('renders pending and loaded states, forwarding reactive props without reloading', async () => {
     const request = deferred();
     const loader = vi.fn(() => request.promise);
     const { target, inputs } = render(loader);
@@ -76,7 +76,7 @@ describe('lazy route recovery', () => {
     expect(loader).toHaveBeenCalledTimes(1);
   });
 
-  it('surfaces rejection and only reloads the same document after explicit activation', async () => {
+  it('surfaces rejection and reloads only after explicit activation', async () => {
     const reload = vi.fn();
     vi.stubGlobal('location', { reload });
     const request = deferred();
@@ -85,7 +85,9 @@ describe('lazy route recovery', () => {
     await settled();
 
     expect(target.querySelector('[role="status"]')).toBeNull();
-    expect(target.querySelector('[role="alert"]')?.textContent).toContain("Couldn't load this page");
+    expect(target.querySelector('[role="alert"]')?.textContent).toContain(
+      "Couldn't load this page",
+    );
     const button = target.querySelector<HTMLButtonElement>('button')!;
     expect(button.textContent).toBe('Reload page');
     expect(button.type).toBe('button');

@@ -20,13 +20,14 @@
 
   let Page = $state<Component<any> | null>(null);
   let failed = $state(false);
+  const load = $derived(loader);
 
   $effect(() => {
     let alive = true;
     Page = null;
     failed = false;
     Promise.resolve()
-      .then(loader)
+      .then(load)
       .then(
         (m) => {
           if (alive) Page = m.default;
