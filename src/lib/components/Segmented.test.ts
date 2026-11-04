@@ -109,3 +109,52 @@ describe('Segmented responsive choices', () => {
     expectSelection(buttons, count - 1);
   });
 });
+
+describe('Segmented forced-colors selection', () => {
+  it('keeps a non-color selection cue after focus leaves and follows the checked option', () => {
+    const style = document.createElement('style');
+    style.id = 'segmented-layout-styles';
+    style.textContent = source.match(/<style>([\s\S]*)<\/style>/)![1];
+    document.head.appendChild(style);
+    const media = [...style.sheet!.cssRules].find(
+      (rule): rule is CSSMediaRule =>
+        rule instanceof CSSMediaRule && rule.conditionText === '(forced-colors: active)',
+    );
+    expect(media).toBeDefined();
+    const forcedRules = [...media!.cssRules].map((rule) => rule.cssText).join('\n');
+    expect(forcedRules).not.toMatch(/forced-color-adjust|box-shadow|background|border|padding/);
+
+    // jsdom does not emulate forced colors; apply its rules explicitly for state assertions.
+    style.textContent += `\n${forcedRules}`;
+    const { buttons } = render();
+    const outside = document.createElement('button');
+    outside.style.color = 'CanvasText';
+    document.body.appendChild(outside);
+    buttons[0].focus();
+    outside.focus();
+    expectSelection(buttons, 0);
+    expect(document.activeElement).toBe(outside);
+    expect(getComputedStyle(buttons[0]).textDecorationLine).toBe('underline');
+    expect(getComputedStyle(buttons[0]).textDecorationThickness).toBe('3px');
+    expect(getComputedStyle(buttons[0]).textUnderlineOffset).toBe('4px');
+    expect(forcedRules).toMatch(/text-decoration-color:\s*CanvasText;/i);
+    expect(getComputedStyle(buttons[0]).textDecorationColor).toBe(getComputedStyle(outside).color);
+    expect(getComputedStyle(buttons[1]).textDecorationLine).not.toBe('underline');
+
+    flushSync(() => buttons[2].click());
+    outside.focus();
+    expectSelection(buttons, 2);
+    expect(getComputedStyle(buttons[0]).textDecorationLine).not.toBe('underline');
+    expect(getComputedStyle(buttons[2]).textDecorationLine).toBe('underline');
+    expect(getComputedStyle(buttons[2]).outlineStyle).not.toBe('solid');
+    expect(forcedRules).toMatch(/\.seg:focus-visible\s*\{\s*outline-color:\s*Highlight;/i);
+  });
+
+  it('confines the selected underline to forced colors and leaves the normal palette intact', () => {
+    const selectedRule = source.match(/\.seg\.on\s*\{[^}]*\}/)![0];
+    expect(selectedRule).toContain('background: var(--primary)');
+    expect(selectedRule).toContain('color: #fff');
+    expect(selectedRule).not.toContain('text-decoration');
+    expect(source).not.toContain('forced-color-adjust: none');
+  });
+});

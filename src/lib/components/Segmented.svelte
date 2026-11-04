@@ -108,4 +108,15 @@
     outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
+  @media (forced-colors: active) {
+    .seg.on {
+      text-decoration-line: underline;
+      text-decoration-color: CanvasText;
+      text-decoration-thickness: 3px;
+      text-underline-offset: 4px;
+    }
+    .seg:focus-visible {
+      outline-color: Highlight;
+    }
+  }
 </style>
