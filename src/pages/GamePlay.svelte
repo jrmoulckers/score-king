@@ -513,7 +513,7 @@
     <span class="row" style="gap: 10px">
       <span style="font-size: 1.7rem">{module.emoji}</span>
       <span>
-        <div><strong>{module.name}</strong></div>
+        <h1 class="game-heading">{module.name}</h1>
         <div class="muted" style="font-size: 0.8rem">
           {game.status === 'finished'
             ? 'Finished'
@@ -609,7 +609,7 @@
     {@const EditorC = module.RoundEditor}
     {@const ectx = buildCtx(editing.index, totalsBefore(editing.index))}
     <div class="card stack" style="margin-top: 12px">
-      <strong>Editing round {editing.index + 1}</strong>
+      <h2 class="round-heading">Editing round {editing.index + 1}</h2>
       <EditorC loader={module.editorLoader} bind:input={editDraft} ctx={ectx} />
       {#if game.type === 'hearts' && editDraft}
         <MoonScoringChoice bind:input={editDraft} ctx={ectx} saveArea editing />
@@ -632,7 +632,7 @@
       {@const actx = buildCtx(rounds.length, totals)}
       {@const AddEditor = module.RoundEditor}
       <div class="card stack" style="margin-top: 12px">
-        <strong>Round {rounds.length + 1}{maxR ? ` of ${maxR}` : ''}</strong>
+        <h2 class="round-heading">Round {rounds.length + 1}{maxR ? ` of ${maxR}` : ''}</h2>
         {#if draft}
           <AddEditor loader={module.editorLoader} bind:input={draft} ctx={actx} />
         {/if}
@@ -769,6 +769,13 @@
 {/if}
 
 <style>
+  .game-heading,
+  .round-heading {
+    margin: 0;
+    font: inherit;
+    font-weight: 700;
+    letter-spacing: inherit;
+  }
   .notfound {
     display: flex;
     flex-direction: column;

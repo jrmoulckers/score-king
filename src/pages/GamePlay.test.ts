@@ -107,7 +107,7 @@ describe('Hearts scoring presentation and entry feedback', () => {
   it('separates scoring from guidance and keeps allocation and moon choices guarded', async () => {
     const target = await render();
     const header = target.querySelector('.scoring-header')!;
-    expect(header.querySelector('h2')?.textContent).toBe('Scoring');
+    expect(header.querySelector('h3')?.textContent).toBe('Scoring');
     expect(header.previousElementSibling?.querySelector('h2')).toBeNull();
     expect(target.querySelector('.pass')).not.toBeNull();
     expect(header.compareDocumentPosition(target.querySelector('.prow')!) & 4).toBe(4);
