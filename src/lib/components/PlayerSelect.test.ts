@@ -119,10 +119,7 @@ describe('player selection capacity', () => {
     expect(chips()[12].disabled).toBe(false);
     expect(document.getElementById(hint.id)).toBeNull();
     flushSync(() => chips()[12].click());
-    expect(props.selected).toEqual([
-      ...names.slice(1).map((_, i) => `player-${i + 1}`),
-      'extra',
-    ]);
+    expect(props.selected).toEqual([...names.slice(1).map((_, i) => `player-${i + 1}`), 'extra']);
   });
 
   it('retains the full ordered lineup when a dynamic maximum drops, and recovers without truncation', () => {
