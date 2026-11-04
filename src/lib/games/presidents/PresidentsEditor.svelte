@@ -123,11 +123,15 @@
   {#each sortedPlayers as p (p.id)}
     {@const finish = pos(p.id)}
     {@const clash = isClash(p.id)}
-    {@const title = titleFor(finish || 1, n)}
+    {@const entered = input.positions[p.id]}
+    {@const title = Number.isInteger(entered) && entered >= 1 && entered <= n
+      ? titleFor(entered, n)
+      : null}
+    {@const rankLabel = title ? title.label : entered == null ? 'Finish not entered' : 'Invalid finish'}
     <div
       class="prow"
       class:clash
-      class:president={finish === 1 && !clash}
+      class:president={title?.tier === 'president' && !clash}
       animate:flip={{ duration: flipDur }}
     >
       <div class="row spread head">
@@ -140,9 +144,9 @@
         </span>
       </div>
       <div class="entry">
-        <span class="rank tnum" aria-label={`Finished ${finish || '—'}: ${title.label}`}>
-          <span class="badge" aria-hidden="true">{title.emoji}</span>
-          {title.label}
+        <span class="rank tnum" aria-label={title ? `Finished ${finish}: ${rankLabel}` : rankLabel}>
+          <span class="badge" aria-hidden="true">{title ? title.emoji : '—'}</span>
+          {rankLabel}
         </span>
         <Stepper bind:value={input.positions[p.id]} min={1} max={n} label={p.name} />
         <button
