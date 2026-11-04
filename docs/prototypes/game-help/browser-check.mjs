@@ -18,42 +18,43 @@ try {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.locator('#guide[open]').waitFor();
-    assert.equal(await page.locator('#footer-score').textContent(), '+40 pts');
-    await page.getByRole('button', { name: 'Increase sample tricks won', exact: true }).click();
-    assert.equal(await page.locator('#footer-score').textContent(), '−10 pts');
-    await page.getByRole('button', { name: 'Increase sample bid', exact: true }).click();
-    assert.equal(await page.locator('#footer-score').textContent(), '+60 pts');
-    await page.locator('#round').selectOption('1');
-    assert.equal(await page.locator('#footer-score').textContent(), '+20 pts');
+    assert.equal(await page.locator('#score').textContent(), '+40 points');
+    await page.getByRole('button', { name: 'Trick 3', exact: true }).click();
+    assert.equal(await page.locator('#score').textContent(), '−10 points');
+    await page.getByLabel('Example bid', { exact: true }).selectOption('3');
+    assert.equal(await page.locator('#score').textContent(), '+60 points');
+    await page.getByRole('button', { name: 'Trick 1', exact: true }).click();
+    assert.equal(await page.locator('#score').textContent(), '−10 points');
     assert.equal(
-      await page.getByRole('button', { name: 'Increase sample bid', exact: true }).isDisabled(),
-      true,
+      await page.getByRole('button', { name: 'Trick 1', exact: true }).getAttribute('aria-pressed'),
+      'false',
     );
-    await page.getByRole('button', { name: 'Try zero', exact: true }).click();
-    assert.equal(await page.locator('#footer-score').textContent(), '+10 pts');
-    await page.getByRole('button', { name: 'Increase sample tricks won', exact: true }).click();
-    assert.equal(await page.locator('#footer-score').textContent(), '−10 pts');
+    await page.getByRole('button', { name: 'Reset example', exact: true }).click();
+    await page.locator('#round').selectOption('1');
+    assert.equal(await page.locator('#score').textContent(), '+20 points');
+    assert.equal(await page.locator('[data-trick]').count(), 1);
+    assert.equal(await page.locator('#bid option').count(), 2);
+    await page.getByRole('button', { name: 'Zero bids', exact: true }).click();
+    assert.equal(await page.locator('#score').textContent(), '+10 points');
+    await page.getByRole('button', { name: 'Trick 1', exact: true }).click();
+    assert.equal(await page.locator('#score').textContent(), '−10 points');
     await page.locator('#round').selectOption('10');
-    assert.equal(await page.locator('#footer-score').textContent(), '−100 pts');
-    await page.getByRole('button', { name: 'Decrease sample tricks won', exact: true }).click();
-    assert.equal(await page.locator('#footer-score').textContent(), '+100 pts');
-    await page.getByRole('button', { name: 'Bounties & captures', exact: true }).click();
+    assert.equal(await page.locator('#score').textContent(), '−100 points');
+    assert.equal(await page.locator('[data-trick]').count(), 10);
+    await page.getByRole('button', { name: 'Clear', exact: true }).click();
+    assert.equal(await page.locator('#score').textContent(), '+100 points');
+    assert.equal(await page.getByRole('button', { name: 'Clear', exact: true }).isDisabled(), true);
+    await page.getByRole('button', { name: 'Bonuses', exact: true }).click();
     assert.equal(await page.locator('#practice').isVisible(), false);
     assert.equal(await page.locator('#topic-copy tbody tr').count(), 5);
-    await page.getByRole('button', { name: 'Table settings', exact: true }).click();
-    await page.locator('#sample-bounty-setting').uncheck();
-    assert.match(await page.locator('#setting-explanation').textContent(), /even when/);
-    await page.getByRole('button', { name: 'Learn the game', exact: true }).click();
-    assert.match(
-      await page.locator('#topic-copy').textContent(),
-      /not implemented in this prototype/i,
-    );
-    await page.getByRole('button', { name: 'Explore bid scoring', exact: false }).click();
+    await page.getByRole('button', { name: 'Learn to play', exact: false }).click();
+    assert.match(await page.locator('#topic-copy').textContent(), /full rules are not included/i);
+    await page.getByRole('button', { name: 'Open scoring example', exact: false }).click();
     assert.equal(await page.locator('#practice').isVisible(), true);
     await page.keyboard.press('Escape');
     await page.locator('#guide').waitFor({ state: 'hidden' });
     assert.equal(await page.evaluate(() => document.activeElement.id), 'open-guide');
-    await page.getByRole('button', { name: 'Open game guide', exact: true }).click();
+    await page.getByRole('button', { name: 'Rules & scoring', exact: true }).click();
     for (let index = 0; index < 30; index += 1) {
       await page.keyboard.press(index < 15 ? 'Tab' : 'Shift+Tab');
       assert.equal(
@@ -63,8 +64,8 @@ try {
         true,
       );
     }
-    await page.getByRole('button', { name: 'At a glance', exact: false }).click();
-    await page.getByRole('button', { name: 'Reset', exact: true }).click();
+    await page.getByRole('button', { name: 'Scoring', exact: true }).click();
+    await page.getByRole('button', { name: 'Reset example', exact: true }).click();
     const geometry = await page.locator('#guide').evaluate((element) => ({
       width: element.getBoundingClientRect().width,
       scroll: document.documentElement.scrollWidth,
@@ -72,9 +73,21 @@ try {
     }));
     assert.ok(geometry.width <= viewport.width + 1);
     assert.ok(geometry.scroll <= geometry.viewport + 1);
+    await page.locator('#practice').scrollIntoViewIfNeeded();
+    const exampleGeometry = await page.evaluate(() => {
+      const scroller = document.querySelector('.guide-scroll').getBoundingClientRect();
+      const choices = document.querySelector('#trick-choices').getBoundingClientRect();
+      const result = document.querySelector('.score-receipt').getBoundingClientRect();
+      return {
+        choicesVisible: choices.top >= scroller.top && choices.bottom <= scroller.bottom,
+        resultVisible: result.top >= scroller.top && result.bottom <= scroller.bottom,
+      };
+    });
+    assert.ok(exampleGeometry.choicesVisible, 'Won-trick controls must fit with the result');
+    assert.ok(exampleGeometry.resultVisible, 'Result must be visible alongside won-trick controls');
     if (viewport.width !== 320) {
       const size = viewport.width === 1440 ? 'desktop' : 'mobile';
-      await page.locator('.guide-body').evaluate((element) => {
+      await page.locator('.guide-scroll').evaluate((element) => {
         element.scrollTop = 0;
       });
       await page.screenshot({
@@ -86,7 +99,7 @@ try {
         path: fileURLToPath(new URL(`tools.local/${size}-light.png`, import.meta.url)),
       });
     }
-    await page.getByRole('button', { name: 'Back to the table', exact: true }).click();
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
     await page.locator('#guide').waitFor({ state: 'hidden' });
     await page.close();
     console.log(`PASS ${viewport.width}px: scoring, bounds, topics, keyboard, viewport fit`);

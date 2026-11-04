@@ -9,8 +9,10 @@ From the repository root, using Node 24:
 node docs\prototypes\game-help\serve.mjs
 ```
 
-Open the localhost URL printed by the server (it chooses an available port). Close and reopen the modal, try scoring scenarios,
-change the round, browse topics, and switch between light and dark themes.
+Open the localhost URL printed by the server (it chooses an available port). Choose
+a bid, tap the stacks representing tricks you won, and read the score directly below.
+Each stack is a toggle, with a checkmark and "Won" label when selected.
+Change the round, browse topics, and switch between light and dark themes.
 The preview uses the existing app CSS and serves the existing Skull King scorer
 with TypeScript types stripped; it does not maintain a second scoring implementation.
 No install, external assets, or network services are needed.
@@ -35,6 +37,6 @@ node docs\prototypes\game-help\browser-check.mjs
 ```
 
 This opens only its own temporary localhost server. It checks score updates, bounds,
-topic navigation, sample settings, modal keyboard containment, Escape/focus return,
+topic navigation, modal keyboard containment, Escape/focus return,
 and viewport fit at 1440px, 390px, and 320px. Desktop and mobile captures in both themes
 are written under `tools.local`. Screen-reader verification remains a separate check.

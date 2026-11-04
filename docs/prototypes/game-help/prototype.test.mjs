@@ -12,8 +12,8 @@ test('isolated preview serves assets and the real scorer, never arbitrary reposi
     assert.match(page.headers.get('content-security-policy'), /connect-src 'none'/);
     const html = await page.text();
     assert.match(html, /<dialog id="guide" aria-labelledby="guide-title">/);
-    assert.match(html, /Practice only/);
-    assert.match(html, /not a complete rulebook/);
+    assert.match(html, /Prototype · nothing is saved/);
+    assert.match(html, /aria-label="Tricks won in the example"/);
     for (const asset of [
       '/app.css',
       '/prototype.css',
