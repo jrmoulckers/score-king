@@ -57,6 +57,7 @@
     [
       $settings.keepAwake ? 'Keep awake' : null,
       $settings.privacyGuard ? 'Peek-guard' : null,
+      $settings.haptics ? 'Haptic feedback' : null,
       $settings.roastMode ? 'Roasts' : null,
     ]
       .filter(Boolean)
