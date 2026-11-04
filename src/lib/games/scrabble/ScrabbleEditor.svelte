@@ -30,11 +30,23 @@
 
   function toTurn() {
     if (isTurn(input)) return;
+    if (
+      dirty &&
+      !confirm('Discard this final tally and switch to a turn? Cancel to keep editing.')
+    ) {
+      return;
+    }
     input = emptyTurnInput(ids, ctx.roundIndex);
     haptic('tick');
   }
   function toFinal() {
     if (isFinalTally(input)) return;
+    if (
+      (dirty || input.playerId !== emptyTurnInput(ids, ctx.roundIndex).playerId) &&
+      !confirm('Discard this turn and switch to the final tally? Cancel to keep editing.')
+    ) {
+      return;
+    }
     input = emptyFinalInput(ids);
     haptic('tick');
   }
@@ -66,7 +78,7 @@
 
   const dirty = $derived(
     isTurn(input)
-      ? (input.points ?? 0) > 0 || input.bingo
+      ? input.points !== 0 || input.bingo
       : isFinalTally(input) &&
           (input.finisherId != null || Object.values(input.remaining ?? {}).some((v) => v)),
   );
