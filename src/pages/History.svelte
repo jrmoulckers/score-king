@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import {
     games,
     activeGames,
@@ -60,6 +61,8 @@
   let editingCrew = $state<string | null>(null);
   let crewDraft = $state('');
   let sharePayload = $state<RecapPayload | null>(null);
+  let controlsEl = $state<HTMLDivElement>();
+  let headingEl: HTMLHeadingElement;
 
   const playerMap = $derived(new Map($players.map((p) => [p.id, p] as const)));
   const archivedGames = $derived($games.filter((g) => g.archived));
@@ -71,6 +74,20 @@
   const statusOptions = $derived(
     hasAbandoned ? [...STATUS_OPTIONS, ABANDONED_OPTION] : STATUS_OPTIONS,
   );
+
+  $effect.pre(() => {
+    if (statusOptions.some((option) => option.value === status)) return;
+    const selected = controlsEl?.querySelector<HTMLButtonElement>('[aria-checked="true"]');
+    const hadFocus = selected != null && document.activeElement === selected;
+    status = 'all';
+    if (hadFocus) {
+      void tick().then(() => {
+        if (document.activeElement !== selected && document.activeElement !== document.body) return;
+        const next = controlsEl?.querySelector<HTMLButtonElement>('[aria-checked="true"]');
+        (next ?? headingEl)?.focus();
+      });
+    }
+  });
 
   /** Glanceable margin of victory for a finished game, when both totals are known. */
   function margin(g: Game): number | null {
@@ -267,7 +284,7 @@
   </div>
 {/snippet}
 
-<h1>History</h1>
+<h1 tabindex="-1" bind:this={headingEl}>History</h1>
 <a class="card night-entry" href="/nights" use:link>
   <span aria-hidden="true">🎲</span>
   <span
@@ -287,7 +304,7 @@
   </div>
 {:else}
   {#if showControls}
-    <div class="controls">
+    <div class="controls" bind:this={controlsEl}>
       <div class="searchbar">
         <span class="searchicon" aria-hidden="true">🔍</span>
         <input
