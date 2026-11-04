@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { getModule } from '../lib/games/registry';
   import { defaultConfig } from '../lib/types';
   import { activeGames, createGame, games } from '../lib/stores/games';
@@ -13,6 +14,7 @@
   import { editCustomHref } from '../lib/stores/catalog';
   import { navigate, link } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
+  import { reportStorageError } from '../lib/stores/storage';
   import PlayerSelect from '../lib/components/PlayerSelect.svelte';
   import ConfigForm from '../lib/components/ConfigForm.svelte';
   import BackLink from '../lib/components/BackLink.svelte';
@@ -32,6 +34,7 @@
   const playedCount = $derived($games.filter((g) => g.type === type).length);
 
   let selected = $state<string[]>([]);
+  let creating = $state(false);
   let config = $state<Record<string, any>>({});
   let configForm = $state<ReturnType<typeof ConfigForm>>();
   let lastInitFor = '';
@@ -53,7 +56,7 @@
   );
 
   async function start() {
-    if (!module) return;
+    if (creating || !module) return;
     if (unavailableSelected.length) {
       showToast('Remove unavailable players or restore them from Players before starting.');
       return;
@@ -67,8 +70,16 @@
       return;
     }
     if (configForm && !configForm.reportValidity()) return;
-    const g = await createGame(type, [...selected], { ...config });
-    navigate(`/play/${g.id}`);
+    creating = true;
+    try {
+      const g = await createGame(type, [...selected], { ...config });
+      navigate(`/play/${g.id}`);
+      await tick();
+    } catch {
+      reportStorageError();
+    } finally {
+      creating = false;
+    }
   }
 
   // Clone-and-tweak: save a fresh copy, then open it in the builder to adjust.
@@ -180,11 +191,13 @@
     <button
       class="btn primary block"
       onclick={start}
-      disabled={selected.length < minPlayers ||
+      aria-busy={creating}
+      disabled={creating ||
+        selected.length < minPlayers ||
         selected.length > maxPlayers ||
         unavailableSelected.length > 0}
     >
-      Start game
+      {creating ? 'Starting game...' : 'Start game'}
     </button>
     {#if selected.length < minPlayers}
       <p class="startneed muted sm" role="status">

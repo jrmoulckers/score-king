@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import type { Game, ID, Player, Round, RoundContext } from '../lib/types';
   import { resolveLower } from '../lib/types';
   import { configValidationMessage } from '../lib/configValidation';
@@ -22,6 +22,7 @@
   import { computeTotals, leaders } from '../lib/scoring';
   import { navigate, link, absoluteUrl } from '../lib/router';
   import { showToast, showActionToast } from '../lib/stores/toast';
+  import { reportStorageError } from '../lib/stores/storage';
   import { announce } from '../lib/stores/announcer';
   import { haptic } from '../lib/haptics';
   import { relativeTime, generateJoinCode, rosterFor } from '../lib/util';
@@ -62,6 +63,7 @@
   let rounds = $state<Round[]>([]);
   let plist = $state<Player[]>([]);
   let loading = $state(true);
+  let creating = $state(false);
   let draft = $state<any>(null);
   let editing = $state<Round | null>(null);
   let editDraft = $state<any>(null);
@@ -338,14 +340,22 @@
     });
   }
   async function playAgain() {
-    if (!game) return;
+    if (creating || !game) return;
     const error = configValidationMessage(module?.configFields, game.config);
     if (error) {
       showToast(`${error} Start a new game to adjust the setup.`);
       return;
     }
-    const g = await createGame(game.type, [...game.playerIds], { ...game.config });
-    navigate(`/play/${g.id}`);
+    creating = true;
+    try {
+      const g = await createGame(game.type, [...game.playerIds], { ...game.config });
+      navigate(`/play/${g.id}`);
+      await tick();
+    } catch {
+      reportStorageError();
+    } finally {
+      creating = false;
+    }
   }
   async function deleteGame() {
     if (!game) return;
@@ -596,14 +606,18 @@
     <a class="btn block" style="margin-top: 10px" href="/tonight" use:link>🎁 Tonight’s Recap</a>
     <div class="row" style="gap: 10px; margin-top: 10px">
       <button class="btn" onclick={doReopen} title="Reopen to add more rounds">Reopen game</button>
-      <button class="btn primary grow" onclick={playAgain}>Play again</button>
+      <button class="btn primary grow" onclick={playAgain} disabled={creating} aria-busy={creating}>
+        {creating ? 'Starting game...' : 'Play again'}
+      </button>
     </div>
   {:else if game.status === 'abandoned'}
     <div class="card center banner">🚪 Game abandoned — no winner recorded.</div>
     <a class="btn block" style="margin-top: 12px" href="/tonight" use:link>🎁 Tonight’s Recap</a>
     <div class="row" style="gap: 10px; margin-top: 10px">
       <button class="btn" onclick={doReopen} title="Reopen to keep playing">Reopen game</button>
-      <button class="btn primary grow" onclick={playAgain}>Play again</button>
+      <button class="btn primary grow" onclick={playAgain} disabled={creating} aria-busy={creating}>
+        {creating ? 'Starting game...' : 'Play again'}
+      </button>
     </div>
   {:else if editing}
     {@const EditorC = module.RoundEditor}

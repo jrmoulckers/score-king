@@ -227,6 +227,10 @@ describe('configuration-aware player requirements', () => {
       ids.slice(0, 2),
       expect.objectContaining({ format: '1v1' }),
     );
+    await vi.waitFor(() => {
+      flushSync();
+      expect(button(target, 'Start game').disabled).toBe(false);
+    });
     format(target, '2v2');
     expect(button(target, 'Start game').disabled).toBe(true);
     expect(target.querySelectorAll('.chip[aria-pressed="true"]')).toHaveLength(2);
@@ -331,6 +335,10 @@ describe('advanced setup constraints and presets', () => {
     button(target, 'Start game').click();
     await tick();
     expect(createGame).toHaveBeenCalledOnce();
+    await vi.waitFor(() => {
+      flushSync();
+      expect(button(target, 'Start game').disabled).toBe(false);
+    });
     vi.mocked(createGame).mockClear();
     target.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click();
     flushSync();
