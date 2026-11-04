@@ -126,7 +126,7 @@
   <div class="stack list">
     {#each ctx.players as p (p.id)}
       <div class="krow-wrap" use:shakeOn={boomToken[p.id] ?? 0}>
-        {#if survivorId === p.id}
+        {#if trackOrder && survivorId === p.id}
           <div class="krow survivor" aria-label="{p.name} is the last kitten standing">
             <span class="who">
               <Avatar name={p.name} color={p.color} />
@@ -181,8 +181,15 @@
               <Avatar name={p.name} color={p.color} />
               <strong>{p.name}</strong>
             </span>
-            <span class="badge">{input.winner === p.id ? '👑 Survivor' : 'Tap to crown'}</span>
+            {#if input.winner === p.id}
+              <span class="badge crown" use:popIn>👑 Survivor</span>
+            {:else}
+              <span class="badge">Tap to crown</span>
+            {/if}
           </button>
+          {#if input.winner === p.id}
+            <ImplodeBurst token={crownToken} crown />
+          {/if}
         {/if}
       </div>
     {/each}
