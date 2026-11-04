@@ -220,8 +220,11 @@
     </div>
   {/if}
 
-  <div class="row spread wrap">
-    <span class="muted hint">Fewer points is better — dodge the ♥ and the ♠Q.</span>
+  <div class="scoring-header row spread wrap">
+    <div class="scoring-title">
+      <h2>Scoring</h2>
+      <p class="muted hint">Fewer points is better — dodge the ♥ and the ♠Q.</p>
+    </div>
     <span class="row" style="gap: 8px">
       {#if dirty}
         <button type="button" class="btn small ghost" onclick={clearHand}>Clear hand</button>
@@ -397,7 +400,19 @@
   .sky-stage {
     position: relative;
   }
+  .scoring-header {
+    margin-top: 4px;
+    padding-top: var(--gap);
+    border-top: 1px solid var(--border);
+    gap: 10px;
+  }
+  .scoring-title h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
   .hint {
+    margin: 6px 0 0;
     font-size: 0.85rem;
   }
   .moon-banner {

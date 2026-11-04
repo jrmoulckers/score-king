@@ -244,19 +244,46 @@ describe('heart tallies', () => {
 describe('validateRound', () => {
   it('nudges toward 13 when hearts are short', () => {
     const msg = validateRound(input({ a: 5, b: 3, c: 0, d: 0 }, 'a'), P4, {});
-    expect(msg).toMatch(/5 more hearts/);
+    expect(msg).toBe('Assign the remaining 5 hearts to continue.');
   });
   it('flags too many hearts', () => {
     const msg = validateRound(input({ a: 10, b: 5, c: 0, d: 0 }, 'a'), P4, {});
-    expect(msg).toMatch(/2 too many/);
+    expect(msg).toBe('Unassign 2 hearts to continue.');
   });
-  it('frames the shortfall against the required heart count', () => {
-    const msg = validateRound(input({ a: 5, b: 3, c: 0, d: 0 }, 'a'), P4, {});
-    expect(msg).toMatch(/Must total 13/);
+  it('gives an actionable initial shortfall without repeating the allocation meter', () => {
+    expect(validateRound(emptyInput(IDS), P4, {})).toBe(
+      'Assign the remaining 13 hearts to continue.',
+    );
   });
   it('requires the Queen to be assigned', () => {
     const msg = validateRound(input({ a: 13, b: 0, c: 0, d: 0 }, null), P4, {});
-    expect(msg).toMatch(/Queen of Spades/);
+    expect(msg).toBe('Assign the remaining Queen of Spades to continue.');
+  });
+  it.each([1, 2])('keeps card counts and actionable Queen feedback for %i decks', (deckCount) => {
+    const hand = {
+      ...emptyInput(IDS),
+      hearts: { a: 13 * deckCount - 1, b: 1, c: 0, d: 0 },
+      queens: { a: 0, b: 0, c: 0, d: 0 },
+    };
+    const config = { deckCount };
+    expect(validateRound(hand, P4, config)).toBe(
+      deckCount === 1
+        ? 'Assign the remaining Queen of Spades to continue.'
+        : 'Assign the remaining 2 Queens of Spades to continue.',
+    );
+    hand.queens.b = deckCount + 1;
+    expect(validateRound(hand, P4, config)).toBe('Unassign 1 Queen of Spades to continue.');
+    hand.queens.c = 1;
+    expect(validateRound(hand, P4, config)).toBe('Unassign 2 Queens of Spades to continue.');
+    hand.queens.b = deckCount;
+    hand.queens.c = 0;
+    expect(validateRound(hand, P4, config)).toBeNull();
+    expect(scoreRound(hand, IDS, config)).toEqual({
+      a: 13 * deckCount - 1,
+      b: 1 + 13 * deckCount,
+      c: 0,
+      d: 0,
+    });
   });
   it('requires the Jack under the Omnibus variant', () => {
     const i = {
@@ -269,7 +296,7 @@ describe('validateRound', () => {
   it('requires an explicit per-round rule when a player shoots the moon', () => {
     const moon = input({ a: 13, b: 0, c: 0, d: 0 }, 'a');
     expect(validateRound(moon, P4, { moonRule: 'subtract' })).toMatch(
-      /Choose how to score this moon/,
+      /Choose how to score the moon to continue/,
     );
     expect(validateRound({ ...moon, moonRule: 'add26' }, P4, {})).toBeNull();
     expect(validateRound({ ...moon, moonRule: 'subtract' }, P4, {})).toBeNull();
@@ -361,13 +388,17 @@ describe('validateRound', () => {
       ...input({ a: 13, b: 6, c: 4, d: 2 }),
       queens: { a: 1, b: 0, c: 0, d: 0 },
     };
-    expect(validateRound(partial, P4, { deckCount: 2 })).toMatch(/1 more heart/);
+    expect(validateRound(partial, P4, { deckCount: 2 })).toBe(
+      'Assign the remaining 1 heart to continue.',
+    );
 
     const missingQueen = {
       ...partial,
       hearts: { a: 13, b: 7, c: 4, d: 2 },
     };
-    expect(validateRound(missingQueen, P4, { deckCount: 2 })).toMatch(/1 more Queen/);
+    expect(validateRound(missingQueen, P4, { deckCount: 2 })).toBe(
+      'Assign the remaining Queen of Spades to continue.',
+    );
     expect(
       validateRound({ ...missingQueen, queens: { a: 1, b: 1, c: 0, d: 0 } }, P4, { deckCount: 2 }),
     ).toBeNull();

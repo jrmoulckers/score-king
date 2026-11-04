@@ -395,14 +395,14 @@ export function validateRound(
   if (total !== requiredHearts) {
     const left = requiredHearts - total;
     return left > 0
-      ? `${left} more heart${left === 1 ? '' : 's'} to assign. Must total ${requiredHearts}.`
-      : `That's ${-left} too many heart${-left === 1 ? '' : 's'}. Must total ${requiredHearts}.`;
+      ? `Assign the remaining ${left} heart${left === 1 ? '' : 's'} to continue.`
+      : `Unassign ${-left} heart${-left === 1 ? '' : 's'} to continue.`;
   }
   const queenShortfall = cfg.deckCount - queensTotal(input);
   if (queenShortfall !== 0) {
     return queenShortfall > 0
-      ? `Assign ${queenShortfall} more Queen${queenShortfall === 1 ? '' : 's'} of Spades (♠Q).`
-      : `That's ${-queenShortfall} too many Queens of Spades.`;
+      ? `Assign the remaining ${queenShortfall === 1 ? 'Queen' : `${queenShortfall} Queens`} of Spades to continue.`
+      : `Unassign ${-queenShortfall} Queen${queenShortfall === -1 ? '' : 's'} of Spades to continue.`;
   }
   if (cfg.variantJack) {
     const jackShortfall = cfg.deckCount - jacksTotal(input);
@@ -413,7 +413,7 @@ export function validateRound(
     }
   }
   if (shooter(input, config) && input.moonRule !== 'add26' && input.moonRule !== 'subtract') {
-    return 'Choose how to score this moon before saving the round.';
+    return 'Choose how to score the moon to continue.';
   }
   return null;
 }
