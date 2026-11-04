@@ -1,6 +1,7 @@
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoundContext } from '../../types';
+import { haptic } from '../../haptics';
 import SaladBowlEditorHarness from './SaladBowlEditorHarness.svelte';
 import type { SaladBowlInput } from './logic';
 
@@ -30,10 +31,11 @@ function render(guessed = [0, 0, 0]) {
   };
   const target = document.createElement('div');
   document.body.appendChild(target);
-  component = mount(SaladBowlEditorHarness, {
+  const harness = mount(SaladBowlEditorHarness, {
     target,
     props: { ctx, initial: { guessed } },
   });
+  component = harness;
   flushSync();
   const click = (selector: string) => {
     target.querySelector<HTMLButtonElement>(selector)!.click();
@@ -49,6 +51,14 @@ function render(guessed = [0, 0, 0]) {
         (chip) => chip.getAttribute('aria-pressed') === 'true',
       ),
     clock: () => target.querySelector('.time')!.textContent,
+    setRound: (round: number) => {
+      harness.setRound(round);
+      flushSync();
+    },
+    setTurn: (seconds: number) => {
+      harness.setTurn(seconds);
+      flushSync();
+    },
   };
 }
 
@@ -57,7 +67,159 @@ afterEach(async () => {
   component = undefined;
   document.body.replaceChildren();
   vi.restoreAllMocks();
+  vi.clearAllMocks();
   vi.useRealTimers();
+});
+
+describe('Salad Bowl elapsed turn reminder', () => {
+  function start() {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+    const editor = render([4, 7, 1]);
+    editor.click('.tally');
+    editor.click('.controls button:first-child');
+    return editor;
+  }
+
+  function advance(ms: number) {
+    vi.advanceTimersByTime(ms);
+    flushSync();
+  }
+
+  function returnToPage() {
+    document.dispatchEvent(new Event('resume'));
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('pageshow'));
+    flushSync();
+  }
+
+  const buzzes = () => vi.mocked(haptic).mock.calls.filter(([kind]) => kind === 'buzz');
+
+  it('expires once when wall time crosses the deadline without missed callbacks being delivered', () => {
+    const editor = start();
+    advance(1000);
+    expect(editor.clock()).toBe('0:04');
+    vi.setSystemTime(19000);
+    expect(editor.clock()).toBe('0:04');
+    expect(buzzes()).toHaveLength(0);
+    returnToPage();
+    expect(editor.clock()).toBe('0:00');
+    expect(editor.target.querySelector('.clabel')!.textContent).toContain('Time!');
+    expect(editor.target.querySelector('.controls')!.textContent).toContain('Start');
+    expect(editor.pending()).toBe('1');
+    expect(editor.draft().guessed).toEqual([4, 7, 1]);
+    expect(buzzes()).toHaveLength(1);
+    expect(vi.getTimerCount()).toBe(0);
+    returnToPage();
+    advance(10000);
+    expect(buzzes()).toHaveLength(1);
+    editor.click('.tally');
+    editor.click('.endrow button:last-child');
+    expect(editor.draft().guessed).toEqual([6, 7, 1]);
+    expect(editor.active()).toBe(1);
+  });
+
+  it('also reconciles on a single delayed interval without a lifecycle event', () => {
+    const editor = start();
+    vi.setSystemTime(18000);
+    advance(1000);
+    expect(editor.clock()).toBe('0:00');
+    expect(buzzes()).toHaveLength(1);
+  });
+
+  it('preserves fractional running time and excludes deliberate paused suspension', () => {
+    const editor = start();
+    advance(1500);
+    editor.click('.controls button:first-child');
+    expect(editor.clock()).toBe('0:04');
+    expect(vi.getTimerCount()).toBe(0);
+    vi.setSystemTime(30000);
+    returnToPage();
+    expect(editor.clock()).toBe('0:04');
+    expect(buzzes()).toHaveLength(0);
+    editor.click('.controls button:first-child');
+    advance(3499);
+    expect(buzzes()).toHaveLength(0);
+    editor.click('.controls button:first-child');
+    expect(editor.clock()).toBe('0:01');
+    editor.click('.controls button:first-child');
+    advance(1);
+    returnToPage();
+    expect(editor.clock()).toBe('0:00');
+    expect(buzzes()).toHaveLength(1);
+  });
+
+  it('reconciles an overdue pause and restarts a fresh turn after expiration', () => {
+    const editor = start();
+    vi.setSystemTime(6000);
+    editor.click('.controls button:first-child');
+    expect(editor.clock()).toBe('0:00');
+    expect(buzzes()).toHaveLength(1);
+    editor.click('.controls button:first-child');
+    expect(editor.clock()).toBe('0:05');
+    expect(vi.getTimerCount()).toBe(1);
+    advance(5000);
+    expect(buzzes()).toHaveLength(2);
+  });
+
+  it.each(['reset', 'team', 'round'] as const)(
+    'clears the old deadline on %s and keeps one interval for the next turn',
+    (transition) => {
+      const editor = start();
+      advance(1500);
+      if (transition === 'reset') editor.click('[aria-label="Reset the turn clock"]');
+      if (transition === 'team') {
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        editor.click('.chip:nth-child(2)');
+      }
+      if (transition === 'round') editor.setRound(1);
+      expect(editor.clock()).toBe('0:05');
+      expect(vi.getTimerCount()).toBe(0);
+      vi.setSystemTime(20000);
+      returnToPage();
+      expect(editor.clock()).toBe('0:05');
+      expect(buzzes()).toHaveLength(0);
+      editor.click('.controls button:first-child');
+      returnToPage();
+      expect(vi.getTimerCount()).toBe(1);
+      advance(1000);
+      expect(editor.clock()).toBe('0:04');
+    },
+  );
+
+  it('uses idle configuration changes without changing an already engaged turn', () => {
+    const editor = start();
+    editor.setTurn(15);
+    advance(1000);
+    expect(editor.clock()).toBe('0:04');
+    editor.click('.controls button:first-child');
+    editor.setTurn(30);
+    expect(editor.clock()).toBe('0:04');
+    editor.click('[aria-label="Reset the turn clock"]');
+    expect(editor.clock()).toBe('0:30');
+    editor.setTurn(15);
+    expect(editor.clock()).toBe('0:15');
+    editor.click('.controls button:first-child');
+    advance(1000);
+    expect(editor.clock()).toBe('0:14');
+  });
+
+  it('removes intervals and lifecycle listeners on unmount, then mounts a fresh clock', async () => {
+    start();
+    await unmount(component!);
+    component = undefined;
+    document.body.replaceChildren();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.setSystemTime(20000);
+    returnToPage();
+    expect(buzzes()).toHaveLength(0);
+    const editor = render();
+    expect(editor.clock()).toBe('0:05');
+    editor.click('.controls button:first-child');
+    expect(vi.getTimerCount()).toBe(1);
+    advance(1000);
+    expect(editor.clock()).toBe('0:04');
+  });
 });
 
 describe('Salad Bowl pending turn team switching', () => {
