@@ -103,16 +103,32 @@
 </script>
 
 {#snippet navLinks()}
-  <a href="/" use:link class:active={navActive.games}
+  <a
+    href="/"
+    use:link
+    class:active={navActive.games}
+    aria-current={navActive.games ? (route.name === 'home' ? 'page' : 'true') : undefined}
     ><span class="ico" aria-hidden="true">🏠</span><span class="lbl">Games</span></a
   >
-  <a href="/players" use:link class:active={navActive.players}
+  <a
+    href="/players"
+    use:link
+    class:active={navActive.players}
+    aria-current={navActive.players ? 'page' : undefined}
     ><span class="ico" aria-hidden="true">👥</span><span class="lbl">Players</span></a
   >
-  <a href="/history" use:link class:active={navActive.history}
+  <a
+    href="/history"
+    use:link
+    class:active={navActive.history}
+    aria-current={navActive.history ? (route.name === 'history' ? 'page' : 'true') : undefined}
     ><span class="ico" aria-hidden="true">📜</span><span class="lbl">History</span></a
   >
-  <a href="/stats" use:link class:active={navActive.stats}
+  <a
+    href="/stats"
+    use:link
+    class:active={navActive.stats}
+    aria-current={navActive.stats ? (route.name === 'stats' ? 'page' : 'true') : undefined}
     ><span class="ico" aria-hidden="true">📊</span><span class="lbl">Stats</span></a
   >
 {/snippet}
