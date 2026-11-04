@@ -244,8 +244,8 @@
   {#if g.status === 'finished'}
     <span class="muted sm result">
       🏆 {winners(g.winnerIds) || '—'}{#if g.winnerScore != null}
-        <strong class="lead score">{g.winnerScore}</strong>{/if}{#if margin(g)}
-        <span class="margin">· by {margin(g)}</span>{/if}
+        {' '}<strong class="lead score">{g.winnerScore}</strong>{/if}{#if margin(g)}
+        {' '}<span class="margin">· by {margin(g)}</span>{/if}
     </span>
   {/if}
 {/snippet}
