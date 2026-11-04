@@ -7,7 +7,7 @@
   import { suggestWord } from './words';
 
   let { input = $bindable(), ctx }: { input: WerewordsInput; ctx: RoundContext } = $props();
-  const wordLabelId = `${$props.id()}-word-label`;
+  const wordLabelId = $props.id();
 
   const seerOn = $derived(!!ctx.config.seer);
   const expectedWolves = $derived(Math.max(1, Number(ctx.config.werewolves) || 1));

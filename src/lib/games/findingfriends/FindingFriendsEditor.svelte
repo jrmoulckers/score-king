@@ -13,7 +13,7 @@
   } from './logic';
 
   let { input = $bindable(), ctx }: { input: FindingFriendsInput; ctx: RoundContext } = $props();
-  const pointsLabelId = `${$props.id()}-points-label`;
+  const pointsLabelId = $props.id();
 
   let showRules = $state(false);
 
