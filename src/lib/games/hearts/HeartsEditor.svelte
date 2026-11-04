@@ -211,7 +211,7 @@
 
   <div class="scoring-header row spread wrap">
     <div class="scoring-title">
-      <h2>Scoring</h2>
+      <h3>Scoring</h3>
       <p class="muted hint">Fewer points is better — dodge the ♥ and the ♠Q.</p>
     </div>
     <span class="row" style="gap: 8px">
@@ -378,7 +378,7 @@
     border-top: 1px solid var(--border);
     gap: 10px;
   }
-  .scoring-title h2 {
+  .scoring-title h3 {
     margin: 0;
     font-size: 1.25rem;
     line-height: 1.2;
