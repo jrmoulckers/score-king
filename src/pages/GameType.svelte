@@ -33,6 +33,7 @@
 
   let selected = $state<string[]>([]);
   let config = $state<Record<string, any>>({});
+  let configForm: ReturnType<typeof ConfigForm> | undefined;
   let lastInitFor = '';
   const maxPlayers = $derived(module?.maxPlayersForConfig?.(config) ?? module?.maxPlayers ?? 1);
   const unavailableSelected = $derived(
@@ -64,6 +65,7 @@
       showToast(`At most ${maxPlayers} players with this setup.`);
       return;
     }
+    if (configForm && !configForm.reportValidity()) return;
     const g = await createGame(type, [...selected], { ...config });
     navigate(`/play/${g.id}`);
   }
@@ -169,7 +171,7 @@
     </div>
     {#if module.configFields?.length}
       <hr />
-      <ConfigForm fields={module.configFields} bind:config />
+      <ConfigForm fields={module.configFields} bind:config bind:this={configForm} />
     {/if}
     <button
       class="btn primary block"

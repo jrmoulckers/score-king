@@ -1,9 +1,25 @@
 <script lang="ts">
   import type { ConfigField } from '../types';
+  import { showToast } from '../stores/toast';
 
   let { fields, config = $bindable() }: { fields: ConfigField[]; config: Record<string, any> } =
     $props();
   const formId = $props.id();
+  let container: HTMLDivElement;
+
+  export function reportValidity(): boolean {
+    const invalid = [...container.querySelectorAll<HTMLInputElement>('input[type="number"]')].find(
+      (input) => !input.validity.valid,
+    );
+    if (!invalid) return true;
+    const disclosure = invalid.closest('details');
+    if (disclosure) disclosure.open = true;
+    const label = fields.find((field) => field.key === invalid.id)?.label;
+    showToast(`${label}: ${invalid.validationMessage}`);
+    invalid.focus();
+    invalid.reportValidity();
+    return false;
+  }
 
   // Only fields whose condition holds for the current draft show at all — irrelevant
   // knobs (e.g. blinds when we're only tracking buy-ins) simply aren't there.
@@ -77,7 +93,7 @@
     {#if group.section}
       <fieldset class="config-section">
         <legend>{group.section}</legend>
-        <div class="stack">
+        <div class="stack" bind:this={container}>
           {#each group.fields as f (f.key)}
             {@render field(f)}
           {/each}
