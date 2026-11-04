@@ -85,9 +85,14 @@
     align-items: stretch;
   }
   .who {
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+  .who strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .fields {
     display: flex;

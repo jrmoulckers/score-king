@@ -335,7 +335,7 @@
               onclick={() => setLeader(room, p.id)}
             >
               <Avatar name={p.name} color={p.color} size={22} />
-              <span>{p.name}</span>
+              <span class="chipname">{p.name}</span>
               {#if on}<span class="tag">📢 Leader</span>{/if}
             </button>
           {/each}
@@ -436,7 +436,7 @@
               onclick={() => toggleWinnerMember(p.id)}
             >
               <Avatar name={p.name} color={p.color} size={22} />
-              <span>{p.name}</span>
+              <span class="chipname">{p.name}</span>
               {#if on}<span class="tag">🏆</span>{/if}
             </button>
           {/each}
@@ -455,7 +455,9 @@
                 aria-pressed={on}
                 onclick={() => setPresident(p.id)}
               >
-                <Avatar name={p.name} color={p.color} size={22} /><span>{p.name}</span>
+                <Avatar name={p.name} color={p.color} size={22} /><span class="chipname"
+                  >{p.name}</span
+                >
               </button>
             {/each}
           </div>
@@ -470,7 +472,9 @@
                 aria-pressed={on}
                 onclick={() => setBomber(p.id)}
               >
-                <Avatar name={p.name} color={p.color} size={22} /><span>{p.name}</span>
+                <Avatar name={p.name} color={p.color} size={22} /><span class="chipname"
+                  >{p.name}</span
+                >
               </button>
             {/each}
           </div>
@@ -633,6 +637,8 @@
     font-size: 1.1rem;
   }
   .ledby {
+    min-width: 0;
+    overflow-wrap: anywhere;
     margin-left: auto;
     font-size: 0.8rem;
     color: var(--muted);
@@ -683,6 +689,8 @@
     gap: 8px;
   }
   .chip {
+    max-width: 100%;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -698,6 +706,10 @@
   .chip.on {
     border-color: var(--primary);
     background: color-mix(in srgb, var(--primary) 18%, var(--surface));
+  }
+  .chipname {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .chip .tag {
     font-size: 0.72rem;

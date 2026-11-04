@@ -206,7 +206,7 @@
             onclick={() => selectBuyin(p.id)}
           >
             <Avatar name={p.name} color={p.color} size={24} decorative />
-            <span>{p.name}</span>
+            <span class="chipname">{p.name}</span>
             {#if invested[p.id] > 0}<span class="reb">rebuy</span>{/if}
           </button>
         {/each}
@@ -312,6 +312,8 @@
     flex-direction: column;
   }
   .pchip {
+    max-width: 100%;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -328,6 +330,10 @@
   .pchip.on {
     border-color: var(--primary);
     background: var(--surface-2);
+  }
+  .chipname {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .pchip:focus-visible,
   .star:focus-visible {

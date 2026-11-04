@@ -311,7 +311,12 @@
     flex-direction: column;
     gap: 10px;
   }
+  .who {
+    min-width: 0;
+  }
   .who strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-weight: 700;
   }
   .nilhint {
