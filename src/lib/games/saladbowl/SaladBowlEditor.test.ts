@@ -1,7 +1,9 @@
 import { flushSync, mount, unmount } from 'svelte';
+import { get } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoundContext } from '../../types';
 import { haptic } from '../../haptics';
+import { announcement } from '../../stores/announcer';
 import SaladBowlEditorHarness from './SaladBowlEditorHarness.svelte';
 import type { SaladBowlInput } from './logic';
 
@@ -97,6 +99,7 @@ describe('Salad Bowl elapsed turn reminder', () => {
 
   it('expires once when wall time crosses the deadline without missed callbacks being delivered', () => {
     const editor = start();
+    const before = get(announcement).seq;
     advance(1000);
     expect(editor.clock()).toBe('0:04');
     vi.setSystemTime(19000);
@@ -109,10 +112,12 @@ describe('Salad Bowl elapsed turn reminder', () => {
     expect(editor.pending()).toBe('1');
     expect(editor.draft().guessed).toEqual([4, 7, 1]);
     expect(buzzes()).toHaveLength(1);
+    expect(get(announcement)).toEqual({ message: 'Time! — tap End turn', seq: before + 1 });
     expect(vi.getTimerCount()).toBe(0);
     returnToPage();
     advance(10000);
     expect(buzzes()).toHaveLength(1);
+    expect(get(announcement).seq).toBe(before + 1);
     editor.click('.tally');
     editor.click('.endrow button:last-child');
     expect(editor.draft().guessed).toEqual([6, 7, 1]);
@@ -129,6 +134,7 @@ describe('Salad Bowl elapsed turn reminder', () => {
 
   it('preserves fractional running time and excludes deliberate paused suspension', () => {
     const editor = start();
+    const before = get(announcement).seq;
     advance(1500);
     editor.click('.controls button:first-child');
     expect(editor.clock()).toBe('0:04');
@@ -137,9 +143,11 @@ describe('Salad Bowl elapsed turn reminder', () => {
     returnToPage();
     expect(editor.clock()).toBe('0:04');
     expect(buzzes()).toHaveLength(0);
+    expect(get(announcement).seq).toBe(before);
     editor.click('.controls button:first-child');
     advance(3499);
     expect(buzzes()).toHaveLength(0);
+    expect(get(announcement).seq).toBe(before);
     editor.click('.controls button:first-child');
     expect(editor.clock()).toBe('0:01');
     editor.click('.controls button:first-child');
@@ -147,25 +155,30 @@ describe('Salad Bowl elapsed turn reminder', () => {
     returnToPage();
     expect(editor.clock()).toBe('0:00');
     expect(buzzes()).toHaveLength(1);
+    expect(get(announcement).seq).toBe(before + 1);
   });
 
   it('reconciles an overdue pause and restarts a fresh turn after expiration', () => {
     const editor = start();
+    const before = get(announcement).seq;
     vi.setSystemTime(6000);
     editor.click('.controls button:first-child');
     expect(editor.clock()).toBe('0:00');
     expect(buzzes()).toHaveLength(1);
+    expect(get(announcement).seq).toBe(before + 1);
     editor.click('.controls button:first-child');
     expect(editor.clock()).toBe('0:05');
     expect(vi.getTimerCount()).toBe(1);
     advance(5000);
     expect(buzzes()).toHaveLength(2);
+    expect(get(announcement)).toEqual({ message: 'Time! — tap End turn', seq: before + 2 });
   });
 
   it.each(['reset', 'team', 'round'] as const)(
     'clears the old deadline on %s and keeps one interval for the next turn',
     (transition) => {
       const editor = start();
+      const before = get(announcement).seq;
       advance(1500);
       if (transition === 'reset') editor.click('[aria-label="Reset the turn clock"]');
       if (transition === 'team') {
@@ -179,11 +192,13 @@ describe('Salad Bowl elapsed turn reminder', () => {
       returnToPage();
       expect(editor.clock()).toBe('0:05');
       expect(buzzes()).toHaveLength(0);
+      expect(get(announcement).seq).toBe(before);
       editor.click('.controls button:first-child');
       returnToPage();
       expect(vi.getTimerCount()).toBe(1);
       advance(1000);
       expect(editor.clock()).toBe('0:04');
+      expect(get(announcement).seq).toBe(before);
     },
   );
 
@@ -206,6 +221,7 @@ describe('Salad Bowl elapsed turn reminder', () => {
 
   it('removes intervals and lifecycle listeners on unmount, then mounts a fresh clock', async () => {
     start();
+    const before = get(announcement).seq;
     await unmount(component!);
     component = undefined;
     document.body.replaceChildren();
@@ -213,12 +229,50 @@ describe('Salad Bowl elapsed turn reminder', () => {
     vi.setSystemTime(20000);
     returnToPage();
     expect(buzzes()).toHaveLength(0);
+    expect(get(announcement).seq).toBe(before);
     const editor = render();
     expect(editor.clock()).toBe('0:05');
     editor.click('.controls button:first-child');
     expect(vi.getTimerCount()).toBe(1);
     advance(1000);
     expect(editor.clock()).toBe('0:04');
+    expect(get(announcement).seq).toBe(before);
+  });
+
+  it('updates the shared polite status once at natural expiry without moving focus or banking words', async () => {
+    const editor = start();
+    const before = get(announcement).seq;
+    const tally = editor.target.querySelector<HTMLButtonElement>('.tally')!;
+    tally.focus();
+    advance(4999);
+    expect(get(announcement).seq).toBe(before);
+    advance(1);
+    await Promise.resolve();
+    flushSync();
+    const status = editor.target.querySelector('[role="status"]')!;
+    expect(status.getAttribute('aria-live')).toBe('polite');
+    expect(status.getAttribute('aria-atomic')).toBe('true');
+    expect(status.textContent).toBe('Time! — tap End turn');
+    expect(editor.target.querySelector('.time')!.getAttribute('aria-live')).toBe('off');
+    expect(document.activeElement).toBe(tally);
+    expect(editor.pending()).toBe('1');
+    expect(editor.draft().guessed).toEqual([4, 7, 1]);
+    returnToPage();
+    advance(10000);
+    expect(get(announcement).seq).toBe(before + 1);
+    editor.click('[aria-label="Reset the turn clock"]');
+    returnToPage();
+    expect(get(announcement).seq).toBe(before + 1);
+    editor.click('.endrow button:last-child');
+    expect(editor.draft().guessed).toEqual([5, 7, 1]);
+    expect(editor.active()).toBe(1);
+    expect(get(announcement).seq).toBe(before + 1);
+    editor.click('.controls button:first-child');
+    advance(5000);
+    await Promise.resolve();
+    flushSync();
+    expect(get(announcement)).toEqual({ message: 'Time! — tap End turn', seq: before + 2 });
+    expect(status.textContent).toBe('Time! — tap End turn');
   });
 });
 

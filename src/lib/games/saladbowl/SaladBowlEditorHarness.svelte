@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { RoundContext } from '../../types';
+  import Announcer from '../../components/Announcer.svelte';
   import SaladBowlEditor from './SaladBowlEditor.svelte';
   import type { SaladBowlInput } from './logic';
 
@@ -18,5 +19,6 @@
   }
 </script>
 
+<Announcer />
 <SaladBowlEditor bind:input ctx={context} />
 <output data-draft>{JSON.stringify(input)}</output>
