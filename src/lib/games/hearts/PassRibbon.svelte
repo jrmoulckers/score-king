@@ -5,16 +5,19 @@
 </script>
 
 <div class="pass" class:hold={info.direction === 'hold'}>
-  <div class="label">
-    <span class="direction" aria-hidden="true">{info.glyph}</span>
-    <span>{info.label}</span>
+  <div class="header">
+    <div class="label">
+      <span>{info.label}</span>
+      <span class="direction" aria-hidden="true">{info.glyph}</span>
+    </div>
+    {#if progress}
+      <span class="progress">
+        <span>Cycle {progress.cycle}</span>
+        <span>Pass {progress.deal}/{progress.cycleLength}</span>
+      </span>
+    {/if}
   </div>
   <span class="hint">{info.hint}</span>
-  {#if progress}
-    <span class="progress">
-      Passing cycle {progress.cycle} · Deal {progress.deal} of {progress.cycleLength} (includes Hold)
-    </span>
-  {/if}
 </div>
 
 <style>
@@ -35,14 +38,27 @@
   .pass.hold .direction {
     color: var(--muted);
   }
+  .header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 3px 12px;
+  }
   .label {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-weight: 700;
     font-size: 0.9rem;
   }
   .progress {
+    display: flex;
+    flex-direction: column;
+    margin-left: auto;
+    max-width: 100%;
+    text-align: right;
     font-size: 0.75rem;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
