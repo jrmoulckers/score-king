@@ -6,7 +6,13 @@
   import { haptic } from '../../haptics';
   import SinkBurst from './SinkBurst.svelte';
   import UnoGolfProgress from './UnoGolfProgress.svelte';
-  import { closestToPin, handStrokes, resolveConfig, type UnoGolfInput } from './logic';
+  import {
+    closestToPin,
+    handStrokes,
+    resolveConfig,
+    type UnoGolfHand,
+    type UnoGolfInput,
+  } from './logic';
 
   let { input = $bindable(), ctx }: { input: UnoGolfInput; ctx: RoundContext } = $props();
 
@@ -41,6 +47,12 @@
   let showKey = $state(false);
   // Per-player token that replays the "sank it" burst each time they drop the ball.
   const sinkToken = $state<Record<string, number>>({});
+  let pendingHand: {
+    draft: UnoGolfInput;
+    id: string;
+    hand: UnoGolfHand;
+    cleared: UnoGolfHand;
+  } | null = null;
 
   function strokes(id: string): number {
     return input.out === id ? 0 : handStrokes(input.hands[id], cfg);
@@ -50,11 +62,22 @@
   }
 
   function sink(id: string) {
+    // Only undo our own temporary zeroing, never a replaced/reset draft or hand.
+    if (
+      pendingHand?.draft === input &&
+      input.out === pendingHand.id &&
+      input.hands[pendingHand.id] === pendingHand.cleared
+    ) {
+      input.hands[pendingHand.id] = pendingHand.hand;
+    }
+    pendingHand = null;
     if (input.out === id) {
       input.out = null;
     } else {
       input.out = id;
+      const hand = input.hands[id];
       input.hands[id] = { numbers: 0, actions: 0, wilds: 0 };
+      pendingHand = { draft: input, id, hand, cleared: input.hands[id] };
       sinkToken[id] = (sinkToken[id] ?? 0) + 1;
       haptic('win');
     }

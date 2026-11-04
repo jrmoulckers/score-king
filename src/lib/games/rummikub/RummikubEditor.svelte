@@ -37,13 +37,29 @@
   // go-out flings tiles and a fresh stranded joker slams the dread stamp.
   let burstTokens = $state<Record<string, number>>({});
   let stingTokens = $state<Record<string, number>>({});
+  let pendingHand: {
+    draft: RummikubInput;
+    id: string;
+    hand: RummikubInput['hands'][string];
+    cleared: RummikubInput['hands'][string];
+  } | null = null;
 
   function setWinner(id: string) {
+    // Only undo our own temporary zeroing, never a replaced/reset draft or rack.
+    if (
+      pendingHand?.draft === input &&
+      input.winner === pendingHand.id &&
+      input.hands[pendingHand.id] === pendingHand.cleared
+    ) {
+      input.hands[pendingHand.id] = pendingHand.hand;
+    }
+    pendingHand = null;
     const turningOn = input.winner !== id;
     input.winner = turningOn ? id : null;
     if (turningOn) {
-      // A fresh winner starts with an empty rack; clear any leftovers they'd entered.
+      const hand = input.hands[id];
       input.hands[id] = { tiles: 0, jokers: 0 };
+      pendingHand = { draft: input, id, hand, cleared: input.hands[id] };
       burstTokens = { ...burstTokens, [id]: (burstTokens[id] ?? 0) + 1 };
       haptic('save');
     }
