@@ -69,11 +69,13 @@ describe('History card result presentation', () => {
         [...card.querySelectorAll('button')].map(
           (button) => button.getAttribute('aria-label') ?? button.textContent,
         ),
-      ).toEqual(archived ? ['Restore', 'Delete game'] : ['Share results', 'Archive game', 'Delete game']);
+      ).toEqual(
+        archived ? ['Restore', 'Delete game'] : ['Share results', 'Archive game', 'Delete game'],
+      );
     },
   );
 
-  it('preserves stored tied identities, including repeated winner ids, without deduplication', async () => {
+  it('preserves stored tied identities, including repeated winner ids', async () => {
     const card = await render({ winnerIds: ['short', 'long', 'short'], runnerUpScore: undefined });
     expect(card.querySelector('.result')?.textContent).toContain(
       'Jo & SyntheticWinner' + 'A'.repeat(25) + ' & Jo',
@@ -96,14 +98,17 @@ describe('History card result presentation', () => {
     expect(card.querySelector('.margin')?.textContent).toBe(values.margin);
   });
 
-  it.each(['active', 'abandoned'] as const)('keeps the %s summary without a winner', async (status) => {
-    const card = await render({ status });
-    expect(card.textContent).toContain(status === 'active' ? 'In progress' : 'Abandoned');
-    expect(card.querySelector('.summary')?.textContent).toContain('2 rounds');
-    expect(card.querySelector('.result')).toBeNull();
-    expect(card.querySelector('[aria-label="Share results"]')).toBeNull();
-    if (status === 'abandoned') {
-      expect(card.querySelector('.summary')?.textContent).toContain('no winner');
-    }
-  });
+  it.each(['active', 'abandoned'] as const)(
+    'keeps the %s summary without a winner',
+    async (status) => {
+      const card = await render({ status });
+      expect(card.textContent).toContain(status === 'active' ? 'In progress' : 'Abandoned');
+      expect(card.querySelector('.summary')?.textContent).toContain('2 rounds');
+      expect(card.querySelector('.result')).toBeNull();
+      expect(card.querySelector('[aria-label="Share results"]')).toBeNull();
+      if (status === 'abandoned') {
+        expect(card.querySelector('.summary')?.textContent).toContain('no winner');
+      }
+    },
+  );
 });
