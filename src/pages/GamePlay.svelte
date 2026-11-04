@@ -611,8 +611,9 @@
         onclick={playAgain}
         disabled={creating}
         aria-busy={creating}
-        >{creating ? 'Starting game...' : 'Play again'}</button
       >
+        {creating ? 'Starting game...' : 'Play again'}
+      </button>
     </div>
   {:else if game.status === 'abandoned'}
     <div class="card center banner">🚪 Game abandoned — no winner recorded.</div>
@@ -624,8 +625,9 @@
         onclick={playAgain}
         disabled={creating}
         aria-busy={creating}
-        >{creating ? 'Starting game...' : 'Play again'}</button
       >
+        {creating ? 'Starting game...' : 'Play again'}
+      </button>
     </div>
   {:else if editing}
     {@const EditorC = module.RoundEditor}
