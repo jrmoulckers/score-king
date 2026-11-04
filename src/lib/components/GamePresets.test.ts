@@ -59,9 +59,8 @@ function name(target: HTMLElement, value: string) {
 }
 
 async function submit(target: HTMLElement) {
-  target.querySelector('form')!.dispatchEvent(
-    new Event('submit', { bubbles: true, cancelable: true }),
-  );
+  const form = target.querySelector('form')!;
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   flushSync();
   await tick();
 }
@@ -101,7 +100,7 @@ describe('GamePresets focus recovery', () => {
     },
   );
 
-  it('returns Save Cancel to its replaced opener, both idle and with an active preset', async () => {
+  it('returns Save Cancel to its replaced idle or active opener', async () => {
     const target = renderPresets('hearts', ['focus-player'], { endScore: 175 });
     const opener = button(target, '＋ Save preset');
     await activate(opener);
@@ -151,7 +150,7 @@ describe('GamePresets focus recovery', () => {
     expect(document.activeElement).toBe(button(target, '＋ Save preset'));
   });
 
-  it('focuses Save preset after deleting the active preset, leaving other chips untouched', async () => {
+  it('focuses Save preset after Delete without changing other presets', async () => {
     savePreset('hearts', 'Survivor', ['focus-player'], {});
     const removed = savePreset('hearts', 'Delete me', ['focus-player'], { endScore: 175 });
     const target = renderPresets('hearts');

@@ -93,8 +93,9 @@
     const chip = [...(container?.querySelectorAll<HTMLButtonElement>('.pchip') ?? [])].find(
       (button) => button.dataset.presetId === id && !button.disabled,
     );
-    const target =
-      destination === 'preset' ? chip : destination === 'rename' ? renameButton : saveButton;
+    let target = chip;
+    if (destination === 'rename') target = renameButton;
+    else if (destination === 'save') target = saveButton;
     (target?.isConnected ? target : chip ?? saveButton)?.focus();
   }
 
@@ -307,10 +308,18 @@
           >Update</button
         >
       {/if}
-      <button class="btn small ghost" type="button" bind:this={renameButton} onclick={startRename}
+      <button
+        class="btn small ghost"
+        type="button"
+        bind:this={renameButton}
+        onclick={startRename}
         >Rename</button
       >
-      <button class="btn small ghost" type="button" bind:this={saveButton} onclick={startSave}
+      <button
+        class="btn small ghost"
+        type="button"
+        bind:this={saveButton}
+        onclick={startSave}
         >Save new</button
       >
       <button class="btn small ghost" type="button" onclick={remove}>Delete</button>
@@ -319,9 +328,9 @@
       <p class="muted hint">Updating replaces the saved lineup, including unavailable players.</p>
     {/if}
   {:else}
-    <button class="linkbtn" type="button" bind:this={saveButton} onclick={startSave}>
-      ＋ Save preset
-    </button>
+    <button class="linkbtn" type="button" bind:this={saveButton} onclick={startSave}
+      >＋ Save preset</button
+    >
   {/if}
 </div>
 
