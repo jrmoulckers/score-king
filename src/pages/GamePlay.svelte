@@ -592,7 +592,7 @@
       <button class="btn primary grow" onclick={playAgain}>Play again</button>
     </div>
   {:else if game.status === 'abandoned'}
-    <div class="card center banner">🪦 Game abandoned — no winner recorded.</div>
+    <div class="card center banner">🚪 Game abandoned — no winner recorded.</div>
     <a class="btn block" style="margin-top: 12px" href="/tonight" use:link>🎁 Tonight’s Recap</a>
     <div class="row" style="gap: 10px; margin-top: 10px">
       <button class="btn" onclick={doReopen} title="Reopen to keep playing">Reopen game</button>
@@ -653,7 +653,7 @@
       class="btn ghost block"
       style="margin-top: 8px; color: var(--muted)"
       onclick={doAbandon}
-      title="Stop this game without recording a winner">🪦 Abandon game</button
+      title="Stop this game without recording a winner">🚪 Abandon game</button
     >
   {/if}
 
