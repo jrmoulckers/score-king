@@ -104,9 +104,7 @@ describe('Stardew category entry regions', () => {
       expect(increase.disabled).toBe(true);
       expect(row.querySelector('.tally.maxed .sr-only')?.textContent).toBe('— complete');
       expect(row.querySelector('.check')?.getAttribute('aria-hidden')).toBe('true');
-      target
-        .querySelector<HTMLButtonElement>(`[aria-label="Decrease ${category.label}"]`)!
-        .click();
+      target.querySelector<HTMLButtonElement>(`[aria-label="Decrease ${category.label}"]`)!.click();
       flushSync();
       expect(draft(target)[category.key]).toBe(category.cap - 1);
       expect(increase.disabled).toBe(false);
