@@ -49,7 +49,6 @@ describe('custom game player bounds', () => {
         target,
         props: editing ? { id: def.id } : {},
       });
-
       flushSync();
       if (!editing) {
         setValue(target.querySelector<HTMLInputElement>('[aria-label="Game name"]')!, def.name);
@@ -137,7 +136,10 @@ describe('custom game numeric control names', () => {
           flushSync();
         }
         if (inputShape === 'columns') {
-          setValue(target.querySelector<HTMLInputElement>('[aria-label="Column 1 name"]')!, 'Points');
+          setValue(
+            target.querySelector<HTMLInputElement>('[aria-label="Column 1 name"]')!,
+            'Points',
+          );
         }
       }
 
@@ -168,7 +170,10 @@ describe('custom game numeric control names', () => {
         flushSync();
         expect(Number(input.value)).toBe(values[index]);
       }
-      const visibleLabels = Array.from(target.querySelectorAll('.fieldlabel'), (el) => el.textContent);
+      const visibleLabels = Array.from(
+        target.querySelectorAll('.fieldlabel'),
+        (el) => el.textContent,
+      );
       expect(visibleLabels).toEqual(
         expect.arrayContaining([labels[0], 'Round limit', 'Players', 'Points per tap']),
       );
