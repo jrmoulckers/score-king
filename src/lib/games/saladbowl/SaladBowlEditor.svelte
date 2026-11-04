@@ -5,6 +5,7 @@
   import Stepper from '../../components/Stepper.svelte';
   import { haptic } from '../../haptics';
   import { animateMotion } from '../../motion';
+  import { announce } from '../../stores/announcer';
   import {
     ROUND_THEMES,
     bowlTotal,
@@ -176,6 +177,7 @@
 
   function onTimesUp() {
     timesUp = true;
+    announce('Time! — tap End turn');
     haptic('buzz');
     playBuzzer();
     if (clockEl) {
