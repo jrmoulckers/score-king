@@ -2,7 +2,7 @@ import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { RoundContext } from '../../types';
 import { PALETTE, PLAYER_COLOR_CHOICES } from '../../util';
-import CornholeEditor from './CornholeEditor.svelte';
+import CornholeEditorHarness from './CornholeEditorHarness.svelte';
 import editorSource from './CornholeEditor.svelte?raw';
 import { cornhole } from './index';
 import { type CornholeInput, defaultTeams } from './logic';
@@ -37,11 +37,15 @@ function render(colors = [PALETTE[0], PALETTE[1]]) {
   };
   const target = document.createElement('div');
   document.body.appendChild(target);
-  mounted.push(mount(CornholeEditor, { target, props: { ctx, input } }));
+  mounted.push(mount(CornholeEditorHarness, { target, props: { ctx, initial: input } }));
   flushSync();
   [...target.querySelectorAll('button')].find((b) => b.textContent?.includes('Sides'))!.click();
   flushSync();
-  return { target, ctx, input };
+  return { target, ctx };
+}
+
+function draft(target: HTMLElement): CornholeInput {
+  return JSON.parse(target.querySelector('[data-draft]')!.textContent!) as CornholeInput;
 }
 
 afterEach(async () => {
@@ -73,14 +77,15 @@ describe('Cornhole side colour controls', () => {
   });
 
   it('updates only the chosen side colour and preserves selection when Sides is reopened', () => {
-    const { target, ctx, input } = render();
-    const initial = structuredClone(input);
-    const scores = cornhole.scoreRound(input, ctx);
+    const { target, ctx } = render();
+    const initial = draft(target);
+    const scores = cornhole.scoreRound(initial, ctx);
     for (const side of [0, 1]) {
       const group = target.querySelectorAll('.palette')[side];
       for (const [i, choice] of PLAYER_COLOR_CHOICES.entries()) {
         group.querySelectorAll('button')[i].click();
         flushSync();
+        const input = draft(target);
         expect(input.teams![side].color).toBe(choice.value);
         expect(group.querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
         expect(group.querySelector('[aria-pressed="true"] .colour-check')?.textContent).toBe('✓');
@@ -103,14 +108,14 @@ describe('Cornhole side colour controls', () => {
   });
 
   it('does not select a palette choice for an existing custom side colour', () => {
-    const { target, input } = render(['#123456', PALETTE[1]]);
+    const { target } = render(['#123456', PALETTE[1]]);
     const group = target.querySelector('.palette')!;
     expect(group.querySelector('[aria-pressed="true"]')).toBeNull();
     expect(group.querySelector('.colour-check')).toBeNull();
-    expect(input.teams![0].color).toBe('#123456');
+    expect(draft(target).teams![0].color).toBe('#123456');
     group.querySelectorAll('button')[2].click();
     flushSync();
-    expect(input.teams![0].color).toBe(PALETTE[2]);
+    expect(draft(target).teams![0].color).toBe(PALETTE[2]);
     expect(group.querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
   });
 
