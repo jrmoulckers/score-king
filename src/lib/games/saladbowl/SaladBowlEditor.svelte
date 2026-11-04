@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import type { RoundContext } from '../../types';
   import Avatar from '../../components/Avatar.svelte';
   import Stepper from '../../components/Stepper.svelte';
@@ -69,6 +69,8 @@
   let started = $state(false); // clock engaged this turn (so idle re-arm doesn't fight it)
   let timesUp = $state(false);
   let timer: ReturnType<typeof setInterval> | undefined;
+  let deadline = 0;
+  let remainingMs = 0;
 
   let clockEl: HTMLDivElement | undefined = $state();
   let countEl: HTMLSpanElement | undefined = $state();
@@ -116,6 +118,16 @@
   });
 
   onDestroy(stopInterval);
+  onMount(() => {
+    document.addEventListener('visibilitychange', tick);
+    document.addEventListener('resume', tick);
+    window.addEventListener('pageshow', tick);
+    return () => {
+      document.removeEventListener('visibilitychange', tick);
+      document.removeEventListener('resume', tick);
+      window.removeEventListener('pageshow', tick);
+    };
+  });
 
   function stopInterval() {
     if (timer) {
@@ -176,9 +188,11 @@
   }
 
   function tick() {
-    remaining -= 1;
-    if (remaining <= 0) {
-      remaining = 0;
+    if (!running) return;
+    // Suspended pages miss interval callbacks; only elapsed running time counts.
+    remainingMs = Math.max(0, deadline - Date.now());
+    remaining = Math.ceil(remainingMs / 1000);
+    if (remainingMs <= 0) {
       stopInterval();
       running = false;
       onTimesUp();
@@ -189,6 +203,8 @@
     if (running) return;
     ensureAudio();
     if (remaining <= 0) remaining = turn;
+    if (!started || timesUp) remainingMs = remaining * 1000;
+    deadline = Date.now() + remainingMs;
     started = true;
     running = true;
     timesUp = false;
@@ -197,6 +213,7 @@
   }
 
   function pause() {
+    tick();
     running = false;
     stopInterval();
   }
