@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import {
     players,
     activePlayers,
@@ -25,6 +26,8 @@
 
   let newName = $state('');
   let editingId = $state<string | null>(null);
+  let editNameInput: HTMLInputElement | undefined;
+  const editButtons: Record<string, HTMLButtonElement | undefined> = {};
   let editName = $state('');
   let editColor = $state('#7c5cff');
   let editColor2 = $state('#22d3ee');
@@ -86,7 +89,7 @@
     // indistinguishable except by avatar colour.
     if (dup) showToast(`Two players named “${n}” — rename one to tell them apart.`);
   }
-  function startEdit(p: Player) {
+  async function startEdit(p: Player) {
     cancelImageRequest();
     editingId = p.id;
     editName = p.name;
@@ -100,6 +103,8 @@
     editEmoji = p.appearance?.emoji ?? '';
     imageUrl = '';
     imageError = '';
+    await tick();
+    if (editingId === p.id) editNameInput?.focus();
   }
   async function saveEdit(p: Player) {
     if (!editName.trim() || imageBusy) return;
@@ -108,12 +113,15 @@
       color: editColor,
       appearance: draftAppearance(),
     });
-    editingId = null;
+    if (editingId === p.id) await cancelEdit();
   }
-  function cancelEdit() {
+  async function cancelEdit() {
+    const playerId = editingId;
     cancelImageRequest();
     editingId = null;
     imageError = '';
+    await tick();
+    if (editingId === null && playerId) editButtons[playerId]?.focus();
   }
   function cancelImageRequest() {
     imageRequestId += 1;
@@ -261,6 +269,7 @@
             />
             {#if editingId === p.id}
               <input
+                bind:this={editNameInput}
                 class="grow"
                 type="text"
                 bind:value={editName}
@@ -293,6 +302,7 @@
                 title="Play on this device">👑</button
               >
               <button
+                bind:this={editButtons[p.id]}
                 class="iconbtn"
                 onclick={() => startEdit(p)}
                 aria-label="Edit player"
