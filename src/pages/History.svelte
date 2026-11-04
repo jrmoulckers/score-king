@@ -240,6 +240,16 @@
   }
 </script>
 
+{#snippet resultSummary(g: Game)}
+  {#if g.status === 'finished'}
+    <span class="muted sm result">
+      🏆 {winners(g.winnerIds) || '—'}{#if g.winnerScore != null}
+        <strong class="lead score">{g.winnerScore}</strong>{/if}{#if margin(g)}
+        <span class="margin">· by {margin(g)}</span>{/if}
+    </span>
+  {/if}
+{/snippet}
+
 {#snippet gameCard(g: Game)}
   {@const m = getModule(g.type)}
   <div class="card row spread libitem">
@@ -252,17 +262,14 @@
             >{:else if g.status === 'abandoned'}<span class="pill">🪦 Abandoned</span>{/if}
         </span>
         <span class="muted sm oneline">{names(g.playerIds)}</span>
-        <span class="muted sm oneline" title={formatDateTime(ts(g))}>
+        <span class="muted sm summary" title={formatDateTime(ts(g))}>
           {relativeTime(ts(g))}
           {#if g.roundCount}
             · {g.roundCount} {g.roundCount === 1 ? 'round' : 'rounds'}{/if}
-          {#if g.status === 'finished'}
-            · 🏆 {winners(g.winnerIds) || '—'}{#if g.winnerScore != null}
-              <strong class="lead score">{g.winnerScore}</strong>{/if}{#if margin(g)}
-              · by {margin(g)}{/if}{/if}
           {#if g.status === 'abandoned'}
             · no winner{/if}
         </span>
+        {@render resultSummary(g)}
       </span>
     </a>
     <span class="row actions">
@@ -446,13 +453,12 @@
               <span class="meta">
                 <span class="titleline"><strong>{m?.name ?? g.type}</strong></span>
                 <span class="muted sm oneline">{names(g.playerIds)}</span>
-                <span class="muted sm oneline" title={formatDateTime(ts(g))}>
+                <span class="muted sm summary" title={formatDateTime(ts(g))}>
                   {relativeTime(ts(g))}
-                  {#if g.status === 'finished'}
-                    · 🏆 {winners(g.winnerIds) || '—'}{/if}
                   {#if g.status === 'abandoned'}
                     · no winner{/if}
                 </span>
+                {@render resultSummary(g)}
               </span>
             </a>
             <span class="row actions">
@@ -670,6 +676,7 @@
   .meta {
     display: flex;
     flex-direction: column;
+    flex: 1;
     gap: 2px;
     min-width: 0;
   }
@@ -685,6 +692,10 @@
     text-overflow: ellipsis;
     max-width: 100%;
   }
+  .summary,
+  .result {
+    overflow-wrap: anywhere;
+  }
   .actions {
     flex: none;
     gap: 8px;
@@ -697,6 +708,11 @@
   .score {
     font-variant-numeric: tabular-nums;
   }
+  .score,
+  .margin {
+    display: inline-block;
+    white-space: nowrap;
+  }
   .arch {
     opacity: 0.82;
   }
@@ -704,10 +720,17 @@
     margin-top: 16px;
   }
 
+  @media (max-width: 600px) {
+    .libitem {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .actions {
+      justify-content: flex-end;
+    }
+  }
+
   @media (max-width: 360px) {
-    /* Recover a few px of info width so the 3-icon finished row (Share · Archive ·
-       Delete) keeps a comfortable title/tap area on the narrowest phones, without
-       ever shrinking the 46×46 icon hit targets. */
     .libitem {
       padding: 12px;
       gap: 8px;
