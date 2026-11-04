@@ -139,6 +139,7 @@
 
 <style>
   .banner {
+    overflow-wrap: anywhere;
     font-weight: 700;
     color: var(--accent-ink);
     background: color-mix(in srgb, var(--accent) 10%, var(--surface));
