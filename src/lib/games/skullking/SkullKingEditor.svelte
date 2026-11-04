@@ -201,24 +201,30 @@
                 type="button"
                 class="chip"
                 class:on={b.jollyRoger}
+                aria-pressed={b.jollyRoger}
                 onclick={() => flip(b, 'jollyRoger')}
               >
+                {#if b.jollyRoger}<span class="check" aria-hidden="true">✓</span>{/if}
                 🏴‍☠️ Jolly Roger <span class="cv">+{BONUS_VALUES.jollyRoger}</span>
               </button>
               <button
                 type="button"
                 class="chip"
                 class:on={b.mermaidCatchesSK}
+                aria-pressed={b.mermaidCatchesSK}
                 onclick={() => flip(b, 'mermaidCatchesSK')}
               >
+                {#if b.mermaidCatchesSK}<span class="check" aria-hidden="true">✓</span>{/if}
                 🧜‍♀️ Mermaid nabs Skull King <span class="cv">+{BONUS_VALUES.mermaidCatchesSK}</span>
               </button>
               <button
                 type="button"
                 class="chip"
                 class:on={b.skOverMermaid}
+                aria-pressed={b.skOverMermaid}
                 onclick={() => flip(b, 'skOverMermaid')}
               >
+                {#if b.skOverMermaid}<span class="check" aria-hidden="true">✓</span>{/if}
                 👑 Skull King eats Mermaid <span class="cv">+{BONUS_VALUES.skOverMermaid}</span>
               </button>
             </div>
