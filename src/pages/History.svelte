@@ -83,7 +83,8 @@
     if (hadFocus) {
       void tick().then(() => {
         if (document.activeElement !== selected && document.activeElement !== document.body) return;
-        (controlsEl?.querySelector<HTMLButtonElement>('[aria-checked="true"]') ?? headingEl)?.focus();
+        const next = controlsEl?.querySelector<HTMLButtonElement>('[aria-checked="true"]');
+        (next ?? headingEl)?.focus();
       });
     }
   });

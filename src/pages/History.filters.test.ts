@@ -18,7 +18,10 @@ vi.mock('../lib/storage/db', () => ({
     fixture.games = [...fixture.games.filter((row) => row.id !== game.id), structuredClone(game)];
   }),
   putRound: vi.fn(async (round: Round) => {
-    fixture.rounds = [...fixture.rounds.filter((row) => row.id !== round.id), structuredClone(round)];
+    fixture.rounds = [
+      ...fixture.rounds.filter((row) => row.id !== round.id),
+      structuredClone(round),
+    ];
   }),
   deleteGame: vi.fn(async (id: string) => {
     fixture.games = fixture.games.filter((game) => game.id !== id);
@@ -79,7 +82,8 @@ function ids() {
 
 function expectAll() {
   const buttons = [...target.querySelectorAll<HTMLButtonElement>('[role="radio"]')];
-  expect(buttons.map((button) => button.textContent?.trim())).toEqual(['All', 'Active', 'Finished']);
+  const labels = buttons.map((button) => button.textContent?.trim());
+  expect(labels).toEqual(['All', 'Active', 'Finished']);
   expect(buttons.map((button) => button.getAttribute('aria-checked'))).toEqual([
     'true',
     'false',
@@ -133,12 +137,17 @@ describe('History shrinking status options', () => {
       );
       expect(radio('All').getAttribute('aria-checked')).toBe('true');
       expect(radio('Abandoned').getAttribute('aria-checked')).toBe('false');
-      expect(fixture.games.slice().sort((a, b) => a.id.localeCompare(b.id))).toEqual(
-        before.games.map((game) =>
-          action === 'Archive game' && game.id === 'history-0' ? { ...game, archived: false } : game,
-        ),
+      const restoredGames = fixture.games.slice().sort((a, b) => a.id.localeCompare(b.id));
+      const restoredRounds = fixture.rounds.slice().sort((a, b) => a.id.localeCompare(b.id));
+      expect(restoredGames).toEqual(
+        before.games.map((game) => {
+          if (action === 'Archive game' && game.id === 'history-0') {
+            return { ...game, archived: false };
+          }
+          return game;
+        }),
       );
-      expect(fixture.rounds.slice().sort((a, b) => a.id.localeCompare(b.id))).toEqual(before.rounds);
+      expect(restoredRounds).toEqual(before.rounds);
     },
   );
 
@@ -171,11 +180,8 @@ describe('History shrinking status options', () => {
       }
       expectAll();
       expect(document.activeElement).toBe(radio('All'));
-      flushSync(() =>
-        radio('All').dispatchEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
-        ),
-      );
+      const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
+      flushSync(() => radio('All').dispatchEvent(event));
       expect(document.activeElement).toBe(radio('Active'));
       expect(radio('Active').getAttribute('aria-checked')).toBe('true');
       expect(ids()).toEqual(['history-1']);
@@ -193,7 +199,7 @@ describe('History shrinking status options', () => {
     expect(document.activeElement).toBe(search);
   });
 
-  it('preserves a still-available Abandoned choice and an empty but offered Active choice', async () => {
+  it('preserves available Abandoned and empty but offered Active choices', async () => {
     await render(8, 2);
     await click(radio('Abandoned'));
     await click(target.querySelector<HTMLButtonElement>('[aria-label="Archive game"]')!);
@@ -206,7 +212,7 @@ describe('History shrinking status options', () => {
     expect(target.textContent).toContain('No games match');
   });
 
-  it('preserves search, ordering and a valid Finished selection when Abandoned disappears', async () => {
+  it('preserves search, ordering and Finished when Abandoned disappears', async () => {
     await render();
     await click(radio('Finished'));
     const search = target.querySelector<HTMLInputElement>('[aria-label="Search games"]')!;
@@ -221,6 +227,6 @@ describe('History shrinking status options', () => {
     expect(radio('Finished').getAttribute('aria-checked')).toBe('true');
     expect(search.value).toBe('tally');
     expect(sort.value).toBe('oldest');
-    expect(ids()).toEqual(['history-2', 'history-3', 'history-4', 'history-5', 'history-6', 'history-7']);
+    expect(ids()).toEqual(Array.from({ length: 6 }, (_, index) => `history-${index + 2}`));
   });
 });
