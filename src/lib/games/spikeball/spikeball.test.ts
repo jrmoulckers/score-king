@@ -52,6 +52,14 @@ describe('readConfig', () => {
 });
 
 describe('teams', () => {
+  it.each([{}, { format: '2v2' }, { format: '1v1' }])(
+    'uses the editor requirement for both setup bounds: %j',
+    (config) => {
+      const count = requiredPlayers(readConfig(config).format);
+      expect(spikeball.minPlayersForConfig?.(config)).toBe(count);
+      expect(spikeball.maxPlayersForConfig?.(config)).toBe(count);
+    },
+  );
   it('has one player per side in 1v1 and two in 2v2', () => {
     expect(teamSize('1v1')).toBe(1);
     expect(teamSize('2v2')).toBe(2);
