@@ -3,7 +3,8 @@
   import StardewEditor from './StardewEditor.svelte';
   import type { StardewSeasonInput } from './logic';
 
-  let { ctx, initial }: { ctx: RoundContext; initial: StardewSeasonInput } = $props();
+  const { ctx, initial }: { ctx: RoundContext; initial: StardewSeasonInput } = $props();
+  // svelte-ignore state_referenced_locally
   let input = $state(structuredClone(initial));
 </script>
 
