@@ -42,7 +42,7 @@ afterEach(() => {
 });
 
 describe('Segmented responsive choices', () => {
-  it('wraps content-sized choices and bounds long labels without clipping or shrinking targets', () => {
+  it('wraps content-sized choices and bounds long labels without shrinking targets', () => {
     const groupRule = source.match(/\.segmented\s*\{[^}]*\}/)?.[0];
     const segmentRule = source.match(/\.seg\s*\{[^}]*\}/)?.[0];
     expect(groupRule).toBeDefined();
@@ -64,7 +64,7 @@ describe('Segmented responsive choices', () => {
     expect(segmentStyle.maxWidth).toBe('100%');
     expect(segmentStyle.overflowWrap).toBe('anywhere');
     expect(`${groupRule}\n${segmentRule}`).not.toMatch(
-      /(?:order|white-space|text-overflow|overflow-x|overflow-y)\s*:/,
+      /(?:^|[;{])\s*(?:order|white-space|text-overflow|overflow-x|overflow-y)\s*:/,
     );
   });
 
@@ -73,21 +73,18 @@ describe('Segmented responsive choices', () => {
     { name: 'four statuses', options: statuses },
     { name: 'three long labels', options: longOptions.slice(0, 3) },
     { name: 'four long labels', options: longOptions },
-  ])(
-    'preserves source order, accessible names, checked state and roving focus for $name',
-    ({ options }) => {
-      const { group, buttons } = render(options, 'active');
-      expect(group.getAttribute('aria-label')).toBe('Filter by status');
-      expect(buttons.map((b) => b.textContent?.trim())).toEqual(options.map((o) => o.label));
-      expectSelection(buttons, 1);
-      flushSync(() => buttons.at(-1)!.click());
-      expectSelection(buttons, buttons.length - 1);
-      flushSync(() => buttons[0].click());
-      expectSelection(buttons, 0);
-    },
-  );
+  ])('preserves radio identity and state for $name', ({ options }) => {
+    const { group, buttons } = render(options, 'active');
+    expect(group.getAttribute('aria-label')).toBe('Filter by status');
+    expect(buttons.map((b) => b.textContent?.trim())).toEqual(options.map((o) => o.label));
+    expectSelection(buttons, 1);
+    flushSync(() => buttons.at(-1)!.click());
+    expectSelection(buttons, buttons.length - 1);
+    flushSync(() => buttons[0].click());
+    expectSelection(buttons, 0);
+  });
 
-  it.each([3, 4])('keeps Arrow/Home/End selection and focus in DOM order for %i choices', (count) => {
+  it.each([3, 4])('keeps Arrow/Home/End selection and focus for %i choices', (count) => {
     const { buttons } = render(statuses.slice(0, count));
     buttons[0].focus();
     const steps: [string, number][] = [
