@@ -3,6 +3,7 @@
   import Avatar from '../../components/Avatar.svelte';
   import Stepper from '../../components/Stepper.svelte';
   import { haptic } from '../../haptics';
+  import { radioGroupKeydown } from '../radioGroup';
   import { bumpOnChange } from '../../motion';
   import { scrabble } from './index';
   import {
@@ -97,11 +98,18 @@
 
 <div class="stack">
   <div class="row spread wrap head">
-    <div class="mode-toggle" role="radiogroup" aria-label="What to record">
+    <div
+      class="mode-toggle"
+      role="radiogroup"
+      aria-label="What to record"
+      tabindex="-1"
+      onkeydown={radioGroupKeydown}
+    >
       <button
         type="button"
         role="radio"
         aria-checked={isTurn(input)}
+        tabindex={isTurn(input) ? 0 : -1}
         class="mode-btn"
         class:on={isTurn(input)}
         onclick={toTurn}
@@ -112,6 +120,7 @@
         type="button"
         role="radio"
         aria-checked={isFinalTally(input)}
+        tabindex={isFinalTally(input) ? 0 : -1}
         class="mode-btn"
         class:on={isFinalTally(input)}
         onclick={toFinal}
@@ -136,13 +145,20 @@
   {#if isTurn(input)}
     <section class="panel">
       <p class="sub">Whose turn was it?</p>
-      <div class="players" role="radiogroup" aria-label="Active player">
+      <div
+        class="players"
+        role="radiogroup"
+        aria-label="Active player"
+        tabindex="-1"
+        onkeydown={radioGroupKeydown}
+      >
         {#each ctx.players as p (p.id)}
           {@const on = input.playerId === p.id}
           <button
             type="button"
             role="radio"
             aria-checked={on}
+            tabindex={on ? 0 : -1}
             class="player"
             class:on
             onclick={() => setPlayer(p.id)}
@@ -200,13 +216,12 @@
     {@const fin = input}
     <section class="panel">
       <p class="sub">Who went out — emptied their rack, with the bag empty?</p>
-      <div class="players" role="radiogroup" aria-label="Who went out">
+      <div class="players" role="group" aria-label="Who went out">
         {#each ctx.players as p (p.id)}
           {@const on = fin.finisherId === p.id}
           <button
             type="button"
-            role="radio"
-            aria-checked={on}
+            aria-pressed={on}
             class="player"
             class:on
             onclick={() => setFinisher(p.id)}

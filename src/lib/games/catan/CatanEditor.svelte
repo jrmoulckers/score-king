@@ -67,13 +67,12 @@
         <span class="pts">+{AWARD_POINTS} VP</span>
       </div>
       <p class="hint">{hint}</p>
-      <div class="chips" role="radiogroup" aria-label={title}>
+      <div class="chips" role="group" aria-label={title}>
         {#each ctx.players as p (p.id)}
           {@const on = input[kind] === p.id}
           <button
             type="button"
-            role="radio"
-            aria-checked={on}
+            aria-pressed={on}
             class="chip"
             class:on
             onclick={() => setAward(kind, p.id)}

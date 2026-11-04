@@ -4,6 +4,7 @@
   import Stepper from '../../components/Stepper.svelte';
   import { bumpOnChange } from '../../motion';
   import { haptic } from '../../haptics';
+  import { radioGroupKeydown } from '../radioGroup';
   import { cribbage } from './index';
   import PegBoard from './PegBoard.svelte';
   import CountAssist from './CountAssist.svelte';
@@ -111,13 +112,20 @@
       </button>
     </div>
 
-    <div class="dealers" role="radiogroup" aria-label="Whose deal it is">
+    <div
+      class="dealers"
+      role="radiogroup"
+      aria-label="Whose deal it is"
+      tabindex="-1"
+      onkeydown={radioGroupKeydown}
+    >
       {#each ctx.players as p (p.id)}
         {@const on = input.dealerId === p.id}
         <button
           type="button"
           role="radio"
           aria-checked={on}
+          tabindex={on || (!input.dealerId && p.id === ctx.players[0]?.id) ? 0 : -1}
           class="dealer"
           class:on
           onclick={() => setDealer(p.id)}

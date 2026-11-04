@@ -4,6 +4,7 @@
   import Stepper from '../../components/Stepper.svelte';
   import { bumpOnChange } from '../../motion';
   import { haptic } from '../../haptics';
+  import { radioGroupKeydown } from '../radioGroup';
   import { ginRummy } from './index';
   import {
     boxCounts,
@@ -91,13 +92,20 @@
       </button>
     </div>
 
-    <div class="knockers" role="radiogroup" aria-label="Who knocked or went gin">
+    <div
+      class="knockers"
+      role="radiogroup"
+      aria-label="Who knocked or went gin"
+      tabindex="-1"
+      onkeydown={radioGroupKeydown}
+    >
       {#each ctx.players as p (p.id)}
         {@const on = input.knockerId === p.id}
         <button
           type="button"
           role="radio"
           aria-checked={on}
+          tabindex={on || (!input.knockerId && p.id === ctx.players[0]?.id) ? 0 : -1}
           class="knocker"
           class:on
           onclick={() => setKnocker(p.id)}
