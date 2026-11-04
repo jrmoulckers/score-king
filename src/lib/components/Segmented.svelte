@@ -67,6 +67,8 @@
 <style>
   .segmented {
     display: flex;
+    flex-wrap: wrap;
+    min-width: 0;
     gap: 4px;
     padding: 4px;
     background: var(--surface-2);
@@ -74,9 +76,12 @@
     border-radius: var(--radius);
   }
   .seg {
-    flex: 1 1 0;
+    flex: 1 1 auto;
+    min-width: 46px;
+    max-width: 100%;
     min-height: 46px;
-    padding: 0 10px;
+    padding: 8px 10px;
+    overflow-wrap: anywhere;
     border: 0;
     border-radius: var(--radius-sm);
     background: transparent;
