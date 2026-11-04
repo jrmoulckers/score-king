@@ -215,6 +215,7 @@
     font-variant-numeric: tabular-nums;
   }
   .tobarn {
+    overflow-wrap: anywhere;
     font-size: 0.78rem;
     color: var(--muted);
   }
@@ -225,6 +226,8 @@
     gap: 8px;
   }
   .chip {
+    max-width: 100%;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -243,7 +246,8 @@
     color: #fff;
   }
   .chipname {
-    white-space: nowrap;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .chiprole {
     font-size: 0.68rem;
@@ -313,6 +317,7 @@
     font-weight: 800;
   }
   .cel-cheer {
+    overflow-wrap: anywhere;
     font-size: 0.8rem;
     color: var(--muted);
   }

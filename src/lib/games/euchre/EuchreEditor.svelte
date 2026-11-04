@@ -107,7 +107,7 @@
         <div class="racetop">
           <span class="racename">
             {#if ahead}<span class="crown" aria-hidden="true">👑</span>{/if}
-            {teamLabel(ti)}
+            <span class="racelabel">{teamLabel(ti)}</span>
           </span>
           <span class="racescore" class:lead={ahead}>{s}</span>
         </div>
@@ -204,7 +204,7 @@
               onclick={() => setAlonePlayer(p.id)}
             >
               <Avatar name={p.name} color={p.color} size={24} />
-              {p.name}
+              <span class="whoname">{p.name}</span>
             </button>
           {/each}
         </div>
@@ -281,6 +281,10 @@
     font-size: 0.95rem;
     line-height: 1;
   }
+  .racelabel {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   .racescore {
     font-weight: 800;
     font-variant-numeric: tabular-nums;
@@ -335,6 +339,7 @@
   }
   .teambtn {
     flex: 1 1 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -370,6 +375,8 @@
     margin-left: -8px;
   }
   .names {
+    max-width: 100%;
+    overflow-wrap: anywhere;
     font-weight: 700;
     text-align: center;
     line-height: 1.2;
@@ -396,6 +403,8 @@
     flex-wrap: wrap;
   }
   .whobtn {
+    max-width: 100%;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -412,6 +421,10 @@
     background: var(--primary);
     border-color: var(--primary-strong);
     color: #fff;
+  }
+  .whoname {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .results {
     display: flex;
@@ -481,6 +494,7 @@
     font-weight: 800;
   }
   .cel-cheer {
+    overflow-wrap: anywhere;
     font-size: 0.8rem;
     color: var(--muted);
   }
