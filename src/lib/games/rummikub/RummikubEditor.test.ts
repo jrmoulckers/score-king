@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoundContext } from '../../types';
@@ -94,5 +95,40 @@ describe('Rummikub joker configuration in the editor', () => {
     ]);
     expect(rummikub.scoreRound(draft(target), ctx)).toEqual({ a: 13, b: -13 });
     expect(initial.hands.b).toEqual({ tiles: 0, jokers: 1 });
+  });
+
+  describe('Rummikub responsive tile keypad', () => {
+    it('fits columns to the rack with 46px keys and no more than seven columns', () => {
+      const source = readFileSync(new URL('./TileKeypad.svelte', import.meta.url), 'utf8');
+      expect(source).toContain(
+        'grid-template-columns: repeat(auto-fit, minmax(max(46px, calc((100% - 36px) / 7)), 1fr))',
+      );
+      const keyRule = source.match(/\.key\s*\{([^}]*)\}/)?.[1];
+      expect(keyRule).toContain('min-width: 46px');
+      expect(keyRule).toContain('min-height: 46px');
+    });
+
+    it('keeps numbered keys in order, tallies repeated tiles, caps jokers and clears the rack', () => {
+      const { target } = render();
+      const rack = target.querySelector<HTMLElement>('.prow')!;
+      const keys = [...rack.querySelectorAll<HTMLButtonElement>('.pad button')];
+      expect(keys.map((key) => key.getAttribute('aria-label'))).toEqual([
+        ...Array.from({ length: 13 }, (_, i) => `Add a ${i + 1} tile`),
+        'Add a stranded joker, worth 30',
+      ]);
+      expect(keys.every((key) => key.type === 'button')).toBe(true);
+
+      for (const index of [12, 1, 12, 13, 13, 13]) {
+        keys[index].click();
+        flushSync();
+      }
+      expect(draft(target).hands.a).toEqual({ tiles: 28, jokers: 2 });
+      expect(keys[13].disabled).toBe(true);
+
+      click(rack, '.clear');
+      expect(draft(target).hands.a).toEqual({ tiles: 0, jokers: 0 });
+      expect(keys[13].disabled).toBe(false);
+      expect(rack.querySelector<HTMLButtonElement>('.clear')!.disabled).toBe(true);
+    });
   });
 });

@@ -105,10 +105,12 @@
   }
   .pad {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    /* Fit fewer columns on narrow racks; keep at most seven across on desktop. */
+    grid-template-columns: repeat(auto-fit, minmax(max(46px, calc((100% - 36px) / 7)), 1fr));
     gap: 6px;
   }
   .key {
+    min-width: 46px;
     min-height: 46px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
