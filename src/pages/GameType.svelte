@@ -33,7 +33,7 @@
 
   let selected = $state<string[]>([]);
   let config = $state<Record<string, any>>({});
-  let configForm: ReturnType<typeof ConfigForm> | undefined;
+  let configForm = $state<ReturnType<typeof ConfigForm>>();
   let lastInitFor = '';
   const maxPlayers = $derived(module?.maxPlayersForConfig?.(config) ?? module?.maxPlayers ?? 1);
   const unavailableSelected = $derived(

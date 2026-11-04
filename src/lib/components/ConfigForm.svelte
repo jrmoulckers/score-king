@@ -5,9 +5,13 @@
   let { fields, config = $bindable() }: { fields: ConfigField[]; config: Record<string, any> } =
     $props();
   const formId = $props.id();
-  let container: HTMLDivElement;
+  let container = $state<HTMLDivElement>();
 
   export function reportValidity(): boolean {
+    if (!container) {
+      showToast('Game setup is not ready. Try starting again.');
+      return false;
+    }
     const invalid = [...container.querySelectorAll<HTMLInputElement>('input[type="number"]')].find(
       (input) => !input.validity.valid,
     );
@@ -93,7 +97,7 @@
     {#if group.section}
       <fieldset class="config-section">
         <legend>{group.section}</legend>
-        <div class="stack" bind:this={container}>
+        <div class="stack">
           {#each group.fields as f (f.key)}
             {@render field(f)}
           {/each}
@@ -105,7 +109,7 @@
   {/each}
 {/snippet}
 
-<div class="stack">
+<div class="stack" bind:this={container}>
   {@render grouped(basic)}
 
   {#if advanced.length}
