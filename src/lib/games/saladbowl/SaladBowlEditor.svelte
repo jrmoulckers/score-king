@@ -237,6 +237,13 @@
 
   function selectTeam(i: number) {
     if (i === activeTeam) return;
+    if (
+      turnWords > 0 &&
+      !confirm(
+        `Discard ${turnWords} unbanked ${turnWords === 1 ? 'word' : 'words'} for ${activeName} and switch to ${teams[i].name}? Cancel to keep this turn, then use Bank to count the words.`,
+      )
+    )
+      return;
     activeTeam = i;
     turnWords = 0;
     resetClock();
