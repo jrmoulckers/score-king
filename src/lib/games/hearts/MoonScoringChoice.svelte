@@ -3,7 +3,7 @@
   import { haptic } from '../../haptics';
   import { moonPoints, shooter, type HeartsInput, type MoonRule } from './logic';
 
-  let {
+  const {
     input = $bindable(),
     ctx,
     saveArea = false,

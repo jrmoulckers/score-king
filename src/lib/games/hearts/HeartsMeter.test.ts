@@ -74,9 +74,7 @@ describe('Hearts card allocation meter', () => {
     );
     click(el, '.moon-choice button');
     expect(rows[0].querySelector('.outcome')!.textContent).toBe('🌙 shot the moon');
-    expect(rows[1].querySelector('.outcome')!.textContent).toBe(
-      `🌙 mooned · +${26 * decks} points`,
-    );
+    expect(rows[1].querySelector('.outcome')!.textContent).toBe(`🌙 mooned · +${26 * decks} points`);
     expect(rows[1].querySelector('.preview')!.textContent).toBe(`+${26 * decks}`);
     click(el, '.moon-choice button:nth-child(2)');
     expect(rows[0].querySelector('.preview')!.textContent).toBe(`−${26 * decks}`);
