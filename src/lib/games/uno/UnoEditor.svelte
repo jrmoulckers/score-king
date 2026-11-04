@@ -6,7 +6,7 @@
   import { bumpOnChange } from '../../motion';
   import { haptic } from '../../haptics';
   import UnoBurst from './UnoBurst.svelte';
-  import { handValue, opponentsTotal, readConfig, type UnoInput } from './logic';
+  import { handValue, opponentsTotal, readConfig, type UnoHand, type UnoInput } from './logic';
 
   let { input = $bindable(), ctx }: { input: UnoInput; ctx: RoundContext } = $props();
 
@@ -68,17 +68,36 @@
 
   // Bump a token so the Uno! burst replays on the row that just went out.
   let outToken = $state(0);
+  let pendingHand: {
+    draft: UnoInput;
+    id: string;
+    hand: UnoHand;
+    cleared: UnoHand;
+  } | null = null;
 
   function handValueOf(id: string): number {
     return input.out === id ? 0 : handValue(input.hands?.[id], cfg);
   }
 
   function goOut(id: string) {
+    // Only undo our own temporary zeroing, never a replaced/reset draft or hand.
+    if (
+      pendingHand?.draft === input &&
+      input.out === pendingHand.id &&
+      input.hands?.[pendingHand.id] === pendingHand.cleared
+    ) {
+      input.hands[pendingHand.id] = pendingHand.hand;
+    }
+    pendingHand = null;
     if (input.out === id) {
       input.out = null;
     } else {
       input.out = id;
-      if (input.hands?.[id]) input.hands[id] = { numbers: 0, actions: 0, wilds: 0 };
+      if (input.hands?.[id]) {
+        const hand = input.hands[id];
+        input.hands[id] = { numbers: 0, actions: 0, wilds: 0 };
+        pendingHand = { draft: input, id, hand, cleared: input.hands[id] };
+      }
       outToken += 1;
       haptic('win');
     }
