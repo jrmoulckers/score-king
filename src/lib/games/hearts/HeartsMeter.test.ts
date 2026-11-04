@@ -1,6 +1,7 @@
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoundContext } from '../../types';
+import HeartsMeter from './HeartsMeter.svelte';
 import HeartsMeterHarness from './HeartsMeterHarness.svelte';
 import { emptyInput, type HeartsInput } from './logic';
 
@@ -41,6 +42,10 @@ function available(el: HTMLElement, suit: 'heart' | 'queen') {
   return el.querySelectorAll(`[data-suit="${suit}"] .playing-card:not(.allocated)`).length;
 }
 
+function progress(el: HTMLElement) {
+  return [...el.querySelectorAll<HTMLProgressElement>('progress')];
+}
+
 function typeHearts(el: HTMLElement, player: string, value: number) {
   const field = el.querySelector<HTMLInputElement>(`[aria-label="${player} hearts"]`)!;
   field.value = String(value);
@@ -59,6 +64,102 @@ afterEach(async () => {
 });
 
 describe('Hearts card allocation meter', () => {
+  it.each([
+    [1, 0, 0],
+    [1, 8, 0],
+    [1, 8, 1],
+    [1, 13, 1],
+    [1, 14, 2],
+    [2, 0, 0],
+    [2, 20, 1],
+    [2, 8, 2],
+    [2, 26, 0],
+    [2, 26, 2],
+    [2, 27, 3],
+  ])('fills point segments: %i decks, %i hearts, %i Queens', (decks, hearts, queens) => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    const points = hearts + queens * 13;
+    const total = decks * 26;
+    mounted.push(
+      mount(HeartsMeter, {
+        target: el,
+        props: {
+          hearts,
+          queens,
+          totalHearts: decks * 13,
+          totalQueens: decks,
+          points,
+          total,
+        },
+      }),
+    );
+    flushSync();
+
+    const segments = progress(el);
+    expect(segments).toHaveLength(2);
+    const [heart, queen] = segments;
+    expect(heart.max).toBe(decks * 13);
+    expect(queen.max).toBe(decks * 13);
+    expect(heart.value).toBe(Math.min(hearts, decks * 13));
+    expect(queen.value).toBe(Math.min(queens, decks) * 13);
+    expect(heart.position).toBeCloseTo(Math.min(hearts / (decks * 13), 1));
+    expect(queen.position).toBeCloseTo(Math.min(queens / decks, 1));
+    expect(heart.getAttribute('aria-label')).toBe('Heart points placed');
+    expect(queen.getAttribute('aria-label')).toBe('Queen of Spades points placed');
+    expect(heart.getAttribute('aria-valuetext')).toBe(`${hearts} of ${decks * 13} points placed`);
+    expect(queen.getAttribute('aria-valuetext')).toBe(`${queens * 13} of ${decks * 13} points placed`);
+    expect(el.querySelector('.count')!.textContent).toBe(`${points}/${total} pts`);
+    const panel = el.querySelector('.progress-panel')!;
+    expect(el.querySelector('.inventory')!.nextElementSibling).toBe(panel);
+    expect(panel.firstElementChild).toBe(el.querySelector('.cap'));
+    expect(panel.querySelectorAll('progress')).toHaveLength(2);
+    expect(heart.nextElementSibling!.textContent).toBe(`♥ ${hearts}/${decks * 13} pts`);
+    expect(queen.nextElementSibling!.textContent).toBe(`Q♠ ${queens * 13}/${decks * 13} pts`);
+    expect(el.querySelector('.remaining')!.textContent).toContain(
+      `${Math.max(0, decks * 13 - hearts)} heart`,
+    );
+    expect(el.querySelectorAll('.remaining')[1].textContent).toContain(
+      `${Math.max(0, decks - queens)} Queen`,
+    );
+    if (points > total) {
+      expect(el.querySelector('.label')!.textContent).toBe(`${points - total} too many points`);
+      expect(el.querySelector('.card-error')!.textContent).toContain('1 too many hearts.');
+      expect(el.querySelector('.card-error')!.textContent).toContain('1 too many Queens.');
+    } else {
+      expect(el.querySelector('.meter.over')).toBeNull();
+      expect(el.querySelector('.label')!.textContent).toBe(
+        points === total ? `All ${total} points placed` : `${total - points} points left to place`,
+      );
+    }
+  });
+
+  it('uses the supplied totals rather than assuming a deck size', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    mounted.push(
+      mount(HeartsMeter, {
+        target: el,
+        props: {
+          hearts: 8,
+          totalHearts: 10,
+          queens: 1,
+          totalQueens: 3,
+          points: 21,
+          total: 49,
+        },
+      }),
+    );
+    flushSync();
+    const [heart, queen] = progress(el);
+    expect(heart.max).toBe(10);
+    expect(heart.position).toBeCloseTo(8 / 10);
+    expect(queen.max).toBe(39);
+    expect(queen.position).toBeCloseTo(1 / 3);
+    expect(el.querySelector('.count')!.textContent).toBe('21/49 pts');
+    expect(el.querySelector('.label')!.textContent).toBe('28 points left to place');
+  });
+
   it.each([1, 2] as const)(
     'distinguishes moon rows before and after either choice (%i)',
     (decks) => {
@@ -71,6 +172,7 @@ describe('Hearts card allocation meter', () => {
       expect(rows[1].querySelector('.outcome')!.textContent).toBe('🌙 mooned · points pending');
       expect(rows[0].querySelector('.preview')!.textContent).toBe('—');
       expect(el.querySelector('.meter.ready .label')!.textContent).toBe('🌙 Moon shot');
+      expect(progress(el).map((segment) => segment.position)).toEqual([1, 1]);
       const body = el.querySelector('.moon-body')!;
       expect(body.firstElementChild!.textContent).toBe('a is shooting the moon!');
       expect(body.querySelector('.moon-scoring')!.firstElementChild!.textContent).toBe(
@@ -110,16 +212,19 @@ describe('Hearts card allocation meter', () => {
     expect(available(el, 'heart')).toBe(13 * decks - 13);
     expect(available(el, 'queen')).toBe(decks);
     expect(el.querySelector('.count')!.textContent).toBe(`13/${26 * decks} pts`);
+    expect(progress(el).map((segment) => segment.position)).toEqual([1 / decks, 0]);
 
     click(el, '[aria-label^="Assign Queen of Spades to b."]');
     expect(available(el, 'heart')).toBe(13 * decks - 13);
     expect(available(el, 'queen')).toBe(decks - 1);
     expect(el.querySelector('.count')!.textContent).toBe(`26/${26 * decks} pts`);
+    expect(progress(el).map((segment) => segment.position)).toEqual([1 / decks, 1 / decks]);
 
     click(el, '[aria-label="Decrease a hearts"]');
     expect(available(el, 'heart')).toBe(13 * decks - 12);
     typeHearts(el, 'a', 2);
     expect(available(el, 'heart')).toBe(13 * decks - 10);
+    expect(progress(el)[0].position).toBeCloseTo(10 / (13 * decks));
 
     for (let i = 0; i < decks; i++) click(el, '[aria-label^="Assign Queen of Spades to b."]');
     expect(available(el, 'queen')).toBe(decks);
@@ -133,6 +238,7 @@ describe('Hearts card allocation meter', () => {
     expect(available(el, 'heart')).toBe(13 * decks);
     expect(available(el, 'queen')).toBe(decks);
     expect(el.querySelector('.count')!.textContent).toBe(`0/${26 * decks} pts`);
+    expect(progress(el).map((segment) => segment.position)).toEqual([0, 0]);
   });
 
   it.each([1, 2] as const)(
@@ -183,5 +289,7 @@ describe('Hearts card allocation meter', () => {
     expect(available(el, 'queen')).toBe(0);
     expect(el.querySelector('.meter.over')).not.toBeNull();
     expect(el.querySelector('.card-error')!.textContent).toContain('1 too many Queens');
+    expect(progress(el).map((segment) => segment.position)).toEqual([0, 1]);
+    expect(progress(el)[1].getAttribute('aria-valuetext')).toBe('26 of 13 points placed');
   });
 });
