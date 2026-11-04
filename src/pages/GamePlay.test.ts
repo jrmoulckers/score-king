@@ -4,6 +4,8 @@ import type { Game, Player, Round } from '../lib/types';
 import { emptyInput } from '../lib/games/hearts/logic';
 import * as db from '../lib/storage/db';
 import { settings } from '../lib/stores/settings';
+import { get } from 'svelte/store';
+import { dismissToast, toast } from '../lib/stores/toast';
 import GamePlay from './GamePlay.svelte';
 
 vi.mock('../lib/storage/db', () => ({
@@ -70,7 +72,35 @@ afterEach(async () => {
   if (component) await unmount(component);
   component = undefined;
   document.body.replaceChildren();
+  dismissToast();
   settings.update((value) => ({ ...value, motion: 'system' }));
+});
+
+describe('rematch numeric constraints', () => {
+  it('does not clone invalid saved rules or change the original game', async () => {
+    const saved: Game = {
+      ...game,
+      type: 'tally',
+      status: 'finished',
+      config: { step: 0, target: 0 },
+    };
+    vi.mocked(db.getAllPlayers).mockResolvedValue(roster);
+    vi.mocked(db.getGame).mockResolvedValue(saved);
+    vi.mocked(db.getRounds).mockResolvedValue([]);
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    component = mount(GamePlay, { target, props: { id: saved.id } });
+    await vi.waitFor(() => {
+      flushSync();
+      expect(button(target, 'Play again')).toBeDefined();
+    });
+    button(target, 'Play again').click();
+    flushSync();
+    expect(db.putGame).not.toHaveBeenCalled();
+    expect(get(toast)?.message).toContain('Point step:');
+    expect(get(toast)?.message).toContain('Start a new game to adjust the setup.');
+    expect(saved.config).toEqual({ step: 0, target: 0 });
+  });
 });
 
 describe('Hearts scoring presentation and entry feedback', () => {

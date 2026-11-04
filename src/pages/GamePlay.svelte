@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import type { Game, ID, Player, Round, RoundContext } from '../lib/types';
   import { resolveLower } from '../lib/types';
+  import { configValidationMessage } from '../lib/configValidation';
   import * as db from '../lib/storage/db';
   import { players } from '../lib/stores/players';
   import {
@@ -338,6 +339,11 @@
   }
   async function playAgain() {
     if (!game) return;
+    const error = configValidationMessage(module?.configFields, game.config);
+    if (error) {
+      showToast(`${error} Start a new game to adjust the setup.`);
+      return;
+    }
     const g = await createGame(game.type, [...game.playerIds], { ...game.config });
     navigate(`/play/${g.id}`);
   }
