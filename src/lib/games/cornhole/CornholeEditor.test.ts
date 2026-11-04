@@ -68,7 +68,8 @@ describe('Cornhole side colour controls', () => {
           `Side ${side} colour: ${PLAYER_COLOR_CHOICES[index].name}`,
         );
         expect(button.getAttribute('aria-pressed')).toBe(index === i ? 'true' : 'false');
-        expect(button.querySelector('.colour-check')?.textContent ?? '').toBe(index === i ? '✓' : '');
+        const check = button.querySelector('.colour-check')?.textContent ?? '';
+        expect(check).toBe(index === i ? '✓' : '');
       }
     }
     expect(
@@ -119,7 +120,7 @@ describe('Cornhole side colour controls', () => {
     expect(group.querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
   });
 
-  it('keeps a small swatch inside a nonshrinking 46px target with wrapping and theme-aware cues', () => {
+  it('keeps small swatches in nonshrinking 46px targets with wrapping and theme-aware cues', () => {
     const rule = (selector: string) =>
       editorSource.match(new RegExp(`${selector}\\s*\\{([^}]*)\\}`))?.[1];
     expect(rule('\\.palette')).toMatch(/flex-wrap:\s*wrap/);
