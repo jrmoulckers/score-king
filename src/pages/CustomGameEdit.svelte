@@ -214,12 +214,7 @@
     <div class="row" style="align-items: flex-start; gap: 10px">
       <div style="flex: none">
         <div class="fieldlabel">Emoji</div>
-        <input
-          class="emoji-in"
-          type="text"
-          bind:value={def.emoji}
-          aria-label="Game emoji"
-        />
+        <input class="emoji-in" type="text" bind:value={def.emoji} aria-label="Game emoji" />
       </div>
       <div class="grow">
         <div class="fieldlabel">Name</div>
