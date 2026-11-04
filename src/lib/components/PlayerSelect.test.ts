@@ -93,6 +93,7 @@ async function addNamed(name: string) {
 }
 
 async function settleCreation() {
+  flushSync();
   await vi.waitFor(() =>
     expect(document.querySelector('form')?.getAttribute('aria-busy')).toBe('false'),
   );
