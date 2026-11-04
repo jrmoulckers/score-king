@@ -48,7 +48,7 @@ describe('documentScrollLock', () => {
     expect(scroll).toHaveBeenCalledExactlyOnceWith({ left: 12, top, behavior: 'instant' });
   });
 
-  it.each([false, true])('keeps nested owners locked with out-of-order release: %s', (outerFirst) => {
+  it.each([false, true])('retains nested lock with out-of-order release: %s', (outerFirst) => {
     const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const outer = lock();
     const inner = lock();

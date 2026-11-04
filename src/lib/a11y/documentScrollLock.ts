@@ -29,7 +29,10 @@ function overrideStyle(node: HTMLElement, properties: Record<string, string>) {
   };
 }
 
-/** Svelte action: lock the page, not the sheet; release only after the last modal unmounts. */
+/**
+ * Lock the page, not the sheet; release only after the last modal unmounts.
+ * Attach after focusTrap so restoring the opener cannot displace the saved page position.
+ */
 export function documentScrollLock(node: HTMLElement) {
   const doc = node.ownerDocument;
   const view = doc.defaultView!;

@@ -21,10 +21,14 @@ afterEach(async () => {
 
 describe('shared sheet scroll lifecycle', () => {
   it.each(['results', 'play'] as const)('locks %s until route/component unmount', async (kind) => {
-    const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const opener = document.createElement('button');
     document.body.append(opener);
     opener.focus();
+    const rootStyle = document.documentElement.getAttribute('style');
+    const bodyStyle = document.body.getAttribute('style');
+    const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      expect(document.activeElement).toBe(opener);
+    });
     const onclose = vi.fn();
     component =
       kind === 'results'
@@ -70,8 +74,8 @@ describe('shared sheet scroll lifecycle', () => {
     }
     await unmount(component);
     component = undefined;
-    expect(document.documentElement.hasAttribute('style')).toBe(false);
-    expect(document.body.hasAttribute('style')).toBe(false);
+    expect(document.documentElement.getAttribute('style')).toBe(rootStyle);
+    expect(document.body.getAttribute('style')).toBe(bodyStyle);
     expect(document.activeElement).toBe(opener);
     expect(scroll).toHaveBeenCalledOnce();
   });

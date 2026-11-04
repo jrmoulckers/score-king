@@ -173,8 +173,8 @@
   aria-label="Share results"
   tabindex="-1"
   bind:this={sheet}
-  use:documentScrollLock
   use:focusTrap
+  use:documentScrollLock
 >
   <div class="grabber" aria-hidden="true"></div>
 
