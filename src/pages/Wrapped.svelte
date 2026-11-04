@@ -34,7 +34,7 @@
   let preset = $state<Preset>(untrack(() => initialPreset));
   let index = $state(0);
   const storyId = $props.id();
-  let progressEl: HTMLDivElement;
+  let progressEl = $state<HTMLDivElement>();
 
   const meId = $derived($settings.leadMemberId);
   const roast = $derived($settings.roastMode);
@@ -189,7 +189,7 @@
     }
     e.preventDefault();
     index = to;
-    progressEl.querySelectorAll<HTMLButtonElement>('[role="tab"]')[to]?.focus();
+    progressEl?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[to]?.focus();
   }
 
   const chooserPlayers = $derived([...$activePlayers].sort((a, b) => a.name.localeCompare(b.name)));
@@ -245,7 +245,7 @@
       aria-label="Your Wrapped cards"
     >
       {#key clamped}
-        <article
+        <div
           class="wcard"
           class:gold={card.gold}
           id={`${storyId}-panel`}
@@ -273,7 +273,7 @@
               {/each}
             </div>
           {/if}
-        </article>
+        </div>
       {/key}
     </section>
 
