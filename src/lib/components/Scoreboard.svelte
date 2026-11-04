@@ -58,9 +58,12 @@
       {@const behind = gap(s.total)}
       <tr class:winner={winnerSet.has(s.playerId)}>
         <td>{s.rank}</td>
-        <td>
-          <span class="row" style="gap: 8px">
-            {#if p}<Avatar name={p.name} color={p.color} size={24} decorative />{p.name}{/if}
+        <td class="player">
+          <span class="identity">
+            {#if p}
+              <Avatar name={p.name} color={p.color} size={24} decorative />
+              <span class="name">{p.name}</span>
+            {/if}
             {#if youId && s.playerId === youId}<span class="you">You</span>{/if}
             {#if winnerSet.has(s.playerId)}
               <span aria-hidden="true" title="Winner" use:popIn>🏆</span><span class="sr-only"
@@ -87,6 +90,22 @@
 </table>
 
 <style>
+  .player {
+    width: 100%;
+    white-space: normal;
+    text-align: left;
+  }
+  .identity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .name {
+    flex: 1 1 8ch;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   .num {
     font-variant-numeric: tabular-nums;
     font-weight: 700;
@@ -101,6 +120,10 @@
      the headline; the gap is the footnote. */
   .gap {
     display: block;
+    max-width: 8ch;
+    margin-left: auto;
+    white-space: normal;
+    overflow-wrap: anywhere;
     font-size: 0.72rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
