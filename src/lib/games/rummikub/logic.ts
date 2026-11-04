@@ -31,6 +31,15 @@ export interface RummikubInput {
 /** Official joker penalty: a joker left on your rack costs 30 points. */
 export const DEFAULT_JOKER_VALUE = 30;
 
+export function readJokerValue(config: Record<string, unknown>): number {
+  const value = config.jokerValue;
+  if (value == null || (typeof value === 'string' && value.trim() === '')) {
+    return DEFAULT_JOKER_VALUE;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : DEFAULT_JOKER_VALUE;
+}
+
 /** A safe, non-negative integer from possibly-dirty draft input. */
 function clampCount(n: unknown): number {
   const v = Math.round(Number(n) || 0);

@@ -1,13 +1,16 @@
 import type { GameModule, ID, Round, RoundContext } from '../../types';
 import { RoundEditor } from '../editor';
-import { DEFAULT_JOKER_VALUE, scoreRummikub, validateRummikub, type RummikubInput } from './logic';
+import {
+  DEFAULT_JOKER_VALUE,
+  readJokerValue,
+  scoreRummikub,
+  validateRummikub,
+  type RummikubInput,
+} from './logic';
 import { rummikubStats } from './stats';
 
 export type { RummikubHand, RummikubInput } from './logic';
 export { handPenalty, potTotal } from './logic';
-
-const jokerValueOf = (config: Record<string, unknown>): number =>
-  Math.max(0, Number(config.jokerValue) || DEFAULT_JOKER_VALUE);
 
 export const rummikub: GameModule = {
   id: 'rummikub',
@@ -80,7 +83,7 @@ export const rummikub: GameModule = {
     scoreRummikub(
       input,
       ctx.players.map((p) => p.id),
-      jokerValueOf(ctx.config),
+      readJokerValue(ctx.config),
     ),
 
   describeRound: (round: Round, players): string => {

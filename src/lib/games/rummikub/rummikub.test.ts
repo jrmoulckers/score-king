@@ -4,6 +4,7 @@ import {
   DEFAULT_JOKER_VALUE,
   handPenalty,
   potTotal,
+  readJokerValue,
   scoreRummikub,
   validateRummikub,
   type RummikubInput,
@@ -24,6 +25,23 @@ function input(
 }
 
 const sum = (deltas: Record<string, number>) => Object.values(deltas).reduce((a, b) => a + b, 0);
+
+describe('readJokerValue', () => {
+  it.each([0, '0', 15, '50', 30, 60])('honours configured value %s', (jokerValue) => {
+    expect(readJokerValue({ jokerValue })).toBe(Number(jokerValue));
+  });
+
+  it.each([undefined, null, '', ' ', 'invalid', NaN, Infinity])(
+    'uses the official default for missing or unusable value %s',
+    (jokerValue) => {
+      expect(readJokerValue({ jokerValue })).toBe(DEFAULT_JOKER_VALUE);
+    },
+  );
+
+  it('preserves non-negative normalization', () => {
+    expect(readJokerValue({ jokerValue: -5 })).toBe(0);
+  });
+});
 
 describe('handPenalty', () => {
   it('counts numbered tiles at face value', () => {
@@ -215,6 +233,24 @@ describe('rummikub module', () => {
   it('scores a round through the module with the configured joker value', () => {
     const round = input('a', { a: hand(0), b: hand(4, 1), c: hand(2) });
     expect(rummikub.scoreRound(round, ctx({ jokerValue: 50 }))).toEqual({ a: 56, b: -54, c: -2 });
+  });
+
+  it.each([0, '0', 15, 30, 60, undefined])(
+    'keeps module scoring and the preview pot consistent for joker value %s',
+    (jokerValue) => {
+      const config = { jokerValue };
+      const value = readJokerValue(config);
+      const round = input('a', { a: hand(0), b: hand(4, 1), c: hand(2, 2) });
+      const deltas = rummikub.scoreRound(round, ctx(config));
+      expect(deltas).toEqual({ a: 6 + 3 * value, b: -(4 + value), c: -(2 + 2 * value) });
+      expect(deltas.a).toBe(potTotal(round, ['a', 'b', 'c'], value));
+      expect(sum(deltas)).toBe(0);
+    },
+  );
+
+  it('saves a joker-only zero-penalty round without negative zero', () => {
+    const round = input('a', { a: hand(0), b: hand(0, 1), c: hand(0) });
+    expect(rummikub.scoreRound(round, ctx({ jokerValue: 0 }))).toEqual({ a: 0, b: 0, c: 0 });
   });
 
   it('validates through the module', () => {
