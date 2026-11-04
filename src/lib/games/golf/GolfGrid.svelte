@@ -48,12 +48,12 @@
   const filled = $derived(cells.some((c) => c != null));
   const canceledCount = $derived(breakdown.canceled.filter(Boolean).length);
 
-  // Push the computed total up whenever the laid-out grid changes, but only once
-  // a card is actually placed — an untouched helper never overwrites a typed score.
+  // Once a card is placed, the grid owns its total even when the last card is
+  // cleared. An untouched helper never overwrites a typed score.
   let prev = -Infinity;
   $effect(() => {
     const t = breakdown.total;
-    if (filled && t !== prev) {
+    if ((filled || prev !== -Infinity) && t !== prev) {
       prev = t;
       onscore(t);
     }
