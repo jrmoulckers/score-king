@@ -33,6 +33,8 @@
   const { initialPreset = 'year' }: { initialPreset?: Preset } = $props();
   let preset = $state<Preset>(untrack(() => initialPreset));
   let index = $state(0);
+  const storyId = $props.id();
+  let progressEl: HTMLDivElement;
 
   const meId = $derived($settings.leadMemberId);
   const roast = $derived($settings.roastMode);
@@ -166,16 +168,32 @@
   function next() {
     if (clamped < cards.length - 1) index = clamped + 1;
   }
-  function onKey(e: KeyboardEvent) {
+  function onKey(e: KeyboardEvent, from: number) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === 'ArrowLeft') prev();
-    else if (e.key === 'ArrowRight') next();
+    let to: number;
+    switch (e.key) {
+      case 'ArrowLeft':
+        to = (from - 1 + cards.length) % cards.length;
+        break;
+      case 'ArrowRight':
+        to = (from + 1) % cards.length;
+        break;
+      case 'Home':
+        to = 0;
+        break;
+      case 'End':
+        to = cards.length - 1;
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+    index = to;
+    progressEl.querySelectorAll<HTMLButtonElement>('[role="tab"]')[to]?.focus();
   }
 
   const chooserPlayers = $derived([...$activePlayers].sort((a, b) => a.name.localeCompare(b.name)));
 </script>
-
-<svelte:window onkeydown={onKey} />
 
 <BackLink href="/stats" label="Stats" />
 <h1 style="margin: 0 4px 8px">🎁 Wrapped</h1>
@@ -227,7 +245,15 @@
       aria-label="Your Wrapped cards"
     >
       {#key clamped}
-        <article class="wcard" class:gold={card.gold} aria-live="polite">
+        <article
+          class="wcard"
+          class:gold={card.gold}
+          id={`${storyId}-panel`}
+          role="tabpanel"
+          aria-labelledby={`${storyId}-tab-${clamped}`}
+          tabindex="0"
+          aria-live="polite"
+        >
           <span class="wc-emoji" aria-hidden="true">{card.emoji}</span>
           <h2 class="wc-head">{card.headline}</h2>
           {#if card.stats && card.stats.length > 0}
@@ -256,14 +282,18 @@
       <button class="nav" onclick={prev} disabled={clamped === 0} aria-label="Previous card"
         >←</button
       >
-      <div class="dots" role="tablist" aria-label="Wrapped progress">
+      <div class="dots" role="tablist" aria-label="Wrapped progress" bind:this={progressEl}>
         {#each cards as c, i (c.key)}
           <button
             class="dot"
             class:on={i === clamped}
             role="tab"
+            id={`${storyId}-tab-${i}`}
+            aria-controls={`${storyId}-panel`}
             aria-selected={i === clamped}
+            tabindex={i === clamped ? 0 : -1}
             aria-label={`Card ${i + 1} of ${cards.length}`}
+            onkeydown={(e) => onKey(e, i)}
             onclick={() => (index = i)}
           >
             <span class="dot-mark" aria-hidden="true"></span>
