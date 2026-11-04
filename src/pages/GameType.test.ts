@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ConfigField, GameModule } from '../lib/types';
 import { tally } from '../lib/games/tally';
 import { hearts } from '../lib/games/hearts';
+import { spikeball } from '../lib/games/spikeball';
 import { buildCustomModule } from '../lib/games/custom/factory';
 import { blankDef, MAX_NAME_LEN } from '../lib/games/custom/types';
 import { getModule } from '../lib/games/registry';
@@ -152,6 +153,126 @@ describe('new game numeric constraints', () => {
       direction: 'high',
       step: 1,
       target: key === 'step' ? 125 : 0,
+    });
+
+    describe('configuration-aware player requirements', () => {
+      function roster(count = 5) {
+        const entries = Array.from({ length: count }, (_, i) => ({
+          id: `player-${i}`,
+          name: `Player ${i}`,
+          color: '#7c5cff',
+          createdAt: i,
+        }));
+        players.set(entries);
+        return entries.map((p) => p.id);
+      }
+
+      function select(target: HTMLElement, indices: number[]) {
+        for (const index of indices) {
+          target.querySelectorAll<HTMLButtonElement>('.chip')[index].click();
+          flushSync();
+        }
+      }
+
+      function format(target: HTMLElement, value: string) {
+        const control = target.querySelector<HTMLSelectElement>('#format')!;
+        control.value = value;
+        control.dispatchEvent(new Event('change', { bubbles: true }));
+        flushSync();
+      }
+
+      it.each([2, 3])('blocks %i-player doubles until the roster is complete', async (count) => {
+        const ids = roster();
+        const target = renderModule(spikeball);
+        select(target, Array.from({ length: count }, (_, i) => i));
+        expect(target.textContent).toContain('Players (4)');
+        expect(target.textContent).toContain(`Pick ${4 - count} more player`);
+        expect(button(target, 'Start game').disabled).toBe(true);
+        button(target, 'Start game').click();
+        expect(createGame).not.toHaveBeenCalled();
+        select(target, Array.from({ length: 4 - count }, (_, i) => count + i));
+        expect(button(target, 'Start game').disabled).toBe(false);
+        button(target, 'Start game').click();
+        await tick();
+        expect(createGame).toHaveBeenCalledWith(
+          'spikeball',
+          ids.slice(0, 4),
+          expect.objectContaining({ format: '2v2' }),
+        );
+      });
+
+      it.each([3, 4])('retains %i players after switching to singles until corrected', async (count) => {
+        const ids = roster();
+        const target = renderModule(spikeball);
+        select(target, Array.from({ length: count }, (_, i) => i));
+        format(target, '1v1');
+        expect(target.textContent).toContain('Players (2)');
+        expect(target.textContent).toContain('No players were removed automatically.');
+        expect(target.querySelectorAll('.chip[aria-pressed="true"]')).toHaveLength(count);
+        expect(button(target, 'Start game').disabled).toBe(true);
+        button(target, 'Start game').click();
+        expect(createGame).not.toHaveBeenCalled();
+        expect(target.querySelectorAll<HTMLButtonElement>('.chip')[4].disabled).toBe(true);
+        select(target, Array.from({ length: count - 2 }, (_, i) => count - 1 - i));
+        button(target, 'Start game').click();
+        await tick();
+        expect(createGame).toHaveBeenCalledWith(
+          'spikeball',
+          ids.slice(0, 2),
+          expect.objectContaining({ format: '1v1' }),
+        );
+        format(target, '2v2');
+        expect(button(target, 'Start game').disabled).toBe(true);
+        expect(target.querySelectorAll('.chip[aria-pressed="true"]')).toHaveLength(2);
+      });
+
+      it('previews preset bounds using its own rules and applies exact ordered rosters', async () => {
+        const ids = roster();
+        const full = savePreset('spikeball', 'Singles lineup', [ids[2], ids[0]], { format: '1v1' });
+        const invalid = savePreset('spikeball', 'Short doubles', [ids[1], ids[3]], { format: '2v2' });
+        const rules = savePreset('spikeball', 'Doubles rules', [], { format: '2v2' }, 'rules');
+        const target = renderModule(spikeball);
+        const presetButton = (id: string) =>
+          target.querySelector<HTMLButtonElement>(`[data-preset-id="${id}"]`)!;
+        expect(presetButton(full.id).textContent).not.toContain('needs at least');
+        expect(presetButton(invalid.id).textContent).toContain('needs at least 4 players');
+        presetButton(full.id).click();
+        flushSync();
+        expect(button(target, 'Start game').disabled).toBe(false);
+        expect(target.querySelector('#format')).toHaveProperty('value', '1v1');
+        expect(presetButton(rules.id).textContent).toContain('needs at least 4 players');
+        presetButton(rules.id).click();
+        flushSync();
+        expect(button(target, 'Start game').disabled).toBe(true);
+        expect(target.querySelectorAll('.chip[aria-pressed="true"]')).toHaveLength(2);
+        expect(get(settings).gamePresets.find((p) => p.id === full.id)?.playerIds).toEqual([
+          ids[2],
+          ids[0],
+        ]);
+        presetButton(full.id).click();
+        flushSync();
+        button(target, 'Start game').click();
+        await tick();
+        expect(createGame).toHaveBeenCalledWith(
+          'spikeball',
+          [ids[2], ids[0]],
+          expect.objectContaining({ format: '1v1' }),
+        );
+      });
+
+      it.each([
+        ['1', 6],
+        ['2', 11],
+      ])('preserves Hearts deck %s limits and selected players', (deckCount, max) => {
+        const ids = roster(11);
+        savePreset('hearts', 'Large table', ids, { deckCount });
+        const target = renderModule(hearts);
+        target.querySelector<HTMLButtonElement>('.pchip')!.click();
+        flushSync();
+        expect(target.textContent).toContain(`Players (3–${max})`);
+        expect(target.querySelectorAll('.chip[aria-pressed="true"]')).toHaveLength(11);
+        expect(button(target, 'Start game').disabled).toBe(max < 11);
+      });
     });
   });
 

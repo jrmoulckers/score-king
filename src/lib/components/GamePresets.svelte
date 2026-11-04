@@ -23,6 +23,7 @@
     fields,
     min = 1,
     max = 12,
+    minForConfig,
     maxForConfig,
   }: {
     type: string;
@@ -31,6 +32,7 @@
     fields: ConfigField[] | undefined;
     min?: number;
     max?: number;
+    minForConfig?: (config: Record<string, unknown>) => number;
     maxForConfig?: (config: Record<string, unknown>) => number;
   } = $props();
 
@@ -66,10 +68,11 @@
 
   function compatibility(p: GamePreset): string {
     const next = preview(p);
+    const minimum = minForConfig?.(next.config) ?? min;
     const limit = maxForConfig?.(next.config) ?? max;
     const issues: string[] = [];
     if (next.unavailableIds.length) issues.push(`${next.unavailableIds.length} unavailable`);
-    if (next.selected.length < min) issues.push(`needs at least ${min} players`);
+    if (next.selected.length < minimum) issues.push(`needs at least ${minimum} players`);
     if (next.selected.length > limit) issues.push(`at most ${limit} players`);
     return issues.join(' · ');
   }

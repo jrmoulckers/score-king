@@ -207,6 +207,8 @@ export interface GameModule {
   /** Optional search aliases/keywords for catalog discovery (matched alongside name + tagline). */
   keywords?: string[];
   minPlayers: number;
+  /** Resolve the minimum setup roster for the selected rules or format. */
+  minPlayersForConfig?(config: Record<string, unknown>): number;
   /** Absolute upper bound; setup may narrow it for a specific configuration. */
   maxPlayers: number;
   /** Resolve a lower setup limit when a variant changes the usable deck or board size. */

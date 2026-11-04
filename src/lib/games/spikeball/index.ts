@@ -3,6 +3,7 @@ import { RoundEditor } from '../editor';
 import { spikeballStats } from './stats';
 import {
   readConfig,
+  requiredPlayers,
   splitTeams,
   gamesToWin,
   scoreDeltas,
@@ -14,6 +15,8 @@ import {
 export type { SpikeballInput } from './logic';
 
 const playerIds = (ctx: RoundContext): ID[] => ctx.players.map((p) => p.id);
+const playersForConfig = (config: Record<string, unknown>): number =>
+  requiredPlayers(readConfig(config).format);
 
 /**
  * Spikeball / Roundnet — a live rally scorer. Each Score King "round" is one *game*
@@ -29,6 +32,8 @@ export const spikeball: GameModule = {
   keywords: ['roundnet', 'spikeball', 'rally', 'net', 'doubles', '2v2', 'outdoor', 'beach'],
   minPlayers: 2,
   maxPlayers: 4,
+  minPlayersForConfig: playersForConfig,
+  maxPlayersForConfig: playersForConfig,
   teams: true,
   configFields: [
     {

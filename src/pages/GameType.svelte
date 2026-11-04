@@ -35,6 +35,7 @@
   let config = $state<Record<string, any>>({});
   let configForm = $state<ReturnType<typeof ConfigForm>>();
   let lastInitFor = '';
+  const minPlayers = $derived(module?.minPlayersForConfig?.(config) ?? module?.minPlayers ?? 1);
   const maxPlayers = $derived(module?.maxPlayersForConfig?.(config) ?? module?.maxPlayers ?? 1);
   const unavailableSelected = $derived(
     selected.filter((id) => !$activePlayers.some((p) => p.id === id)),
@@ -57,8 +58,8 @@
       showToast('Remove unavailable players or restore them from Players before starting.');
       return;
     }
-    if (selected.length < module.minPlayers) {
-      showToast(`Need at least ${module.minPlayers} players.`);
+    if (selected.length < minPlayers) {
+      showToast(`Need at least ${minPlayers} players.`);
       return;
     }
     if (selected.length > maxPlayers) {
@@ -140,16 +141,19 @@
     <GamePresets
       {type}
       fields={module.configFields}
-      min={module.minPlayers}
+      min={minPlayers}
       max={maxPlayers}
+      minForConfig={module.minPlayersForConfig}
       maxForConfig={module.maxPlayersForConfig}
       bind:selected
       bind:config
     />
     <hr />
     <div>
-      <div class="fieldlabel">Players ({module.minPlayers}–{maxPlayers})</div>
-      <PlayerSelect bind:selected max={maxPlayers} min={module.minPlayers} />
+      <div class="fieldlabel">
+        Players ({minPlayers === maxPlayers ? minPlayers : `${minPlayers}–${maxPlayers}`})
+      </div>
+      <PlayerSelect bind:selected max={maxPlayers} min={minPlayers} />
       {#if selected.length > maxPlayers}
         <p class="muted sm" role="status">
           {selected.length} players selected; this setup allows at most {maxPlayers}. Deselect
@@ -176,21 +180,18 @@
     <button
       class="btn primary block"
       onclick={start}
-      disabled={selected.length < module.minPlayers ||
+      disabled={selected.length < minPlayers ||
         selected.length > maxPlayers ||
         unavailableSelected.length > 0}
     >
       Start game
     </button>
-    {#if selected.length < module.minPlayers}
+    {#if selected.length < minPlayers}
       <p class="startneed muted sm" role="status">
         {#if $activePlayers.length === 0}
-          Add {module.minPlayers} player{module.minPlayers === 1 ? '' : 's'} above to start your first
-          game.
+          Add {minPlayers} player{minPlayers === 1 ? '' : 's'} above to start your first game.
         {:else}
-          Pick {module.minPlayers - selected.length} more player{module.minPlayers -
-            selected.length ===
-          1
+          Pick {minPlayers - selected.length} more player{minPlayers - selected.length === 1
             ? ''
             : 's'} to start.
         {/if}
